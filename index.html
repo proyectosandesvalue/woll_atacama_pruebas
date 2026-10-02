@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plataforma Woll Atacama</title>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- MarkerCluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <!-- Tipografía -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <!-- DOMPurify para sanitización XSS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
+  <!-- Material Symbols Outlined -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    rel="stylesheet" />
+  <!-- Estilos propios -->
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/desktop.css" />
+  <link rel="stylesheet" href="css/mobile.css" />
+  <link rel="icon" href="assets/img/cropped-logo2-192x192.png" type="image/x-icon" />
+</head>
+
+<body>
+  <!--HEADER -->
+  <header class="header header-custom">
+    <!-- Izquierda: Marca -->
+    <div class="header-left">
+      <div class="brand">
+        <img src="assets/img/logo2-1.png" alt="WoLL Atacama" class="brand-logo-img light-logo" />
+        <img src="assets/img/woll-logo-para-azul.png" alt="WoLL Atacama" class="brand-logo-img dark-logo" />
+      </div>
+    </div>
+    <!-- Centro: Buscador -->
+    <div class="header-center">
+      <div class="search-bar search-bar-rounded" id="searchBarWrapper">
+        <span class="material-symbols-outlined search-icon">search</span>
+        <input class="search-input" id="searchInput" placeholder="Busca elementos, capas o atributos" type="text" autocomplete="off" />
+        <div id="search-results-anchor"></div>
+      </div>
+    </div>
+    <!-- Sector Derecho: Acciones -->
+    <div class="header-right header-right-custom">
+      <div class="header-divider hide-on-mobile"></div>
+      <div class="header-actions">
+        <a class="icon-btn" href="help.html" aria-label="Ayuda" title="Ayuda">
+          <span class="material-symbols-outlined">help</span>
+        </a>
+        <button class="icon-btn" id="welcomeModalBtn" aria-label="Información" title="Información">
+          <span class="material-symbols-outlined">info</span>
+        </button>
+        <button class="icon-btn mobile-only" id="mobileSearchBtn" aria-label="Buscar" title="Buscar">
+          <span class="material-symbols-outlined">search</span>
+        </button>
+        <button class="icon-btn" id="mobileLeftSidebarBtn" aria-label="Capas" title="Capas">
+          <span class="material-symbols-outlined">layers</span>
+        </button>
+        <button class="icon-btn" id="mobileRightSidebarBtn" aria-label="Leyenda" title="Leyenda">
+          <span class="material-symbols-outlined">map</span>
+        </button>
+        <button class="icon-btn" id="chatSidebarBtn" aria-label="Asistente IA" title="Asistente IA"
+          aria-expanded="false" aria-controls="chatSidebar">
+          <span class="material-symbols-outlined">forum</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-layout">
+    <!-- SIDEBAR IZQUIERDO -->
+    <aside class="sidebar sidebar-left" id="sidebarLeft" aria-label="Panel de capas">
+      <!-- Cabecera -->
+      <div class="sidebar-header">
+        <span class="sidebar-title sidebar-title--icon sidebar-label">
+          <span class="material-symbols-outlined sidebar-title-icon">layers</span>
+          Capas
+        </span>
+      </div>
+      <!-- Contenido con scroll -->
+      <div class="sidebar-content">
+        <!-- Sección: Capas Temáticas -->
+        <nav class="sidebar-nav">
+          <!-- Lista maestra de capas temáticas. actualizarCapasSidebar() escribe en este <ul> -->
+          <div class="sidebar-layers" id="sidebar-layers">
+            <ul id="sidebar-layers-master" class="layer-list-master"></ul>
+          </div>
+        </nav>
+        <!-- Sección: Capas Base  -->
+        <nav class="sidebar-nav">
+          <div class="sidebar-section-header sidebar-label">
+            <span class="material-symbols-outlined sidebar-section-icon">grid_view</span>
+            <span class="sidebar-section-title">Capas Base</span>
+          </div>
+          <div class="base-layers-container sidebar-label" id="sidebar-base-container">
+            <ul id="sidebar-base-layers" class="layer-list-base"></ul>
+          </div>
+        </nav>
+      </div>
+      <!-- Botón cerrar (mobile overlay) -->
+      <button class="sidebar-close-btn mobile-only" id="closeLeftSidebarBtn" aria-label="Cerrar panel de capas">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </aside>
+
+
+    <!-- MAPCANVAS -->
+    <div class="map-canvas">
+      <!-- Contenedor real de Leaflet -->
+      <div id="map"></div>
+      <!-- Panel inferior: Tabla de Atributos -->
+      <div id="attribute-table-panel" class="attribute-table-panel">
+        <div id="attribute-table-resizer" class="attribute-table-resizer"></div>
+        <div class="attribute-table-header">
+          <div class="attribute-table-title-group">
+            <span class="material-symbols-outlined attribute-table-icon">table_chart</span>
+            <h3 id="attribute-table-title" class="attribute-table-title">Tabla de Atributos</h3>
+            <span id="attribute-table-count" class="attribute-table-count"></span>
+          </div>
+          <div class="attribute-table-actions">
+            <button id="searchAttributeTableBtn" class="icon-btn" aria-label="Buscar en tabla" title="Buscar en tabla">
+              <span class="material-symbols-outlined">search</span>
+            </button>
+            <button id="filterAttributeTableBtn" class="icon-btn" aria-label="Filtrar datos" title="Filtrar datos">
+              <span class="material-symbols-outlined">filter_alt</span>
+            </button>
+            <button id="fullscreenAttributeTableBtn" class="icon-btn" aria-label="Pantalla completa"
+              title="Pantalla completa">
+              <span class="material-symbols-outlined" id="fullscreenAttributeTableIcon">open_in_full</span>
+            </button>
+            <button id="closeAttributeTableBtn" class="icon-btn" aria-label="Cerrar tabla" title="Cerrar tabla">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </div>
+        </div>
+        <div class="attribute-table-body">
+          <!-- Spinner de carga -->
+          <div id="attribute-table-loading" class="attribute-table-loading" style="display: none;">
+            <span class="material-symbols-outlined loading-spinner">sync</span>
+            <span>Cargando datos de la capa...</span>
+          </div>
+          <!-- Contenedor de la tabla -->
+          <div class="table-responsive">
+            <table id="attribute-table" class="attribute-table">
+              <thead id="attribute-table-head"></thead>
+              <tbody id="attribute-table-body-content"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- Controles de zoom (sobre el mapa, arriba derecha) -->
+      <div class="zoom-controls">
+        <button class="map-btn" id="zoomInBtn" aria-label="Acercar">
+          <span class="material-symbols-outlined">add</span>
+        </button>
+        <button class="map-btn" id="zoomOutBtn" aria-label="Alejar">
+          <span class="material-symbols-outlined">remove</span>
+        </button>
+      </div>
+      <!-- Controles de navegación + tema (sobre el mapa, derecha centro) -->
+      <div class="nav-controls">
+        <button class="map-btn" id="locateBtn" aria-label="Mi ubicación">
+          <span class="material-symbols-outlined">my_location</span>
+        </button>
+        <!-- Toggle dark / light del mapa -->
+        <button class="map-btn theme-toggle-btn" id="themeToggle" aria-label="Cambiar tema"
+          title="Cambiar entre modo oscuro y claro">
+          <span class="material-symbols-outlined" id="themeIcon">light_mode</span>
+        </button>
+      </div>
+      <!-- Barra de coordenadas (fondo del mapa) -->
+      <div class="coords-bar" id="coordsBar">
+        <span id="coordLat">Lat: —</span>
+        <span class="coords-divider"></span>
+        <span id="coordLng">Lng: —</span>
+        <span class="coords-divider"></span>
+        <span id="coordZoom">Zoom: —</span>
+      </div>
+    </div>
+
+
+    <!-- SIDEBAR DERECHO -->
+    <aside class="sidebar sidebar-right" id="sidebarRight" aria-label="Panel de información">
+      <!-- Cabecera (homologada con Capas y Asistente IA) -->
+      <div class="sidebar-header">
+        <span class="sidebar-title sidebar-title--icon">
+          <span class="material-symbols-outlined sidebar-title-icon">map</span>
+          Leyenda
+        </span>
+      </div>
+      <!-- ── Contenido: Leyenda -->
+      <div class="tab-content active" id="tab-leyenda" role="tabpanel">
+        <div id="sidebar-legend"></div>
+      </div>
+      <!-- Botón cerrar (mobile overlay) -->
+      <button class="sidebar-close-btn mobile-only" id="closeRightSidebarBtn" aria-label="Cerrar panel de información">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </aside>
+
+    <!-- SIDEBAR INFO ELEMENTO -->
+    <aside class="sidebar sidebar-info" id="sidebarInfo" aria-label="Información del elemento">
+      <div class="sidebar-header">
+        <h2 class="sidebar-title" id="sidebarInfoTitle"
+          style="display: flex; align-items: center; gap: 8px; white-space: normal; line-height: 1.2;">
+          <span class="material-symbols-outlined" style="font-size: 18px;">info</span>
+          Información
+        </h2>
+        <button class="icon-btn" id="closeSidebarInfoBtn" aria-label="Cerrar información">
+          <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+        </button>
+      </div>
+      <div class="sidebar-content" id="sidebarInfoContent" style="padding: 16px;">
+      </div>
+      <div class="sidebar-footer"
+        style="padding: 8px 16px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-2); flex-shrink: 0;">
+        <span style="font-size: 0.75rem; color: var(--text-tertiary); font-weight: 500;">Tamaño de texto</span>
+        <div style="display: flex; gap: 4px;">
+          <button class="icon-btn" id="decreaseFontSizeBtn" aria-label="Reducir texto"
+            style="width: 24px; height: 24px;" title="Reducir tamaño de letra">
+            <span class="material-symbols-outlined" style="font-size: 16px;">text_decrease</span>
+          </button>
+          <button class="icon-btn" id="increaseFontSizeBtn" aria-label="Aumentar texto"
+            style="width: 24px; height: 24px;" title="Aumentar tamaño de letra">
+            <span class="material-symbols-outlined" style="font-size: 16px;">text_increase</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- SIDEBAR CHAT IA — Se desliza desde el derecho (navbar → icono forum) -->
+    <aside class="sidebar sidebar-chat" id="chatSidebar" aria-label="Asistente con inteligencia artificial"
+      aria-hidden="true" inert>
+      <!-- Cabecera -->
+      <div class="sidebar-header chat-header">
+  <span class="sidebar-title chat-title">
+    <span class="material-symbols-outlined chat-title-icon">auto_awesome</span>
+    Asistente IA
+  </span>
+  <div class="chat-actions">
+    <button class="icon-btn" id="clearChatBtn" aria-label="Limpiar conversación" title="Limpiar conversación">
+      <span class="material-symbols-outlined">delete_sweep</span>
+    </button>
+    <button class="icon-btn" id="closeChatSidebarBtn" aria-label="Cerrar asistente" title="Cerrar">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+</div>
+
+      <!-- Conversación + entrada (reutiliza las clases .ai-chat-* del design system) -->
+      <div class="ai-chat-container">
+        <div class="ai-chat-messages" id="ai-chat-messages" role="log" aria-live="polite">
+          <div class="ai-message assistant">¡Hola! Soy tu asistente de IA del Visor Territorial WoLL.
+            Puedo analizar las capas del visor, calcular estadísticas y explicarte cómo se relacionan
+            entre dimensiones. ¿Qué quieres saber?</div>
+        </div>
+
+        <form class="ai-chat-input-area" id="ai-chat-form" autocomplete="off">
+          <div class="ai-chat-input-row">
+            <input class="ai-chat-input" id="ai-chat-input" type="text" placeholder="Escribe tu consulta aquí..."
+              aria-label="Consulta para el asistente" autocomplete="off" />
+            <button class="ai-chat-send-btn" id="ai-chat-send" type="submit" aria-label="Enviar mensaje"
+              title="Enviar">
+              <span class="material-symbols-outlined">send</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </aside>
+  </main>
+
+
+  <!-- MODAL DE BIENVENIDA -->
+  <dialog class="welcome-dialog" id="welcomeModal" aria-labelledby="welcomeModalTitle">
+
+    <div class="welcome-dialog-inner">
+
+      <div class="welcome-dialog-header">
+        <h2 class="welcome-dialog-title" id="welcomeModalTitle">Bienvenido/a</h2>
+        <button class="welcome-dialog-close" id="welcomeModalClose" aria-label="Cerrar">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="welcome-dialog-body welcome-dialog-body-split">
+        <div class="welcome-body-left">
+          <p class="welcome-lead">
+            Bienvenido/a al visor territorial del
+            <strong>"Water Oriented Living Lab (WoLL) Región de Atacama"</strong>.
+          </p>
+
+          <p>
+            Esta plataforma avanzada ha sido diseñada para ofrecer una visión estratégica y
+            multidimensional de los recursos y desafíos hídricos de nuestro territorio. Este
+            desarrollo es fruto de una alianza estratégica entre la consultora Andes Value
+            Research (AVR) y la Universidad de Atacama, logrando una sinergia única entre la
+            experiencia en consultoría técnica y la vanguardia académica.
+          </p>
+
+          <p>
+            El Visor se sustenta en la integración de las capacidades analíticas de AVR y la
+            potencia de UDATACAMA, la plataforma de datos masivos de la universidad. Mientras AVR
+            aporta la inteligencia de procesos y diseño cartográfico especializado, UDATACAMA
+            provee la infraestructura técnica y el ecosistema de procesamiento necesarios para
+            gestionar grandes volúmenes de información, transformándolos en conocimiento aplicado
+            para la toma de decisiones. El visor integra información geográfica clave, permitiendo
+            a actores del ecosistema evaluar oportunidades, comprender el contexto territorial y
+            tomar decisiones informadas.
+          </p>
+
+          <p class="welcome-callout">
+            <span class="material-symbols-outlined welcome-callout-icon">mail</span>
+            <span>
+              <strong>¡Ayúdenos a fortalecer esta herramienta!</strong> Si representa a una empresa
+              u organización y desea actualizar, precisar o complementar la información de su
+              entidad, le invitamos a <a href="mailto:j.martinez@andesvalue.com" target="_blank"
+              rel="noopener">contactarnos</a>. Su aporte es fundamental para construir el ecosistema
+              de datos más robusto y actualizado de Atacama, reafirmando el compromiso de la
+              Universidad del Estado y la empresa privada con el desarrollo sostenible de su territorio.
+            </span>
+          </p>
+
+          <div class="welcome-meta">
+            <p class="welcome-meta-item">
+              <span class="material-symbols-outlined welcome-meta-icon">handshake</span>
+              <span>
+                Proyecto financiado por el Programa de Desarrollo Productivo Sostenible, a través de
+                la línea de Bienes Públicos de Corfo, Mandatado por el Gobierno Regional, gestionado
+                por Andes Value Research Limitada con el soporte técnico especializado de la
+                Universidad de Atacama.
+              </span>
+            </p>
+            <p class="welcome-meta-item">
+              <span class="material-symbols-outlined welcome-meta-icon">info</span>
+              <span>
+                La información contenida en el Visor es de carácter REFERENCIAL, por lo tanto puede
+                presentar inconsistencias con el objeto que se está representando. Las capas de
+                información contenidas en el Visor provienen de distintas fuentes de proyección
+                geográfica, realizándose una transformación al datum WGS 1984, por lo que es
+                responsabilidad del usuario verificar su exactitud y vigencia.
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div class="welcome-body-right">
+          <p class="welcome-right-title">PRINCIPALES NOVEDADES:</p>
+          <ul class="welcome-list">
+            <li>
+              <span class="material-symbols-outlined welcome-list-icon">layers</span>
+              <span class="welcome-list-text">Capas temáticas: Dimensiones expandibles con control de visibilidad y opacidad.</span>
+            </li>
+            <li>
+              <span class="material-symbols-outlined welcome-list-icon">auto_awesome</span>
+              <span class="welcome-list-text">Análisis IA: Asistente con inteligencia artificial para consultas en lenguaje natural.</span>
+            </li>
+            <li>
+              <span class="material-symbols-outlined welcome-list-icon">download</span>
+              <span class="welcome-list-text">Descarga: Exporta datos en formato GeoJSON y CSV de forma directa.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="welcome-dialog-footer">
+        <button class="btn-primary-action" id="welcomeModalCloseFooter">Comenzar exploración</button>
+      </div>
+
+    </div>
+
+  </dialog>
+
+  <!-- MODAL DE DESCARGA DE CAPAS -->
+  <dialog class="welcome-dialog download-dialog" id="downloadModal" aria-labelledby="downloadModalTitle">
+    <div class="welcome-dialog-inner">
+      <div class="welcome-dialog-header">
+        <h2 class="welcome-dialog-title" id="downloadModalTitle">Descargar Capa</h2>
+        <button class="welcome-dialog-close" id="downloadModalClose" aria-label="Cerrar">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="welcome-dialog-body" style="padding-bottom: 30px;">
+        <p>Selecciona el formato en el que deseas descargar los datos de la capa <strong
+            id="downloadModalLayerName"></strong>:</p>
+
+        <div class="download-options-container">
+          <button id="btnDownloadGeoJSON" class="download-option-btn">
+            <span class="material-symbols-outlined download-icon">data_object</span>
+            <div class="download-text">
+              <span class="download-title">GeoJSON</span>
+              <span class="download-desc">Geometría espacial y datos completos. Ideal para uso en software SIG (QGIS,
+                ArcGIS).</span>
+            </div>
+          </button>
+
+          <button id="btnDownloadCSV" class="download-option-btn">
+            <span class="material-symbols-outlined download-icon">table</span>
+            <div class="download-text">
+              <span class="download-title">Tabla CSV (Excel)</span>
+              <span class="download-desc">Exporta solo los atributos tabulares visibles. Ideal para análisis en Excel o
+                bases de datos.</span>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- MODAL DE FILTRADO DE CAPAS -->
+  <dialog class="welcome-dialog filter-dialog" id="filterModal" aria-labelledby="filterModalTitle">
+    <div class="welcome-dialog-inner">
+      <div class="welcome-dialog-header">
+        <h2 class="welcome-dialog-title" id="filterModalTitle">Filtrar Datos</h2>
+        <button class="welcome-dialog-close" id="filterModalClose" aria-label="Cerrar">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="welcome-dialog-body">
+        <p class="filter-modal-subtitle">Selecciona atributos y valores para filtrar la capa <strong id="filterModalLayerName"></strong></p>
+
+        <div class="filter-controls">
+          <div class="filter-select-group">
+            <label for="filterAttributeSelect">Atributo:</label>
+            <select id="filterAttributeSelect" class="form-select">
+              <option value="">Seleccionar atributo...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="filter-values-container" id="filterValuesContainer" style="display: none;">
+          <div class="filter-values-header">
+            <span class="filter-values-title">Valores disponibles:</span>
+            <div class="filter-values-actions">
+              <button type="button" class="btn btn-sm btn-link" id="filterSelectAll">Seleccionar todos</button>
+              <button type="button" class="btn btn-sm btn-link" id="filterDeselectAll">Deseleccionar todos</button>
+            </div>
+          </div>
+          <div class="filter-values-list" id="filterValuesList"></div>
+        </div>
+
+        <div class="filter-active-filters" id="filterActiveFilters" style="display: none;">
+          <div class="filter-active-header">
+            <span class="filter-active-title">Filtros activos:</span>
+          </div>
+          <div class="filter-active-list" id="filterActiveList"></div>
+        </div>
+      </div>
+      <div class="welcome-dialog-footer">
+        <button type="button" class="btn btn-secondary" id="filterClearAllBtn">Limpiar Todo</button>
+        <button type="button" class="btn btn-primary" id="filterApplyBtn">Aplicar Filtros</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- OVERLAY DE BÚSQUEDA MOBILE, Se activa desde el botón de búsqueda del sidebar. -->
+  <div class="mobile-search-overlay" id="mobileSearchOverlay" aria-hidden="true">
+    <div class="mobile-search-overlay-inner">
+      <div class="mobile-search-bar">
+        <span class="material-symbols-outlined mobile-search-icon">search</span>
+        <input class="mobile-search-input" id="mobileSearchInput" placeholder="Busca elementos, capas o atributos"
+          type="text" autocomplete="off" aria-label="Buscar en el mapa" />
+        <button class="mobile-search-close-btn" id="mobileSearchCloseBtn" aria-label="Cerrar buscador">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div id="mobile-search-results-anchor"></div>
+    </div>
+  </div>
+
+  <!-- Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- MarkerCluster -->
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <!-- Turf.js (geometría) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+  <!-- Chart.js (gráficos en respuestas del chat IA) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- WebGL Heatmap para Leaflet -->
+  <script src="./js/utils/webgl-heatmap.js"></script>
+  <script src="./js/utils/leaflet-webgl-heatmap.js"></script>
+  <!-- Leaflet.glify — Renderer WebGL para polígonos y líneas de alta densidad -->
+  <script src="./js/lib/glify-browser.js"></script>
+  <!-- Lógica de módulos de app -->
+  <script type="module" src="js/app.js"></script>
+  <!-- UI Shell: tema, tabs, sidebar, modal, responsive -->
+  <script type="module" src="js/script.js"></script>
+
+</body>
+
+</html>

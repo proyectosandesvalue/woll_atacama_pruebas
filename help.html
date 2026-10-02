@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ayuda — Plataforma Territorial Water Oriented Living Lab Atacama</title>
+    <!-- Tipografía -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <!-- Material Symbols -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+        rel="stylesheet" />
+    <!-- Estilos del proyecto -->
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/mobile.css" />
+    <link rel="icon" href="assets/img/cropped-favicon-192x192.png" type="image/x-icon" />
+</head>
+
+<body class="help-page">
+    <!-- Progress bar -->
+    <div class="scroll-progress">
+        <div class="scroll-progress-bar" id="progressBar"></div>
+    </div>
+
+    <header class="help-header">
+        <div class="help-header-left">
+            <button class="mobile-nav-btn" id="mobileNavBtn" aria-label="Menú">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+            <a href="index.html" class="help-back-btn">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Volver al Visor
+            </a>
+            <span class="help-header-title">Manual de <span>Ayuda</span></span>
+        </div>
+        <div class="help-header-right">
+            <div class="search-help-input">
+                <span class="material-symbols-outlined">search</span>
+                <input type="text" id="helpSearch" placeholder="Buscar en la ayuda..." autocomplete="off" />
+                <span class="search-count" id="searchCount"></span>
+                <button class="search-nav-btn" id="searchPrev" title="Resultado anterior (Shift+Enter)"
+                    aria-label="Anterior">
+                    <span class="material-symbols-outlined">keyboard_arrow_up</span>
+                </button>
+                <button class="search-nav-btn" id="searchNext" title="Resultado siguiente (Enter)"
+                    aria-label="Siguiente">
+                    <span class="material-symbols-outlined">keyboard_arrow_down</span>
+                </button>
+            </div>
+            <button class="theme-toggle" id="themeToggleHelp" title="Cambiar tema">
+                <span class="material-symbols-outlined" id="themeIconHelp">light_mode</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="help-layout">
+        <!-- SIDEBAR NAV -->
+        <nav class="help-nav" id="helpNav">
+            <div class="help-nav-section-title">Introducción</div>
+            <div class="help-nav-link active" data-target="intro" onclick="scrollToSection('intro', this)">
+                <span class="material-symbols-outlined">info</span>
+                Introducción y Visión General
+            </div>
+            <div class="help-nav-link" data-target="interfaz" onclick="scrollToSection('interfaz', this)">
+                <span class="material-symbols-outlined">dashboard</span>
+                Interfaz Principal
+            </div>
+            <div class="help-nav-section-title">Funciones</div>
+            <div class="help-nav-link" data-target="dimensiones" onclick="scrollToSection('dimensiones', this)">
+                <span class="material-symbols-outlined">layers</span>
+                Dimensiones y Capas
+            </div>
+            <div class="help-nav-link" data-target="navegacion" onclick="scrollToSection('navegacion', this)">
+                <span class="material-symbols-outlined">near_me</span>
+                Navegación en el Mapa
+            </div>
+            <div class="help-nav-link" data-target="capas-base" onclick="scrollToSection('capas-base', this)">
+                <span class="material-symbols-outlined">map</span>
+                Capas Base
+            </div>
+            <div class="help-nav-link" data-target="leyenda" onclick="scrollToSection('leyenda', this)">
+                <span class="material-symbols-outlined">legend_toggle</span>
+                Leyenda
+            </div>
+            <div class="help-nav-link" data-target="buscador" onclick="scrollToSection('buscador', this)">
+                <span class="material-symbols-outlined">manage_search</span>
+                Buscador Geoespacial
+            </div>
+            <div class="help-nav-link" data-target="popups" onclick="scrollToSection('popups', this)">
+                <span class="material-symbols-outlined">info</span>
+                Popups e Información
+            </div>
+            <div class="help-nav-link" data-target="tabla-atributos" onclick="scrollToSection('tabla-atributos', this)">
+                <span class="material-symbols-outlined">table_chart</span>
+                Tabla de Atributos
+            </div>
+            <div class="help-nav-link" data-target="descargas" onclick="scrollToSection('descargas', this)">
+                <span class="material-symbols-outlined">download</span>
+                Descarga de Capas
+            </div>
+            <div class="help-nav-link" data-target="cluster-heatmap" onclick="scrollToSection('cluster-heatmap', this)">
+                <span class="material-symbols-outlined">grid_view</span>
+                Modos Cluster y Mapa de Calor
+            </div>
+            <div class="help-nav-section-title">Personalización</div>
+            <div class="help-nav-link" data-target="personalizacion" onclick="scrollToSection('personalizacion', this)">
+                <span class="material-symbols-outlined">tune</span>
+                Personalización
+            </div>
+            <div class="help-nav-link" data-target="mobile" onclick="scrollToSection('mobile', this)">
+                <span class="material-symbols-outlined">smartphone</span>
+                Uso en Móvil
+            </div>
+            <div class="help-nav-section-title">Soporte</div>
+            <div class="help-nav-link" data-target="faq" onclick="scrollToSection('faq', this)">
+                <span class="material-symbols-outlined">quiz</span>
+                Preguntas Frecuentes
+            </div>
+        </nav>
+
+        <!-- CONTENT -->
+        <main class="help-content-wrapper" id="helpContentWrapper">
+            <article class="help-content">
+                <!-- HERO -->
+                <div class="help-hero" id="section-intro">
+                    <div class="help-hero-badge">
+                        <span class="material-symbols-outlined">auto_stories</span>
+                        Manual de Usuario · v2.1 · Septiembre 2026
+                    </div>
+                    <h1>Visor Territorial<br>Water Oriented Living Lab Atacama</h1>
+                    <p>
+                        Guía completa para el uso del Visor Territorial del Water Oriented Living Lab Atacama. Aquí encontrarás todo lo necesario para
+                        explorar capas, buscar elementos, personalizar tu experiencia y aprovechar todas las
+                        funcionalidades avanzadas.
+                    </p>
+                    <div class="quick-links">
+                        <div class="quick-link-card"
+                            onclick="scrollToSection('dimensiones', document.querySelector('[data-target=dimensiones]'))">
+                            <span class="material-symbols-outlined">layers</span>
+                            <strong>Activar capas</strong>
+                            <span class="desc">Aprende a activar dimensiones y capas temáticas</span>
+                        </div>
+                        <div class="quick-link-card"
+                            onclick="scrollToSection('buscador', document.querySelector('[data-target=buscador]'))">
+                            <span class="material-symbols-outlined">manage_search</span>
+                            <strong>Buscar elementos</strong>
+                            <span class="desc">Localiza empresas, localidades y más con operadores avanzados</span>
+                        </div>
+                        <div class="quick-link-card"
+                            onclick="scrollToSection('faq', document.querySelector('[data-target=faq]'))">
+                            <span class="material-symbols-outlined">quiz</span>
+                            <strong>Preguntas frecuentes</strong>
+                            <span class="desc">Soluciones a los problemas más comunes</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- ══ INTRODUCCIÓN ══ -->
+                <section class="help-section" id="intro">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">info</span></div>
+                        <h2>Introducción y Conceptos Clave</h2>
+                    </div>
+
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">public</span>¿Qué es el Visor Territorial?</h3>
+                        <p>
+                            El <strong>Visor Territorial Water Oriented Living Lab Atacama</strong> es una plataforma de cartografía web
+                            (<em>WebGIS</em>)
+                            desarrollada por la consultora Andes Value Research (AVR). Permite explorar, analizar y comprender el territorio regional a través de
+                            información
+                            geoespacial organizada por temáticas de interés para para ofrecer una visión estratégica y multidimensional de los recursos y desafíos hídricos de nuestro territorio..
+                        </p>
+                        <p>La plataforma integra datos sobre <strong> hidrografía y cuerpos de agua, reservas de agua, infraestructura y saneamiento, minería, agricultura, energia , riesgos, planificación
+                            </strong>,
+                            superpuestos sobre un mapa interactivo de la región.</p>
+
+                        <p>Sus objetivos principales son:</p>
+                        <ul class="help-list">
+                            <li>Ofrecer una visión estratégica y multidimensional de los recursos y desafíos hídricos de nuestro territorio.</li>
+                            <li>Comprender el contexto territorial de la región, incluyendo infraestructura, recursos
+                                naturales y servicios.</li>
+                            <li>Tomar decisiones informadas basadas en datos geoespaciales actualizados y verificados.
+                            </li>
+                            <li>Facilitar el conocimento de la región en materia hídrica usando datos geoespaciales para el potencial de desarrollo de la
+                                región.</li>
+                        </ul>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">book_2</span>Conceptos Básicos</h3>
+                        <div class="help-table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Término</th>
+                                        <th>Definición</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Capa</td>
+                                        <td>Conjunto de elementos geográficos del mismo tipo (ej.: "Plantas Solares",
+                                            "Límite Comunal"). Puede activarse o desactivarse independientemente. Cuenta
+                                            con control de opacidad que se guarda automáticamente.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Dimensión</td>
+                                        <td>Agrupación temática de capas relacionadas (ej.: "Energía" agrupa todas las
+                                            capas del sector energético).</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Grupo</td>
+                                        <td>Subconjunto de capas dentro de una dimensión (ej.: dentro de "Energía"
+                                            existe el grupo "Generación de Energía").</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Informacion</td>
+                                        <td>Panel de información que aparece al hacer clic sobre un elemento del mapa.
+                                            Su tamaño de texto puede ajustarse.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Leyenda</td>
+                                        <td>Panel que explica el significado de los colores e iconos usados en las capas
+                                            activas.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Capa Base</td>
+                                        <td>Mapa de fondo sobre el que se superponen las capas temáticas (OpenStreetMap,
+                                            Google Maps, OpenTopoMap).</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Feature</td>
+                                        <td>Elemento individual dentro de una capa (ej.: una empresa específica, una
+                                            línea eléctrica).</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="help-callout danger">
+                            <span class="material-symbols-outlined">warning</span>
+                            <div class="help-callout-body">
+                                <strong>Nota sobre la Información</strong>
+                                <p>La información contenida en el Visor es de carácter<strong> REFERENCIAL</strong> Los datos provienen de distintas fuentes institucionales y han sido procesados para
+                                    su
+                                    visualización.
+                                    Se recomienda verificar la exactitud y vigencia de los datos en las fuentes
+                                    originales antes de tomar decisiones basadas en esta información.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ══ INTERFAZ ══ -->
+                <section class="help-section" id="interfaz">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">dashboard</span></div>
+                        <h2>Interfaz Principal</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">view_quilt</span>Estructura General</h3>
+                        <p>La interfaz del Visor está organizada en <strong>tres zonas principales</strong>:</p>
+                        <ul class="help-list">
+                            <li><strong>Panel izquierdo:</strong> Control de capas temáticas y capas base.</li>
+                            <li><strong>Área central (mapa):</strong> Visualización interactiva del territorio.</li>
+                            <li><strong>Panel derecho:</strong> Leyenda de las capas activas, Chat ia ey panel de información</li>
+                        </ul>
+                        <p>Adicionalmente, se dispone de un <strong>panel inferior</strong> para la tabla de atributos y
+                            un <strong>panel deslizable</strong> que muestra la información detallada de los elementos
+                            al hacer clic.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">web_asset</span>Barra de Encabezado</h3>
+                        <p>La barra superior contiene los elementos de acceso global:</p>
+                        <div class="help-table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Elemento</th>
+                                        <th>Función</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Título del Visor</td>
+                                        <td>Identificación del visor y del programa Water Oriented Living Lab Atacama.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Barra de búsqueda</td>
+                                        <td>Localiza elementos en todas las capas (visible solo en pantallas grandes).
+                                            Soporta operadores avanzados.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Ayuda <span class="kbd">?</span></td>
+                                        <td>Abre esta página de documentación del Visor.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Botón <span class="material-symbols-outlined"
+                                                style="font-size:14px;vertical-align:middle">help</span></td>
+                                        <td>Abre el modal de bienvenida con información del proyecto y novedades.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Botón <span class="material-symbols-outlined"
+                                                style="font-size:14px;vertical-align:middle">layers</span></td>
+                                        <td>Muestra u oculta el panel izquierdo de capas temáticas.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Botón <span class="material-symbols-outlined"
+                                                style="font-size:14px;vertical-align:middle">map</span></td>
+                                        <td>Muestra u oculta el panel derecho de leyenda.</td>
+                                    </tr>
+                                     <tr>
+                                        <td>Botón <span class="material-symbols-outlined"
+                                                style="font-size:14px;vertical-align:middle">forum</span></td>
+                                        <td>Muestra u oculta el panel derecho de asistente ia.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">open_in_new</span>Modal de Bienvenida</h3>
+                        <p>Al ingresar por primera vez al visor, aparecerá automáticamente una ventana de bienvenida
+                            con:</p>
+                        <ul class="help-list">
+                            <li>Descripción del programa y objetivos del visor.</li>
+                            <li>Guía rápida de las herramientas disponibles (búsqueda avanzada, tabla de atributos,
+                                descarga de capas, modos cluster/heatmap).</li>
+                            <li>Aviso sobre el carácter referencial de la información.</li>
+                            <li>Logos institucionales del proyecto.</li>
+                        </ul>
+                        <p>Para cerrar el modal, haz clic en <strong>"Comenzar exploración"</strong> o en la
+                            <strong>X</strong>
+                            de la esquina superior derecha. El modal no volverá a aparecer automáticamente en visitas
+                            posteriores.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- ══ DIMENSIONES ══ -->
+                <section class="help-section" id="dimensiones">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">layers</span></div>
+                        <h2>Dimensiones Temáticas (Panel Izquierdo)</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">category</span>Descripción General</h3>
+                        <p>El panel izquierdo es el <strong>centro de control de las capas de información</strong>. Está
+                            organizado en dimensiones y subdimensiones temáticas. Las dimensiones disponibles son:</p>
+                        <div class="help-table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Dimensión</th>
+                                        <th>Contenido principal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Agua</td>
+                                        <td>Hidrografía y Cuerpos de Agua Superficial (Red Hidrográfica, Lagunas tranques y 
+                                            embalses, Salares, Humedales y Glaciares). Reservas de Agua (Acuiferos SHAC, 
+                                            Glaciares). Infraestructura y Saneamiento (Servicios Sanitaros Rurales (ex APR), 
+                                            Plantas desaladoras, Plantas desaladoras - Acueductos, Planta de Tratamiento de Aguas 
+                                            Servidas, Puntos Descarga Plantas Aguas Servidas, Territorios Operacionales de Agua 
+                                            Potable). Gestión y Regulación Administrativa (Derechos de Aprovechamiento de Agua, 
+                                            Zonas de Decreto de Escasez Hidrícas, Cuencas DGA)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Clima</td>
+                                        <td>Clima: Zonas Climaticas (Koppen - Geiger)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Agricultura</td>
+                                        <td>Catastro Fruticola (Especies Frutales, Variedades Frutales, Plantas de embalaje, Cámaras de Frio, Viveros Inscritos Sag.), Recurso Naturales (Capacidad de Uso de los Suelos, Red de Canales - CNR, Red Hidrográfica)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Minería</td>
+                                        <td>Yacimientos (Yacimientos minerales), Instalaciones Mineras: (Instalaciones Mediana y Gran Minería, Relaves Mineros, Distritos Mineros), Infraestructura de Soporte (Puertos, Red ferroviaria, Plantas Desaladoras, Plantas Desaladoras - Acueductos)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Otros</td>
+                                        <td>Areas de Protección Conservación: (Bienes Nacionales Protegidos, Sistema Nacional de Areas Protegidas)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Planificación Territorial</td>
+                                        <td>Instrumentos de Planificación Territorial. Comunales (Planes Reguladores Comunales). Regionales: (Plan Regulador Intercomunal, Macrozonificacion de los Usos del Borde Costero) </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Riesgos</td>
+                                        <td>Amenazas Geológicas (Volcanes Activos, Grandes Sismos), Amenazas Hidrometereologicas (Remociones en Masa, Puntos Criticos Invierno). Amenazas Antropicas (Incendios Forestales)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Suelo</td>
+                                        <td>Geomorfología (Unidades Geomorfologicas)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Energía</td>
+                                        <td>Líneas de transmisión, Plantas (Eólica, Solar, Hidroeléctrica,
+                                            Termoeléctrica, Bioenergía), Subestaciones, Hidrocarburos, Potencial
+                                            energético.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">visibility</span>Activar y Desactivar una Dimensión
+                        </h3>
+                        <p>Cada dimensión tiene un <strong>ícono de ojo</strong> a la izquierda de su nombre:</p>
+                        <ul class="help-list">
+                            <li><strong>Ojo abierto (azul):</strong> la dimensión está activa y sus capas iniciales
+                                están visibles en el mapa.</li>
+                            <li><strong>Ojo cerrado (gris):</strong> la dimensión está inactiva y sus capas no se
+                                muestran.</li>
+                        </ul>
+                        <div class="help-callout info">
+                            <span class="material-symbols-outlined">info</span>
+                            <div class="help-callout-body">
+                                <strong>Nota</strong>
+                                <p>Al activar una dimensión, el sistema carga automáticamente las capas más relevantes
+                                    de ese tema.
+                                    Esto puede tomar algunos segundos dependiendo de la velocidad de su conexión a
+                                    internet.</p>
+                            </div>
+                        </div>
+                        <h4>Para activar una dimensión:</h4>
+                        <ol class="help-list">
+                            <li>Localizar la dimensión deseada en el panel izquierdo.</li>
+                            <li>Hacer clic en el ícono de ojo a su izquierda.</li>
+                            <li>Esperar a que las capas se carguen (se mostrará el texto "Cargando..." brevemente).</li>
+                        </ol>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">expand_more</span>Expandir y Colapsar una Dimensión
+                        </h3>
+                        <p>El nombre de la dimensión y la flecha a su derecha permiten expandir o colapsar la lista de
+                            grupos y capas:</p>
+                        <ul class="help-list">
+                            <li><strong>Flecha hacia abajo (▼):</strong> la dimensión está expandida y muestra sus
+                                grupos y capas.</li>
+                            <li><strong>Flecha hacia la derecha (►):</strong> la dimensión está colapsada.</li>
+                        </ul>
+                        <p>Hacer clic en el nombre de la dimensión o en la flecha para alternar entre estos estados.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">folder_open</span>Grupos de Capas</h3>
+                        <p>Dentro de cada dimensión, las capas se organizan en <strong>subdimensiones</strong>. Por
+                            ejemplo, dentro de "Energía":</p>
+                        <ul class="help-list">
+                            <li><strong>Transmisión de Energía:</strong> Líneas de transmisión, Subestaciones.</li>
+                            <li><strong>Generación de Energía:</strong> Plantas Eólicas, Solares, Hidroeléctricas, etc.
+                            </li>
+                            <li><strong>Hidrocarburos:</strong> Almacenamiento de combustibles, Oleoductos.</li>
+                            <li><strong>Potencial Energético:</strong> Fotovoltaico, eólico, geotérmico, etc.</li>
+                            <li><strong>Territorio:</strong> Límite Comunal, Toponimia.</li>
+                        </ul>
+                        <p>Cada grupo tiene su propio ícono de ojo para activar o desactivar todas sus capas
+                            simultáneamente.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">check_box</span>Capas Individuales</h3>
+                        <p>Dentro de cada grupo, aparecen las capas individuales con:</p>
+                        <ul class="help-list">
+                            <li><strong>Ícono de ojo:</strong> Activa o desactiva la visualización de esa capa
+                                específica.</li>
+                            <li><strong>Nombre de la capa:</strong> Descripción del contenido.</li>
+                            <li><strong>Slider de opacidad:</strong> Barra horizontal que aparece bajo el nombre cuando
+                                la capa está activa. Ajusta la transparencia de 0% (invisible) a 100% (totalmente
+                                opaca). El valor se guarda automáticamente en el navegador.</li>
+                        </ul>
+                        <h4>Para activar una capa individual:</h4>
+                        <ol class="help-list">
+                            <li>Asegúrese de que la dimensión y el grupo correspondientes están expandidos.</li>
+                            <li>Hacer clic en el ícono de ojo junto al nombre de la capa.</li>
+                            <li>La capa aparecerá sobre el mapa.</li>
+                        </ol>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">opacity</span>Control de Opacidad de Capas</h3>
+                        <p>Cuando una capa está activa, aparece una barra deslizante (slider) debajo de su nombre:</p>
+                        <ul class="help-list">
+                            <li><strong>Deslizar hacia la izquierda:</strong> la capa se vuelve más transparente.</li>
+                            <li><strong>Deslizar hacia la derecha:</strong> la capa se vuelve más opaca.</li>
+                        </ul>
+                        <p>La opacidad configurada se guarda automáticamente en su navegador y se recuperará en la
+                            próxima visita.</p>
+                        <div class="help-callout tip">
+                            <span class="material-symbols-outlined">lightbulb</span>
+                            <div class="help-callout-body">
+                                <strong>Consejo</strong>
+                                <p>Use el control de opacidad cuando necesite ver la capa base (el mapa de fondo) a
+                                    través de una capa de polígonos que la cubre.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">chevron_left</span>Colapsar el Panel Izquierdo</h3>
+                        <p>En pantallas de escritorio, el panel izquierdo puede colapsarse para ampliar el área visible
+                            del mapa:</p>
+                        <ol class="help-list">
+                            <li>Hacer clic en el botón <strong>‹</strong> ubicado en la esquina superior derecha del
+                                panel izquierdo.</li>
+                            <li>El panel se reducirá a una franja delgada mostrando solo los íconos.</li>
+                            <li>Para expandirlo nuevamente, hacer clic en el botón <strong>›</strong>.</li>
+                        </ol>
+                        <p>El estado (expandido/colapsado) se guarda automáticamente para futuras visitas.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">more_vert</span>Menú de Opciones de Capa</h3>
+                        <p>Cada capa individual dispone de un botón <strong class="kbd">⋮</strong> (tres puntos
+                            verticales) ubicado a la derecha de su nombre que abre un menú contextual con acciones
+                            avanzadas:</p>
+                        <div class="help-table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Opción del Menú</th>
+                                        <th>Descripción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Ver Tabla de Atributos</td>
+                                        <td>Abre un panel inferior con todos los atributos de los elementos de esa capa
+                                            en formato tabular. Si la capa no estaba activa, se cargará automáticamente
+                                            en segundo plano.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Descargar Capa</td>
+                                        <td>Abre el modal de descarga permitiendo exportar los datos en formato GeoJSON
+                                            o CSV (Excel).</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Activar/Desactivar Cluster</td>
+                                        <td>Solo para capas de puntos. Agrupa automáticamente los puntos cercanos al
+                                            hacer zoom, mostrando un número en un círculo.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Activar/Desactivar Mapa de Calor</td>
+                                        <td>Solo para capas de puntos. Representa la densidad de puntos mediante un
+                                            degradado de colores.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="help-callout info">
+                            <span class="material-symbols-outlined">info</span>
+                            <div class="help-callout-body">
+                                <strong>Disponibilidad</strong>
+                                <p>El menú <strong class="kbd">⋮</strong> está disponible en todas las capas vectoriales
+                                    (GeoJSON). Las opciones de cluster y mapa de calor solo aparecen en capas de tipo
+                                    <strong>punto</strong>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ══ NAVEGACIÓN ══ -->
+                <section class="help-section" id="navegacion">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">near_me</span></div>
+                        <h2>Navegación en el Mapa</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">zoom_in</span>Controles de Zoom</h3>
+                        <p>Los controles de zoom se ubican en la esquina superior derecha del mapa:</p>
+                        <div class="help-table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Control</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="kbd">+</span></td>
+                                        <td>Acercar el mapa (aumentar el nivel de detalle)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="kbd">−</span></td>
+                                        <td>Alejar el mapa (disminuir el nivel de detalle)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Rueda del ratón</td>
+                                        <td>Acercar o alejar (girar hacia adelante = acercar)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Doble clic</td>
+                                        <td>Acercar centrado en el punto donde se hizo clic</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Pellizco (táctil)</td>
+                                        <td>Acercar o alejar con dos dedos</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">pan_tool</span>Desplazamiento (Paneo)</h3>
+                        <p>Para mover el área visible del mapa:</p>
+                        <ul class="help-list">
+                            <li><strong>Desktop:</strong> Hacer clic sostenido y arrastrar en cualquier dirección.</li>
+                            <li><strong>Mobile/Tablet:</strong> Deslizar con un dedo sobre el mapa.</li>
+                        </ul>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">more_horiz</span>Controles Adicionales del Mapa</h3>
+                        <ul class="help-list">
+                            <li>
+                                <strong>Botón Mi Ubicación <span class="material-symbols-outlined"
+                                        style="font-size:14px;vertical-align:middle">my_location</span>:</strong>
+                                Al hacer clic, el visor solicitará permiso para acceder a su ubicación GPS. Si acepta,
+                                el mapa se centrará automáticamente en su posición actual.
+                            </li>
+                            <li>
+                                <strong>Botón Modo Oscuro/Claro <span class="material-symbols-outlined"
+                                        style="font-size:14px;vertical-align:middle">light_mode</span>:</strong>
+                                Alterna entre el modo visual oscuro y el modo claro de la interfaz. La preferencia se
+                                guarda.
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">location_on</span>Barra de Coordenadas</h3>
+                        <p>En la parte inferior central del mapa aparece una barra que muestra en tiempo real:</p>
+                        <ul class="help-list">
+                            <li><strong>Lat:</strong> Latitud del centro del área visible del mapa.</li>
+                            <li><strong>Lng:</strong> Longitud del centro del área visible del mapa.</li>
+                            <li><strong>Zoom:</strong> Nivel de zoom actual (valores entre 1 y 18; mayor número = más
+                                detalle).</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- ══ CAPAS BASE ══ -->
+                <section class="help-section" id="capas-base">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">map</span></div>
+                        <h2>Capas Base</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">info</span>¿Qué es la Capa Base?</h3>
+                        <p>La capa base es el <strong>mapa de fondo</strong> sobre el cual se superponen todas las capas
+                            temáticas.
+                            El visor ofrece tres opciones de capa base, cada una con características distintas.</p>
+                        <p>Las capas base se seleccionan desde la parte inferior del panel izquierdo, bajo la sección
+                            <strong>"Capas Base"</strong>.
+                        </p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">compare</span>Opciones Disponibles</h3>
+                        <div class="help-table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Capa Base</th>
+                                        <th>Características</th>
+                                        <th>Cuándo usarla</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>OpenStreetMap</td>
+                                        <td>Mapa cartográfico estándar con calles, ríos, nombres de lugares y límites
+                                            administrativos.</td>
+                                        <td>Uso general, ideal para orientación espacial en zonas urbanas y rurales.
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Google Maps (Satelital)</td>
+                                        <td>Imágenes satelitales de alta resolución de Google.</td>
+                                        <td>Cuando necesite ver la realidad del terreno, vegetación o infraestructura
+                                            existente.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>OpenTopoMap</td>
+                                        <td>Mapa topográfico con curvas de nivel y relieve sombreado.</td>
+                                        <td>Análisis de terreno, cuencas hidrográficas o proyectos relacionados con
+                                            topografía.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">swap_horiz</span>Cambiar la Capa Base</h3>
+                        <ol class="help-list">
+                            <li>En el panel izquierdo, desplazarse hasta la sección <strong>"Capas Base"</strong> (parte
+                                inferior del panel).</li>
+                            <li>Hacer clic en el ícono de ojo junto a la capa base deseada.</li>
+                            <li>La capa base cambiará inmediatamente.</li>
+                        </ol>
+                        <div class="help-callout tip">
+                            <span class="material-symbols-outlined">lightbulb</span>
+                            <div class="help-callout-body">
+                                <strong>Consejo</strong>
+                                <p>Reducir la opacidad de la capa base puede ser útil para dar más protagonismo visual a
+                                    las capas de información superpuestas.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ══ LEYENDA ══ -->
+                <section class="help-section" id="leyenda">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">legend_toggle</span>
+                        </div>
+                        <h2>Leyenda (Panel Derecho)</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">info</span>Descripción General</h3>
+                        <p>El panel derecho contiene la <strong>leyenda del mapa</strong>: la explicación visual de los
+                            colores
+                            e iconos utilizados por las capas que están activas en ese momento.</p>
+                        <p>La leyenda se <strong>actualiza automáticamente</strong> cada vez que se activa o desactiva
+                            una capa,
+                            mostrando únicamente la simbología de las capas visibles.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">style</span>Leer la Leyenda</h3>
+                        <p>La leyenda organiza la información en bloques, uno por cada capa activa:</p>
+                        <ul class="help-list">
+                            <li><strong>Cuadros de color:</strong> representan la simbología de polígonos y líneas.</li>
+                            <li><strong>Iconos:</strong> representan la simbología de puntos (marcadores).</li>
+                        </ul>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">block</span>Leyenda Vacía</h3>
+                        <p>Si la leyenda muestra el mensaje <em>"No hay capas activas. Activa capas para ver su
+                                leyenda"</em>,
+                            significa que ninguna capa temática está activa en la dimensión seleccionada. Active al
+                            menos una capa
+                            desde el panel izquierdo para ver su simbología.</p>
+                    </div>
+                </section>
+
+                <!-- ══ BUSCADOR ══ -->
+                <section class="help-section" id="buscador">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">manage_search</span>
+                        </div>
+                        <h2>Buscador Geoespacial</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">search</span>Cómo Usar el Buscador</h3>
+                        <p>El visor ofrece una barra de búsqueda global visible en la parte superior central de la
+                            pantalla (disponible en pantallas grandes).</p>
+                        <h4>Búsqueda básica:</h4>
+                        <ol class="help-list">
+                            <li>Hacer clic en la barra de búsqueda.</li>
+                            <li>Escribir el término de búsqueda (nombre de empresa, localidad, recurso, etc.).</li>
+                            <li>Los resultados aparecerán automáticamente después de escribir al menos 2 caracteres.
+                            </li>
+                            <li>Hacer clic en un resultado para que el mapa se desplace y centre en ese elemento.</li>
+                        </ol>
+                        <p>Además, se colocan <strong>marcadores rojos</strong> en el mapa para hasta 50 resultados, con
+                            botones de navegación (anterior/siguiente) en el panel de resultados. El botón <strong>✕
+                                Limpiar resultados</strong> elimina los marcadores.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">code</span>Búsqueda Avanzada con Operadores</h3>
+                        <p>El buscador del mapa soporta operadores especiales para búsquedas más precisas:</p>
+                        <div class="help-table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Operador</th>
+                                        <th>Uso</th>
+                                        <th>Ejemplo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="op-code">capa:"nombre"</span></td>
+                                        <td>Filtra por nombre de capa</td>
+                                        <td><span class="op-code">capa:"Plantas Solares"</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="op-code">comuna:nombre</span></td>
+                                        <td>Filtra por comuna</td>
+                                        <td><span class="op-code">comuna:Tierra Amarilla</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="op-code">tipo:valor</span></td>
+                                        <td>Filtra por tipo de elemento</td>
+                                        <td><span class="op-code">tipo:solar</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="op-code">region:nombre</span></td>
+                                        <td>Filtra por región</td>
+                                        <td><span class="op-code">region:atacama</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <h4>Ejemplos combinados:</h4>
+                        <div class="operator-example">
+                            <div class="op-row">
+                                <span class="op-code">solar comuna:Tierra Amarilla</span>
+                                <span class="op-arrow">→</span>
+                                <span class="op-desc">Plantas solares en Tierra Amarilla</span>
+                            </div>
+                            <div class="op-row">
+                                <span class="op-code">capa:"Yacimientos" tipo:Au</span>
+                                <span class="op-arrow">→</span>
+                                <span class="op-desc">Yacimientos de oro</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">filter_alt</span>Filtros de Búsqueda</h3>
+                        <p>En el buscador del mapa, existe un selector desplegable para filtrar los resultados por
+                            categoría temática:
+                            Todas las capas, Energía, Minería, Empresas, Agricultura, y otras categorías disponibles.
+                        </p>
+                        <p>Seleccionar una categoría antes de buscar agiliza la búsqueda y filtra los resultados al tema
+                            de interés.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">place</span>Resultados en el Mapa</h3>
+                        <p>Cuando una búsqueda devuelve múltiples resultados, el visor:</p>
+                        <ol class="help-list">
+                            <li>Muestra una lista de los primeros 20 resultados en el panel desplegable.</li>
+                            <li>Coloca <strong>marcadores rojos</strong> en el mapa para todos los resultados
+                                encontrados (hasta 50 elementos).</li>
+                            <li>Ajusta el nivel de zoom para mostrar todos los resultados en pantalla.</li>
+                        </ol>
+                        <p>Los botones de navegación <span class="kbd">←</span> <span class="kbd">→</span> permiten
+                            desplazarse entre los resultados uno a uno.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">bolt</span>Activación Automática de Capas</h3>
+                        <p>Si hace clic en un resultado que pertenece a una capa no activa, el visor la <strong>activará
+                                automáticamente</strong> y navegará hasta el elemento. Esto facilita explorar el visor
+                            sin necesidad de activar capas manualmente antes de buscar.</p>
+                    </div>
+                </section>
+
+                <!-- ══ POPUPS ══ -->
+                <section class="help-section" id="popups">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">info</span></div>
+                        <h2>Información de Elementos</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">ads_click</span>Mostrar Información de un elemento</h3>
+                        <p>Para ver la información detallada de cualquier elemento en el mapa:</p>
+                        <ol class="help-list">
+                            <li>Asegúrese de que la capa correspondiente está activa.</li>
+                            <li>Hacer clic directamente sobre el elemento (punto, línea o polígono).</li>
+                            <li>Se desplegará el panel derecho con los atributos del elemento.</li>
+                        </ol>
+                        <div class="help-callout tip">
+                            <span class="material-symbols-outlined">lightbulb</span>
+                            <div class="help-callout-body">
+                                <strong>Consejo</strong>
+                                <p>Si al hacer clic no aparece nada, puede que el elemento sea muy pequeño. Intente
+                                    acercar el zoom y hacer clic nuevamente, o ajuste la opacidad de otras capas que
+                                    puedan estar superpuestas.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">description</span>Contenido del elemento</h3>
+                        <p>El panel muestra los campos de información configurados para esa capa. Algunos campos pueden
+                            contener <strong>enlaces web (URLs)</strong> que al hacer clic abren el sitio externo en una
+                            nueva pestaña del navegador.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">text_increase</span>Tamaño de Texto</h3>
+                        <p>En el panel de información que se abre al hacer clic en un elemento, hay botones <span
+                                class="material-symbols-outlined" style="font-size:14px">text_decrease</span> y <span
+                                class="material-symbols-outlined" style="font-size:14px">text_increase</span> para
+                            ajustar el tamaño de la fuente. La preferencia se mantiene durante la sesión.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">close</span>Cerrar el panel de información</h3>
+                        <p>Para cerrar el panel, hacer clic en la <strong>X</strong> de su esquina superior derecha,
+                            o hacer clic en cualquier área vacía del mapa.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">label</span>Etiquetas Permanentes</h3>
+                        <p>Algunas capas muestran etiquetas de texto directamente sobre el mapa (sin necesidad de hacer
+                            clic).
+                            Por ejemplo, la capa de <strong>Toponimia</strong> muestra los nombres de las localidades.
+                            Estas etiquetas son parte visual de la capa y desaparecerán al desactivarla.</p>
+                    </div>
+                </section>
+
+                <!-- ══ TABLA DE ATRIBUTOS ══ -->
+                <section class="help-section" id="tabla-atributos">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">table_chart</span></div>
+                        <h2>Tabla de Atributos</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">info</span>¿Qué es la Tabla de Atributos?</h3>
+                        <p>La <strong>Tabla de Atributos</strong> es un panel inferior que muestra todos los registros
+                            de una capa vectorial en formato tabular, similar a una hoja de cálculo. Cada fila
+                            corresponde a un elemento geográfico (empresa, planta, punto, polígono) y cada columna a uno
+                            de sus atributos (nombre, dirección, potencia, etc.).</p>
+                        <div class="help-callout tip">
+                            <span class="material-symbols-outlined">lightbulb</span>
+                            <div class="help-callout-body">
+                                <strong>Consejo</strong>
+                                <p>La tabla es ideal para explorar y comparar todos los registros de una capa de forma
+                                    masiva sin tener que hacer clic en cada elemento del mapa individualmente.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">open_in_new</span>Cómo Abrir la Tabla</h3>
+                        <ol class="help-list">
+                            <li>Localizar la capa deseada en el panel izquierdo.</li>
+                            <li>Hacer clic en el botón <strong class="kbd">⋮</strong> (tres puntos) a la derecha del
+                                nombre de la capa.</li>
+                            <li>Seleccionar <strong>«Ver Tabla de Atributos»</strong> en el menú desplegable.</li>
+                            <li>El panel inferior se abrirá mostrando todos los registros de esa capa.</li>
+                        </ol>
+                        <div class="help-callout info">
+                            <span class="material-symbols-outlined">info</span>
+                            <div class="help-callout-body">
+                                <strong>Carga automática</strong>
+                                <p>Si la capa no estaba previamente activada, el sistema la <strong>descargará y
+                                        activará automáticamente</strong> al abrir la tabla, mostrando un indicador de
+                                    carga mientras se obtienen los datos.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">mouse</span>Interacción con la Tabla</h3>
+                        <p>La tabla de atributos ofrece las siguientes interacciones:</p>
+                        <div class="help-table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Acción</th>
+                                        <th>Resultado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Clic en una fila</td>
+                                        <td>El mapa hace zoom automático al elemento correspondiente y lo resalta con un
+                                            contorno cian brillante. La fila queda marcada en el panel.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Arrastrar el borde superior del panel</td>
+                                        <td>Redimensiona verticalmente la altura del panel entre 150 px y el 90% de la
+                                            pantalla.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Arrastrar el borde de una columna</td>
+                                        <td>Ajusta el ancho de esa columna individualmente para facilitar la lectura de
+                                            contenidos largos.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Botón <span class="material-symbols-outlined"
+                                                style="font-size:14px;vertical-align:middle">open_in_full</span>
+                                            (pantalla completa)</td>
+                                        <td>Expande la tabla para ocupar toda la ventana del navegador. Clic nuevamente
+                                            para restaurar.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Botón <span class="material-symbols-outlined"
+                                                style="font-size:14px;vertical-align:middle">close</span></td>
+                                        <td>Cierra el panel y restaura el panel de leyenda derecho si estaba visible.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">view_column</span>Columnas y Atributos Mostrados
+                        </h3>
+                        <p>Las columnas de la tabla corresponden a los <strong>atributos configurados</strong> para cada
+                            capa. Los nombres técnicos de los campos originales (como <span
+                                class="op-code">NOM_COMUNA</span>) se traducen automáticamente a nombres legibles en
+                            español (como <em>«Nombre de la Comuna»</em>).</p>
+                        <p>El contador superior indica el <strong>número total de registros</strong> disponibles en la
+                            capa.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">search</span>Búsqueda y Filtrado en la Tabla</h3>
+                        <p>La tabla de atributos incluye herramientas para encontrar información rápidamente:</p>
+                        <ul class="help-list">
+                            <li><strong>Botón <span class="material-symbols-outlined"
+                                    style="font-size:14px;vertical-align:middle">search</span>:</strong>
+                                Activa un campo de búsqueda para filtrar los registros por texto en cualquier columna.
+                                Escribe al menos 2 caracteres para ver resultados.</li>
+                            <li><strong>Botón <span class="material-symbols-outlined"
+                                    style="font-size:14px;vertical-align:middle">filter_alt</span>:</strong>
+                                Abre el panel de filtrado avanzado donde puedes seleccionar un atributo y elegir
+                                valores específicos para mostrar solo los registros que coincidan. Los filtros activos
+                                se pueden limpiar individualmente o todos a la vez.</li>
+                        </ul>
+                        <p>Los resultados filtrados se reflejan tanto en la tabla como en el mapa (cuando la capa
+                            está activa), y la tabla recuerda el filtro al cambiar entre capas o al volver a abrirla.</p>
+                    </div>
+                </section>
+
+                <!-- ══ DESCARGA DE CAPAS ══ -->
+                <section class="help-section" id="descargas">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">download</span></div>
+                        <h2>Descarga de Capas</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">info</span>¿Para qué sirve la Descarga?</h3>
+                        <p>La función de descarga permite exportar los datos de una capa vectorial para usarlos en
+                            herramientas externas como <strong>QGIS, ArcGIS, Excel o Python</strong>. Los datos
+                            descargados reflejan la configuración de atributos del visor, con nombres de columnas
+                            legibles en español.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">open_in_new</span>Cómo Descargar una Capa</h3>
+                        <ol class="help-list">
+                            <li>Localizar la capa deseada en el panel izquierdo.</li>
+                            <li>Hacer clic en el botón <strong class="kbd">⋮</strong> a la derecha del nombre de la
+                                capa.</li>
+                            <li>Seleccionar <strong>«Descargar Capa»</strong> en el menú.</li>
+                            <li>Se abrirá un modal con las opciones de formato disponibles.</li>
+                            <li>Elegir el formato deseado y hacer clic en el botón de descarga.</li>
+                        </ol>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">swap_horiz</span>Formatos de Descarga Disponibles
+                        </h3>
+                        <div class="help-table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Formato</th>
+                                        <th>Descripción</th>
+                                        <th>Uso recomendado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>GeoJSON</td>
+                                        <td>Archivo vectorial estándar que incluye la geometría (puntos, líneas,
+                                            polígonos) y todos los atributos originales del campo fuente.</td>
+                                        <td>QGIS, ArcGIS, aplicaciones GIS y desarrollo web con Leaflet o Mapbox.</td>
+                                    </tr>
+                                    <tr>
+                                        <td>CSV (Excel)</td>
+                                        <td>Tabla de texto plano con separador de punto y coma (<span
+                                                class="op-code">;</span>). Incluye solo los atributos configurados con
+                                            sus nombres en español. Codificado en UTF-8 con BOM para compatibilidad
+                                            directa con Excel.</td>
+                                        <td>Microsoft Excel, Google Sheets, análisis estadístico en Python o R.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="help-callout warning">
+                            <span class="material-symbols-outlined">warning</span>
+                            <div class="help-callout-body">
+                                <strong>Nota sobre el CSV</strong>
+                                <p>El archivo CSV <strong>no incluye geometría</strong> (coordenadas). Si necesita
+                                    trabajar con la ubicación geográfica de los elementos, utilice el formato
+                                    <strong>GeoJSON</strong>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">schedule</span>Tiempo de Descarga</h3>
+                        <p>Si la capa no estaba previamente cargada en el visor, el sistema deberá descargar sus datos
+                            antes de exportarlos. El botón CSV mostrará <em>«Generando archivo...»</em> durante ese
+                            proceso. El tiempo depende del tamaño de la capa y la velocidad de conexión a internet.</p>
+                        <div class="help-callout info">
+                            <span class="material-symbols-outlined">info</span>
+                            <div class="help-callout-body">
+                                <strong>Capas grandes</strong>
+                                <p>Para capas con miles de registros (ej. Empresas SII por comunas), la generación del
+                                    CSV puede tardar algunos segundos. El archivo se descargará automáticamente una vez
+                                    listo.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ══ MODOS CLUSTER Y MAPA DE CALOR ══ -->
+                <section class="help-section" id="cluster-heatmap">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">grid_view</span></div>
+                        <h2>Modos Cluster y Mapa de Calor</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">group_work</span>Modo Cluster</h3>
+                        <p>Para capas de puntos con muchos elementos, el modo <strong>cluster</strong> agrupa los puntos
+                            cercanos mostrando un número dentro de un círculo. Al hacer zoom, los grupos se desagrupan
+                            progresivamente.</p>
+                        <p><strong>Cómo activarlo:</strong> En una capa de puntos activa, haz clic en el botón <strong
+                                class="kbd">⋮</strong> y selecciona <strong>Activar Cluster</strong>. Para desactivarlo,
+                            elige <strong>Desactivar Cluster</strong>.</p>
+                        <div class="help-callout tip">
+                            <span class="material-symbols-outlined">lightbulb</span>
+                            <div class="help-callout-body">
+                                <strong>Consejo</strong>
+                                <p>El modo cluster es ideal para capas con cientos o miles de puntos, ya que evita la
+                                    saturación visual y mejora el rendimiento.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">heat</span>Mapa de Calor (Heatmap)</h3>
+                        <p>El <strong>mapa de calor</strong> representa la densidad de puntos mediante un degradado de
+                            colores. Las zonas de mayor concentración aparecen en rojo/naranja, y las de menor densidad
+                            en azul/verde.</p>
+                        <p><strong>Cómo activarlo:</strong> En una capa de puntos, abre el menú <strong
+                                class="kbd">⋮</strong> y elige <strong>Activar Mapa de Calor</strong>. Puedes ajustar el
+                            radio y la opacidad desde la configuración de la capa.</p>
+                        <div class="help-callout info">
+                            <span class="material-symbols-outlined">info</span>
+                            <div class="help-callout-body">
+                                <strong>Nota</strong>
+                                <p>Al activar el mapa de calor, el modo cluster se desactiva automáticamente (y
+                                    viceversa). No es posible tener ambos modos simultáneamente en la misma capa.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ══ PERSONALIZACIÓN ══ -->
+                <section class="help-section" id="personalizacion">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">tune</span></div>
+                        <h2>Personalización de la Experiencia</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">dark_mode</span>Modo Oscuro y Modo Claro</h3>
+                        <p>El visor soporta dos modos de visualización:</p>
+                        <ul class="help-list">
+                            <li><strong>Modo Oscuro (predeterminado):</strong> Interfaz con fondo oscuro, recomendado
+                                para uso prolongado o en ambientes con poca luz.</li>
+                            <li><strong>Modo Claro:</strong> Interfaz con fondo blanco, recomendado para presentaciones
+                                o impresión de capturas de pantalla.</li>
+                        </ul>
+                        <p>Para cambiar entre modos, hacer clic en el ícono <span class="material-symbols-outlined"
+                                style="font-size:14px;vertical-align:middle">light_mode</span>/<span
+                                class="material-symbols-outlined"
+                                style="font-size:14px;vertical-align:middle">dark_mode</span> ubicado en los controles
+                            del mapa. La preferencia se guarda automáticamente en el navegador.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">opacity</span>Opacidad de Capas</h3>
+                        <p>Cada capa activa dispone de un slider de opacidad. Las configuraciones de opacidad de todas
+                            las capas se guardan automáticamente en el navegador y se restauran en la próxima visita.
+                        </p>
+                        <p>Para restablecer la opacidad de una capa al 100%, deslizar el slider completamente hacia la
+                            derecha.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">text_fields</span>Tamaño de Letra en el Panel de Información</h3>
+                        <p>Cuando se abre el panel lateral, hay botones para
+                            aumentar o disminuir la fuente. Estos botones se encuentran en la parte inferior del panel
+                            de información. El tamaño de letra se ajusta dinámicamente y se mantiene mientras el panel
+                            esté abierto.</p>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">view_sidebar</span>Estado del Panel Izquierdo</h3>
+                        <p>El visor recuerda si el panel izquierdo estaba expandido o colapsado en su última visita y
+                            restaurará ese estado automáticamente.</p>
+                    </div>
+                </section>
+
+                <!-- ══ MÓVIL ══ -->
+                <section class="help-section" id="mobile">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">smartphone</span></div>
+                        <h2>Uso desde Dispositivos Móviles</h2>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">compare_arrows</span>Diferencias Respecto al
+                            Escritorio</h3>
+                        <p>En pantallas pequeñas (smartphones y tablets), la interfaz se adapta automáticamente:</p>
+                        <ul class="help-list">
+                            <li>Los paneles izquierdo y derecho pasan a ser <strong>menús deslizables</strong> que se
+                                superponen sobre el mapa.</li>
+                            <li>El buscador central del encabezado se oculta; en su lugar se usa un buscador de pantalla
+                                completa (ícono de lupa).</li>
+                            <li>Los controles del mapa son ligeramente más grandes para facilitar la interacción táctil.
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">touch_app</span>Abrir los Paneles en Mobile</h3>
+                        <h4>Panel de Capas (izquierdo):</h4>
+                        <ol class="help-list">
+                            <li>Hacer clic en el botón <strong>Capas</strong> (ícono de capas) en la barra de
+                                encabezado.</li>
+                            <li>El panel deslizará desde el lado izquierdo de la pantalla.</li>
+                            <li>Para cerrarlo, hacer clic en la <strong>X</strong> en la esquina del panel, o fuera del
+                                panel.</li>
+                        </ol>
+                        <h4>Panel de Leyenda (derecho):</h4>
+                        <ol class="help-list">
+                            <li>Hacer clic en el botón <strong>Leyenda</strong> (ícono de mapa) en la barra de
+                                encabezado.</li>
+                            <li>El panel deslizará desde el lado derecho.</li>
+                        </ol>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">gesture</span>Gestos en Móvil</h3>
+                        <div class="help-table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Gesto</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Un dedo — deslizar</td>
+                                        <td>Mover el mapa (paneo)</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Dos dedos — pellizcar</td>
+                                        <td>Acercar o alejar el mapa</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Toque simple</td>
+                                        <td>Abrir el popup del elemento tocado</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Doble toque</td>
+                                        <td>Acercar el mapa en el punto tocado</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="help-subsection">
+                        <h3><span class="material-symbols-outlined">tips_and_updates</span>Recomendaciones para Mobile
+                        </h3>
+                        <ul class="help-list">
+                            <li>Use el dispositivo en <strong>orientación horizontal (paisaje)</strong> para aprovechar
+                                mejor el espacio del mapa.</li>
+                            <li>Si la conexión a internet es lenta, active solo las capas estrictamente necesarias para
+                                su consulta.</li>
+                            <li>En redes móviles 3G o inferiores, la carga de capas complejas puede tardar varios
+                                segundos.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- ══ FAQ ══ -->
+                <section class="help-section" id="faq">
+                    <div class="help-section-header">
+                        <div class="help-section-icon"><span class="material-symbols-outlined">quiz</span></div>
+                        <h2>Preguntas Frecuentes (FAQ)</h2>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">hourglass_empty</span>
+                            <span class="faq-q-text">¿Por qué algunas capas tardan en cargarse?</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            Las capas de información geoespacial son archivos de datos que se descargan desde internet
+                            al activarlas.
+                            El tiempo de carga depende del tamaño del archivo y de la velocidad de su conexión. Las
+                            capas más detalladas
+                            (como el catastro frutícola o las líneas de transmisión eléctrica) pueden tardar entre 5 y
+                            30 segundos en
+                            una conexión estándar.
+                        </div>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">touch_app</span>
+                            <span class="faq-q-text">¿Por qué no veo información al hacer clic en el mapa?</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            Varias razones pueden causar esto:
+                            <ol
+                                style="margin-top:8px; padding-left:20px; display:flex; flex-direction:column; gap:4px;">
+                                <li>La capa que desea consultar no está activa. Asegúrese de activarla desde el panel
+                                    izquierdo.</li>
+                                <li>Está haciendo clic en un área sin elementos. Intente acercar el zoom y hacer clic
+                                    sobre un elemento visible.</li>
+                                <li>La capa tiene transparencia al 100% (completamente invisible). Revise el slider de
+                                    opacidad.</li>
+                                <li>Una capa con polígonos opacos está cubriendo el elemento que desea consultar.
+                                    Reduzca la opacidad de ese polígono.</li>
+                            </ol>
+                        </div>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">schedule</span>
+                            <span class="faq-q-text">¿Los datos del visor son en tiempo real?</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            No. Los datos del visor corresponden a la última actualización disponible al momento de la
+                            publicación.
+                            Cada capa indica su fuente y fecha de actualización en el panel de información de sus elementos. Para
+                            data
+                            actualizada, consulte las fuentes institucionales originales indicadas en cada capa.
+                        </div>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">grid_view</span>
+                            <span class="faq-q-text">¿Cómo cambio entre cluster y mapa de calor en una capa de
+                                puntos?</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            Activa la capa de puntos, luego haz clic en el botón <strong class="kbd">⋮</strong> (tres
+                            puntos) junto a su nombre. En el menú contextual encontrarás las opciones <strong>Activar
+                                Cluster</strong> y <strong>Activar Mapa de Calor</strong>. Solo uno de los dos modos
+                            puede estar activo a la vez.
+                        </div>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">download</span>
+                            <span class="faq-q-text">¿Puedo descargar los datos que veo en el mapa?</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            Sí. Desde el menú <strong class="kbd">⋮</strong> de cada capa, selecciona <strong>Descargar
+                                Capa</strong>. Puedes obtener los datos en formato GeoJSON (incluye geometría) o CSV
+                            (solo atributos, compatible con Excel).
+                        </div>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">table_chart</span>
+                            <span class="faq-q-text">La tabla de atributos no muestra datos o se ve vacía</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            Asegúrate de que la capa tenga al menos un elemento. Si es una capa recién activada, puede
+                            que los datos aún se estén descargando. Espera unos segundos y vuelve a abrir la tabla. Si
+                            el problema persiste, recarga la página y vuelve a intentarlo.
+                        </div>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">my_location</span>
+                            <span class="faq-q-text">¿Por qué el visor me pide permiso de ubicación?</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            Solo si hace clic en el botón "Mi Ubicación", el visor solicitará acceso a su posición GPS.
+                            Este permiso es completamente opcional y solo se utiliza para centrar el mapa en su
+                            ubicación actual.
+                            El visor <strong>no almacena ni transmite</strong> su información de ubicación.
+                        </div>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">wifi_off</span>
+                            <span class="faq-q-text">¿El visor funciona sin internet?</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            No. El visor requiere conexión a internet para cargar el mapa base (OpenStreetMap, Google
+                            Maps, etc.)
+                            y para descargar los archivos de información geoespacial al activar capas. Una vez que una
+                            capa ha sido
+                            cargada en una sesión, permanece disponible mientras no se recargue la página.
+                        </div>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">bug_report</span>
+                            <span class="faq-q-text">¿Cómo reportar un error en la información del visor?</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            Si detecta información desactualizada, incorrecta o un error técnico en el visor, puede
+                            reportarlo a través de los canales de contacto del programa IFI indicados en el modal de
+                            bienvenida (botón ? en el encabezado del visor).
+                        </div>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">language</span>
+                            <span class="faq-q-text">¿El visor funciona en todos los navegadores?</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            El visor ha sido optimizado para navegadores modernos. Se recomienda usar las versiones
+                            actualizadas de:
+                            <ul
+                                style="margin-top:8px; padding-left:20px; display:flex; flex-direction:column; gap:4px;">
+                                <li><strong>Google Chrome</strong> (recomendado)</li>
+                                <li>Microsoft Edge</li>
+                                <li>Mozilla Firefox</li>
+                                <li>Safari (macOS e iOS)</li>
+                            </ul>
+                            No se garantiza el correcto funcionamiento en Internet Explorer o versiones muy antiguas.
+                        </div>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">code</span>
+                            <span class="faq-q-text">¿Por qué veo capas en inglés o con códigos técnicos?</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            El visor traduce automáticamente los códigos técnicos internos (como "NOM_COMUNA" o
+                            "POTENCIAMW")
+                            a nombres legibles en español (como "Comuna" o "Potencia en MW"). Si en algún popup aparecen
+                            nombres
+                            técnicos, es posible que esa capa tenga información sin configurar. Puede reportarlo como se
+                            indica en la pregunta anterior.
+                        </div>
+                    </div>
+                    <div class="faq-item" onclick="toggleFaq(this)">
+                        <div class="faq-question">
+                            <span class="material-symbols-outlined">share</span>
+                            <span class="faq-q-text">¿Puedo compartir la vista actual del mapa con otra persona?</span>
+                            <span class="material-symbols-outlined faq-chevron">expand_more</span>
+                        </div>
+                        <div class="faq-answer">
+                            Actualmente el visor no genera URLs dinámicas que preserven el estado (capas activas, zoom,
+                            posición).
+                            Para compartir una vista específica, puede tomar una captura de pantalla e incluirla en su
+                            comunicación.
+                            También puede comunicar verbalmente las coordenadas visibles en la barra de coordenadas
+                            inferior del mapa.
+                        </div>
+                    </div>
+                </section>
+            </article>
+        </main>
+    </div>
+
+    <!-- Back to top -->
+    <button class="back-to-top" id="backToTop" onclick="scrollToTop()" title="Volver arriba">
+        <span class="material-symbols-outlined">arrow_upward</span>
+    </button>
+
+    <script src="js/ui/help.js" defer></script>
+</body>
+
+</html>

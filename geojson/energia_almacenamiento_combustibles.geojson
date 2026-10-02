@@ -1,0 +1,9 @@
+{
+"type": "FeatureCollection",
+"name": "energia_almacenamiento_combustibles",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "OBJECTID": 11, "ID_ALM_COM": 11, "NOMBRE": "CALDERA", "PROPIEDAD": "COPEC S.A.", "DIRECCION": "CAMINO PESQUERA BAHIA CALDERA SN", "CAPACID_M3": 22280.74, "BENCINA": null, "BUTANO": null, "GASOLINAS": null, "GNL": null, "KEROS_AVI": "SI", "KEROS_DOM": null, "PET_COMBUS": null, "PET_DIESEL": "SI", "PROPANO": null, "COOR_ESTE": 320393.99995637999, "COOR_NORTE": 7007095.0000029197, "HUSO": "19 S", "DATUM": "WGS84", "REGION": "ATACAMA", "PROVINCIA": "COPIAPO", "COMUNA": "CALDERA", "FUENTE_BAS": "SEC", "FECHA_CREA": "11/30/2014", "FECHA_ACT": "3/30/2023", "Origen Data": "Visor de Capas del Ministerio de Energia, IDE Energia, disponible en https://ide-energia.minenergia.cl/portal/apps/webappviewer/index.html?id=5c526a138b1449458e0667b2235d2b19" }, "geometry": { "type": "Point", "coordinates": [ -70.810838745999945, -27.046757877235198 ] } },
+{ "type": "Feature", "properties": { "OBJECTID": 18, "ID_ALM_COM": 18, "NOMBRE": "COPIAPO", "PROPIEDAD": "EMPRESAS LIPIGAS S.A", "DIRECCION": "PANAMERICANA NORTE KM 813", "CAPACID_M3": 632.3, "BENCINA": null, "BUTANO": null, "GASOLINAS": null, "GNL": "SI", "KEROS_AVI": null, "KEROS_DOM": null, "PET_COMBUS": null, "PET_DIESEL": null, "PROPANO": null, "COOR_ESTE": 363684.13912781997, "COOR_NORTE": 6975718.7828239296, "HUSO": "19 S", "DATUM": "WGS84", "REGION": "ATACAMA", "PROVINCIA": "COPIAPO", "COMUNA": "COPIAPO", "FUENTE_BAS": "SEC", "FECHA_CREA": "11/30/2014", "FECHA_ACT": "3/30/2023", "Origen Data": "Visor de Capas del Ministerio de Energia, IDE Energia, disponible en https://ide-energia.minenergia.cl/portal/apps/webappviewer/index.html?id=5c526a138b1449458e0667b2235d2b19" }, "geometry": { "type": "Point", "coordinates": [ -70.377969768999947, -27.334891260229657 ] } }
+]
+}

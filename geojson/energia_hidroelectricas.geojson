@@ -1,0 +1,8 @@
+{
+"type": "FeatureCollection",
+"name": "energia_hidroelectricas",
+"crs": { "type": "name", "properties": { "name": "urn:ogc:def:crs:OGC:1.3:CRS84" } },
+"features": [
+{ "type": "Feature", "properties": { "OBJECTID": 1082, "ID_GE_HIDRO": 263, "NOMBRE": "RIO HUASCO", "PROPIEDAD": "HIDROELECTRICA RIO HUASCO S.A.", "TIPO": "HIDRAULICA PASADA", "MEDIO_GENE": "PMG", "COMBUSTIBL": "NO APLICA", "POTENCIAMW": 5.1, "UNIDADES": 2, "RCA": "147/2010", "SIST_ELECT": "SEN", "ESTADO": "OPERATIVA", "F_OPERACIO": "2013-10-08T21:00:00", "COORD_ESTE": 339260.0, "COORD_NORT": 6826780.0, "HUSO": "19 SUR", "DATUM": "WGS 1984", "REGION": "03", "PROVINCIA": "033", "COMUNA": "03301", "FUENTE_BAS": "CNE", "FECH_CREA": "2018-06-29T20:00:00", "FECH_ACT": "2025-06-29T20:00:00", "Origen Data": "Visor de Capas del Ministerio de Energia, IDE Energia, disponible en https://ide-energia.minenergia.cl/portal/apps/webappviewer/index.html?id=5c526a138b1449458e0667b2235d2b19" }, "geometry": { "type": "Point", "coordinates": [ -70.645085276999964, -28.676202438999951 ] } }
+]
+}

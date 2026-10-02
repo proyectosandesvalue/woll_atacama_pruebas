@@ -1,0 +1,13 @@
+{
+  "name": "plataforma-woll-atacama",
+  "version": "2.0.0",
+  "description": "Plataforma Territorial Water Oriented Living Lab Atacama",
+  "main": "js/app.js",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint js/"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0"
+  }
+}

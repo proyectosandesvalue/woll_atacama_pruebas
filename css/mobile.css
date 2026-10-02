@@ -1,0 +1,557 @@
+/* ========================================
+   MOBILE.CSS — Estilos para pantallas ≤ 768px
+   Visor WoLL — Interfaz v2
+   ======================================== */
+
+@media (max-width: 768px) {
+
+  /* ===== BODY Y LAYOUT PRINCIPAL ===== */
+  body {
+    height: 100dvh !important;
+    overflow: hidden;
+  }
+
+  /* Main layout: sin grid, solo el mapa a pantalla completa */
+  .main-layout {
+    position: fixed;
+    top: var(--navbar-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: block;
+    overflow: hidden;
+  }
+
+  .map-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  #map {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ===== HEADER MOBILE ===== */
+  .header {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--navbar-height);
+    z-index: 1000;
+    padding: 0 8px;
+  }
+
+  /* Ocultar elementos no esenciales en mobile */
+  .header-center {
+    display: none;
+  }
+
+  .header-nav {
+    display: none;
+  }
+
+  .header-divider {
+    display: none;
+  }
+
+  /* === HEADER ACTIONS: alinear a la derecha en mobile === */
+  .header-right {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+  }
+
+  .header-actions {
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  /* Marca compacta */
+  .brand-title {
+    font-size: 0.75rem;
+    line-height: 1.2;
+  }
+
+  .brand-subtitle {
+    font-size: 0.6rem;
+  }
+
+  .brand-logo-img {
+    height: 24px;
+    max-height: 24px;
+  }
+
+  /* Botones del header más compactos */
+  .header-actions .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Mostrar botones mobile-only */
+  .mobile-only {
+    display: flex !important;
+  }
+
+  /* ===== SIDEBARS — OVERLAY DESLIZABLE ===== */
+  .sidebar {
+    position: fixed !important;
+    top: var(--navbar-height) !important;
+    bottom: 0 !important;
+    width: 85vw !important;
+    max-width: 360px !important;
+    height: calc(100dvh - var(--navbar-height)) !important;
+    z-index: 1050 !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow: hidden !important;
+  }
+
+  .sidebar-left {
+    left: 0 !important;
+    right: auto !important;
+    transform: translateX(-100%);
+    /* Oculto por defecto, script.js lo muestra */
+    border-right: 1px solid var(--border-subtle);
+  }
+
+  .sidebar-right {
+    right: 0 !important;
+    left: auto !important;
+    transform: translateX(100%);
+    /* Oculto por defecto */
+    border-left: 1px solid var(--border-subtle);
+  }
+
+  /* ===== SIDEBAR CHAT IA — OVERLAY DESLIZABLE ===== */
+  .sidebar-chat {
+    left: auto !important;
+    right: 0 !important;
+    transform: translateX(100%);
+    /* Oculto por defecto, .active lo muestra */
+    border-left: 1px solid var(--border-subtle);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .sidebar-chat.active {
+    transform: translateX(0);
+  }
+
+  /* Sidebar header compacto */
+  .sidebar-header {
+    height: 40px;
+    min-height: 40px;
+    padding: 0 8px 0 12px;
+  }
+
+  .sidebar-title {
+    font-size: 0.7rem;
+  }
+
+  /* Mostrar botón de cerrar mobile */
+  .sidebar-close-btn {
+    display: flex !important;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+  }
+
+  /* ===== SIDEBAR CONTENT — SCROLL ===== */
+  .sidebar-content {
+    padding: 4px 0;
+    /* min-height: 0 viene de components.css */
+  }
+
+
+  /* ===== MOBILE SEARCH OVERLAY ===== */
+  .mobile-search-overlay {
+    display: none;
+    position: fixed;
+    top: var(--navbar-height);
+    left: 0;
+    right: 0;
+    z-index: 1100;
+    padding: 10px 12px;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-md, 0 4px 20px rgba(0, 0, 0, 0.4));
+    animation: slideDownFade 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .mobile-search-overlay.open {
+    display: block;
+  }
+
+  @keyframes slideDownFade {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .mobile-search-overlay-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .mobile-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--search-bg);
+    border: 1px solid var(--search-border);
+    border-radius: 10px;
+    padding: 6px 10px;
+  }
+
+  .mobile-search-icon {
+    font-size: 20px;
+    color: var(--search-placeholder, var(--text-muted));
+    flex-shrink: 0;
+  }
+
+  .mobile-search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--search-text, var(--text-primary));
+    font-family: inherit;
+    font-size: 0.9rem;
+    outline: none;
+  }
+
+  .mobile-search-input::placeholder {
+    color: var(--search-placeholder, var(--text-muted));
+  }
+
+  .mobile-search-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--search-placeholder, var(--text-muted));
+    padding: 2px;
+    border-radius: 6px;
+    transition: color 0.15s;
+  }
+
+  .mobile-search-close-btn:hover {
+    color: var(--text-primary);
+  }
+
+  .mobile-search-close-btn .material-symbols-outlined {
+    font-size: 20px;
+  }
+
+  #mobile-search-results-anchor .global-search-results-container {
+    max-height: 50vh;
+    overflow-y: auto;
+    border-radius: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+  }
+
+  /* ===== DIMENSIONES Y GRUPOS ===== */
+
+  /* Headers de dimensión más compactos */
+  .dimension-group-header,
+  .grupo-header {
+    padding: 5px 6px !important;
+    gap: 6px !important;
+  }
+
+  .dimension-group {
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+  }
+
+  .dimension-title {
+    font-size: 13px !important;
+  }
+
+  .grupo-nombre {
+    font-size: 12px !important;
+  }
+
+  .dimension-icon {
+    font-size: 16px !important;
+  }
+
+  /* Botones de ojo más compactos */
+  .group-vis-btn .material-symbols-outlined {
+    font-size: 14px !important;
+  }
+
+  /* Botón chevron de colapso */
+  .btn-collapse-toggle,
+  .btn-collapse-toggle-grupo {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .btn-collapse-toggle .material-symbols-outlined,
+  .btn-collapse-toggle-grupo .material-symbols-outlined {
+    font-size: 14px !important;
+  }
+
+  /* ===== CAPAS INDIVIDUALES ===== */
+  .layer-item {
+    padding: 3px 6px !important;
+    gap: 4px !important;
+  }
+
+  .layer-item-name {
+    font-size: 12px !important;
+  }
+
+  .layer-vis-btn .material-symbols-outlined {
+    font-size: 16px !important;
+  }
+
+  /* Sliders de opacidad más delgados */
+  .layer-opacity-slider,
+  .base-opacity-slider {
+    height: 2px !important;
+  }
+
+  .layer-opacity-control {
+    margin-top: 0 !important;
+  }
+
+  /* ===== CAPAS BASE ===== */
+  .sidebar-section-header {
+    padding: 8px 10px;
+    margin: 2px 6px 8px 6px;
+  }
+
+  .sidebar-section-title {
+    font-size: 0.65rem;
+  }
+
+  .sidebar-section-icon {
+    font-size: 14px;
+  }
+
+  .base-layers-container {
+    padding: 0 4px;
+  }
+
+  /* ===== SIDEBAR DERECHO — TABS ===== */
+  .sidebar-tabs {
+    gap: 0;
+  }
+
+  .tab-btn {
+    padding: 8px 4px;
+    font-size: 0.7rem;
+  }
+
+  .tab-icon {
+    font-size: 18px;
+  }
+
+  /* ===== CONTROLES DEL MAPA — Grupo unificado arriba-derecha ===== */
+
+  /* Zoom: arriba-derecha */
+  .zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* Nav + tema: justo debajo del zoom */
+  .nav-controls {
+    position: absolute;
+    top: auto;
+    right: 10px;
+    /* Se posiciona debajo de zoom-controls usando top calculado */
+    /* zoom-controls: top 10px + 2 botones (36px cada uno) + gap 4px + margin */
+    top: 96px;
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transform: none;
+    /* Anular el translateY(-50%) de desktop */
+  }
+
+  .map-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    backdrop-filter: blur(8px);
+  }
+
+  .map-btn .material-symbols-outlined {
+    font-size: 18px;
+  }
+
+  /* Barra de coordenadas */
+  .coords-bar {
+    font-size: 0.6rem;
+    padding: 2px 8px;
+  }
+
+  /* ===== LEYENDA MOBILE ===== */
+  #sidebar-legend {
+    max-height: calc(100dvh - var(--navbar-height) - 120px) !important;
+    overflow-y: auto;
+  }
+
+  /* ===== POPUPS MOBILE ===== */
+  .custom-popup {
+    font-size: 10px !important;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .custom-popup .popup-title {
+    font-size: 11px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .custom-popup p {
+    font-size: 9.5px !important;
+    margin: 2px 0 !important;
+  }
+
+  .custom-popup p strong {
+    font-size: 9.5px !important;
+  }
+
+  .custom-popup a {
+    font-size: 9.5px !important;
+    word-break: break-all;
+  }
+
+  .leaflet-popup-content {
+    margin: 6px 10px !important;
+    min-width: 150px !important;
+    max-width: 250px !important;
+  }
+
+  /* ===== BÚSQUEDA GLOBAL ===== */
+  .search-bar {
+    display: none;
+    /* Oculta la barra de búsqueda del header en mobile */
+  }
+}
+
+/* ===== PANTALLAS EXTRA PEQUEÑAS (≤ 480px) ===== */
+@media (max-width: 480px) {
+
+  .sidebar {
+    width: 92vw !important;
+    max-width: 340px !important;
+  }
+
+  .brand-title {
+    font-size: 0.65rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.55rem;
+  }
+
+  .custom-popup {
+    font-size: 9.5px !important;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .custom-popup .popup-title {
+    font-size: 10px !important;
+  }
+
+  .custom-popup p {
+    font-size: 8.5px !important;
+  }
+
+  /* Chat IA compacto en pantallas pequeñas */
+  .ai-chat-messages {
+    font-size: 0.8rem;
+  }
+
+  .ai-chat-input {
+    font-size: 0.85rem;
+  }
+
+  /* Header compacto: con el 6º botón (Chat IA) los actions miden ~236px;
+     aquí se recogen para que el logo no quede recortado en móviles de 360px */
+  .header-actions {
+    gap: 2px;
+  }
+
+  .header-actions .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   HELP PAGE — Estilos móviles de help.html
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .help-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .help-nav {
+    display: none;
+  }
+
+  .help-nav.mobile-open {
+    display: block;
+    position: fixed;
+    top: var(--help-header-h);
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 300;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .help-content {
+    padding: 24px 20px 60px;
+  }
+
+  .quick-links {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .search-help-input {
+    display: none;
+  }
+
+  .mobile-nav-btn {
+    display: flex !important;
+  }
+
+  .layer-options-menu {
+    position: fixed;
+    right: 16px;
+    top: auto;
+    bottom: auto;
+    max-width: 90vw;
+    z-index: 2100;
+  }
+}

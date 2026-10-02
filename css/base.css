@@ -1,0 +1,463 @@
+/* ============================================================
+   BASE.CSS — Atacama Fluidity Design System
+   Visor WoLL — Interfaz v2
+   ============================================================ */
+
+/* ── Dimensiones y estructura ───────────────────────────────── */
+:root {
+  --navbar-height: 56px;
+  --sidebar-left-width: 300px;
+  --sidebar-right-width: 300px;
+  --chat-sidebar-width: 380px;
+
+  /* Spacing (8px unit) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-8: 4rem;
+  --space-16: 8rem;
+
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: all 0.15s ease;
+  --transition-standard: all 0.25s ease;
+  --transition-sidebar: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-lift: all 0.2s ease;
+
+  /* Shadows (Ambient Shadows - soft, tinted) */
+  --shadow-sm: 0 1px 3px rgba(41, 44, 85, 0.06);
+  --shadow-md: 0 4px 12px rgba(41, 44, 85, 0.08);
+  --shadow-lg: 0 8px 24px rgba(41, 44, 85, 0.10);
+  --shadow-map: 0 2px 8px rgba(41, 44, 85, 0.12);
+
+  /* Página de Ayuda */
+  --help-sidebar-width: 260px;
+  --help-content-max: 820px;
+  --help-header-h: 56px;
+
+  /* Brand colors (always same across themes) */
+  --color-brand: #1A19CC;
+  --color-brand-hover: #060099;
+  --color-brand-subtle: rgba(26, 25, 204, 0.12);
+  /* Azul de marca legible al TEXTO/ICONOS: el de marca no alcanza contraste
+     sobre los fondos oscuros. Relleno y bordes usan --color-brand. */
+  --color-brand-text: #1A19CC;
+
+  /* Accent (active / progress) */
+  --color-accent: #FFB93D;
+  --color-accent-hover: #e6a635;
+  --color-accent-subtle: rgba(255, 185, 61, 0.15);
+
+  /* Info */
+  --color-info: #1A19CC;
+  --color-info-subtle: rgba(26, 25, 204, 0.12);
+
+  /* Warning */
+  --color-warning: #FFB93D;
+
+  /* Brand fonts */
+  --font-display: 'Montserrat', system-ui, sans-serif;
+  --font-body: 'Open Sans', system-ui, sans-serif;
+
+  /* Typography scale */
+  --text-display-xl: 4rem;
+  --text-headline-lg: 2.5rem;
+  --text-headline-lg-mobile: 2rem;
+  --text-title-md: 1.5rem;
+  --text-body-lg: 1.125rem;
+  --text-body-md: 1rem;
+  --text-label-sm: 0.75rem;
+
+  /* Line heights */
+  --leading-display: 4.5rem;
+  --leading-headline: 3rem;
+  --leading-headline-mobile: 2.5rem;
+  --leading-title: 2rem;
+  --leading-body-lg: 1.75rem;
+  --leading-body-md: 1.5rem;
+  --leading-label: 1rem;
+
+  /* Layout */
+  --container-max: 1280px;
+  --gutter: 1.5rem;
+  --margin-desktop: 4rem;
+  --margin-mobile: 1.25rem;
+}
+
+/* ── Tema claro (default) ──────────────────────────────────────── */
+:root,
+[data-theme="light"] {
+  /* Navbar icon color — brand blue */
+  --navbar-icon-color: #1A19CC;
+
+  /* Surfaces */
+  --bg-app: #fbf8ff;
+  --bg-header: rgba(255, 255, 255, 0.85);
+  --bg-surface: rgba(255, 255, 255, 0.75);
+  --bg-surface-2: rgba(238, 236, 255, 0.6);
+  --bg-surface-3: #eeecff;
+  --bg-surface-hover: rgba(230, 230, 255, 0.5);
+  --bg-surface-active: rgba(214, 215, 255, 0.5);
+  --bg-overlay: rgba(251, 248, 255, 0.80);
+
+  /* Glassmorphism surfaces */
+  --glass-bg: rgba(255, 255, 255, 0.70);
+  --glass-border: rgba(26, 25, 204, 0.10);
+  --glass-blur: blur(20px);
+
+  /* Borders */
+  --border-subtle: rgba(26, 25, 204, 0.08);
+  --border-default: rgba(26, 25, 204, 0.14);
+  --border-strong: rgba(26, 25, 204, 0.25);
+
+  /* Text */
+  --text-primary: #14173f;
+  --text-secondary: #454555;
+  --text-tertiary: #767587;
+  --text-on-brand: #ffffff;
+  --text-disabled: #c6c5d8;
+
+  /* Map controls */
+  --map-control-bg: rgba(255, 255, 255, 0.80);
+  --map-control-border: rgba(26, 25, 204, 0.12);
+  --map-control-text: #14173f;
+  --map-control-hover: rgba(230, 230, 255, 0.6);
+
+  /* Coords bar */
+  --coords-bg: rgba(255, 255, 255, 0.88);
+  --coords-text: #454555;
+
+  /* Search */
+  --search-bg: rgba(238, 236, 255, 0.8);
+  --search-border: rgba(26, 25, 204, 0.12);
+  --search-focus-border: #1A19CC;
+  --search-text: #14173f;
+  --search-placeholder: #767587;
+
+  /* Tabs */
+  --tab-bg: transparent;
+  --tab-text: #454555;
+  --tab-active-text: #14173f;
+  --tab-active-indicator: #1A19CC;
+  --tab-hover-bg: rgba(26, 25, 204, 0.04);
+
+  /* Layer items */
+  --layer-item-bg: transparent;
+  --layer-item-hover: rgba(26, 25, 204, 0.04);
+  --layer-item-active: rgba(26, 25, 204, 0.08);
+  --layer-item-border: rgba(26, 25, 204, 0.08);
+
+  /* Progress bars */
+  --progress-track: rgba(26, 25, 204, 0.08);
+  --progress-fill: #1A19CC;
+
+  /* Chat */
+  --chat-bg: rgba(238, 236, 255, 0.6);
+  --chat-input-bg: rgba(255, 255, 255, 0.80);
+  --chat-msg-assistant-bg: rgba(255, 255, 255, 0.90);
+  --chat-msg-assistant-text: #14173f;
+  --chat-msg-user-bg: #1A19CC;
+  --chat-msg-user-text: #ffffff;
+
+  /* Scrollbar */
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(26, 25, 204, 0.16);
+  --scrollbar-thumb-hover: rgba(26, 25, 204, 0.28);
+
+  /* Modal / Dialog */
+  --dialog-bg: rgba(255, 255, 255, 0.95);
+  --dialog-header-bg: rgba(238, 236, 255, 0.8);
+  --dialog-border: rgba(26, 25, 204, 0.12);
+  --dialog-backdrop: rgba(20, 23, 63, 0.45);
+
+  /* Buttons */
+  --btn-primary-bg: #1A19CC;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover: #060099;
+  --btn-secondary-bg: transparent;
+  --btn-secondary-text: #1A19CC;
+  --btn-secondary-border: #1A19CC;
+
+  /* Cards */
+  --card-bg: rgba(255, 255, 255, 0.80);
+  --card-border: rgba(26, 25, 204, 0.10);
+  --card-shadow: none;
+}
+
+/* ── Tokens complementarios (usados en components.css y antes sin definir) ── */
+:root {
+  color-scheme: light;
+  --color-accent-rgb: 255, 185, 61;
+  --bg-body: var(--bg-app);
+  --accent-primary: var(--color-brand);
+  --color-danger: #b50000;
+  --color-danger-hover: #8a0000;
+}
+
+/* ── Tema oscuro — "Noche Atacama" ────────────────────────────
+   Base navy derivada de #292C55 (paleta WoLL). La elevación se logra
+   con luminosidad creciente y bordes blancos translúcidos; el azul de
+   marca queda como acento y el ámbar #FFB93D marca lo activo.
+   ────────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Navbar icon color — white */
+  --navbar-icon-color: #ffffff;
+
+  /* Azul de marca legible sobre fondos oscuros (texto e iconos) */
+  --color-brand-text: #9fa8ff;
+  --color-brand-subtle: rgba(159, 168, 255, 0.14);
+  --color-info: #9fa8ff;
+  --color-info-subtle: rgba(159, 168, 255, 0.14);
+  --accent-primary: #9fa8ff;
+  --color-danger: #ff8a80;
+  --color-danger-hover: #ffb3ad;
+
+  /* Surfaces */
+  --bg-app: #171a36;
+  --bg-header: rgba(23, 26, 54, 0.92);
+  --bg-surface: rgba(31, 35, 71, 0.80);
+  --bg-surface-2: #262b55;
+  --bg-surface-3: #2f3562;
+  --bg-surface-hover: rgba(255, 255, 255, 0.06);
+  --bg-surface-active: rgba(255, 185, 61, 0.12);
+  --bg-overlay: rgba(23, 26, 54, 0.82);
+
+  /* Glassmorphism surfaces */
+  --glass-bg: rgba(31, 35, 71, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-blur: blur(20px);
+
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-default: rgba(255, 255, 255, 0.13);
+  --border-strong: rgba(255, 255, 255, 0.26);
+
+  /* Text (contraste medido sobre #1f2347) */
+  --text-primary: #eef0ff;
+  --text-secondary: #b8bcdd;
+  --text-tertiary: #8f94ba;
+  --text-on-brand: #ffffff;
+  --text-disabled: #5c6088;
+
+  /* Map controls */
+  --map-control-bg: rgba(31, 35, 71, 0.88);
+  --map-control-border: rgba(255, 255, 255, 0.14);
+  --map-control-text: #eef0ff;
+  --map-control-hover: rgba(255, 255, 255, 0.10);
+
+  /* Coords bar */
+  --coords-bg: rgba(23, 26, 54, 0.86);
+  --coords-text: #b8bcdd;
+
+  /* Search */
+  --search-bg: rgba(255, 255, 255, 0.06);
+  --search-border: rgba(255, 255, 255, 0.14);
+  --search-focus-border: #9fa8ff;
+  --search-text: #eef0ff;
+  --search-placeholder: #8f94ba;
+
+  /* Tabs */
+  --tab-bg: transparent;
+  --tab-text: #b8bcdd;
+  --tab-active-text: #eef0ff;
+  --tab-active-indicator: #FFB93D;
+  --tab-hover-bg: rgba(255, 255, 255, 0.05);
+
+  /* Layer items */
+  --layer-item-bg: transparent;
+  --layer-item-hover: rgba(255, 255, 255, 0.05);
+  --layer-item-active: rgba(255, 185, 61, 0.10);
+  --layer-item-border: rgba(255, 255, 255, 0.08);
+
+  /* Progress bars */
+  --progress-track: rgba(255, 255, 255, 0.10);
+  --progress-fill: #FFB93D;
+
+  /* Chat */
+  --chat-bg: rgba(31, 35, 71, 0.70);
+  --chat-input-bg: rgba(255, 255, 255, 0.06);
+  --chat-msg-assistant-bg: #262b55;
+  --chat-msg-assistant-text: #eef0ff;
+  --chat-msg-user-bg: #46308c;
+  --chat-msg-user-text: #ffffff;
+
+  /* Scrollbar */
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.16);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.30);
+
+  /* Modal / Dialog */
+  --dialog-bg: rgba(31, 35, 71, 0.97);
+  --dialog-header-bg: #262b55;
+  --dialog-border: rgba(255, 255, 255, 0.14);
+  --dialog-backdrop: rgba(8, 9, 24, 0.65);
+
+  /* Buttons */
+  --btn-primary-bg: #5b5cf0;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover: #7375ff;
+  --btn-secondary-bg: transparent;
+  --btn-secondary-text: #9fa8ff;
+  --btn-secondary-border: #9fa8ff;
+
+  /* Cards */
+  --card-bg: rgba(255, 255, 255, 0.05);
+  --card-border: rgba(255, 255, 255, 0.10);
+  --card-shadow: none;
+
+  /* Sombras: en oscuro son neutras, no tintadas de azul */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.40);
+  --shadow-map: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+/* ── Reset y base global ────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  height: 100%;
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-body-md);
+  line-height: var(--leading-body-md);
+  color: var(--text-primary);
+  background-color: var(--bg-app);
+  height: 100%;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: var(--leading-headline);
+}
+
+a {
+  color: var(--color-brand-text);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+input,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+/* ── Material Symbols — ajuste de baseline ──────────────────── */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+  vertical-align: middle;
+  user-select: none;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ── Scrollbar global (Webkit) ──────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 99px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ── Utilidades mínimas ─────────────────────────────────────── */
+
+/* Oculto visualmente pero accesible para screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Visible solo en mobile (< 769px), oculto en desktop */
+.mobile-only {
+  display: none !important;
+}
+
+/* Ocultar controles de zoom nativos de Leaflet — usamos los propios */
+.leaflet-control-zoom {
+  display: none !important;
+}
+
+/* Ocultar cualquier control de búsqueda de Leaflet que pueda aparecer */
+.leaflet-control-search,
+.search-control-container {
+  display: none !important;
+}
+
+/* Ocultar overlay de búsqueda mobile en desktop (se muestra solo vía .open en mobile.css) */
+.mobile-search-overlay {
+  display: none;
+}
+
+/* ── Glassmorphism utility ────────────────────────────────────── */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}

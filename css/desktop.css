@@ -1,0 +1,167 @@
+/* ============================================================
+   DESKTOP.CSS — Layout de 3 columnas para pantallas ≥ 769px
+   Visor WoLL — Interfaz v2
+   ============================================================ */
+
+@media (min-width: 769px) {
+
+  /* ── Estructura raíz ──────────────────────────────────────── */
+
+  body {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* ── Header fijo ──────────────────────────────────────────── */
+
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--navbar-height);
+    z-index: 1000;
+    flex-shrink: 0;
+  }
+
+  /* ── Main layout: grid de 3 columnas ─────────────────────── */
+  /*
+     Columna 1: sidebar izquierdo (ancho fijo)
+     Columna 2: mapa (ocupa todo el espacio restante)
+     Columna 3: sidebar derecho (ancho fijo)
+  */
+
+  .main-layout {
+    position: fixed;
+    top: var(--navbar-height);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: var(--sidebar-left-width) 1fr var(--sidebar-right-width);
+    grid-template-rows: 1fr;
+    transition: grid-template-columns 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+
+  /* Solo columna 1 colapsada (ancho 0): mapa y columna 3 se desplazan */
+  .main-layout:has(#sidebarLeft.collapsed) {
+    grid-template-columns: 0px 1fr var(--sidebar-right-width);
+  }
+
+  /* Solo columna 3 colapsada (ancho 0): mapa ocupa su lugar */
+  .main-layout:has(#sidebarRight.collapsed) {
+    grid-template-columns: var(--sidebar-left-width) 1fr 0px;
+  }
+
+  /* Ambas colapsadas: el mapa ocupa todo el ancho */
+  .main-layout:has(#sidebarLeft.collapsed):has(#sidebarRight.collapsed) {
+    grid-template-columns: 0px 1fr 0px;
+  }
+
+  /* ── Sidebar izquierdo ────────────────────────────────────── */
+
+  .sidebar-left {
+    position: relative;
+    /* Fluye en el grid, no es overlay */
+    top: auto;
+    left: auto;
+    width: 100%;
+    /* Ocupa el ancho que le da la columna del grid */
+    height: 100%;
+    transform: none !important;
+    /* Anula cualquier translateX del CSS base */
+    z-index: auto;
+    overflow: clip; /* clip en vez de hidden: no crea scroll context, permite que el scroll interno funcione */
+    border-right: 1px solid var(--border-subtle);
+  }
+
+  /* El botón de cierre mobile no existe en desktop */
+  .sidebar-left .sidebar-close-btn {
+    display: none;
+  }
+
+  /* ── Mapa canvas ──────────────────────────────────────────── */
+
+  .map-canvas {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  #map {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  /* ── Sidebar derecho ──────────────────────────────────────── */
+
+  .sidebar-right {
+    position: relative;
+    /* Fluye en el grid */
+    top: auto;
+    right: auto;
+    width: 100%;
+    height: 100%;
+    transform: none !important;
+    z-index: auto;
+    overflow: hidden;
+    border-left: 1px solid var(--border-subtle);
+  }
+
+  /* El botón de cierre mobile no existe en desktop */
+  .sidebar-right .sidebar-close-btn {
+    display: none;
+  }
+
+  /* ── Controles sobre el mapa ──────────────────────────────── */
+
+  /* Controles de zoom: arriba derecha del canvas */
+  .zoom-controls {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 400;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* Controles de navegación: debajo del zoom (grupo unificado) */
+  .nav-controls {
+    position: absolute;
+    top: 92px; /* 16px (top zoom) + 68px (2 botones zoom) + 8px (espacio) */
+    right: 16px;
+    transform: none; /* Se anula el centrado vertical previo */
+    z-index: 400;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* Barra de coordenadas: fondo centro del canvas */
+  .coords-bar {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 400;
+  }
+
+  /* ── Leaflet: ajuste de posición para controles propios ───── */
+
+  /* Alejar el attribution de Leaflet de la coords-bar */
+  .leaflet-bottom.leaflet-right {
+    bottom: 36px !important;
+  }
+
+  .leaflet-bottom.leaflet-left {
+    bottom: 36px !important;
+  }
+}

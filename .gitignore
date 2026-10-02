@@ -1,0 +1,35 @@
+# Dependencias
+node_modules/
+
+# Seguridad — credenciales de IA (Groq) y Supabase
+.env
+.env.local
+.env.*.local
+.env.staging
+
+# Vercel
+.vercel/
+
+# Sistema (macOS / Windows)
+.DS_Store
+._*
+Thumbs.db
+
+# OpenCode / agente local — no es parte del proyecto
+.agents/
+session_export.md
+skills-lock.json
+
+# Backups locales generados durante desarrollo
+*.bak
+*.bak.js
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo.env.staging
