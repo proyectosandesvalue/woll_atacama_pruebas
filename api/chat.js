@@ -56,7 +56,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: validation.error });
     }
 
-    const { text, history } = validation;
+    const { text, history, sessionId } = validation;
 
     // ── Paso 2: detectar IP y país ────────────────────────────
     const ip = getIpFromRequest(req);
@@ -90,13 +90,13 @@ export default async function handler(req, res) {
     }
 
     // ── Paso 5: domain classifier (capa 2, LLM) ───────────────
-    const domain = await classifyDomain(text);
+    const domain = await classifyDomain(text, sessionId);
     if (domain === "OUT") {
       return res.status(403).json({ error: MSG_OUT_OF_SCOPE });
     }
 
     // ── Paso 6: orquestador ───────────────────────────────────
-    const payload = await runOrchestrator({ text, history });
+    const payload = await runOrchestrator({ text, history, sessionId });
     return res.status(200).json(payload);
   } catch (err) {
   const errInfo = {

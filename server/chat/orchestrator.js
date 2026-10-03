@@ -24,7 +24,7 @@ const DEFAULT_MAX_ITERATIONS = 1;
 /** Log de diagnóstico: activar con ORCHESTRATOR_DEBUG=1 */
 const DEBUG = /^(1|true|yes)$/i.test(process.env.ORCHESTRATOR_DEBUG || "");
 function dbg(...args) {
-  if (DEBUG) console.error("[orchestrator]", ...args);
+  if (DEBUG) console.log("[orchestrator]", ...args);
 }
 
 /**
@@ -290,7 +290,7 @@ function buildChartFromHistory(history) {
 /**
  * Ejecuta el ciclo: rondas de tools + síntesis forzada.
  */
-export async function runOrchestrator({ text, history = [] }) {
+export async function runOrchestrator({ text, history = [], sessionId = null }) {
   const budgetMs =
     Number(process.env.ORCHESTRATOR_BUDGET_MS) || DEFAULT_BUDGET_MS;
   const maxIterations =
@@ -329,6 +329,7 @@ export async function runOrchestrator({ text, history = [] }) {
       messages,
       tools: TOOL_DEFINITIONS,
       toolChoice: "auto",
+      sessionId,
     });
   } catch (err) {
     console.error(
@@ -394,6 +395,7 @@ export async function runOrchestrator({ text, history = [] }) {
         system: SYNTHESIS_SYSTEM_PROMPT,
         messages: buildSynthesisMessages(messages),
         signal: AbortSignal.timeout(remaining),
+        sessionId,
       });
       const reply = (final.content || "").trim();
       if (reply) {

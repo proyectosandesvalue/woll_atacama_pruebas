@@ -111,7 +111,7 @@ function setInCache(key, result) {
  * @param {string} text
  * @returns {Promise<"IN"|"OUT">}
  */
-export async function classifyDomain(text) {
+export async function classifyDomain(text, sessionId = null) {
   if (typeof text !== "string" || text.trim().length === 0) {
     return "IN";
   }
@@ -130,6 +130,7 @@ export async function classifyDomain(text) {
       messages: [{ role: "user", content: text }],
       maxTokens: 5,
       temperature: 0,
+      sessionId,
     });
 
     const raw = (response.content || "").trim().toUpperCase();

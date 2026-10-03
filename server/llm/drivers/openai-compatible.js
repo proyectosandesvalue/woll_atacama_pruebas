@@ -2,39 +2,63 @@
  * Driver LLM OpenAI-compatible.
  *
  * Implementa la interfaz `llm.chat(...)` sobre cualquier API que siga
- * el dialecto OpenAI Chat Completions: Groq, OpenAI, Together,
- * Mistral, vLLM local, etc. Solo cambia LLM_BASE_URL / LLM_MODEL /
- * LLM_API_KEY.
+ * el dialecto OpenAI Chat Completions: Groq, OpenAI, Together, Mistral,
+ * OpenCode Go, vLLM local, etc.
  *
- * Soporta tool calling (function calling). El formato de tools sigue
- * el estándar OpenAI: [{type:"function", function:{name, description,
- * parameters}}]. Esto es compatible con Groq (que usa el mismo formato).
+ * Soporta tool calling (function calling) en el formato OpenAI.
  *
  * Soporta `signal` (AbortSignal) para cancelar la petición si el
  * presupuesto de tiempo del orquestador se agota.
+ *
+ * Soporta `sessionId` para proveedores que lo requieren (OpenCode Go
+ * requiere el header `x-opencode-session` desde 2026-09-05).
  */
+
+import { randomUUID } from "node:crypto";
 
 export function createProvider(config) {
   const baseUrl = config.baseUrl.replace(/\/+$/, "");
   const url = `${baseUrl}/chat/completions`;
-  const headers = {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${config.apiKey}`,
-  };
+  const isOpenCode = /opencode\.ai/i.test(config.baseUrl);
+
+  /**
+   * Construye los headers HTTP. Si el proveedor es OpenCode, agrega
+   * el header `x-opencode-session` requerido para el routing.
+   */
+  function buildHeaders(sessionId) {
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${config.apiKey}`,
+    };
+
+    if (isOpenCode) {
+      // OpenCode requiere un ID de sesión estable por conversación.
+      // Si no viene del caller, generamos uno efímero por request
+      // (evita el 400 MissingSessionID pero pierde el caché de prompt).
+      const session =
+        (typeof sessionId === "string" && sessionId.length > 0)
+          ? sessionId
+          : `oneshot-${randomUUID().replace(/-/g, "").slice(0, 16)}`;
+      headers["x-opencode-session"] = session;
+    }
+
+    return headers;
+  }
 
   /**
    * Llama al endpoint de chat completions.
    *
    * @param {{
    *   system: string,
-   *   messages: Array<{role:'user'|'assistant'|'tool', content?:string, tool_call_id?:string, name?:string, tool_calls?:any}>,
-   *   tools?: Array<{type:'function', function:{name, description, parameters}}>,
-   *   toolChoice?: 'auto'|'none'|'required'|{type:'function', function:{name}},
+   *   messages: Array,
+   *   tools?: Array,
+   *   toolChoice?: string|object,
    *   maxTokens?: number,
    *   temperature?: number,
-   *   signal?: AbortSignal
+   *   signal?: AbortSignal,
+   *   sessionId?: string,
    * }} args
-   * @returns {Promise<{content: string|null, toolCalls: Array<{name, arguments, id}>|null, raw: any}>}
+   * @returns {Promise<{content: string|null, toolCalls: Array|null, raw: any}>}
    */
   async function chat(args) {
     const openaiMessages = [{ role: "system", content: args.system }];
@@ -60,22 +84,20 @@ export function createProvider(config) {
     if (args.tools && args.tools.length > 0) {
       body.tools = args.tools;
       body.tool_choice = args.toolChoice ?? "auto";
-      // Pedir paralelismo explícito cuando el proveedor lo soporta:
-      // el orquestador ejecuta las tools en Promise.all.
       body.parallel_tool_calls = true;
     }
 
+    const reqHeaders = buildHeaders(args.sessionId);
+
     const res = await fetch(url, {
       method: "POST",
-      headers,
+      headers: reqHeaders,
       body: JSON.stringify(body),
       signal: args.signal,
     });
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      // Mensajes amigables para los errores de rate limit del proveedor:
-      // 413/429 suelen ser límites de TPM del tier (ej. Groq free: 8000).
       if (res.status === 429 || res.status === 413 || /rate_limit/i.test(text)) {
         throw new Error(
           "El proveedor de IA alcanzó su límite de tokens por minuto (TPM). " +

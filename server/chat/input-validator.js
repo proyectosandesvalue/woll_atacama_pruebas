@@ -112,6 +112,26 @@ function validateHistory(history) {
 }
 
 /**
+ * Valida el campo `sessionId` (opcional).
+ *
+ * Si viene, debe ser un string corto (≤ 100 chars). Si no viene, se
+ * devuelve null y el driver generará uno efímero.
+ */
+function validateSessionId(sessionId) {
+  if (sessionId === undefined || sessionId === null) {
+    return { ok: true, sessionId: null };
+  }
+  if (typeof sessionId !== "string") {
+    return { ok: false, error: "El campo 'sessionId' debe ser un string." };
+  }
+  if (sessionId.length === 0 || sessionId.length > 100) {
+    return { ok: false, error: "El campo 'sessionId' tiene longitud inválida." };
+  }
+  return { ok: true, sessionId };
+}
+
+
+/**
  * Valida el body completo.
  *
  * @param {object} body
@@ -128,10 +148,14 @@ export function validateChatInput(body) {
   const historyResult = validateHistory(body.history);
   if (!historyResult.ok) return historyResult;
 
+  const sessionResult = validateSessionId(body.sessionId);
+  if (!sessionResult.ok) return sessionResult;
+
   return {
     ok: true,
     text: textResult.text,
     history: historyResult.history,
+    sessionId: sessionResult.sessionId,
   };
 }
 
