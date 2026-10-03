@@ -1,3 +1,25 @@
+## Documentación
+
+Antes de tocar código, leé:
+
+- **[Contrato de diseño y desarrollo](docs/CONTRACT.md)** — Reglas que no se rompen.
+- **[Arquitectura](docs/ARCHITECTURE.md)** — Cómo está armado el sistema.
+- **[Guía de desarrollo](docs/DEV_GUIDE.md)** — Setup, comandos, flujo de trabajo.
+- **[Decisiones (ADRs)](docs/DECISIONS/)** — Por qué se tomaron las decisiones clave.
+
+---
+
+## Ambientes
+
+| Ambiente | Repo | Vercel | Supabase | URL |
+|---|---|---|---|---|
+| **Producción** | repo privado (existente) | project prod | project prod | dominio real |
+| **Pruebas** | `woll_atacama_pruebas` | `visor_atacama_pruebas` | `visor_atacama_pruebas` | [wollatacamapruebas.vercel.app](https://wollatacamapruebas.vercel.app) |
+
+El desarrollo se hace en **pruebas**. Cuando una feature está validada, se promueve manualmente a producción (ver [`docs/DECISIONS/004-promocion-manual.md`](docs/DECISIONS/004-promocion-manual.md)).
+
+---
+
 # Plataforma Territorial Water Oriented Living Lab Atacama
 
 > Plataforma WebGIS territorial para la Región de Atacama, Chile, potenciada con Inteligencia Artificial.
