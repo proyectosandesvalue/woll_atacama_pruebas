@@ -5,7 +5,8 @@
   "main": "js/app.js",
   "type": "module",
   "scripts": {
-    "lint": "eslint js/"
+    "lint": "eslint js/ server/",
+    "test": "node --test server/**/*.test.js"
   },
   "devDependencies": {
     "eslint": "^8.57.0"
