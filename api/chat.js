@@ -99,13 +99,19 @@ export default async function handler(req, res) {
     const payload = await runOrchestrator({ text, history });
     return res.status(200).json(payload);
   } catch (err) {
-    console.error("[/api/chat] error:", err);
-    const isConfigError =
-      typeof err?.message === "string" &&
-      err.message.includes("Variable de entorno");
-    const status = isConfigError ? 503 : 500;
-    return res.status(status).json({
-      error: err?.message || "Error interno del chat.",
-    });
-  }
+  const errInfo = {
+    message: err?.message || String(err),
+    name: err?.name || "Error",
+    stack: err?.stack ? String(err.stack).split("\n").slice(0, 3).join(" | ") : "",
+  };
+  console.error("[/api/chat] ERROR:", JSON.stringify(errInfo));
+
+  const isConfigError =
+    typeof err?.message === "string" &&
+    err.message.includes("Variable de entorno");
+  const status = isConfigError ? 503 : 500;
+  return res.status(status).json({
+    error: errInfo.message,
+  });
+}
 }

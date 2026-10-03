@@ -320,14 +320,24 @@ export async function runOrchestrator({ text, history = [] }) {
   let iterations = 0;
 
   while (iterations < maxIterations && Date.now() < deadline) {
-    iterations += 1;
+  iterations += 1;
 
-    const response = await llm.chat({
+  let response;
+  try {
+    response = await llm.chat({
       system,
       messages,
       tools: TOOL_DEFINITIONS,
       toolChoice: "auto",
     });
+  } catch (err) {
+    console.error(
+      `[orchestrator] LLM call failed (iteración ${iterations}):`,
+      err?.message || err,
+      err?.stack || ""
+    );
+    throw err;
+  }
 
     if (!response.toolCalls || response.toolCalls.length === 0) {
       dbg(`iteración ${iterations}: respuesta directa (sin tool_calls)`);
