@@ -274,10 +274,25 @@ function buildChartsFromHistory(history) {
  * @returns {Array<object>} Lista de charts.
  */
 function extractChartableData(data, toolName) {
-  if (!data) return [];
+  if (data == null) return [];
+
+  // ── Caso 0: si es un string, intentar parsear como JSON ──
+  if (typeof data === "string") {
+    try {
+      const parsed = JSON.parse(data);
+      return extractChartableData(parsed, toolName);
+    } catch {
+      return [];
+    }
+  }
 
   // ── Caso A: array plano ──
   if (Array.isArray(data)) {
+    // Desenvolver si es un array con un único elemento que es array
+    if (data.length === 1 && Array.isArray(data[0])) {
+      return extractChartableData(data[0], toolName);
+    }
+
     // A.1 — [{group, value}, ...] → chart de distribución
     if (data.length > 0 && isGroupValueArray(data)) {
       const chart = buildChartFromGroupValue(data);
@@ -302,6 +317,16 @@ function extractChartableData(data, toolName) {
   // ── Caso B: objeto ──
   if (typeof data === "object") {
     const charts = [];
+
+    // B.0 — Desenvolver wrappers: {"func_name": [...]} o {"data": [...]}
+    const keys = Object.keys(data);
+    if (keys.length === 1) {
+      const onlyValue = data[keys[0]];
+      // Si el único valor es un array u objeto, desenvolver
+      if (Array.isArray(onlyValue) || (onlyValue && typeof onlyValue === "object")) {
+        return extractChartableData(onlyValue, toolName);
+      }
+    }
 
     // B.1 — { attributes: [{attr, top_values}, ...] }
     if (Array.isArray(data.attributes)) {
@@ -329,9 +354,15 @@ function extractChartableData(data, toolName) {
       }
     }
 
-    // B.3 — { data: [...] } → recursión por si anida
+    // B.3 — { data: [...] } → recursión
     if (Array.isArray(data.data)) {
       const nested = extractChartableData(data.data, toolName);
+      for (const chart of nested) charts.push(chart);
+    }
+
+    // B.4 — Resultado de RPC envuelto con el nombre de la función
+    if (Array.isArray(data[toolName])) {
+      const nested = extractChartableData(data[toolName], toolName);
       for (const chart of nested) charts.push(chart);
     }
 
