@@ -240,10 +240,12 @@ const MAX_CHART_SLICE = 10;
  * resultado tiene alguna de esas formas, el chart se genera solo.
  */
 function buildChartsFromHistory(history) {
+  console.log(`[charts] === ENTRANDO === history.length=${history.length}`);
   const charts = [];
 
   for (const m of history) {
     if (m.role !== "tool") continue;
+    console.log(`[charts] procesando tool="${m.name}"`)
 
     let parsed;
     try {
@@ -278,6 +280,7 @@ function buildChartsFromHistory(history) {
     }
   }
 
+  console.log(`[charts] === SALIENDO === total=${charts.length}`);
   return charts;
 }
 
@@ -505,6 +508,7 @@ function buildChartFromRows(rows, toolName) {
  * Ejecuta el ciclo: rondas de tools + síntesis forzada.
  */
 export async function runOrchestrator({ text, history = [], sessionId = null }) {
+  console.log(`[orchestrator] === INICIO === texto="${text.slice(0, 80)}"`);
   const budgetMs =
     Number(process.env.ORCHESTRATOR_BUDGET_MS) || DEFAULT_BUDGET_MS;
   const maxIterations =
@@ -534,30 +538,35 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   let iterations = 0;
 
   while (iterations < maxIterations && Date.now() < deadline) {
-  iterations += 1;
+    iterations += 1;
 
-  let response;
-  try {
-    response = await llm.chat({
-      system,
-      messages,
-      tools: TOOL_DEFINITIONS,
-      toolChoice: "auto",
-      sessionId,
-    });
-  } catch (err) {
-    console.error(
-      `[orchestrator] LLM call failed (iteración ${iterations}):`,
-      err?.message || err,
-      err?.stack || ""
-    );
-    throw err;
-  }
+    let response;
+    try {
+      response = await llm.chat({
+        system,
+        messages,
+        tools: TOOL_DEFINITIONS,
+        toolChoice: "auto",
+        sessionId,
+      });
+    } catch (err) {
+      console.error(
+        `[orchestrator] LLM call failed (iteración ${iterations}):`,
+        err?.message || err,
+        err?.stack || ""
+      );
+      throw err;
+    }
 
     if (!response.toolCalls || response.toolCalls.length === 0) {
       dbg(`iteración ${iterations}: respuesta directa (sin tool_calls)`);
       const reply = (response.content || "Sin respuesta.").trim();
-      return { reply, chart: buildChartsFromHistory(messages), geojson: null };
+      console.log(`[orchestrator] === RETURN DIRECTO ===`);
+      return {
+        reply,
+        charts: buildChartsFromHistory(messages),
+        geojson: null,
+      };
     }
 
     dbg(
@@ -602,9 +611,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   if (Date.now() < deadline) {
     try {
       const remaining = Math.max(500, deadline - Date.now());
-      dbg(
-        `síntesis forzada: timeout=${remaining}ms`
-      );
+      dbg(`síntesis forzada: timeout=${remaining}ms`);
       const final = await llm.chat({
         system: SYNTHESIS_SYSTEM_PROMPT,
         messages: buildSynthesisMessages(messages),
@@ -614,9 +621,10 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       const reply = (final.content || "").trim();
       if (reply) {
         dbg(`síntesis forzada OK: ${reply.slice(0, 120)}...`);
+        console.log(`[orchestrator] === RETURN SÍNTESIS ===`);
         return {
           reply,
-          chart: buildChartsFromHistory(messages),
+          charts: buildChartsFromHistory(messages),
           geojson: null,
         };
       }
@@ -627,7 +635,8 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
     dbg("presupuesto agotado antes de la síntesis forzada");
   }
 
-    return {
+  console.log(`[orchestrator] === RETURN FALLBACK ===`);
+  return {
     reply:
       "No pude generar la respuesta a tiempo. Reformula con una pregunta más específica.",
     charts: buildChartsFromHistory(messages),
