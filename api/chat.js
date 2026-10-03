@@ -1,22 +1,41 @@
 /**
  * Endpoint público del chat IA.
  *
- * Recibe {text, history} del frontend y devuelve {reply, chart, geojson}.
- * Esta Function es DELGADA: delega toda la lógica al orquestador.
- *
- * Variables de entorno requeridas:
- *   SUPABASE_URL, SUPABASE_SERVICE_KEY
- *   LLM_BASE_URL, LLM_MODEL, LLM_API_KEY
+ * Pipeline:
+ *   1. CORS + método.
+ *   2. Validar input (text + history) → 400 si falla.
+ *   3. Detectar IP y país → 403 si no hay IP.
+ *   4. Aplicar rate limit (LATAM o estricto) → 429 si excede.
+ *   5. Filtro de scope determinístico → 403 si bloquea.
+ *   6. Clasificador de dominio LLM → 403 si bloquea.
+ *   7. Delegar al orquestador → 200.
  *
  * Compatible con Vercel Functions.
  */
 
 import { runOrchestrator } from "../server/chat/orchestrator.js";
+import { validateChatInput } from "../server/chat/input-validator.js";
+import { checkRateLimit } from "../server/chat/rate-limiter.js";
+import {
+  isLatam,
+  getCountryFromRequest,
+  getIpFromRequest,
+} from "../server/chat/geo-filter.js";
+import { scopeFilter } from "../server/chat/scope-filter.js";
+import { classifyDomain } from "../server/chat/domain-classifier.js";
 
-const MAX_HISTORY_ITEMS = 20;
+// ── Límites ──────────────────────────────────────────────────────
+const LATAM_LIMIT = { perMinute: 20, perBurst: 5 };
+const NON_LATAM_LIMIT = { perMinute: 3, perBurst: 1 };
+
+// ── Mensajes estándar ────────────────────────────────────────────
+const MSG_OUT_OF_SCOPE =
+  "No puedo responder esa pregunta. Soy un asistente especializado " +
+  "en el Visor Territorial de Atacama y solo puedo ayudarte con " +
+  "consultas sobre los datos geoespaciales del portal.";
 
 export default async function handler(req, res) {
-  // CORS (la función se sirve en /api/chat; misma origin en Vercel)
+  // ── CORS ──────────────────────────────────────────────────────
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -29,22 +48,58 @@ export default async function handler(req, res) {
   }
 
   try {
+    // ── Paso 1: validar input ─────────────────────────────────
     const body = req.body || {};
-    const text = typeof body.text === "string" ? body.text : "";
-    const history = Array.isArray(body.history)
-      ? body.history.slice(-MAX_HISTORY_ITEMS)
-      : [];
+    const validation = validateChatInput(body);
 
-    if (!text.trim()) {
-      return res.status(400).json({ error: "Falta el campo 'text'." });
+    if (!validation.ok) {
+      return res.status(400).json({ error: validation.error });
     }
 
-    const payload = await runOrchestrator({ text, history });
+    const { text, history } = validation;
 
+    // ── Paso 2: detectar IP y país ────────────────────────────
+    const ip = getIpFromRequest(req);
+    const country = getCountryFromRequest(req);
+
+    // Si no hay IP, no podemos identificar al usuario → rechazar.
+    // (Podés cambiar esto a fail-open si preferís no bloquear en dev.)
+    if (!ip) {
+      return res.status(403).json({
+        error:
+          "No se pudo identificar tu conexión. Verifica que no estés " +
+          "usando un proxy que oculte tu IP.",
+      });
+    }
+
+    // ── Paso 3: rate limiting ─────────────────────────────────
+    const limits = isLatam(country) ? LATAM_LIMIT : NON_LATAM_LIMIT;
+    const rate = checkRateLimit(ip, limits.perMinute, limits.perBurst);
+
+    if (!rate.ok) {
+      res.setHeader("Retry-After", String(rate.retryAfterSeconds));
+      return res.status(429).json({
+        error: `Demasiadas solicitudes. Intenta de nuevo en ${rate.retryAfterSeconds} segundos.`,
+      });
+    }
+
+    // ── Paso 4: scope filter (capa 1, rápida) ─────────────────
+    const scope = scopeFilter(text);
+    if (scope.blocked) {
+      return res.status(403).json({ error: MSG_OUT_OF_SCOPE });
+    }
+
+    // ── Paso 5: domain classifier (capa 2, LLM) ───────────────
+    const domain = await classifyDomain(text);
+    if (domain === "OUT") {
+      return res.status(403).json({ error: MSG_OUT_OF_SCOPE });
+    }
+
+    // ── Paso 6: orquestador ───────────────────────────────────
+    const payload = await runOrchestrator({ text, history });
     return res.status(200).json(payload);
   } catch (err) {
     console.error("[/api/chat] error:", err);
-    // Distinguimos config faltante (503) de error genérico (500).
     const isConfigError =
       typeof err?.message === "string" &&
       err.message.includes("Variable de entorno");
