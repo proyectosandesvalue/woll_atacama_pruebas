@@ -88,6 +88,20 @@ Reglas de formato de respuesta:
     - NO uses tablas si son más de 6-7 filas; en su lugar, resume en texto.
 15. NUNCA muestres la misma información como tabla Y como gráfico. Es redundante.
 16. Cuando el resultado sea una lista simple, usa listas con viñetas (-) en lugar de tablas.
+Reglas de gráficos:
+17. IMPORTANTE: cuando la pregunta incluya "por comuna", "por provincia",
+    "por región", "distribución por X", "cómo se distribuye", "en qué X
+    hay más", "cuántos por X" (donde X es una columna o división admin),
+    SIEMPRE usa aggregate_by_admin (o aggregate_by_admin_and_column si
+    hay doble agrupación). NO uses get_layer_stats ni query_layer en
+    esos casos.
+18. Si la pregunta pide totales generales (ej: "¿cuántas lagunas hay en
+    total?") pero además pide su distribución por algún campo, preferí
+    hacer aggregate_by_admin o aggregate_layer. El frontend dibuja el
+    gráfico automáticamente.
+19. Si la pregunta pide múltiples análisis (ej: "distribución por provincia
+    y por tipo"), podés llamar múltiples tools en una misma respuesta.
+    El sistema genera un gráfico por cada agregación.
 `;
 
 // ── Reglas de lenguaje según modo verbose ─────────────────────
@@ -248,14 +262,31 @@ function inferAggregateMeta(history) {
 }
 
 /**
- * Busca el último resultado de agregación (aggregate_layer o
- * aggregate_by_admin) en el historial y construye el payload del chart.
+ * Detecta TODOS los charts posibles desde el historial de tool_calls.
+ *
+ * Devuelve un array de charts (puede haber 0, 1 o varios).
+ * Reconoce:
+ *   - aggregate_layer: {group, value} → chart directo.
+ *   - aggregate_by_admin: {group, value} → chart directo.
+ *   - aggregate_near_layer: {group, value} → chart directo.
+ *   - get_layer_stats: {attributes: [{attr, top_values}]} → charts de distribuciones.
+ *   - get_layer_schema: {columns: [{name, top_values}]} → charts de distribuciones.
+ *   - query_layer: filas con campos numéricos → chart de conteo simple.
+ *
+ * Cada tool puede generar 0, 1 o varios charts.
  */
-function buildChartFromHistory(history) {
-  for (let i = history.length - 1; i >= 0; i--) {
+// NOTA (Fase 3): este orquestador puede devolver MÚLTIPLES charts
+// en el campo `charts` (array). El cliente HTTP (`api/chat.js`)
+// normaliza a `chart` (singular) cuando hay exactamente 1, para
+// compatibilidad con clientes antiguos.
+function buildChartsFromHistory(history) {
+  const charts = [];
+
+  for (let i = 0; i < history.length; i++) {
     const m = history[i];
     if (m.role !== "tool") continue;
-    if (m.name !== "aggregate_layer" && m.name !== "aggregate_by_admin") continue;
+
+    const toolName = m.name;
 
     let parsed;
     try {
@@ -263,28 +294,194 @@ function buildChartFromHistory(history) {
     } catch {
       continue;
     }
-    if (!Array.isArray(parsed) || parsed.length === 0) continue;
-    if (typeof parsed[0] !== "object" || !("group" in parsed[0]) || !("value" in parsed[0])) {
+
+    // ── Tools de agregación directa: {group, value} ──
+    if (
+      toolName === "aggregate_layer" ||
+      toolName === "aggregate_by_admin" ||
+      toolName === "aggregate_near_layer"
+    ) {
+      const chart = buildChartFromAggregate(toolName, parsed, history);
+      if (chart) charts.push(chart);
       continue;
     }
 
-    const { metric, groupBy } = inferAggregateMeta(history);
-    const totalGroups = parsed.length;
-    const sliced = parsed.slice(0, MAX_CHART_SLICE);
+    // ── get_layer_stats: atributos con top_values ──
+    if (toolName === "get_layer_stats" && parsed && typeof parsed === "object") {
+      const stats = Array.isArray(parsed) ? parsed[0] : parsed;
+      if (stats?.attributes && Array.isArray(stats.attributes)) {
+        // Tomamos el atributo con más top_values (el más informativo)
+        const bestAttr = stats.attributes
+          .filter((a) => Array.isArray(a.top_values) && a.top_values.length >= 2)
+          .sort((a, b) => (b.top_values?.length || 0) - (a.top_values?.length || 0))[0];
 
-    let type = "bar";
-    if (totalGroups <= PIE_MAX_GROUPS) type = "pie";
-    else if (totalGroups > BAR_MAX_GROUPS) type = "horizontalBar";
+        if (bestAttr) {
+          const chart = buildChartFromTopValues(
+            bestAttr.attr,
+            bestAttr.top_values,
+            stats.display_name
+          );
+          if (chart) charts.push(chart);
+        }
+      }
+      continue;
+    }
 
-    return {
-      type,
-      title: deriveChartTitle(parsed, metric, groupBy),
-      labels: sliced.map((r) => String(r.group)),
-      values: sliced.map((r) => Number(r.value)),
-      totalGroups,
-    };
+    // ── get_layer_schema: columnas con top_values ──
+    if (toolName === "get_layer_schema" && parsed && typeof parsed === "object") {
+      const schema = Array.isArray(parsed) ? parsed[0] : parsed;
+      if (schema?.columns && Array.isArray(schema.columns)) {
+        const bestCol = schema.columns
+          .filter((c) => Array.isArray(c.top_values) && c.top_values.length >= 2)
+          .sort((a, b) => (b.top_values?.length || 0) - (a.top_values?.length || 0))[0];
+
+        if (bestCol) {
+          const chart = buildChartFromTopValues(
+            bestCol.name,
+            bestCol.top_values,
+            schema.layer_id
+          );
+          if (chart) charts.push(chart);
+        }
+      }
+      continue;
+    }
+
+    // ── query_layer: muchas filas → contar por el campo más repetido ──
+    if (toolName === "query_layer" && Array.isArray(parsed) && parsed.length >= 3) {
+      const chart = buildChartFromRows(parsed);
+      if (chart) charts.push(chart);
+      continue;
+    }
   }
-  return null;
+
+  return charts;
+}
+
+/**
+ * Construye un chart desde el resultado de una tool de agregación
+ * (aggregate_layer, aggregate_by_admin, aggregate_near_layer).
+ *
+ * Formato esperado: [{group, value}, ...]
+ */
+function buildChartFromAggregate(toolName, parsed, history) {
+  if (!Array.isArray(parsed) || parsed.length === 0) return null;
+  if (typeof parsed[0] !== "object" || !("group" in parsed[0]) || !("value" in parsed[0])) {
+    return null;
+  }
+
+  const { metric, groupBy } = inferAggregateMeta(history);
+  const totalGroups = parsed.length;
+  const sliced = parsed.slice(0, MAX_CHART_SLICE);
+
+  let type = "bar";
+  if (totalGroups <= PIE_MAX_GROUPS) type = "pie";
+  else if (totalGroups > BAR_MAX_GROUPS) type = "horizontalBar";
+
+  return {
+    type,
+    title: deriveChartTitle(parsed, metric, groupBy),
+    labels: sliced.map((r) => String(r.group)),
+    values: sliced.map((r) => Number(r.value)),
+    totalGroups,
+  };
+}
+
+/**
+ * Construye un chart desde top_values de un atributo.
+ *
+ * Formato esperado: [{value, count, pct}, ...]
+ *
+ * @param {string} attrName - Nombre del atributo.
+ * @param {Array} topValues - Lista de top values.
+ * @param {string} [contextName] - Nombre visible de la capa (para el título).
+ */
+function buildChartFromTopValues(attrName, topValues, contextName = null) {
+  if (!Array.isArray(topValues) || topValues.length < 2) return null;
+
+  const labels = topValues.map((t) => String(t.value ?? t.group ?? "?"));
+  const values = topValues.map((t) => Number(t.count ?? t.value ?? 0));
+
+  if (values.every((v) => v === 0)) return null;
+
+  const totalGroups = topValues.length;
+  let type = "bar";
+  if (totalGroups <= PIE_MAX_GROUPS) type = "pie";
+  else if (totalGroups > BAR_MAX_GROUPS) type = "horizontalBar";
+
+  const titlePrefix = contextName ? `${contextName}: ` : "";
+  const title = `${titlePrefix}Distribución por ${attrName} (top ${totalGroups})`;
+
+  return {
+    type,
+    title,
+    labels,
+    values,
+    totalGroups,
+  };
+}
+
+/**
+ * Construye un chart desde filas concretas de query_layer.
+ *
+ * Idea: encontrar la columna categórica con más repeticiones y contar.
+ * Si no hay categórica clara, devolver null.
+ */
+function buildChartFromRows(rows) {
+  if (!Array.isArray(rows) || rows.length < 3) return null;
+
+  // Detectar columnas del primer row
+  const first = rows[0];
+  if (!first || typeof first !== "object") return null;
+
+  const columns = Object.keys(first);
+
+  // Para cada columna, calcular "cuántas veces se repite el valor más común".
+  // La columna con mejor ratio (más repetida y con pocos valores únicos) gana.
+  let best = null;
+  for (const col of columns) {
+    const valueCounts = new Map();
+    for (const row of rows) {
+      const v = row[col];
+      if (v === null || v === undefined) continue;
+      const key = String(v);
+      valueCounts.set(key, (valueCounts.get(key) || 0) + 1);
+    }
+    const uniqueCount = valueCounts.size;
+    const maxCount = Math.max(...valueCounts.values());
+
+    // Criterio: al menos 2 valores únicos, y el más común aparece ≥ 2 veces.
+    // Preferimos columnas con pocos valores únicos (categóricas).
+    if (uniqueCount < 2 || maxCount < 2) continue;
+    if (uniqueCount > 20) continue; // demasiado única (es un ID)
+
+    const score = maxCount / uniqueCount; // cuánto "concentra" la moda
+    if (!best || score > best.score) {
+      best = { col, valueCounts, score };
+    }
+  }
+
+  if (!best) return null;
+
+  const entries = Array.from(best.valueCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, MAX_CHART_SLICE);
+
+  const labels = entries.map(([v]) => v);
+  const values = entries.map(([, c]) => c);
+  const totalGroups = best.valueCounts.size;
+
+  let type = "bar";
+  if (totalGroups <= PIE_MAX_GROUPS) type = "pie";
+  else if (totalGroups > BAR_MAX_GROUPS) type = "horizontalBar";
+
+  return {
+    type,
+    title: `Distribución por ${best.col} (top ${labels.length})`,
+    labels,
+    values,
+    totalGroups,
+  };
 }
 
 /**
@@ -343,7 +540,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
     if (!response.toolCalls || response.toolCalls.length === 0) {
       dbg(`iteración ${iterations}: respuesta directa (sin tool_calls)`);
       const reply = (response.content || "Sin respuesta.").trim();
-      return { reply, chart: buildChartFromHistory(messages), geojson: null };
+      return { reply, chart: buildChartsFromHistory(messages), geojson: null };
     }
 
     dbg(
@@ -402,7 +599,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
         dbg(`síntesis forzada OK: ${reply.slice(0, 120)}...`);
         return {
           reply,
-          chart: buildChartFromHistory(messages),
+          chart: buildChartsFromHistory(messages),
           geojson: null,
         };
       }
@@ -413,10 +610,10 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
     dbg("presupuesto agotado antes de la síntesis forzada");
   }
 
-  return {
+    return {
     reply:
       "No pude generar la respuesta a tiempo. Reformula con una pregunta más específica.",
-    chart: buildChartFromHistory(messages),
+    charts: buildChartsFromHistory(messages),
     geojson: null,
   };
 }

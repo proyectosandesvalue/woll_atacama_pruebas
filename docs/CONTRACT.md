@@ -152,6 +152,7 @@ woll_atacama_pruebas/
 ```json
 {
   "reply": "string",
+  "geojson": { "type": "FeatureCollection", "features": [...] } | null,
   "chart": {
     "type": "pie" | "bar" | "horizontalBar" | "line",
     "title": "string",
@@ -159,32 +160,36 @@ woll_atacama_pruebas/
     "values": [1, 2, 3],
     "totalGroups": 12
   } | null,
-  "geojson": { "type": "FeatureCollection", "features": [...] } | null,
+  "charts": [
+    { "type": "pie", "title": "...", "labels": [...], "values": [...], "totalGroups": N },
+    { "type": "bar", "title": "...", "labels": [...], "values": [...], "totalGroups": N }
+  ],
   "citations": [
-    { "type": "layer", "id": "desaladoras", "label": "Plantas Desaladoras" },
-    { "type": "document", "id": "uuid", "page": 12, "snippet": "..." }
+    { "type": "layer", "id": "desaladoras", "label": "Plantas Desaladoras" }
   ]
 }
 
 Reglas:
 
-reply siempre presente (nunca vacío).
-
-chart, geojson, citations opcionales. null si no aplican.
-
-El frontend tolera todos los campos ausentes.
-
-Cualquier cambio al contrato requiere actualizar frontend y backend en el mismo commit.
+- reply siempre presente (nunca vacío).
+- chart, geojson, citations opcionales. null si no aplican.
+- El frontend tolera todos los campos ausentes.
+- Cualquier cambio al contrato requiere actualizar frontend y backend en el mismo commit.
 
 6.2. Tools
 
-Una tool = un archivo en server/chat/tools/ (a migrar).
+- Una tool = un archivo en server/chat/tools/ (a migrar).
+- Cada archivo exporta { schema, run, normalizeArgs }.
+- El registro solo lista archivos, no define lógica.
+- Agregar una tool = 1 archivo nuevo + 1 línea en el registro.
 
-Cada archivo exporta { schema, run, normalizeArgs }.
-
-El registro solo lista archivos, no define lógica.
-
-Agregar una tool = 1 archivo nuevo + 1 línea en el registro.
+**Reglas del contrato de gráficos**:
+- `charts` (plural) es el campo canónico. Contiene 0, 1 o varios gráficos.
+- `chart` (singular) se mantiene **solo por compatibilidad** durante la transición.
+  - Si hay 1 chart: `chart` = ese chart, `charts` = `[ese chart]`.
+  - Si hay 0 o 2+: `chart` = `null`, `charts` = lista completa.
+- El frontend debe usar `charts` si está presente y no vacío, sino `chart`.
+- Cuando se estabilice la migración, `chart` se eliminará.
 
 6.3. Cero SQL generado por el LLM
 

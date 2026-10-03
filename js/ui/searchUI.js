@@ -16,7 +16,7 @@ export function initSearchUI(map) {
   });
 
   if (searchInput) {
-    function renderResults(results) {
+    const renderResults = (results) => {
       if (!searchResultsAnchor) return;
       searchResultsAnchor.innerHTML = '';
       if (!results || results.length === 0) {
@@ -61,7 +61,7 @@ export function initSearchUI(map) {
         resultsContainer.appendChild(moreItem);
       }
       searchResultsAnchor.appendChild(resultsContainer);
-    }
+    };
 
     searchInput.addEventListener('input', function (e) {
       const query = e.target.value.trim();
@@ -132,7 +132,7 @@ export function initSearchUI(map) {
   mobileSearchCloseBtn?.addEventListener('click', closeMobileSearch);
 
   if (mobileSearchInput && mobileSearchResultsAnchor) {
-    function renderMobileResults(results) {
+    const renderMobileResults = (results) => {
       mobileSearchResultsAnchor.innerHTML = '';
       if (!results || results.length === 0) {
         mobileSearchResultsAnchor.style.display = 'none';
@@ -175,7 +175,7 @@ export function initSearchUI(map) {
         container.appendChild(more);
       }
       mobileSearchResultsAnchor.appendChild(container);
-    }
+    };
 
     let mobileDebounce = null;
     mobileSearchInput.addEventListener('input', function (e) {

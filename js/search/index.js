@@ -377,7 +377,7 @@ function parseQuery(query) {
         let value = (match[2] || match[4]).toLowerCase();
         if (value.startsWith('"')) value = value.slice(1);
         if (value.endsWith('"')) value = value.slice(0, -1);
-        if (operators.hasOwnProperty(key)) {
+        if (Object.hasOwn(operators, key)) {
             operators[key] = value;
         }
         processedQuery = processedQuery.replace(match[0], '').trim();

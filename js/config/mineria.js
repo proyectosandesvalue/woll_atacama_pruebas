@@ -247,7 +247,6 @@ const mineriaConfig = {
         "Cu, Co": "cu_co2.png",
         "Cu, Co-(Au)": "cu_co_au.png",
         "Cu, Co, U": "cu_co_u.png",
-        "Cu, Fe": "cu_fe3.png",
         "Cu, Fe-(Au, Ag)": "cu_fe_au_ag.png",
         "Cu, Fe-(Au)": "cu_fe_au2.png",
         "Cu, Fe, Au": "Cu_fe_au3",

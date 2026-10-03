@@ -298,7 +298,7 @@ const agriculturaConfig = {
         V: "#490606ff",
         VI: "#FCB0B3",
         VII: "#FF5552",
-        VII: "#fd0505ff",
+        VIII: "#fd0505ff",
         "N.C.": "#68a8ddff",
       },
       popupCampos: [

@@ -244,26 +244,29 @@ export function crearElementoCapa(
     });
   }
 
-  const menuBtn = listItem.querySelector(".layer-menu-btn");
+   const menuBtn = listItem.querySelector(".layer-menu-btn");
   const menuOptions = listItem.querySelector(".layer-options-menu");
+
   if (menuBtn && menuOptions) {
     const menuOriginalParent = menuOptions.parentElement;
 
-    function openMenu() {
-      document.querySelectorAll(".layer-options-menu.show").forEach((menu) => {
-        if (menu !== menuOptions) closeOtherMenu(menu);
-      });
-      document.querySelectorAll(".menu-open-context").forEach((el) => {
-        if (el !== listItem) el.classList.remove("menu-open-context");
-      });
+    const closeOtherMenu = (menu) => {
+      menu.classList.remove("show");
+      const li =
+        menu._originalParent?.closest(".layer-item-container") ||
+        menu.closest(".layer-item-container");
+      if (li) li.classList.remove("menu-open-context");
+      if (menu.parentElement === document.body && menu._originalParent) {
+        menu._originalParent.appendChild(menu);
+        menu.style.position = "";
+        menu.style.top = "";
+        menu.style.left = "";
+        menu.style.right = "";
+        menu.style.zIndex = "";
+      }
+    };
 
-      document.body.appendChild(menuOptions);
-      menuOptions.classList.add("show");
-      listItem.classList.add("menu-open-context");
-      repositionMenu();
-    }
-
-    function repositionMenu() {
+    const repositionMenu = () => {
       const btnRect = menuBtn.getBoundingClientRect();
       const menuWidth = menuOptions.offsetWidth || 180;
       let left = btnRect.right - menuWidth;
@@ -280,9 +283,23 @@ export function crearElementoCapa(
       menuOptions.style.left = `${left}px`;
       menuOptions.style.right = "auto";
       menuOptions.style.zIndex = "99999";
-    }
+    };
 
-    function closeMenu() {
+    const openMenu = () => {
+      document.querySelectorAll(".layer-options-menu.show").forEach((menu) => {
+        if (menu !== menuOptions) closeOtherMenu(menu);
+      });
+      document.querySelectorAll(".menu-open-context").forEach((el) => {
+        if (el !== listItem) el.classList.remove("menu-open-context");
+      });
+
+      document.body.appendChild(menuOptions);
+      menuOptions.classList.add("show");
+      listItem.classList.add("menu-open-context");
+      repositionMenu();
+    };
+
+    const closeMenu = () => {
       menuOptions.classList.remove("show");
       listItem.classList.remove("menu-open-context");
       if (menuOptions.parentElement !== menuOriginalParent) {
@@ -293,24 +310,7 @@ export function crearElementoCapa(
         menuOptions.style.right = "";
         menuOptions.style.zIndex = "";
       }
-    }
-
-    function closeOtherMenu(menu) {
-      menu.classList.remove("show");
-      // Buscar el li dueño del menú (no el primer .menu-open-context del DOM).
-      const li =
-        menu._originalParent?.closest(".layer-item-container") ||
-        menu.closest(".layer-item-container");
-      if (li) li.classList.remove("menu-open-context");
-      if (menu.parentElement === document.body && menu._originalParent) {
-        menu._originalParent.appendChild(menu);
-        menu.style.position = "";
-        menu.style.top = "";
-        menu.style.left = "";
-        menu.style.right = "";
-        menu.style.zIndex = "";
-      }
-    }
+    };
 
     menuOptions._originalParent = menuOriginalParent;
 
@@ -441,8 +441,6 @@ export function crearElementoCapa(
   subLayerCheckboxes.forEach((subCb) => {
     subCb.addEventListener("change", (e) => {
       const isSubChecked = e.target.checked;
-      // `dataset.valor` ya nos da el valor original (el navegador
-      // decodifica las entidades HTML del atributo automáticamente).
       const val = e.target.dataset.valor || "";
 
       let hiddenSet = appState.layers.hiddenAttributes.get(capaNombre);
@@ -464,7 +462,7 @@ export function crearElementoCapa(
   });
 
   return listItem;
-}
+} 
 
 export function syncIndividualCheckboxes(capaNombre, checkedState) {
   const mainCheckbox = document.getElementById(

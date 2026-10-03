@@ -1,0 +1,35 @@
+{
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "node": true,
+    "worker": true
+  },
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "extends": "eslint:recommended",
+  "globals": {
+    "L": "readonly",
+    "turf": "readonly",
+    "Chart": "readonly",
+    "DOMPurify": "readonly",
+    "WebGLDebugUtils": "readonly",
+    "createWebGLHeatmap": "readonly"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console": "off",
+    "no-empty": ["error", { "allowEmptyCatch": true }]
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    "js/lib/glify-browser.js",
+    "js/utils/webgl-heatmap.js",
+    "js/utils/leaflet-webgl-heatmap.js",
+    "geojson/",
+    "assets/",
+    "*.min.js"
+  ]
+}

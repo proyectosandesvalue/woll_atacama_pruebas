@@ -1142,6 +1142,23 @@
   padding: 14px;
 }
 
+.ai-chart + .ai-chart {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.ai-charts-divider {
+  margin-top: 10px;
+  margin-bottom: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-tertiary);
+  opacity: 0.8;
+}
+
 .ai-message {
   max-width: 88%;
   padding: 9px 12px;

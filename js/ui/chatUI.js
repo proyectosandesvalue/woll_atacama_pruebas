@@ -81,11 +81,30 @@ function addMessage(payload, sender) {
 
   const text = typeof payload === "string" ? payload : payload?.reply || "";
 
-  // Detección de bloques: párrafos, tablas, listas
   renderRichText(text, msg);
 
-  if (typeof payload === "object" && payload?.chart) {
-    renderChart(payload.chart, msg);
+  // Si hay más de 1 chart, mostramos un separador visual.
+  if (Array.isArray(payload?.charts) && payload.charts.length > 1) {
+    const divider = document.createElement("div");
+    divider.className = "ai-charts-divider";
+    divider.textContent = `${payload.charts.length} gráficos`;
+    msg.appendChild(divider);
+  }
+
+  // Render de gráficos.
+  //  1. Preferimos `charts` (array) si existe y tiene items.
+  //  2. Fallback a `chart` (singular) por compatibilidad con respuestas antiguas.
+  //  3. Si hay varios charts, se apilan verticalmente en orden.
+  if (typeof payload === "object" && payload) {
+    const chartsList = Array.isArray(payload.charts) && payload.charts.length > 0
+      ? payload.charts
+      : (payload.chart ? [payload.chart] : []);
+
+    for (const chart of chartsList) {
+      if (chart && typeof chart === "object") {
+        renderChart(chart, msg);
+      }
+    }
   }
 
   messagesEl.appendChild(msg);
