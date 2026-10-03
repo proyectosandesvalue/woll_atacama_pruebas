@@ -28,24 +28,54 @@ const CACHE_MAX_SIZE = 200;
 /** @type {Map<string, {result: "IN"|"OUT", expires: number}>} */
 const cache = new Map();
 
-const CLASSIFIER_SYSTEM_PROMPT = `Eres un clasificador binario. Tu única tarea es decidir si la consulta del usuario pertenece al dominio del Visor Territorial de Atacama.
+// ═══════════════════════════════════════════════════════════════
+// AQUÍ VA EL PROMPT NUEVO (Fix B)
+// ═══════════════════════════════════════════════════════════════
+const CLASSIFIER_SYSTEM_PROMPT = `Eres un clasificador binario. Tu ÚNICA tarea es decidir si la consulta del usuario es ESPECÍFICAMENTE sobre el Visor Territorial de Atacama (Región de Atacama, Chile) o sobre sus datos geoespaciales.
 
-DOMINIO (responde IN):
-- Geografía, comunas, provincias, regiones de Atacama (Chile).
-- Capas del visor: agua, energía, minería, agricultura, clima, riesgos, suelo, planificación, áreas protegidas.
+CRITERIO DE DOMINIO: una consulta es del dominio si y solo si:
+  1. El TEMA es del visor (agua, clima, energía, minería, agricultura, riesgos, suelo, planificación, etc.), Y
+  2. El TERRITORIO es la Región de Atacama (Chile): sus comunas (Copiapó, Vallenar, Diego de Almagro, Tierra Amarilla, Alto del Carmen, Huasco, Freirina, Chañaral, Caldera) o la región en general.
+
+DOMINIO — responde "IN":
+- Capas y datos del visor: agua, energía, minería, agricultura, clima (de Atacama), riesgos, suelo, planificación territorial, áreas protegidas, hidrografía.
+- Comunas de Atacama: Copiapó, Vallenar, Diego de Almagro, Tierra Amarilla, Alto del Carmen, Huasco, Freirina, Chañaral, Caldera.
+- Elementos territoriales EN Atacama: plantas desaladoras, derechos de agua, yacimientos, glaciares, humedales, salares, cuencas, embalses, plantas solares, líneas de transmisión, relaves.
 - Estadísticas y análisis de esas capas.
-- Ubicaciones, coordenadas, elementos territoriales dentro de Atacama.
-- Consultas sobre plantas desaladoras, derechos de agua, yacimientos, glaciares, etc., aunque usen palabras como "cuánto", "cuesta", "vale" — porque son del dominio.
 
-FUERA DE DOMINIO (responde OUT):
-- Generación de código, programación, scripts, funciones.
-- Precios de productos de consumo (iPhone, autos, casas fuera de Atacama, suscripciones).
-- Chistes, entretenimiento, temas personales.
-- Noticias generales, política, deportes.
-- Matemáticas puras, ciencia general.
-- Cualquier tema no relacionado con Atacama o sus datos territoriales.
+FUERA DE DOMINIO — responde "OUT" (CUALQUIER otra cosa):
+- Tema del visor pero territorio NO Atacama (ej: "clima en Valdivia", "población de Santiago", "glaciares de Argentina").
+- Hora, fecha, día actual ("qué día es hoy", "qué hora es").
+- Geografía general del mundo que NO sea Atacama.
+- Programación, código, scripts, funciones.
+- Precios de productos.
+- Chistes, entretenimiento, consejos personales.
+- Noticias, política, deportes, matemáticas generales.
+- Conversación casual ("cómo estás", "quién eres", "qué puedes hacer").
 
-Responde SOLO con la palabra "IN" o "OUT". Nada más. Sin explicaciones.`;
+REGLA CRÍTICA: si dudás, responde "OUT".
+
+EJEMPLOS:
+- "¿cuántas lagunas hay por comuna?" → IN
+- "¿cómo estará el clima mañana en Copiapó?" → IN
+- "¿cómo estará el clima mañana en Valdivia?" → OUT
+- "¿cuántos glaciares hay en Argentina?" → OUT
+- "que dia es hoy" → OUT
+- "qué hora es en China" → OUT
+- "cómo estás" → OUT
+- "quién eres" → OUT
+- "qué puedes hacer" → OUT
+- "cuánto cuesta un iPhone" → OUT
+- "muéstrame los glaciares de Atacama" → IN
+- "clima en Italia" → OUT
+- "dónde queda París" → OUT
+- "¿cuál es la población de Copiapó?" → IN
+- "¿cuál es la población de Santiago?" → OUT
+
+Responde SOLO con "IN" o "OUT". Nada más.`;
+// ═══════════════════════════════════════════════════════════════
+// FIN DEL PROMPT NUEVO
+// ═══════════════════════════════════════════════════════════════
 
 /**
  * Genera una clave de cache a partir del texto.
@@ -67,7 +97,6 @@ function getFromCache(key) {
 
 function setInCache(key, result) {
   if (cache.size >= CACHE_MAX_SIZE) {
-    // Eliminar la entrada más antigua
     const firstKey = cache.keys().next().value;
     cache.delete(firstKey);
   }
@@ -84,7 +113,7 @@ function setInCache(key, result) {
  */
 export async function classifyDomain(text) {
   if (typeof text !== "string" || text.trim().length === 0) {
-    return "IN"; // sin texto, no hay nada que filtrar
+    return "IN";
   }
 
   const key = cacheKey(text);

@@ -103,6 +103,41 @@ test("case-insensitive", () => {
   assert.strictEqual(out.blocked, true);
 });
 
+// ── Consultas temporales genéricas ──
+
+test("bloquea 'qué día es hoy'", () => {
+  const out = scopeFilter("que dia es hoy");
+  assert.strictEqual(out.blocked, true);
+});
+
+test("bloquea 'qué fecha es'", () => {
+  const out = scopeFilter("qué fecha es hoy");
+  assert.strictEqual(out.blocked, true);
+});
+
+test("bloquea 'qué hora es'", () => {
+  const out = scopeFilter("qué hora es");
+  assert.strictEqual(out.blocked, true);
+});
+
+test("bloquea 'cuál es la fecha'", () => {
+  const out = scopeFilter("cuál es la fecha actual");
+  assert.strictEqual(out.blocked, true);
+});
+
+test("bloquea 'en qué año estamos'", () => {
+  const out = scopeFilter("en qué año estamos");
+  assert.strictEqual(out.blocked, true);
+});
+
+// ── Conversación casual ──
+// (si agregás los patrones correspondientes)
+
+test("NO bloquea consulta del dominio con fecha", () => {
+  const out = scopeFilter("¿en qué fecha se promulgó la ley de glaciares?");
+  assert.strictEqual(out.blocked, false);
+});
+
 // ── Estructura de patrones ────────────────────────────────────
 
 test("SCOPE_PATTERNS es un array no vacío", () => {

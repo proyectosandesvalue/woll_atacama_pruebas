@@ -52,6 +52,21 @@ const BLOCK_PATTERNS = [
     reason: "no puedo dar consejos personales",
     regex: /\b(dame\s+consejos?\s+(?:para|sobre)\s+(?:mi\s+vida|mi\s+relaci[óo]n|mi\s+pareja|amor|salud|dinero|inversiones?)|c[óo]mo\s+hago\s+para\s+ser\s+rico|terapia|psic[óo]logo)\b/i,
   },
+    // ── Consultas temporales genéricas ──
+    // ── Consultas temporales genéricas ──
+  {
+    name: "temporal_queries",
+    reason: "no puedo responder consultas temporales generales",
+    regex: /\b(qu[eé]\s+(d[íi]a|fecha|hora)\s+es\s+(hoy|ahora|actualmente)|qu[eé]\s+d[íi]a\s+estamos|fecha\s+actual|hora\s+actual|d[íi]a\s+de\s+hoy|cu[áa]l\s+es\s+la\s+fecha|en\s+qu[eé]\s+a[ñn]o\s+estamos|qu[eé]\s+hora\s+es)\b/i,
+  },
+
+  // ── Tema del visor + territorio fuera de Atacama ──
+  {
+    name: "domain_topic_other_territory",
+    reason: "solo puedo responder sobre la Región de Atacama",
+    regex: /\b(clima|tiempo|temperatura|lluvia|viento|pron[óo]stico|meteorolog[íi]a|poblaci[óo]n|habitantes|relieve|r[íi]os|lagos|monta[ñn]as|ciudades)\b[^.]{0,80}\ben\s+(valdivia|concepci[óo]n|temuco|puerto\s+montt|punta\s+arenas|santiago|valpara[íi]so|antofagasta|iquique|la\s+serena|serena|coquimbo|rancagua|talca|chill[áa]n|osorno|castro|ancud|arica|frutillar|puerto\s+varas|argentina|brasil|per[úu]|bolivia|paraguay|uruguay|ecuador|colombia|venezuela|m[é]xico|estados\s+unidos|eeuu|usa|canad[áa]|espa[ñn]a|francia|italia|alemania|reino\s+unido|inglaterra|china|jap[óo]n|corea|india|rusia|australia|par[íi]s|londres|madrid|roma|berl[íi]n|nueva\s+york|tokio|beijing)\b/i,
+  },
+
   // ── Prompts para jailbreak obvio ──
   {
     name: "jailbreak_attempt",
