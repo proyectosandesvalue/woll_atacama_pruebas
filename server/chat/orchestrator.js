@@ -252,12 +252,27 @@ function buildChartsFromHistory(history) {
       continue;
     }
 
-    // Si la tool devolvió un error, no intentes graficar.
+    // LOG DE DIAGNÓSTICO
+    if (DEBUG) {
+      console.log(
+        `[charts] tool="${m.name}" | tipo=${Array.isArray(parsed) ? "array" : typeof parsed} | ` +
+        `preview=${JSON.stringify(parsed).slice(0, 300)}`
+      );
+    }
+    // FIN LOG
+
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && "error" in parsed) {
       continue;
     }
 
     const toolCharts = extractChartableData(parsed, m.name);
+
+    // LOG DE DIAGNÓSTICO
+    if (DEBUG) {
+      console.log(`[charts] ${m.name} → ${toolCharts.length} chart(s) generado(s)`);
+    }
+    // FIN LOG
+
     for (const chart of toolCharts) {
       charts.push(chart);
     }
