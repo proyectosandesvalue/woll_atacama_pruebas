@@ -88,6 +88,7 @@ Reglas de formato de respuesta:
     - NO uses tablas si son más de 6-7 filas; en su lugar, resume en texto.
 15. NUNCA muestres la misma información como tabla Y como gráfico. Es redundante.
 16. Cuando el resultado sea una lista simple, usa listas con viñetas (-) en lugar de tablas.
+
 Reglas de gráficos:
 17. IMPORTANTE: cuando la pregunta incluya "por comuna", "por provincia",
     "por región", "distribución por X", "cómo se distribuye", "en qué X
@@ -102,6 +103,7 @@ Reglas de gráficos:
 19. Si la pregunta pide múltiples análisis (ej: "distribución por provincia
     y por tipo"), podés llamar múltiples tools en una misma respuesta.
     El sistema genera un gráfico por cada agregación.
+
 `;
 
 // ── Reglas de lenguaje según modo verbose ─────────────────────
@@ -212,81 +214,36 @@ function buildSynthesisMessages(history) {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Detección de chart
+// Detección de charts (agnóstica de la tool)
 // ─────────────────────────────────────────────────────────────────
 
 const PIE_MAX_GROUPS = 6;
 const BAR_MAX_GROUPS = 20;
 const MAX_CHART_SLICE = 10;
 
-function deriveChartTitle(parsed, metric, groupBy) {
-  const n = Math.min(MAX_CHART_SLICE, parsed.length);
-  if (metric === "count") {
-    return `Distribución por ${groupBy} (top ${n})`;
-  }
-  const metricLabel = { avg: "Promedio", sum: "Suma", min: "Mínimo", max: "Máximo" };
-  const label = metricLabel[metric] || metric.toUpperCase();
-  return `${label} por ${groupBy} (top ${n})`;
-}
-
 /**
- * Infiere el nombre "bonito" del campo de agrupación desde el tool_call
- * original: si fue `aggregate_by_admin`, es el admin_level; si fue
- * `aggregate_layer`, es el group_by.
- */
-function inferAggregateMeta(history) {
-  for (let i = history.length - 1; i >= 0; i--) {
-    const m = history[i];
-    if (m.role !== "assistant" || !Array.isArray(m.tool_calls)) continue;
-    for (const tc of m.tool_calls) {
-      const name = tc?.function?.name;
-      if (name !== "aggregate_layer" && name !== "aggregate_by_admin") continue;
-      try {
-        const args =
-          typeof tc.function.arguments === "string"
-            ? JSON.parse(tc.function.arguments)
-            : tc.function.arguments || {};
-        const groupBy = name === "aggregate_by_admin"
-          ? (args.admin_level || "grupo")
-          : (args.group_by || "grupo");
-        return {
-          metric: args.metric || "count",
-          groupBy,
-        };
-      } catch {
-        /* ignore malformed args */
-      }
-    }
-  }
-  return { metric: "count", groupBy: "grupo" };
-}
-
-/**
- * Detecta TODOS los charts posibles desde el historial de tool_calls.
+ * Extrae TODOS los charts posibles desde el historial de tool_calls.
  *
- * Devuelve un array de charts (puede haber 0, 1 o varios).
- * Reconoce:
- *   - aggregate_layer: {group, value} → chart directo.
- *   - aggregate_by_admin: {group, value} → chart directo.
- *   - aggregate_near_layer: {group, value} → chart directo.
- *   - get_layer_stats: {attributes: [{attr, top_values}]} → charts de distribuciones.
- *   - get_layer_schema: {columns: [{name, top_values}]} → charts de distribuciones.
- *   - query_layer: filas con campos numéricos → chart de conteo simple.
+ * Principio: no importa QUÉ tool produjo los datos. Importa la FORMA
+ * del resultado. Si es graficable, se genera un chart.
  *
- * Cada tool puede generar 0, 1 o varios charts.
+ * Formas reconocidas:
+ *   1. [{group, value}, ...]                → chart de distribución.
+ *   2. [{value, count}, ...]                → chart de top values.
+ *   3. { attributes: [{attr, top_values}] } → 1 chart por atributo.
+ *   4. { columns: [{name, top_values}] }    → 1 chart por columna.
+ *   5. [{row}, {row}, ...]                  → conteo por columna categórica.
+ *
+ * Los escalares (count, total) NO son graficables.
+ *
+ * Al agregar una tool nueva, no hay que tocar este código: si su
+ * resultado tiene alguna de esas formas, el chart se genera solo.
  */
-// NOTA (Fase 3): este orquestador puede devolver MÚLTIPLES charts
-// en el campo `charts` (array). El cliente HTTP (`api/chat.js`)
-// normaliza a `chart` (singular) cuando hay exactamente 1, para
-// compatibilidad con clientes antiguos.
 function buildChartsFromHistory(history) {
   const charts = [];
 
-  for (let i = 0; i < history.length; i++) {
-    const m = history[i];
+  for (const m of history) {
     if (m.role !== "tool") continue;
-
-    const toolName = m.name;
 
     let parsed;
     try {
@@ -295,63 +252,14 @@ function buildChartsFromHistory(history) {
       continue;
     }
 
-    // ── Tools de agregación directa: {group, value} ──
-    if (
-      toolName === "aggregate_layer" ||
-      toolName === "aggregate_by_admin" ||
-      toolName === "aggregate_near_layer"
-    ) {
-      const chart = buildChartFromAggregate(toolName, parsed, history);
-      if (chart) charts.push(chart);
+    // Si la tool devolvió un error, no intentes graficar.
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && "error" in parsed) {
       continue;
     }
 
-    // ── get_layer_stats: atributos con top_values ──
-    if (toolName === "get_layer_stats" && parsed && typeof parsed === "object") {
-      const stats = Array.isArray(parsed) ? parsed[0] : parsed;
-      if (stats?.attributes && Array.isArray(stats.attributes)) {
-        // Tomamos el atributo con más top_values (el más informativo)
-        const bestAttr = stats.attributes
-          .filter((a) => Array.isArray(a.top_values) && a.top_values.length >= 2)
-          .sort((a, b) => (b.top_values?.length || 0) - (a.top_values?.length || 0))[0];
-
-        if (bestAttr) {
-          const chart = buildChartFromTopValues(
-            bestAttr.attr,
-            bestAttr.top_values,
-            stats.display_name
-          );
-          if (chart) charts.push(chart);
-        }
-      }
-      continue;
-    }
-
-    // ── get_layer_schema: columnas con top_values ──
-    if (toolName === "get_layer_schema" && parsed && typeof parsed === "object") {
-      const schema = Array.isArray(parsed) ? parsed[0] : parsed;
-      if (schema?.columns && Array.isArray(schema.columns)) {
-        const bestCol = schema.columns
-          .filter((c) => Array.isArray(c.top_values) && c.top_values.length >= 2)
-          .sort((a, b) => (b.top_values?.length || 0) - (a.top_values?.length || 0))[0];
-
-        if (bestCol) {
-          const chart = buildChartFromTopValues(
-            bestCol.name,
-            bestCol.top_values,
-            schema.layer_id
-          );
-          if (chart) charts.push(chart);
-        }
-      }
-      continue;
-    }
-
-    // ── query_layer: muchas filas → contar por el campo más repetido ──
-    if (toolName === "query_layer" && Array.isArray(parsed) && parsed.length >= 3) {
-      const chart = buildChartFromRows(parsed);
-      if (chart) charts.push(chart);
-      continue;
+    const toolCharts = extractChartableData(parsed, m.name);
+    for (const chart of toolCharts) {
+      charts.push(chart);
     }
   }
 
@@ -359,85 +267,156 @@ function buildChartsFromHistory(history) {
 }
 
 /**
- * Construye un chart desde el resultado de una tool de agregación
- * (aggregate_layer, aggregate_by_admin, aggregate_near_layer).
+ * Analiza un resultado y devuelve 0, 1 o varios charts según su forma.
  *
- * Formato esperado: [{group, value}, ...]
+ * @param {*} data - Resultado de la tool.
+ * @param {string} toolName - Nombre de la tool (solo para logs).
+ * @returns {Array<object>} Lista de charts.
  */
-function buildChartFromAggregate(toolName, parsed, history) {
-  if (!Array.isArray(parsed) || parsed.length === 0) return null;
-  if (typeof parsed[0] !== "object" || !("group" in parsed[0]) || !("value" in parsed[0])) {
-    return null;
+function extractChartableData(data, toolName) {
+  if (!data) return [];
+
+  // ── Caso A: array plano ──
+  if (Array.isArray(data)) {
+    // A.1 — [{group, value}, ...] → chart de distribución
+    if (data.length > 0 && isGroupValueArray(data)) {
+      const chart = buildChartFromGroupValue(data);
+      return chart ? [chart] : [];
+    }
+
+    // A.2 — [{value, count}, ...] → chart de top values
+    if (data.length > 1 && isValueCountArray(data)) {
+      const chart = buildChartFromValueCount(data, "distribución");
+      return chart ? [chart] : [];
+    }
+
+    // A.3 — [{row}, {row}, ...] → conteo por columna categórica
+    if (data.length >= 3 && isRowArray(data)) {
+      const chart = buildChartFromRows(data, toolName);
+      return chart ? [chart] : [];
+    }
+
+    return [];
   }
 
-  const { metric, groupBy } = inferAggregateMeta(history);
-  const totalGroups = parsed.length;
-  const sliced = parsed.slice(0, MAX_CHART_SLICE);
+  // ── Caso B: objeto ──
+  if (typeof data === "object") {
+    const charts = [];
 
-  let type = "bar";
-  if (totalGroups <= PIE_MAX_GROUPS) type = "pie";
-  else if (totalGroups > BAR_MAX_GROUPS) type = "horizontalBar";
+    // B.1 — { attributes: [{attr, top_values}, ...] }
+    if (Array.isArray(data.attributes)) {
+      for (const attr of data.attributes) {
+        if (!Array.isArray(attr.top_values) || attr.top_values.length < 2) continue;
+        const chart = buildChartFromValueCount(
+          attr.top_values,
+          attr.attr || attr.name || "atributo",
+          data.display_name
+        );
+        if (chart) charts.push(chart);
+      }
+    }
 
+    // B.2 — { columns: [{name, top_values}, ...] }
+    if (Array.isArray(data.columns)) {
+      for (const col of data.columns) {
+        if (!Array.isArray(col.top_values) || col.top_values.length < 2) continue;
+        const chart = buildChartFromValueCount(
+          col.top_values,
+          col.name || "columna",
+          data.layer_id
+        );
+        if (chart) charts.push(chart);
+      }
+    }
+
+    // B.3 — { data: [...] } → recursión por si anida
+    if (Array.isArray(data.data)) {
+      const nested = extractChartableData(data.data, toolName);
+      for (const chart of nested) charts.push(chart);
+    }
+
+    return charts;
+  }
+
+  return [];
+}
+
+// ── Helpers de detección de forma ────────────────────────────────
+
+function isGroupValueArray(arr) {
+  if (!Array.isArray(arr) || arr.length === 0) return false;
+  const first = arr[0];
+  return (
+    first != null &&
+    typeof first === "object" &&
+    !Array.isArray(first) &&
+    "group" in first &&
+    "value" in first
+  );
+}
+
+function isValueCountArray(arr) {
+  if (!Array.isArray(arr) || arr.length < 2) return false;
+  const first = arr[0];
+  return (
+    first != null &&
+    typeof first === "object" &&
+    !Array.isArray(first) &&
+    "value" in first &&
+    "count" in first
+  );
+}
+
+function isRowArray(arr) {
+  if (!Array.isArray(arr) || arr.length < 3) return false;
+  const first = arr[0];
+  if (first == null || typeof first !== "object" || Array.isArray(first)) return false;
+  const keys = Object.keys(first);
+  if (keys.length < 2) return false;
+  // Excluir formas conocidas
+  if ("group" in first && "value" in first) return false;
+  if ("value" in first && "count" in first) return false;
+  return true;
+}
+
+// ── Constructores de charts ──────────────────────────────────────
+
+function classifyChartType(totalGroups) {
+  if (totalGroups <= PIE_MAX_GROUPS) return "pie";
+  if (totalGroups > BAR_MAX_GROUPS) return "horizontalBar";
+  return "bar";
+}
+
+function buildChartFromGroupValue(arr) {
+  const totalGroups = arr.length;
+  const sliced = arr.slice(0, MAX_CHART_SLICE);
   return {
-    type,
-    title: deriveChartTitle(parsed, metric, groupBy),
+    type: classifyChartType(totalGroups),
+    title: `Distribución (top ${sliced.length} de ${totalGroups})`,
     labels: sliced.map((r) => String(r.group)),
     values: sliced.map((r) => Number(r.value)),
     totalGroups,
   };
 }
 
-/**
- * Construye un chart desde top_values de un atributo.
- *
- * Formato esperado: [{value, count, pct}, ...]
- *
- * @param {string} attrName - Nombre del atributo.
- * @param {Array} topValues - Lista de top values.
- * @param {string} [contextName] - Nombre visible de la capa (para el título).
- */
-function buildChartFromTopValues(attrName, topValues, contextName = null) {
-  if (!Array.isArray(topValues) || topValues.length < 2) return null;
-
-  const labels = topValues.map((t) => String(t.value ?? t.group ?? "?"));
-  const values = topValues.map((t) => Number(t.count ?? t.value ?? 0));
-
-  if (values.every((v) => v === 0)) return null;
-
-  const totalGroups = topValues.length;
-  let type = "bar";
-  if (totalGroups <= PIE_MAX_GROUPS) type = "pie";
-  else if (totalGroups > BAR_MAX_GROUPS) type = "horizontalBar";
-
-  const titlePrefix = contextName ? `${contextName}: ` : "";
-  const title = `${titlePrefix}Distribución por ${attrName} (top ${totalGroups})`;
-
+function buildChartFromValueCount(arr, contextLabel, layerLabel = null) {
+  const totalGroups = arr.length;
+  const sliced = arr.slice(0, MAX_CHART_SLICE);
+  const prefix = layerLabel ? `${layerLabel}: ` : "";
   return {
-    type,
-    title,
-    labels,
-    values,
+    type: classifyChartType(totalGroups),
+    title: `${prefix}Distribución por ${contextLabel} (top ${sliced.length})`,
+    labels: sliced.map((t) => String(t.value)),
+    values: sliced.map((t) => Number(t.count ?? t.value ?? 0)),
     totalGroups,
   };
 }
 
-/**
- * Construye un chart desde filas concretas de query_layer.
- *
- * Idea: encontrar la columna categórica con más repeticiones y contar.
- * Si no hay categórica clara, devolver null.
- */
-function buildChartFromRows(rows) {
-  if (!Array.isArray(rows) || rows.length < 3) return null;
-
-  // Detectar columnas del primer row
+function buildChartFromRows(rows, toolName) {
+  // Buscar la columna categórica más "concentrada"
   const first = rows[0];
-  if (!first || typeof first !== "object") return null;
-
   const columns = Object.keys(first);
 
-  // Para cada columna, calcular "cuántas veces se repite el valor más común".
-  // La columna con mejor ratio (más repetida y con pocos valores únicos) gana.
   let best = null;
   for (const col of columns) {
     const valueCounts = new Map();
@@ -450,12 +429,11 @@ function buildChartFromRows(rows) {
     const uniqueCount = valueCounts.size;
     const maxCount = Math.max(...valueCounts.values());
 
-    // Criterio: al menos 2 valores únicos, y el más común aparece ≥ 2 veces.
-    // Preferimos columnas con pocos valores únicos (categóricas).
-    if (uniqueCount < 2 || maxCount < 2) continue;
-    if (uniqueCount > 20) continue; // demasiado única (es un ID)
+    // Criterio: al menos 2 valores únicos, y el más común ≥2 veces,
+    // y no demasiado único (parece categórica, no un ID).
+    if (uniqueCount < 2 || maxCount < 2 || uniqueCount > 20) continue;
 
-    const score = maxCount / uniqueCount; // cuánto "concentra" la moda
+    const score = maxCount / uniqueCount;
     if (!best || score > best.score) {
       best = { col, valueCounts, score };
     }
@@ -467,19 +445,12 @@ function buildChartFromRows(rows) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, MAX_CHART_SLICE);
 
-  const labels = entries.map(([v]) => v);
-  const values = entries.map(([, c]) => c);
   const totalGroups = best.valueCounts.size;
-
-  let type = "bar";
-  if (totalGroups <= PIE_MAX_GROUPS) type = "pie";
-  else if (totalGroups > BAR_MAX_GROUPS) type = "horizontalBar";
-
   return {
-    type,
-    title: `Distribución por ${best.col} (top ${labels.length})`,
-    labels,
-    values,
+    type: classifyChartType(totalGroups),
+    title: `Distribución por ${best.col} (top ${entries.length})`,
+    labels: entries.map(([v]) => v),
+    values: entries.map(([, c]) => c),
     totalGroups,
   };
 }
