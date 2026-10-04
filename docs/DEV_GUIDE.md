@@ -255,21 +255,55 @@ Subir la tabla física a Supabase (public.nueva_capa).
 
 Re-correr build_catalog.mjs.
 
-8. Agregar una tool al chat
-(Actualmente las tools viven en server/chat/tools.js — 3 archivos grandes. Refactor futuro: una tool por archivo.)
+## 8. Agregar una tool al chat
 
-Mientras tanto:
+1. Crear `server/chat/tools/mi-tool.js`:
+   ```js
+   export default {
+     schema: {
+       type: "function",
+       function: {
+         name: "mi_tool",
+         description: "...",
+         parameters: { /* JSON Schema */ },
+       },
+     },
+     run: async (args) => {
+       const db = await getDB();
+       return db.rpc("mi_rpc", { /* args */ });
+     },
+   };
 
-Agregar el JSON-Schema en TOOL_DEFINITIONS (server/chat/tools.js).
+## 8. Agregar una tool al chat
 
-Agregar el runner en TOOL_RUNNERS (server/chat/runners.js).
+1. Crear `server/chat/tools/mi-tool.js`:
+   ```js
+   export default {
+     schema: {
+       type: "function",
+       function: {
+         name: "mi_tool",
+         description: "...",
+         parameters: { /* JSON Schema */ },
+       },
+     },
+     run: async (args) => {
+       const db = await getDB();
+       return db.rpc("mi_rpc", { /* args */ });
+     },
+   };
+Importar y registrar en server/chat/tools/index.js:
 
-Si toca BD, agregar la RPC en una migración nueva.
+js
+import miTool from "./mi-tool.js";
+const ALL_TOOLS = [ ..., miTool ];
+Si la tool necesita una RPC nueva, agregarla en db/migrations/NNN_mi_tool.sql y aplicarla en Supabase.
 
-Documentar la tool en el SYSTEM_PROMPT del orquestador.
+Documentar la tool en el SYSTEM_PROMPT del orquestador (server/chat/orchestrator.js).
 
-Probar con smoke-orchestrator.mjs.
+Probar con node --env-file=.env.staging scripts/smoke-orchestrator.mjs "pregunta de prueba".zzzzzzzzzzzzzzzzzzzs
 
+   
 9. Troubleshooting
 El visor no carga
 Abrí consola del navegador (F12) → Console → buscá errores.

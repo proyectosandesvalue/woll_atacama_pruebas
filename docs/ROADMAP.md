@@ -246,7 +246,9 @@ Sub-sprints:
 □ C — Panel de resultados (8h)
 □ D — Pintado + exportación (4h)
 □ E — Integración con el chat (nueva tool analyze_aoi) (4h)
+
 Sprint 12 — Registro y visualización de indicadores
+
 Estado: ⏳ pending
 Prioridad: media
 Duración: 20-33h
@@ -269,7 +271,9 @@ Sub-sprints:
 □ D — Dashboard /indicadores (6h)
 □ E — Tool get_indicator en el chat (4h)
 □ F — Generación ad-hoc desde AOI (4h)
+
 Sprint 13 — Generación de reportes con IA
+
 Estado: ⏳ pending
 Prioridad: media
 Duración: 20-32h
@@ -304,21 +308,25 @@ Sub-sprints:
 □ D — Panel de reportes en el sidebar (6h)
 □ E — Editor de plantillas (panel admin) (6h)
 □ F — Formatos adicionales (PDF, Excel) (4h)
-Sprint 14 — Migrar config a Supabase (admin.*)
+
+### Sprint 14 — Migrar config a Supabase (admin.*)
+
 Estado: ⏳ pending
 Prioridad: alta
 Duración: 4-6h
 Dependencias: Sprint 07
 
 Objetivo:
-Mover los 9 archivos js/config/*.js a tablas admin.dimensions, admin.layers, admin.layer_groups.
+Mover los 9 archivos js/config/"todos_los_archivos".js a tablas admin.dimensions, admin.layers, admin.layer_groups.
 
 Sub-sprints:
 
 □ A — Migración SQL: admin.dimensions, admin.layers, admin.layer_groups (2h)
 □ B — Backfill desde archivos JS a BD (2h)
 □ C — Endpoint /api/config lee desde BD (2h)
-Sprint 15 — Panel admin: solo lectura
+
+### Sprint 15 — Panel admin: solo lectura
+
 Estado: ⏳ pending
 Prioridad: alta
 Duración: 6-8h
@@ -333,7 +341,9 @@ Sub-sprints:
 □ B — Auth con Supabase (2h)
 □ C — Vista de dimensiones/capas (3h)
 □ D — Deploy separado en Vercel (1h)
-Sprint 16 — Panel admin: CRUD de capas
+
+### Sprint 16 — Panel admin: CRUD de capas
+
 Estado: ⏳ pending
 Prioridad: alta
 Duración: 8-12h
@@ -349,7 +359,9 @@ Sub-sprints:
 □ C — Preview de cambios (2h)
 □ D — Regeneración de snapshot (2h)
 □ E — Audit log + rollback (2h)
-Sprint 17 — Ingesta RAG (PDFs → chunks → embeddings)
+
+### Sprint 17 — Ingesta RAG (PDFs → chunks → embeddings)
+
 Estado: ⏳ pending
 Prioridad: media
 Duración: 8-12h
@@ -364,7 +376,9 @@ Sub-sprints:
 □ B — Pipeline de ingesta asíncrona (4h)
 □ C — Panel de documentos en admin (3h)
 □ D — Verificación (1h)
-Sprint 18 — Retrieval RAG + tool en chat
+
+### Sprint 18 — Retrieval RAG + tool en chat
+
 Estado: ⏳ pending
 Prioridad: media
 Duración: 8-12h
@@ -379,7 +393,9 @@ Sub-sprints:
 □ B — Router de fuentes (capas + docs) (3h)
 □ C — Reglas del prompt para citar documentos (2h)
 □ D — Verificación (1h)
-Sprint 19 — APIs externas + CRUD
+
+### Sprint 19 — APIs externas + CRUD
+
 Estado: ⏳ pending
 Prioridad: media
 Duración: 15-25h
@@ -395,7 +411,9 @@ Sub-sprints:
 □ C — Panel admin CRUD (10h)
 □ D — Integración con el chat (4h)
 □ E — Adapter 2 (verificación del patrón) (6h)
-Sprint 20 — Adapter real: meteorología
+
+### Sprint 20 — Adapter real: meteorología
+
 Estado: ⏳ pending
 Prioridad: baja
 Duración: 4-6h
@@ -405,7 +423,8 @@ Objetivo: Integrar API de meteorología (OpenWeather, Meteo Chile, o GEE).
 
 Decisión pendiente: proveedor.
 
-Sprint 21 — Adapter real: leyes (BCN)
+### Sprint 21 — Adapter real: leyes (BCN)
+
 Estado: ⏳ pending
 Prioridad: baja
 Duración: 6-8h
@@ -416,6 +435,28 @@ Objetivo: Integrar Biblioteca del Congreso Nacional para consultas de leyes.
 Sesiones de trabajo
 Bitácora cronológica. Se actualiza al cierre de cada sesión.
 
+### Sprint 22 — Alineación de documentación
+
+**Estado**: 🔄 in-progress
+**Prioridad**: alta
+**Duración**: 3-4h
+**Dependencias**: ninguna
+
+**Objetivo**:
+Dejar todos los documentos coherentes entre sí y con el código actual, con un único dueño por tipo de información.
+
+**Decisiones tomadas**:
+- Flujo de trabajo: **commit directo a `main`** (sin `develop`).
+- `IMPLEMENTATION.md` se retira: su historial pasa a `CHANGELOG.md` (etapas E0-E7), sus fases futuras ya están en este ROADMAP, y su tabla de variables de entorno se reemplaza por `.env.example`.
+
+**Sub-sprints**:
+- [ ] **A** — Reemplazar `AGENTS.md`; corregir "8 tools" → "9 tools" (45 min)
+- [ ] **B** — Actualizar `ARCHITECTURE.md`: proveedor LLM (OpenCode Go), tools por archivo, timeout 6 s, nueva tool `get_layer_features` (45 min)
+- [ ] **C** — Actualizar `CONTRACT.md §6.2` y `§9.1` (30 min)
+- [ ] **D** — Actualizar `DEV_GUIDE.md §8` (30 min)
+- [ ] **E** — Actualizar `README.md` si tiene desalineaciones de conteos (30 min)
+- [ ] **F** — Verificar coherencia entre todos los documentos (30 min)
+
 2026-10-03 (sesión 2)
 ✅ Sprint 05 — Multi-chart agnóstico completado. Commit cefcde3.
 
@@ -424,6 +465,11 @@ Sub-fix: x-opencode-session header. Commits aa201c9, 95e1ed4.
 Migración a OpenCode Go (MiMo-V2.5 → GLM-5.3-Flash).
 
 📝 Próxima sesión: Sprint 06 — Respuesta geoespacial.
+
+### 2026-10-04
+- 🔄 Sprint 22 — Alineación de documentación iniciado.
+- Correcciones aplicadas: AGENTS.md, ARCHITECTURE.md, CONTRACT.md, DEV_GUIDE.md, ROADMAP.md.
+- Próximo: verificar README.md y `.env.example`, después continuar con Sprint 06.
 
 2026-10-03 (sesión 1)
 ✅ Sprint 03 — Refactor de tools completado.
@@ -450,6 +496,54 @@ Sprint 07 (/api/config) — 3-4h
 Sprint 14-16 (config en BD + panel admin) — 18-26h
 
 Estos 5 sprints (~30h) llevan el proyecto de "chat funcional" a "plataforma administrable". Es el próximo hito grande.
+
+# Entrada para ROADMAP.md — Sprint 22
+
+## 1. Fila del índice (agregar al final de la tabla)
+
+| 22 | Alineación de documentación | ⏳ pending | alta | 3-4h | — |
+
+> Ejecutar **antes del Sprint 06**: los agentes de IA leen estos documentos en cada sesión y los datos obsoletos los llevan a decisiones equivocadas.
+
+## 2. Detalle (agregar en "Sprints pendientes")
+
+### Sprint 22 — Alineación de documentación
+
+**Estado**: ⏳ pending
+**Prioridad**: alta
+**Duración**: 3-4h
+**Dependencias**: ninguna
+
+**Objetivo**:
+El código base existía antes de la documentación (CONTRACT, ARCHITECTURE, DEV_GUIDE, ADRs, ROADMAP). README, AGENTS.md e IMPLEMENTATION.md quedaron describiendo un estado anterior. Este sprint deja todos los documentos coherentes entre sí y con el código, con un único dueño por tipo de información.
+
+**Decisiones tomadas**:
+- Flujo de trabajo: **commit directo a `main`** (sin `develop`).
+- `IMPLEMENTATION.md` se retira: su historial pasa a `CHANGELOG.md` (etapas E0-E7), sus fases futuras ya están en este ROADMAP, y su tabla de variables de entorno se reemplaza por `.env.example`.
+
+**Criterios de aceptación**:
+- Dado un agente que lee solo `AGENTS.md`, cuando busca reglas o arquitectura, entonces encuentra enlaces a CONTRACT, ARCHITECTURE y ROADMAP.
+- Dados el número de tools, tests, migraciones y variables de entorno, cuando se comparan README, ARCHITECTURE, DEV_GUIDE y el código, entonces coinciden.
+- Dado el flujo de ramas, cuando se comparan README y DEV_GUIDE, entonces dicen lo mismo (`main` directo).
+- Dado el historial de bugs "Sprint 1-5" de AGENTS.md, cuando termina el sprint, entonces vive en `CHANGELOG.md` con numeración E0-E7 y no choca con los Sprint 01-21.
+- Dado que cada tipo de información tiene un dueño (README: qué es y cómo correrlo; AGENTS: comandos y peculiaridades; CONTRACT: reglas; ARCHITECTURE: estado actual; ROADMAP: plan; ADRs: decisiones; CHANGELOG: historial; `.env.example`: variables), cuando se busca un dato, entonces aparece en un solo lugar.
+
+**Sub-sprints**:
+- [ ] **A** — Reemplazar `AGENTS.md` y crear `CHANGELOG.md` (45 min)
+- [ ] **B** — Reemplazar `README.md`; borrar `IMPLEMENTATION.md` y sus enlaces (1h)
+- [ ] **C** — Actualizar `ARCHITECTURE.md`: proveedor LLM actual, tools por archivo, timeout 6 s, clasificador de dominio; quitar su §9 duplicado del roadmap (45 min)
+- [ ] **D** — Limpiar restos de chat en `ROADMAP.md` y en el ADR 004 ("Cómo aplicarlo", "Cómo crearlos"); escribir el ADR de `charts` plural; corregir en el ADR 004 el comando `git diff` entre repos (30 min)
+- [ ] **E** — Decidir la regla de naming (CONTRACT aspiracional o ajustado a la realidad: `layerUtils.js`, `appState.js`) y reflejarla en CONTRACT (15 min)
+- [ ] **F** — (opcional) Script que compare conteos documentados contra el código: tools, migraciones, variables de `.env.example` (1h)
+
+**Pendientes de verificación durante el sprint**:
+- Cuadrar el número de variables de entorno (README listaba 11, ARCHITECTURE dice 13) contra `.env.example`, incluyendo `CHAT_VERBOSE`, `ORCHESTRATOR_DEBUG` y las del proveedor OpenCode Go.
+- Confirmar el rango real de migraciones en `db/migrations/` y el número actual de tests.
+
+## 3. Entrada en "Sesiones de trabajo"
+
+### 2026-10-04
+- 📝 Sprint 22 definido. Decisiones: `main` directo; `IMPLEMENTATION.md` se retira a `CHANGELOG.md`.
 
 Convenciones:
 

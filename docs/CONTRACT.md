@@ -152,21 +152,11 @@ woll_atacama_pruebas/
 ```json
 {
   "reply": "string",
+  "notice": "string | null",
+  "chart": { ... } | null,
+  "charts": [ ... ],
   "geojson": { "type": "FeatureCollection", "features": [...] } | null,
-  "chart": {
-    "type": "pie" | "bar" | "horizontalBar" | "line",
-    "title": "string",
-    "labels": ["..."],
-    "values": [1, 2, 3],
-    "totalGroups": 12
-  } | null,
-  "charts": [
-    { "type": "pie", "title": "...", "labels": [...], "values": [...], "totalGroups": N },
-    { "type": "bar", "title": "...", "labels": [...], "values": [...], "totalGroups": N }
-  ],
-  "citations": [
-    { "type": "layer", "id": "desaladoras", "label": "Plantas Desaladoras" }
-  ]
+  "citations": [ ... ]
 }
 
 Reglas:
@@ -175,13 +165,21 @@ Reglas:
 - chart, geojson, citations opcionales. null si no aplican.
 - El frontend tolera todos los campos ausentes.
 - Cualquier cambio al contrato requiere actualizar frontend y backend en el mismo commit.
+**Reglas del campo `notice`**:
+- Es un aviso determinístico generado por el **backend**, no por el LLM.
+- Uso actual: informar truncado de resultados geoespaciales
+  ("Mostrando 500 de 600 resultados en el mapa.").
+- El frontend lo renderiza destacado, debajo del `reply`.
+- Si no hay aviso, es `null`.
 
 6.2. Tools
 
-- Una tool = un archivo en server/chat/tools/ (a migrar).
-- Cada archivo exporta { schema, run, normalizeArgs }.
-- El registro solo lista archivos, no define lógica.
+- Una tool = un archivo en server/chat/tools/ .
+- Cada archivo exporta { schema, run }.
+- El registro (`tools/index.js`) solo lista archivos, no define lógica.
 - Agregar una tool = 1 archivo nuevo + 1 línea en el registro.
+
+**Tools actuales (9)**: `get_layer_stats`, `get_layer_schema`, `query_layer`, `aggregate_layer`, `aggregate_by_admin`, `aggregate_by_admin_and_column`, `count_near_layer`, `aggregate_near_layer`, `get_layer_features`.
 
 **Reglas del contrato de gráficos**:
 - `charts` (plural) es el campo canónico. Contiene 0, 1 o varios gráficos.
@@ -266,13 +264,12 @@ El proceso está documentado en docs/DECISIONS/004-promocion-manual.md.
 ✅ Documentación actualizada.
 
 9. Testing
-9.1. Qué testear (mínimo)
 
-Lógica pura: normalizeArgs, escapeHtml, buildChartFromHistory, transformCoordinates.
+### 9.1. Qué testear (mínimo)
 
-Contratos de API: /api/chat devuelve {reply, chart, geojson}.
-
-Migraciones: cada migración se puede aplicar 2 veces sin error.
+- Lógica pura: `normalizeArgs`, `escapeHtml`, `buildChartsFromHistory`, `transformCoordinates`.
+- Contratos de API: `/api/chat` devuelve `{reply, chart, charts, geojson}`.
+- Migraciones: cada migración se puede aplicar 2 veces sin error.
 
 9.2. Qué NO testear (por ahora)
 

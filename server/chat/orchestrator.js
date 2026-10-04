@@ -27,6 +27,18 @@ function dbg(...args) {
   if (DEBUG) console.log("[orchestrator]", ...args);
 }
 
+/*
+ * Killswitch de geojson en el chat.
+ * En `0`, el orquestador nunca adjunta `geojson` a la respuesta.
+ */
+/*
+ * Killswitch de geojson en el chat.
+ * En `0`, el orquestador nunca adjunta `geojson` a la respuesta.
+ */
+const CHAT_GEOJSON_ENABLED = /^(1|true|yes)$/i.test(
+  process.env.CHAT_GEOJSON_ENABLED ?? "1"
+);
+
 /**
  * Modo verbose del chat.
  *   true  → el LLM puede mencionar tools, layer_ids y nombres técnicos.
@@ -211,6 +223,80 @@ function buildSynthesisMessages(history) {
   }
   flushTools();
   return out;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Detección de geojson (agnóstica de la tool)
+// ─────────────────────────────────────────────────────────────────
+
+const MAX_GEOJSON_FEATURES = 500;
+
+/**
+ * Recorre el historial de tools buscando FeatureCollections.
+ * Fusiona múltiples colecciones respetando el tope de 500 features.
+ * Devuelve { geojson, total, shown, truncated } o null si no hay ninguna.
+ */
+function buildGeojsonFromHistory(history) {
+  if (!CHAT_GEOJSON_ENABLED) return null;
+
+  const allFeatures = [];
+
+  for (const m of history) {
+    if (m.role !== "tool") continue;
+
+    let parsed;
+    try {
+      parsed = typeof m.content === "string" ? JSON.parse(m.content) : m.content;
+    } catch {
+      continue;
+    }
+
+    // Desenvolver wrappers de PostgREST
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      !Array.isArray(parsed) &&
+      Object.keys(parsed).length === 1
+    ) {
+      const key = Object.keys(parsed)[0];
+      if (parsed[key] && typeof parsed[key] === "object") {
+        parsed = parsed[key];
+      }
+    }
+
+    if (
+      parsed &&
+      typeof parsed === "object" &&
+      parsed.type === "FeatureCollection" &&
+      Array.isArray(parsed.features)
+    ) {
+      for (const f of parsed.features) {
+        allFeatures.push(f);
+        if (allFeatures.length >= MAX_GEOJSON_FEATURES * 2) break;
+      }
+    }
+  }
+
+  if (allFeatures.length === 0) return null;
+
+  const total = allFeatures.length;
+  const shown = Math.min(total, MAX_GEOJSON_FEATURES);
+  const features = allFeatures.slice(0, shown);
+
+  return {
+    geojson: { type: "FeatureCollection", features },
+    total,
+    shown,
+    truncated: total > shown,
+  };
+}
+
+/**
+ * Genera el `notice` determinístico cuando el geojson fue truncado.
+ */
+function buildNoticeFromGeojson(geojsonMeta) {
+  if (!geojsonMeta || !geojsonMeta.truncated) return null;
+  return `Mostrando ${geojsonMeta.shown} de ${geojsonMeta.total} resultados en el mapa.`;
 }
 
 // ─────────────────────────────────────────────────────────────────
@@ -558,11 +644,13 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       dbg(`iteración ${iterations}: respuesta directa (sin tool_calls)`);
       const reply = (response.content || "Sin respuesta.").trim();
 
-      return {
-        reply,
-        charts: buildChartsFromHistory(messages),
-        geojson: null,
-      };
+      const geojsonMeta = buildGeojsonFromHistory(messages);
+return {
+  reply,
+  charts: buildChartsFromHistory(messages),
+  geojson: geojsonMeta ? geojsonMeta.geojson : null,
+  notice: buildNoticeFromGeojson(geojsonMeta),
+};
     }
 
     dbg(
@@ -614,16 +702,19 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
         signal: AbortSignal.timeout(remaining),
         sessionId,
       });
-      const reply = (final.content || "").trim();
+           const reply = (final.content || "").trim();
       if (reply) {
         dbg(`síntesis forzada OK: ${reply.slice(0, 120)}...`);
-        
+
+        const geojsonMeta = buildGeojsonFromHistory(messages);
         return {
           reply,
           charts: buildChartsFromHistory(messages),
-          geojson: null,
+          geojson: geojsonMeta ? geojsonMeta.geojson : null,
+          notice: buildNoticeFromGeojson(geojsonMeta),
         };
       }
+      
     } catch (err) {
       dbg("síntesis forzada FALLÓ:", err?.message || err);
     }
@@ -632,10 +723,12 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   }
 
   
-  return {
-    reply:
-      "No pude generar la respuesta a tiempo. Reformula con una pregunta más específica.",
-    charts: buildChartsFromHistory(messages),
-    geojson: null,
-  };
+  const geojsonMeta = buildGeojsonFromHistory(messages);
+return {
+  reply:
+    "No pude generar la respuesta a tiempo. Reformula con una pregunta más específica.",
+  charts: buildChartsFromHistory(messages),
+  geojson: geojsonMeta ? geojsonMeta.geojson : null,
+  notice: buildNoticeFromGeojson(geojsonMeta),
+};
 }

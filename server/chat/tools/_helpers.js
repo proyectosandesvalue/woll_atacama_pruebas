@@ -74,12 +74,21 @@ function normalizeArgs(name, raw) {
     }
   }
 
-    // limit
+
+    // limit para query_layer (tope 50, default 20)
   if (name === "query_layer" && args.limit !== undefined) {
     const n = Number(args.limit);
     args.limit = Number.isFinite(n)
       ? Math.min(Math.max(1, Math.floor(n)), MAX_LIMIT)
       : 20;
+  }
+
+  // limit para get_layer_features (tope 1000, default 500)
+  if (name === "get_layer_features" && args.limit !== undefined) {
+    const n = Number(args.limit);
+    args.limit = Number.isFinite(n)
+      ? Math.min(Math.max(1, Math.floor(n)), 1000)
+      : 500;
   }
 
   // filters

@@ -22,6 +22,8 @@ import aggregateByAdmin from "./aggregate-by-admin.js";
 import aggregateByAdminAndColumn from "./aggregate-by-admin-and-column.js";
 import countNearLayer from "./count-near-layer.js";
 import aggregateNearLayer from "./aggregate-near-layer.js";
+import getLayerFeatures from "./get-layer-features.js";
+
 
 const ALL_TOOLS = [
   getLayerStats,
@@ -32,6 +34,7 @@ const ALL_TOOLS = [
   aggregateByAdminAndColumn,
   countNearLayer,
   aggregateNearLayer,
+  getLayerFeatures,
 ];
 
 export const TOOL_DEFINITIONS = ALL_TOOLS.map((t) => t.schema);

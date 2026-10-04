@@ -85,9 +85,10 @@
 - **Solo `service_role`** puede ejecutar las RPCs.
 
 ### LLM
-- **Groq** como proveedor (OpenAI-compatible).
-- **Modelo**: `openai/gpt-oss-120b`.
+- **OpenCode Go** como proveedor (OpenAI-compatible).
+- **Modelo activo**: `glm-5.3-flash` (ver `.env.example` y Vercel env vars para el valor vigente).
 - **Tool calling** nativo.
+- **Header `x-opencode-session`** requerido por el proveedor.
 - **Driver abstraído** (`server/llm/drivers/openai-compatible.js`) → cambiar de proveedor es cambiar variables de entorno.
 
 ---
@@ -115,9 +116,9 @@ Orquesta el ciclo del chat:
 
 ### 4.3. `server/chat/tools.js`
 
-Definición JSON-Schema de las 8 tools expuestas al LLM.
+Una tool por archivo. Cada archivo exporta `{ schema, run }`.
 
-**Tools actuales**:
+**Tools actuales (9)**:
 - `get_layer_stats`
 - `get_layer_schema`
 - `query_layer`
@@ -126,6 +127,9 @@ Definición JSON-Schema de las 8 tools expuestas al LLM.
 - `aggregate_by_admin_and_column`
 - `count_near_layer`
 - `aggregate_near_layer`
+- `get_layer_features`
+
+El registro está en `tools/index.js`. `_helpers.js` contiene `normalizeArgs` y `withTimeout`.
 
 ### 4.4. `server/chat/runners.js`
 
@@ -134,7 +138,7 @@ Ejecuta cada tool contra Supabase (vía el pool).
 **Normalización defensiva** de args del LLM:
 - Coacción de tipos.
 - Validación de whitelists (`METRICS`, `ADMIN_LEVELS`).
-- Coacción de límites (`limit` entre 1 y 50).
+- Coacción de límites (`limit` entre 1 y 1000 para features, 1 y 50 para query).
 - Timeouts de 6s por RPC.
 
 ### 4.5. `server/db/*`

@@ -1,25 +1,3 @@
-## Documentación
-
-Antes de tocar código, leé:
-
-- **[Contrato de diseño y desarrollo](docs/CONTRACT.md)** — Reglas que no se rompen.
-- **[Arquitectura](docs/ARCHITECTURE.md)** — Cómo está armado el sistema.
-- **[Guía de desarrollo](docs/DEV_GUIDE.md)** — Setup, comandos, flujo de trabajo.
-- **[Decisiones (ADRs)](docs/DECISIONS/)** — Por qué se tomaron las decisiones clave.
-
----
-
-## Ambientes
-
-| Ambiente | Repo | Vercel | Supabase | URL |
-|---|---|---|---|---|
-| **Producción** | repo privado (existente) | project prod | project prod | dominio real |
-| **Pruebas** | `woll_atacama_pruebas` | `visor_atacama_pruebas` | `visor_atacama_pruebas` | [wollatacamapruebas.vercel.app](https://wollatacamapruebas.vercel.app) |
-
-El desarrollo se hace en **pruebas**. Cuando una feature está validada, se promueve manualmente a producción (ver [`docs/DECISIONS/004-promocion-manual.md`](docs/DECISIONS/004-promocion-manual.md)).
-
----
-
 # Plataforma Territorial Water Oriented Living Lab Atacama
 
 > Plataforma WebGIS territorial para la Región de Atacama, Chile, potenciada con Inteligencia Artificial.
@@ -27,386 +5,140 @@ El desarrollo se hace en **pruebas**. Cuando una feature está validada, se prom
 ![Version](https://img.shields.io/badge/version-2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-Proprietary-red.svg)
 
----
+## Qué es
 
-## Qué es este proyecto?
+Aplicación web interactiva para visualizar y analizar datos geoespaciales estratégicos de la Región de Atacama. Integra mapas WebGL de alto rendimiento con un asistente de IA que permite hacer consultas territoriales en lenguaje natural.
 
-La Plataforma Territorial Water Oriented Living Lab Atacama es una aplicación web interactiva para visualizar y analizar datos geoespaciales estratégicos de la Región de Atacama, Chile. Integra mapas WebGL de alto rendimiento con un asistente de IA context-aware que permite hacer consultas territoriales en lenguaje natural.
+### Características
 
-### Características principales
+- **Visualización geoespacial** con Leaflet y render WebGL de polígonos (`Leaflet.glify`).
+- **Asistente IA** conectado a Supabase (PostGIS): consultas reales vía tool calling, con gráficos automáticos en las respuestas.
+- **Capas WMS** (IDE Chile, CIREN) además de ~70 capas GeoJSON locales.
+- **9 dimensiones de análisis:** Agua, Clima, Agricultura, Minería, Otros, Planificación Territorial, Riesgos, Suelo y Energía.
+- **Búsqueda global semántica** con índice en memoria.
+- **Tabla de atributos** con filtros, búsqueda y exportación (GeoJSON / CSV).
+- **Tema claro/oscuro** y diseño responsive.
+- **Web Workers** para procesar GeoJSON pesado, con fallback al hilo principal.
 
-### Características principales
+## Documentación
 
-- **Visualización geoespacial** basada en Leaflet.js con renderizado WebGL (polígonos vía `Leaflet.glify`)
-- **Asistente IA** conectado a Supabase (PostGIS): consultas reales a la BD vía tool-calling (Groq + Vercel Functions)
-- **Gráficos automáticos** en las respuestas del chat (pie, barras, barras horizontales según cardinalidad)
-- **Capas WMS** integradas (IDE Chile, CIREN) además de las capas GeoJSON locales
-- **9 dimensiones de análisis** (Agua, Clima, Agricultura, Minería, Otros, Planificación Territorial, Riesgos, Suelo, Energía)
-- **Búsqueda global semántica** con índice en memoria
-- **Tema claro/oscuro** con tokens CSS intercambiables
-- **Diseño responsive** para móviles y desktop con sidebars overlay
-- **Web Workers** (`layerProcessor.worker.js`) para procesamiento GeoJSON fuera del hilo principal, con fallback al hilo principal si no están disponibles
-- **Tabla de atributos** interactiva con filtros, búsqueda y export (GeoJSON / CSV)
+Antes de tocar código, lee:
 
-## Demo
+- [Contrato de diseño y desarrollo](docs/CONTRACT.md) — reglas que no se rompen.
+- [Arquitectura](docs/ARCHITECTURE.md) — cómo está armado el sistema hoy.
+- [Guía de desarrollo](docs/DEV_GUIDE.md) — setup, comandos, flujo de trabajo, troubleshooting.
+- [Roadmap](docs/ROADMAP.md) — plan de sprints y bitácora.
+- [Decisiones (ADRs)](docs/DECISIONS/) — por qué se tomaron las decisiones clave.
+- [Changelog](CHANGELOG.md) — historial de cambios.
+- [AGENTS.md](AGENTS.md) — guía técnica para agentes de IA.
 
-**Demo en vivo:** _(próximamente)_
+## Ambientes
 
----
+Hay dos ambientes con infraestructura aislada (producción y pruebas). El desarrollo se hace en **pruebas** (`woll_atacama_pruebas`, [wollatacamapruebas.vercel.app](https://wollatacamapruebas.vercel.app)) y se promueve a producción manualmente. Detalle en [ADR 003](docs/DECISIONS/003-ambientes.md) y [ADR 004](docs/DECISIONS/004-promocion-manual.md).
 
-## Requisitos Previos
+## Requisitos
 
-- Navegador moderno (Chrome, Firefox, Safari, Edge) con soporte ES Modules
-- Node.js >= 16.x (opcional — solo para `npm run lint`)
-- Servidor HTTP estático (no abrir el `index.html` con `file://` por restricciones CORS)
-- Cuenta de Supabase + API Key de un proveedor LLM (Groq) para el chat IA
+- Navegador moderno con soporte de ES Modules.
+- Node.js 18 o superior.
+- Servidor HTTP (no abrir `index.html` con `file://` por CORS).
+- Cuenta de Supabase y API key de un proveedor LLM para el chat IA.
 
----
-
-## Inicio Rápido
-
-### 1. Clona el repositorio
+## Inicio rápido
 
 ```bash
-git clone https://github.com/atacama-andes-value/visor-atacama.git
-cd visor-atacama
+git clone git@github.com:proyectosandesvalue/woll_atacama_pruebas.git
+cd woll_atacama_pruebas
+cp .env.example .env.staging   # completa los valores
+npm install                    # solo instala ESLint
+```
 
-### 2. Configura las variables de entorno
+Las variables de entorno están documentadas en `.env.example` (única lista vigente).
 
-El chat IA necesita Supabase + un proveedor LLM. Crea un archivo .env local
-siguiendo .env.example:
+Para correr en local:
 
-# Base de datos
-DB_DRIVER=supabase
-SUPABASE_URL=https://xxxxx.supabase.co
-SUPABASE_SERVICE_KEY=eyJ...
+```bash
+npx http-server -p 8099   # visor sin chat → http://localhost:8099
+npx vercel dev            # visor + chat IA → http://localhost:3000
+```
 
-# Proveedor LLM
-LLM_PROVIDER=openai-compatible
-LLM_BASE_URL=https://api.groq.com/openai/v1
-LLM_MODEL=openai/gpt-oss-120b
-LLM_API_KEY=gsk_...
-LLM_MAX_TOKENS=1024
-LLM_TEMPERATURE=0.7
+El visor funciona sin API keys: mapa, sidebar y leyenda operan con los GeoJSON locales. El chat necesita el backend (`vercel dev` o Vercel desplegado).
 
-# Orquestador
-ORCHESTRATOR_BUDGET_MS=8000
-ORCHESTRATOR_MAX_ITERATIONS=1
+## Estructura del proyecto
 
-El visor funciona sin la API Key: el sidebar de capas, el mapa y la
-leyenda operan de forma totalmente local con los GeoJSON incluidos.
-El chat IA necesita el backend desplegado (Vercel) o npx vercel dev.
-
-3. Ejecuta localmente
-Sin build step: cualquier servidor estático sirve el proyecto.
-
-Opción A — con Python:
-
-      python3 -m http.server 8099
-
-Opción B — con Node:
-
-      npx http-server -p 8099
-
-Opción C — con vercel dev (necesario para el chat IA):
-
-      npx vercel dev
-
-4. Abre en tu navegador
-
-      http://localhost:8099
-
-Tecnologías
-Frontend
-Mapa: Leaflet.js 1.9.4
-
-Render WebGL de polígonos: Leaflet.glify
-
-Clustering de puntos: Leaflet.markercluster 1.5.3
-
-Heatmap WebGL: webgl-heatmap (adaptado)
-
-Geometría: Turf.js 6.5.0 (solo turf.bbox)
-
-Sanitización: DOMPurify 3.0.3 (popups)
-
-Gráficos del chat: Chart.js 4.4.0 (CDN)
-
-UI: Vanilla JavaScript ES Modules, sin framework
-
-Estilos: CSS3 con custom properties (tema claro/oscuro)
-
-Tipografías: Montserrat + Open Sans (Google Fonts)
-
-Iconos: Material Symbols Outlined
-
-Procesamiento off-main-thread: Web Workers
-
-Backend / API
-Serverless: Vercel Functions (api/chat.js)
-
-IA: Groq API (u otro proveedor OpenAI-compatible)
-
-Base de datos: Supabase PostGIS (REST + RPCs)
-
-Runtime: Node.js
-
-Datos
-Formato GeoJSON local: ~70 archivos en /geojson/ (on-demand)
-
-Capas WMS externas: IDE Chile, CIREN (declaradas en js/config/wms_services.js)
-
-Estructura del Proyecto
-text
-visor-atacama/
-├── index.html                  # SPA entry point
-├── help.html                   # Manual de ayuda
-├── api/
-│   └── chat.js                 # Vercel Function → orquestador
+```text
+woll_atacama_pruebas/
+├── index.html, help.html       # SPA y manual de ayuda
+├── api/chat.js                 # Vercel Function (handler delgado)
 ├── server/
-│   ├── chat/
-│   │   ├── orchestrator.js     # Ciclo tool-calling
-│   │   ├── tools.js            # JSON-Schema de las 3 tools
-│   │   └── runners.js          # Ejecutores + normalización de args
-│   ├── llm/
-│   │   ├── provider.js         # Factoría del driver LLM
-│   │   ├── config.js
-│   │   └── drivers/
-│   │       └── openai-compatible.js
-│   └── db/
-│       ├── pool.js             # Factoría del driver BD
-│       ├── config.js
-│       └── drivers/
-│           └── supabase.js
-├── db/
-│   └── migrations/
-│       └── 001_chat_fase1.sql  # Esquema chat + RPCs
-├── scripts/
-│   ├── build_catalog.mjs       # Inventario de capas
-│   ├── smoke-db.mjs
-│   └── smoke-orchestrator.mjs
-├── css/
-│   ├── base.css                # Design tokens y reset
-│   ├── components.css          # Componentes UI
-│   ├── desktop.css             # Layout ≥ 769px
-│   └── mobile.css              # Adaptaciones ≤ 768px
+│   ├── chat/                   # orchestrator, runners, tools/ (una por archivo), filtros
+│   ├── llm/                    # driver LLM OpenAI-compatible
+│   └── db/                     # driver REST de Supabase
+├── db/migrations/              # migraciones SQL numeradas (NNN_nombre.sql)
+├── scripts/                    # catálogo, smoke tests
 ├── js/
-│   ├── app.js                  # Bootstrap
-│   ├── script.js               # initSidebarUI + initMobileUI
-│   ├── config/                 # Configuración por dimensión
-│   │   ├── agua.js
-│   │   ├── agricultura.js│   │   ├── clima.js
-│   │   ├── energia.js
-│   │   ├── mineria.js
-│   │   ├── otros.js
-│   │   ├── planificacion.js
-│   │   ├── riesgos.js
-│   │   ├── suelo.js
-│   │   ├── capasBase.js
-│   │   ├── wms_services.js
-│   │   ├── leyendaAliases.js
-│   │   ├── allTemasConfig.js
-│   │   └── constants.js
-│   ├── store/
-│   │   └── appState.js
-│   ├── ui/                     # Handlers por feature
-│   ├── utils/                  # Motores lógicos
-│   │   ├── layerUtils.js       # cargarCapaIndividual, dataParaRender, WMS
-│   │   ├── wmsUtils.js         # Resolución de servicios WMS
-│   │   ├── glifyAdapter.js     # buildColorCallback con dataFilter
-│   │   ├── attributeTableUtils.js
-│   │   ├── chatAssistant.js    # Cliente de POST /api/chat
-│   │   └── ...
-│   ├── search/                 # Buscador global
-│   ├── sidebar/                # Construcción del sidebar de capas
-│   ├── workers/                # Web Workers
-│   └── lib/
-│       └── glify-browser.js
-├── geojson/                    # ~70 archivos GeoJSON
-├── assets/                     # Iconos e imágenes
-├── vercel.json
-├── AGENTS.md                   # Guía técnica interna
-└── package.json                # Solo para lint
+│   ├── app.js, script.js       # bootstrap y UI shell
+│   ├── config/                 # una dimensión por archivo + WMS, capas base, aliases
+│   ├── store/appState.js       # única fuente de verdad
+│   ├── ui/, sidebar/, search/  # features
+│   ├── utils/                  # motores (layerUtils, glifyAdapter, wmsUtils, ...)
+│   └── workers/                # Web Workers
+├── css/                        # base, components, desktop, mobile
+├── geojson/                    # capas estáticas (~70)
+├── assets/                     # iconos e imágenes
+├── docs/                       # CONTRACT, ARCHITECTURE, DEV_GUIDE, ROADMAP, DECISIONS/
+└── vercel.json, package.json
+```
 
-Arquitectura en una mirada
-appState (js/store/appState.js) es la única fuente de verdad.
+El mapa completo de carpetas y responsabilidades está en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-9 archivos de dimensión en js/config/ declaran cada capa.
+## Tecnologías
 
-Carga on-demand: una capa se descarga solo cuando el usuario la activa.
+Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGL Heatmap, Turf.js (solo `bbox`), DOMPurify, Chart.js; Vanilla JS ES Modules y CSS custom properties; Vercel Functions, Supabase (PostGIS) y un LLM OpenAI-compatible. Versiones y detalle en [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) §3.
 
-dataFilter se aplica antes del renderer: cargarCapaIndividual() crea dataParaRender filtrado para glify/heatmap/cluster/L.geoJson.
+## Configuración básica
 
-Web Worker procesa GeoJSON pesado fuera del hilo principal.
+- **Agregar una capa GeoJSON o WMS:** ver [`docs/DEV_GUIDE.md`](docs/DEV_GUIDE.md) §7 y [`AGENTS.md`](AGENTS.md).
+- **Importante:** los alias se normalizan con `.toLowerCase().trim()` al hacer lookup.
 
-Asistente IA: el navegador ya no descarga 270 MB de GeoJSON en cada visita. La fase 1 consulta Supabase (PostGIS) en milisegundos vía tool-calling. Detalle en IMPLEMENTATION.md.
+## Despliegue
 
-Para peculiaridades detalladas (alias, glify, dataFilter, WMS, etc.) consulta AGENTS.md.
+Push a `main` → Vercel despliega automáticamente (~30 s). Las variables de entorno se configuran en Vercel → Settings → Environment Variables (lista en `.env.example`). La promoción a producción sigue el [ADR 004](docs/DECISIONS/004-promocion-manual.md).
 
-Configuración Básica
-Agregar una nueva capa GeoJSON
-Coloca tu archivo .geojson en /geojson/.
+## Contribuir
 
-Edita el archivo de dimensión correspondiente en /js/config/:
+Proyecto privado. Hoy trabaja un solo desarrollador, por lo que se commitea directo a `main`; las ramas y PRs se introducirán cuando se sume más gente (ver `docs/DEV_GUIDE.md` §4.3).
 
-javascript
-nueva_capa: {
-  url: "mi_capa.geojson",
-  type: "point",              // "point" | "line" | "polygon"
-  renderer: "cluster",        // opcional
-  alias: ["alias_1", "alias_2"],
-  popupCampos: ["nombre", "descripcion"],
-}
-Recarga el navegador (no hay build step).
+Convención de commits: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `test:`.
 
-Agregar una nueva capa WMS
-Declara el servicio en js/config/wms_services.js:
+```bash
+npm run lint   # objetivo: 0 errores
+npm test       # tests con node:test
+```
 
-javascript
-servicios: {
-  mi_servicio: {
-    url: "https://servidor/wms",
-    layers: "capa:nombre",
-    format: "image/png",
-    transparent: true,
-    version: "1.3.0",
-    attribution: "Fuente",
-    nombre: "Nombre visible",
-  },
-}
-En el archivo de dimensión, agrega la capa con tipo: 'wms':
+## Dimensiones disponibles
 
-javascript
-mi_capa_wms: {
-  tipo: "wms",
-  servicio: "mi_servicio",
-  nombrePersonalizado: "Nombre visible",
-  opacity: 0.8,
-}
-Recarga el navegador.
+| Dimensión | Archivo de config | Notas |
+|---|---|---|
+| Agricultura | `js/config/agricultura.js` | Capas productivas |
+| Agua | `js/config/agua.js` | Hidrografía, APR, desaladoras |
+| Clima | `js/config/clima.js` | Zonas climáticas (Köppen) |
+| Energía | `js/config/energia.js` | Generación, transmisión |
+| Minería | `js/config/mineria.js` | Yacimientos, faenas |
+| Planificación | `js/config/planificacion.js` | PRC, IPT |
+| Otros | `js/config/otros.js` | Áreas protegidas, turismo (WMS) |
+| Suelo | `js/config/suelo.js` | Geomorfología |
+| Riesgos | `js/config/riesgos.js` | Sismos, volcanes, remociones |
+| Capas base | `js/config/capasBase.js` | Cartografía base |
 
-Importante: los alias deben normalizarse con .toLowerCase().trim() al hacer lookup (ver AGENTS.md).
+## Troubleshooting
 
-Bitácora de implementación
-El detalle de cada fase implementada vive en IMPLEMENTATION.md: archivos tocados, decisiones, configuración de variables de entorno, instrucciones de deploy, troubleshooting y fases futuras. Ese documento es la fuente de verdad para cambios grandes.
+Ver [`docs/DEV_GUIDE.md`](docs/DEV_GUIDE.md) §9 (el visor no carga, el chat no responde, Vercel bloquea el deploy, `.env.staging` en `git status`).
 
-Despliegue en Vercel
-Despliegue automático
-Conecta el repositorio en vercel.com.
+## Licencia y equipo
 
-Configura variables de entorno (Settings → Environment Variables):
+Propiedad de Atacama Andes Value. Todos los derechos reservados 2026.
 
-text
-DB_DRIVER=supabase
-SUPABASE_URL=https://xxxxx.supabase.co
-SUPABASE_SERVICE_KEY=eyJ...
-LLM_PROVIDER=openai-compatible
-LLM_BASE_URL=https://api.groq.com/openai/v1
-LLM_MODEL=openai/gpt-oss-120b
-LLM_API_KEY=gsk_...
-LLM_MAX_TOKENS=1024
-LLM_TEMPERATURE=0.7
-ORCHESTRATOR_BUDGET_MS=8000
-ORCHESTRATOR_MAX_ITERATIONS=1
-Despliega:
+- **Desarrollador:** Diego Velásquez
+- **Cliente:** Atacama Andes Value
 
-Vercel detecta api/*.js como Serverless Functions.
-
-vercel.json configura los rewrites y excluye geojson/** del bundle.
-
-Despliegue manual
-bash
-npm install -g vercel
-vercel --prod
-Contribuir
-Este es un proyecto privado del equipo de Atacama Andes Value. Si eres parte del equipo:
-
-Crea una rama desde develop
-
-Realiza tus cambios
-
-Abre un Pull Request hacia develop
-
-Convenciones de commits
-text
-feat: Nueva funcionalidad
-fix: Corrección de bug
-docs: Cambios en documentación
-style: Cambios de formato
-refactor: Refactorización
-perf: Mejoras de rendimiento
-test: Tests
-Linting
-bash
-npm run lint   # ESLint sobre js/ — objetivo: 0 errors
-No hay build step ni tests automatizados.
-
-Dimensiones Disponibles
-Dimensión	Archivo de config	Notas
-Agricultura	js/config/agricultura.js	Capas productivas
-Agua	js/config/agua.js	Hidrografía, APR, desaladoras
-Clima	js/config/clima.js	Zonas climáticas (Köppen)
-Energía	js/config/energia.js	Generación, transmisión
-Minería	js/config/mineria.js	Yacimientos, faenas
-Planificación	js/config/planificacion.js	PRC, IPT
-Otros	js/config/otros.js	Áreas protegidas, turismo (WMS)
-Suelo	js/config/suelo.js	Geomorfología
-Riesgos	js/config/riesgos.js	Sismos, volcanes, remociones
-Capas Base	js/config/capasBase.js	Cartografía base
-Troubleshooting
-El mapa no carga
-Verifica la consola del navegador (F12).
-
-Asegúrate de estar usando un servidor HTTP (http://...), nunca file://.
-
-Confirma que /geojson/ esté accesible.
-
-El chat IA no responde
-Verifica que las variables SUPABASE_* y LLM_* estén configuradas.
-
-Revisa los Runtime Logs de la Function en Vercel.
-
-Si ves 501 Not Implemented localmente: usa npx vercel dev.
-
-Las capas WMS no se ven
-Verifica que el servicio en la config de la capa exista en wms_services.js.
-
-Comprueba que el servidor WMS externo esté accesible.
-
-Las capas no se filtran en el mapa
-Verifica que cargarCapaIndividual() aplique dataFilter al dataParaRender antes de invocar el renderer.
-
-Errores de CORS
-Asegúrate de estar ejecutando un servidor HTTP, no abriendo el archivo con file://.
-
-Licencia
-Propiedad de Atacama Andes Value
-Todos los derechos reservados 2026
-
-Equipo
-Desarrollador: Diego Velásquez
-Cliente: Atacama Andes Value
-Contacto: diegovelasquezf@gmail.com
-
-### v2.0 (Septiembre 2026)
-- Refactorización completa desde la base IFI Atacama original.
-- Migración a Leaflet.glify para render WebGL de polígonos.
-- Integración de Web Worker para GeoJSON pesado.
-- Asistente IA conectado a Supabase (Groq + Vercel Functions).
-- Tabla de atributos interactiva con filtros, búsqueda y export.
-- Tema claro/oscuro unificado mediante custom properties.
-- Sidebars con comportamiento coherente (overlay en móvil, grid en escritorio).
-- Buscador global semántico en memoria.
-- **Soporte WMS** para servicios externos (IDE Chile, CIREN).
-- **Correcciones Sprint 1**: XSS en popups y etiquetas, WMS loader, síntesis del chat, timeout real en `fetch`.
-- **Correcciones Sprint 2**: validación defensiva de args del LLM, tiempo de espera en RPCs, tabla de atributos que restaura el sidebar.
-- **Sprint 3**: `.env.example` y `.gitignore` alineados con los defaults del código. Archivos de sesión/agente fuera del repo.
-- **Sprint 4**: `api/**/*.js` en Vercel, `Worker` con fallback, sin `alert()` bloqueantes, `mapUtils` corregido.
-- **Sprint 5**: tipos de chart (`pie`/`bar`/`horizontalBar`), botón "limpiar conversación", índice de búsqueda cancelable, sanitización de paths de iconos.
-
-v1.x (basado en diegoxkaf/visor_woll_atacama)
-Versión inicial para la Región de Atacama.
-
-Versión: 2.0
-Última Revisión: Septiembre 2026
-
+**Versión 2.0** (septiembre 2026). Historial completo en [`CHANGELOG.md`](CHANGELOG.md).
