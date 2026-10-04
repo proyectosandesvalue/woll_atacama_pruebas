@@ -240,12 +240,10 @@ const MAX_CHART_SLICE = 10;
  * resultado tiene alguna de esas formas, el chart se genera solo.
  */
 function buildChartsFromHistory(history) {
-  console.log(`[charts] === ENTRANDO === history.length=${history.length}`);
   const charts = [];
 
   for (const m of history) {
     if (m.role !== "tool") continue;
-    console.log(`[charts] procesando tool="${m.name}"`)
 
     let parsed;
     try {
@@ -280,7 +278,6 @@ function buildChartsFromHistory(history) {
     }
   }
 
-  console.log(`[charts] === SALIENDO === total=${charts.length}`);
   return charts;
 }
 
@@ -508,7 +505,6 @@ function buildChartFromRows(rows, toolName) {
  * Ejecuta el ciclo: rondas de tools + síntesis forzada.
  */
 export async function runOrchestrator({ text, history = [], sessionId = null }) {
-  console.log(`[orchestrator] === INICIO === texto="${text.slice(0, 80)}"`);
   const budgetMs =
     Number(process.env.ORCHESTRATOR_BUDGET_MS) || DEFAULT_BUDGET_MS;
   const maxIterations =
@@ -561,7 +557,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
     if (!response.toolCalls || response.toolCalls.length === 0) {
       dbg(`iteración ${iterations}: respuesta directa (sin tool_calls)`);
       const reply = (response.content || "Sin respuesta.").trim();
-      console.log(`[orchestrator] === RETURN DIRECTO ===`);
+
       return {
         reply,
         charts: buildChartsFromHistory(messages),
@@ -621,7 +617,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       const reply = (final.content || "").trim();
       if (reply) {
         dbg(`síntesis forzada OK: ${reply.slice(0, 120)}...`);
-        console.log(`[orchestrator] === RETURN SÍNTESIS ===`);
+        
         return {
           reply,
           charts: buildChartsFromHistory(messages),
@@ -635,7 +631,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
     dbg("presupuesto agotado antes de la síntesis forzada");
   }
 
-  console.log(`[orchestrator] === RETURN FALLBACK ===`);
+  
   return {
     reply:
       "No pude generar la respuesta a tiempo. Reformula con una pregunta más específica.",
