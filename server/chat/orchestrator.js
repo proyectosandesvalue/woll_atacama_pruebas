@@ -31,10 +31,6 @@ function dbg(...args) {
  * Killswitch de geojson en el chat.
  * En `0`, el orquestador nunca adjunta `geojson` a la respuesta.
  */
-/*
- * Killswitch de geojson en el chat.
- * En `0`, el orquestador nunca adjunta `geojson` a la respuesta.
- */
 const CHAT_GEOJSON_ENABLED = /^(1|true|yes)$/i.test(
   process.env.CHAT_GEOJSON_ENABLED ?? "1"
 );
@@ -187,10 +183,20 @@ async function buildSystemPrompt() {
     return `- ${c.layer_id} — ${c.display_name} [${c.dimension}]${attrStr}`;
   });
 
-  const full =
-    SYSTEM_PROMPT + "\nCATÁLOGO DE CAPAS:\n" + lines.join("\n").slice(0, 12000);
+  const catalogBlock = lines.join("\n").slice(0, 12000);
+  const full = SYSTEM_PROMPT + "\nCATÁLOGO DE CAPAS:\n" + catalogBlock;
   _cachedSystem = full;
   _cachedAt = Date.now();
+
+  console.log(
+    `[orchestrator] system prompt: ` +
+    `base=${SYSTEM_PROMPT.length} chars (~${Math.round(SYSTEM_PROMPT.length / 4)} tokens) | ` +
+    `catalogo=${catalogBlock.length} chars (~${Math.round(catalogBlock.length / 4)} tokens) | ` +
+    `total=${full.length} chars (~${Math.round(full.length / 4)} tokens) | ` +
+    `capas=${catalog.length}`
+  );
+
+
   dbg(`system prompt regenerado (${catalog.length} capas)`);
   return full;
 }
@@ -617,12 +623,13 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   }
   messages.push({ role: "user", content: String(text || "").trim() });
 
-  let iterations = 0;
+    let iterations = 0;
 
   while (iterations < maxIterations && Date.now() < deadline) {
     iterations += 1;
 
     let response;
+    const t1 = Date.now();
     try {
       response = await llm.chat({
         system,
@@ -639,18 +646,25 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       );
       throw err;
     }
+        const l1Ms = Date.now() - t1;
+    console.log(
+      `[orchestrator] L1: ${l1Ms}ms | ` +
+      `content_len=${(response.content || "").length} | ` +
+      `tool_calls=${response.toolCalls?.length || 0} | ` +
+      `content_preview=${JSON.stringify((response.content || "").slice(0, 100))}`
+    );
 
     if (!response.toolCalls || response.toolCalls.length === 0) {
       dbg(`iteración ${iterations}: respuesta directa (sin tool_calls)`);
       const reply = (response.content || "Sin respuesta.").trim();
 
       const geojsonMeta = buildGeojsonFromHistory(messages);
-return {
-  reply,
-  charts: buildChartsFromHistory(messages),
-  geojson: geojsonMeta ? geojsonMeta.geojson : null,
-  notice: buildNoticeFromGeojson(geojsonMeta),
-};
+      return {
+        reply,
+        charts: buildChartsFromHistory(messages),
+        geojson: geojsonMeta ? geojsonMeta.geojson : null,
+        notice: buildNoticeFromGeojson(geojsonMeta),
+      };
     }
 
     dbg(
@@ -696,13 +710,23 @@ return {
     try {
       const remaining = Math.max(500, deadline - Date.now());
       dbg(`síntesis forzada: timeout=${remaining}ms`);
+
+      const t2 = Date.now();
       const final = await llm.chat({
         system: SYNTHESIS_SYSTEM_PROMPT,
         messages: buildSynthesisMessages(messages),
         signal: AbortSignal.timeout(remaining),
         sessionId,
       });
-           const reply = (final.content || "").trim();
+      const l2Ms = Date.now() - t2;
+
+      // ── Instrumentación temporal: L2 ────────────────────────
+      console.log(
+        `[orchestrator] L2: ${l2Ms}ms | content_len=${(final.content || "").length}`
+      );
+      // ────────────────────────────────────────────────────────
+
+      const reply = (final.content || "").trim();
       if (reply) {
         dbg(`síntesis forzada OK: ${reply.slice(0, 120)}...`);
 
@@ -714,21 +738,22 @@ return {
           notice: buildNoticeFromGeojson(geojsonMeta),
         };
       }
-      
     } catch (err) {
       dbg("síntesis forzada FALLÓ:", err?.message || err);
     }
   } else {
+    console.log(
+      `[orchestrator] L2 SALTED: presupuesto agotado antes de la síntesis`
+    );
     dbg("presupuesto agotado antes de la síntesis forzada");
   }
 
-  
   const geojsonMeta = buildGeojsonFromHistory(messages);
-return {
-  reply:
-    "No pude generar la respuesta a tiempo. Reformula con una pregunta más específica.",
-  charts: buildChartsFromHistory(messages),
-  geojson: geojsonMeta ? geojsonMeta.geojson : null,
-  notice: buildNoticeFromGeojson(geojsonMeta),
-};
+  return {
+    reply:
+      "No pude generar la respuesta a tiempo. Reformula con una pregunta más específica.",
+    charts: buildChartsFromHistory(messages),
+    geojson: geojsonMeta ? geojsonMeta.geojson : null,
+    notice: buildNoticeFromGeojson(geojsonMeta),
+  };
 }

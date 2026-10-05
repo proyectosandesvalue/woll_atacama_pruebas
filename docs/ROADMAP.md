@@ -617,3 +617,19 @@ Marcá en el archivo los sprints 01-05 como done (ya lo tienen).
 
 Próxima decisión: elegir el sprint activo (mi recomendación: Sprint 06).
 
+### Pendientes inmediatos
+
+- [ ] **Clasificador de dominio rechaza preguntas de seguimiento.**
+  El clasificador `classifyDomain(text, sessionId)` solo recibe la pregunta
+  actual, sin contexto del historial. Preguntas como "¿cuál es la más
+  grande en km²?" (seguimiento de "¿cuántas lagunas hay?") son bloqueadas
+  incorrectamente.
+  Fix propuesto (Opción D): skip del clasificador si hay historial reciente
+  O si la pregunta contiene palabras del dominio. Ver conversación
+  2026-10-04.
+  Impacto: usuarios que hacen preguntas de seguimiento reciben bloqueo.
+  Urgencia: media-alta.
+
+- [ ] Limpieza de logs de diagnóstico en orchestrator.js (dejar 1-2 días, después remover).
+
+- [ ] Deuda técnica: ADR del cambio a charts plural.
