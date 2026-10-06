@@ -289,12 +289,20 @@ function extractChartableData(data, toolName) {
       return chart ? [chart] : [];
     }
 
-    // A.3 — [{row}, {row}, ...] → conteo por columna categórica
+        // A.3 — [{row}, {row}, ...] → conteo por columna categórica
+    // Doble agrupación (2+ columnas categóricas): NO generar chart.
+    // El LLM presenta los datos como tabla (regla 13 del prompt).
     if (data.length >= 3 && isRowArray(data)) {
+      const first = data[0];
+      const categoricalKeys = Object.keys(first).filter(
+        (k) => k !== "value" && k !== "count" && k !== "total"
+      );
+      if (categoricalKeys.length >= 2) {
+        return [];
+      }
       const chart = buildChartFromRows(data, toolName);
       return chart ? [chart] : [];
     }
-
     return [];
   }
 
