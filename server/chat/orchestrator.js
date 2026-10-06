@@ -188,14 +188,18 @@ async function buildSystemPrompt() {
   _cachedSystem = full;
   _cachedAt = Date.now();
 
+
+  const baseChars = SYSTEM_PROMPT.length;
+  const catalogChars = catalogBlock.length;
+  const totalChars = full.length;
   console.log(
     `[orchestrator] system prompt: ` +
-    `base=${SYSTEM_PROMPT.length} chars (~${Math.round(SYSTEM_PROMPT.length / 4)} tokens) | ` +
-    `catalogo=${catalogBlock.length} chars (~${Math.round(catalogBlock.length / 4)} tokens) | ` +
-    `total=${full.length} chars (~${Math.round(full.length / 4)} tokens) | ` +
+    `base=${baseChars} chars (~${Math.round(baseChars / 4)} tokens) | ` +
+    `catalogo=${catalogChars} chars (~${Math.round(catalogChars / 4)} tokens) | ` +
+    `total=${totalChars} chars (~${Math.round(totalChars / 4)} tokens) | ` +
     `capas=${catalog.length}`
   );
-
+  
 
   dbg(`system prompt regenerado (${catalog.length} capas)`);
   return full;
@@ -691,20 +695,43 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       }))
     );
 
-    for (const { tc, out } of toolResults) {
+        for (const { tc, out } of toolResults) {
       const payload = out.ok ? out.result : { error: out.error };
       dbg(
         `tool ${tc.name} → ${out.ok ? "ok" : "ERROR: " + out.error} | ` +
           `resultado: ${JSON.stringify(payload).slice(0, 200)}`
       );
+
+      // ── CA-10: el LLM NO debe ver las geometrías ──────────
+      // El geojson viaja en la respuesta final al frontend, pero
+      // NO se envía al LLM: infla tokens y no aporta al razonamiento.
+      // Los metadatos (total/shown/truncated) sí se conservan para
+      // que el LLM pueda informar el recorte.
+      let contentForLLM = payload;
+      if (
+        payload &&
+        typeof payload === "object" &&
+        !Array.isArray(payload)
+      ) {
+        const { geojson, ...rest } = payload;
+        if (geojson) {
+          
+          contentForLLM = rest;
+          if (Array.isArray(geojson.features)) {
+            contentForLLM._geojson_hidden = {
+              feature_count: geojson.features.length,
+            };
+          }
+        }
+      }
+
       messages.push({
         role: "tool",
         tool_call_id: tc.id,
         name: tc.name,
-        content: JSON.stringify(payload),
+        content: JSON.stringify(contentForLLM),
       });
     }
-  }
 
   if (Date.now() < deadline) {
     try {
@@ -756,4 +783,5 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
     geojson: geojsonMeta ? geojsonMeta.geojson : null,
     notice: buildNoticeFromGeojson(geojsonMeta),
   };
+}
 }
