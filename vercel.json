@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/chat.js": {
-      "maxDuration": 60,
+      "maxDuration": 300,
       "excludeFiles": "{geojson/**,db/**,scripts/**,docs/**,help.html,session_export.md,skills-lock.json}"
     }
   },

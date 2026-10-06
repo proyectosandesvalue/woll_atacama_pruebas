@@ -15,7 +15,7 @@ import { TOOL_DEFINITIONS } from "./tools.js";
 import { runTool } from "./runners.js";
 
 const DEFAULT_BUDGET_MS = 8000;
-const DEFAULT_MAX_ITERATIONS = 5;
+const DEFAULT_MAX_ITERATIONS = 3;
 
 /** Log de diagnóstico: activar con ORCHESTRATOR_DEBUG=1 */
 const DEBUG = /^(1|true|yes)$/i.test(process.env.ORCHESTRATOR_DEBUG || "");
