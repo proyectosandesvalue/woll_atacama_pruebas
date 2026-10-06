@@ -1,7 +1,7 @@
 /**
  * Orquestador del chat IA.
  *
- * Bucle ReAct: hasta N pasos (ORCHESTRATOR_MAX_ITERATIONS, default 4).
+ * Bucle ReAct: hasta N pasos (ORCHESTRATOR_MAX_ITERATIONS, default 3).
  * En cada paso el LLM decide si llamar tools o responder.
  * En el último paso, toolChoice: "none" fuerza la respuesta de texto.
  *
@@ -41,6 +41,9 @@ const CHAT_GEOJSON_ENABLED = /^(1|true|yes)$/i.test(
  * Se controla con la variable de entorno CHAT_VERBOSE=1|0.
  */
 const CHAT_VERBOSE = /^(1|true|yes)$/i.test(process.env.CHAT_VERBOSE || "");
+
+/** Tope máximo de features en una respuesta geoespacial. */
+const MAX_GEOJSON_FEATURES = 500;
 
 const SYSTEM_PROMPT_BASE = `Eres el asistente experto de la Plataforma Territorial Water Oriented Living Lab Atacama (Chile).
 Respondes consultas sobre datos territoriales de la Región de Atacama a partir de capas reales (agua, agricultura, minería, energía, clima, riesgos, suelo, planificación, otros).
@@ -219,10 +222,12 @@ const MAX_CHART_SLICE = 10;
  * resultado tiene alguna de esas formas, el chart se genera solo.
  */
 function buildChartsFromHistory(history) {
+  const MAX_TOTAL_CHARTS = 3;
   const charts = [];
 
   for (const m of history) {
     if (m.role !== "tool") continue;
+    if (charts.length >= MAX_TOTAL_CHARTS) break;
 
     let parsed;
     try {
@@ -231,28 +236,14 @@ function buildChartsFromHistory(history) {
       continue;
     }
 
-    // LOG DE DIAGNÓSTICO
-    if (DEBUG) {
-      console.log(
-        `[charts] tool="${m.name}" | tipo=${Array.isArray(parsed) ? "array" : typeof parsed} | ` +
-        `preview=${JSON.stringify(parsed).slice(0, 300)}`
-      );
-    }
-    // FIN LOG
-
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed) && "error" in parsed) {
       continue;
     }
 
     const toolCharts = extractChartableData(parsed, m.name);
 
-    // LOG DE DIAGNÓSTICO
-    if (DEBUG) {
-      console.log(`[charts] ${m.name} → ${toolCharts.length} chart(s) generado(s)`);
-    }
-    // FIN LOG
-
     for (const chart of toolCharts) {
+      if (charts.length >= MAX_TOTAL_CHARTS) break;
       charts.push(chart);
     }
   }
@@ -335,10 +326,37 @@ function extractChartableData(data, toolName) {
       }
     }
 
-    // B.2 — { columns: [{name, top_values}, ...] }
+        // B.2 — { columns: [{name, top_values}, ...] }
+    // Solo tomamos hasta 2 columnas relevantes para no inundar con charts.
+    // Criterio: descartar columnas con valores únicos (IDs, nombres, coords)
+    // y columnas con un valor que concentra >90% (columnas "planas").
     if (Array.isArray(data.columns)) {
-      for (const col of data.columns) {
-        if (!Array.isArray(col.top_values) || col.top_values.length < 2) continue;
+      const candidates = data.columns
+        .filter((col) => {
+          if (!Array.isArray(col.top_values)) return false;
+          if (col.top_values.length < 2) return false;
+          if (col.top_values.length > 20) return false;
+
+          const total = col.top_values.reduce(
+            (acc, t) => acc + Number(t.count || 0),
+            0
+          );
+          if (total === 0) return false;
+
+          // Descartar si el primer valor concentra >90% (columna plana)
+          const firstCount = Number(col.top_values[0]?.count || 0);
+          if (firstCount / total > 0.9) return false;
+
+          // Descartar si la mayoría son únicos (IDs, nombres)
+          const uniqueRatio = col.top_values.length / total;
+          if (uniqueRatio > 0.5) return false;
+
+          return true;
+        })
+        .sort((a, b) => a.top_values.length - b.top_values.length)
+        .slice(0, 2);
+
+      for (const col of candidates) {
         const chart = buildChartFromValueCount(
           col.top_values,
           col.name || "columna",
@@ -484,7 +502,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   const budgetMs =
     Number(process.env.ORCHESTRATOR_BUDGET_MS) || DEFAULT_BUDGET_MS;
   const maxSteps =
-    Number(process.env.ORCHESTRATOR_MAX_ITERATIONS) || 4;
+  Number(process.env.ORCHESTRATOR_MAX_ITERATIONS) || DEFAULT_MAX_ITERATIONS;
 
   if (maxSteps < 1) {
     throw new Error("ORCHESTRATOR_MAX_ITERATIONS debe ser >= 1");
@@ -595,21 +613,12 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
 // Compactador: prepara el resultado de una tool para el LLM
 // ─────────────────────────────────────────────────────────────────
 
-/**
- * Reduce el resultado de una tool a lo mínimo que el LLM necesita.
- *
- * Reglas:
- *   - FeatureCollection → guardar en ctx.raw; el LLM ve ref + total + sample.
- *   - Array de filas → recortar a 40.
- *   - Objeto con rows → recortar rows a 40.
- *   - Cualquier otra cosa → devolver tal cual (agregados, stats).
- */
 function compact(name, out, ctx) {
   if (!out.ok) return { error: out.error };
 
   const r = out.result;
 
-  // FeatureCollection directa (la RPC la devuelve así)
+  // ── FeatureCollection directa ──────────────────────────────
   if (r && r.type === "FeatureCollection" && Array.isArray(r.features)) {
     const ref = `fc_${ctx.raw.size + 1}`;
     ctx.raw.set(ref, r);
@@ -621,7 +630,33 @@ function compact(name, out, ctx) {
     };
   }
 
-  // Array de filas
+  // ── get_layer_schema: solo nombres de columnas ─────────────
+  // El payload completo (con max/min/mean/top_values) colapsa al LLM.
+  if (name === "get_layer_schema" && r && Array.isArray(r.columns)) {
+    return {
+      layer_id: r.layer_id,
+      columns: r.columns.map((c) => ({
+        name: c.name,
+        type: c.type,
+        is_numeric: c.is_numeric === true,
+      })),
+      _hint:
+        "Para ver valores concretos de una columna, usa get_layer_stats.",
+    };
+  }
+
+  // ── get_layer_stats: recortar top_values ───────────────────
+  if (name === "get_layer_stats" && r && Array.isArray(r.attributes)) {
+    return {
+      ...r,
+      attributes: r.attributes.map((a) => ({
+        attr: a.attr || a.name,
+        top_values: Array.isArray(a.top_values) ? a.top_values.slice(0, 5) : [],
+      })),
+    };
+  }
+
+  // ── Array de filas ─────────────────────────────────────────
   if (Array.isArray(r)) {
     const ROWS_MAX = 40;
     if (r.length > ROWS_MAX) {
@@ -634,7 +669,7 @@ function compact(name, out, ctx) {
     return r;
   }
 
-  // Objeto con .rows
+  // ── Objeto con .rows ───────────────────────────────────────
   if (r && typeof r === "object" && Array.isArray(r.rows)) {
     const ROWS_MAX = 40;
     if (r.rows.length > ROWS_MAX) {
@@ -647,7 +682,7 @@ function compact(name, out, ctx) {
     return r;
   }
 
-  // Default: agregados, stats, esquema → tal cual
+  // ── Default: agregados, stats sin attributes, otros ────────
   return r;
 }
 
