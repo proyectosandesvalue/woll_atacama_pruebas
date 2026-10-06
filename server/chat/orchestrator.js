@@ -111,6 +111,9 @@ REGLAS (12):
 
 12. Habla como analista territorial: directo, claro, con conclusiones.
 
+13. Los nombres de columnas son CASE-SENSITIVE y están en MAYÚSCULAS.
+      Usa "TIPO" no "tipo". Usa "COMUNA" no "comuna".
+
 CATÁLOGO:
 `;
 
@@ -277,14 +280,29 @@ function extractChartableData(data, toolName) {
       return extractChartableData(data[0], toolName);
     }
 
-    // A.1 — [{group, value}, ...] → chart de distribución
+        // A.1 — [{group, value}, ...] → chart de distribución
+    // Si hay 2+ columnas categóricas (ej. {admin, group, value})
     if (data.length > 0 && isGroupValueArray(data)) {
+      const first = data[0];
+      const categoricalKeys = Object.keys(first).filter(
+        (k) => k !== "value" && k !== "count" && k !== "total"
+      );
+      if (categoricalKeys.length >= 2) {
+        return [];
+      }
       const chart = buildChartFromGroupValue(data);
       return chart ? [chart] : [];
     }
 
-    // A.2 — [{value, count}, ...] → chart de top values
+        // A.2 — [{value, count}, ...] → chart de top values
     if (data.length > 1 && isValueCountArray(data)) {
+      const first = data[0];
+      const categoricalKeys = Object.keys(first).filter(
+        (k) => k !== "value" && k !== "count" && k !== "total"
+      );
+      if (categoricalKeys.length >= 2) {
+        return [];
+      }
       const chart = buildChartFromValueCount(data, "distribución");
       return chart ? [chart] : [];
     }
