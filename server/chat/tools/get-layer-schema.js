@@ -14,10 +14,10 @@ export default {
     function: {
       name: "get_layer_schema",
       description:
-        "Devuelve el esquema REAL de una capa: lista exacta de columnas " +
-        "con tipo, min/max/promedio (numéricas) y top 5 valores " +
-        "(categóricas). Úsala SIEMPRE que dudes del nombre exacto de una " +
-        "columna antes de agrupar o filtrar por ella.",
+        "Devuelve la LISTA de columnas de una capa. " +
+        "Úsala SOLO si ya intentaste agregar/filtrar y la tool falló " +
+        "porque el nombre de la columna era inválido. " +
+        "NO la uses antes de actuar: si la columna está en el catálogo, úsala directo.",
       parameters: {
         type: "object",
         properties: {
