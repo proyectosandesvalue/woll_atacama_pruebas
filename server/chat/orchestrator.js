@@ -1,16 +1,12 @@
 /**
  * Orquestador del chat IA.
  *
- * Recibe {text, history} del frontend y devuelve {reply, chart?, geojson?}.
+ * Bucle ReAct: hasta N pasos (ORCHESTRATOR_MAX_ITERATIONS, default 4).
+ * En cada paso el LLM decide si llamar tools o responder.
+ * En el último paso, toolChoice: "none" fuerza la respuesta de texto.
  *
- * Diseño del ciclo (exactamente 2 llamadas LLM por respuesta, pensado
- * para el límite de tokens por minuto del tier gratuito de Groq):
- *
- *   L1 (con catálogo + columnas): el LLM decide las tool_calls y las
- *       ejecuta TODAS en paralelo contra Supabase.
- *   L2 (síntesis forzada): el LLM redacta la respuesta final.
- *
- * ORCHESTRATOR_MAX_ITERATIONS controla las rondas de tools (1 por defecto).
+ * El geojson y las filas completas van a `ctx.raw` (almacén por invocación)
+ * y NO se envían al LLM. El LLM ve solo metadatos + muestra reducida.
  */
 
 import { getLLM } from "../llm/provider.js";
@@ -19,7 +15,7 @@ import { TOOL_DEFINITIONS } from "./tools.js";
 import { runTool } from "./runners.js";
 
 const DEFAULT_BUDGET_MS = 8000;
-const DEFAULT_MAX_ITERATIONS = 1;
+const DEFAULT_MAX_ITERATIONS = 5;
 
 /** Log de diagnóstico: activar con ORCHESTRATOR_DEBUG=1 */
 const DEBUG = /^(1|true|yes)$/i.test(process.env.ORCHESTRATOR_DEBUG || "");
@@ -135,24 +131,6 @@ Reglas de estilo (MODO PRODUCCIÓN — obligatorias):
 const SYSTEM_PROMPT =
   SYSTEM_PROMPT_BASE + (CHAT_VERBOSE ? VERBOSE_RULES : NON_VERBOSE_RULES);
 
-  const SYNTHESIS_SYSTEM_PROMPT_BASE =
-  "Eres el asistente del Visor Territorial Atacama. Redacta ahora la respuesta final al usuario " +
-  "usando SOLO los resultados de las herramientas que aparecen en el historial. " +
-  "Responde en español, conciso, citando cifras concretas. " +
-  "Si una herramienta falló o no hay datos, explícalo y sugiere una capa alternativa.";
-
-const SYNTHESIS_VERBOSE_RULES =
-  " Puedes mencionar los nombres técnicos de las herramientas y los layer_id cuando aporten claridad.";
-
-const SYNTHESIS_NON_VERBOSE_RULES =
-  " IMPORTANTE: NO menciones herramientas, layer_id, nombres de columnas de la BD ni términos técnicos. " +
-  "Usa los nombres visibles de las capas. Habla como un analista territorial.";
-
-const SYNTHESIS_SYSTEM_PROMPT =
-  SYNTHESIS_SYSTEM_PROMPT_BASE +
-  (CHAT_VERBOSE ? SYNTHESIS_VERBOSE_RULES : SYNTHESIS_NON_VERBOSE_RULES);
-
-
 
 /** Caché del system prompt (el catálogo cambia raramente). */
 let _cachedSystem = null;
@@ -205,101 +183,6 @@ async function buildSystemPrompt() {
   return full;
 }
 
-
-function buildSynthesisMessages(history) {
-  const out = [];
-  const toolResults = [];
-
-  const flushTools = () => {
-    if (toolResults.length === 0) return;
-    out.push({
-      role: "user",
-      content: `Resultados de herramientas:\n\n${toolResults.join("\n\n")}`,
-    });
-    toolResults.length = 0;
-  };
-
-  for (const m of history) {
-    if (m.role === "tool") {
-      toolResults.push(`### ${m.name || "tool"}\n${m.content}`);
-    } else if (m.role === "assistant") {
-      if (m.tool_calls && m.tool_calls.length > 0) continue;
-      flushTools();
-      out.push({ role: "assistant", content: m.content || "" });
-    } else if (m.role === "user") {
-      flushTools();
-      out.push({ role: "user", content: m.content || "" });
-    }
-  }
-  flushTools();
-  return out;
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Detección de geojson (agnóstica de la tool)
-// ─────────────────────────────────────────────────────────────────
-
-const MAX_GEOJSON_FEATURES = 500;
-
-/**
- * Recorre el historial de tools buscando FeatureCollections.
- * Fusiona múltiples colecciones respetando el tope de 500 features.
- * Devuelve { geojson, total, shown, truncated } o null si no hay ninguna.
- */
-function buildGeojsonFromHistory(history) {
-  if (!CHAT_GEOJSON_ENABLED) return null;
-
-  const allFeatures = [];
-
-  for (const m of history) {
-    if (m.role !== "tool") continue;
-
-    let parsed;
-    try {
-      parsed = typeof m.content === "string" ? JSON.parse(m.content) : m.content;
-    } catch {
-      continue;
-    }
-
-    // Desenvolver wrappers de PostgREST
-    if (
-      parsed &&
-      typeof parsed === "object" &&
-      !Array.isArray(parsed) &&
-      Object.keys(parsed).length === 1
-    ) {
-      const key = Object.keys(parsed)[0];
-      if (parsed[key] && typeof parsed[key] === "object") {
-        parsed = parsed[key];
-      }
-    }
-
-    if (
-      parsed &&
-      typeof parsed === "object" &&
-      parsed.type === "FeatureCollection" &&
-      Array.isArray(parsed.features)
-    ) {
-      for (const f of parsed.features) {
-        allFeatures.push(f);
-        if (allFeatures.length >= MAX_GEOJSON_FEATURES * 2) break;
-      }
-    }
-  }
-
-  if (allFeatures.length === 0) return null;
-
-  const total = allFeatures.length;
-  const shown = Math.min(total, MAX_GEOJSON_FEATURES);
-  const features = allFeatures.slice(0, shown);
-
-  return {
-    geojson: { type: "FeatureCollection", features },
-    total,
-    shown,
-    truncated: total > shown,
-  };
-}
 
 /**
  * Genera el `notice` determinístico cuando el geojson fue truncado.
@@ -597,28 +480,31 @@ function buildChartFromRows(rows, toolName) {
   };
 }
 
-/**
- * Ejecuta el ciclo: rondas de tools + síntesis forzada.
- */
 export async function runOrchestrator({ text, history = [], sessionId = null }) {
   const budgetMs =
     Number(process.env.ORCHESTRATOR_BUDGET_MS) || DEFAULT_BUDGET_MS;
-  const maxIterations =
-    Number(process.env.ORCHESTRATOR_MAX_ITERATIONS) || DEFAULT_MAX_ITERATIONS;
+  const maxSteps =
+    Number(process.env.ORCHESTRATOR_MAX_ITERATIONS) || 4;
 
-  if (maxIterations < 1) {
+  if (maxSteps < 1) {
     throw new Error("ORCHESTRATOR_MAX_ITERATIONS debe ser >= 1");
   }
 
+  const RESERVE_MS = 500;
   const deadline = Date.now() + budgetMs;
 
   const llm = await getLLM();
   const system = await buildSystemPrompt();
 
   dbg(
-    `budget=${budgetMs}ms maxIterations=${maxIterations} model=${process.env.LLM_MODEL}`
+    `budget=${budgetMs}ms maxSteps=${maxSteps} model=${process.env.LLM_MODEL}`
   );
 
+  // ── Almacén por invocación (geojson, filas completas) ──────
+  // El LLM NUNCA ve esto. Va directo al frontend en `finish`.
+  const ctx = { raw: new Map() };
+
+  // ── Mensajes iniciales ─────────────────────────────────────
   const messages = [];
   for (const h of history.slice(-3)) {
     if (h && (h.role === "user" || h.role === "assistant")) {
@@ -627,10 +513,14 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   }
   messages.push({ role: "user", content: String(text || "").trim() });
 
-    let iterations = 0;
-
-  while (iterations < maxIterations && Date.now() < deadline) {
-    iterations += 1;
+  // ── Bucle ReAct ────────────────────────────────────────────
+  // Sale SOLO por `finish()`. Sin returns internos.
+  // En el último paso, `toolChoice: "none"` fuerza texto plano → salida.
+  let step = 0;
+  while (true) {
+    step += 1;
+    const isLast =
+      step >= maxSteps || Date.now() > deadline - RESERVE_MS;
 
     let response;
     const t1 = Date.now();
@@ -639,45 +529,33 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
         system,
         messages,
         tools: TOOL_DEFINITIONS,
-        toolChoice: "auto",
+        toolChoice: isLast ? "none" : "auto",
         sessionId,
       });
     } catch (err) {
       console.error(
-        `[orchestrator] LLM call failed (iteración ${iterations}):`,
+        `[orchestrator] LLM call failed (step ${step}):`,
         err?.message || err,
         err?.stack || ""
       );
       throw err;
     }
-        const l1Ms = Date.now() - t1;
+    const stepMs = Date.now() - t1;
+
     console.log(
-      `[orchestrator] L1: ${l1Ms}ms | ` +
-      `content_len=${(response.content || "").length} | ` +
+      `[orchestrator] step=${step} isLast=${isLast} ms=${stepMs} | ` +
       `tool_calls=${response.toolCalls?.length || 0} | ` +
+      `content_len=${(response.content || "").length} | ` +
       `content_preview=${JSON.stringify((response.content || "").slice(0, 100))}`
     );
 
+    // ── Salida: el LLM no pidió más tools ─────────────────────
     if (!response.toolCalls || response.toolCalls.length === 0) {
-      dbg(`iteración ${iterations}: respuesta directa (sin tool_calls)`);
-      const reply = (response.content || "Sin respuesta.").trim();
-
-      const geojsonMeta = buildGeojsonFromHistory(messages);
-      return {
-        reply,
-        charts: buildChartsFromHistory(messages),
-        geojson: geojsonMeta ? geojsonMeta.geojson : null,
-        notice: buildNoticeFromGeojson(geojsonMeta),
-      };
+      dbg(`step ${step}: sin tool_calls → salida`);
+      return finish(response.content, ctx, messages);
     }
 
-    dbg(
-      `iteración ${iterations}: ${response.toolCalls.length} tool_call(s):`,
-      response.toolCalls
-        .map((tc) => `${tc.name}(${JSON.stringify(tc.arguments)})`)
-        .join(" | ")
-    );
-
+    // ── Tool calls: guardar turno del asistente ───────────────
     messages.push({
       role: "assistant",
       content: response.content || "",
@@ -688,6 +566,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       })),
     });
 
+    // ── Ejecutar tools en paralelo ────────────────────────────
     const toolResults = await Promise.all(
       response.toolCalls.map(async (tc) => ({
         tc,
@@ -695,93 +574,129 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       }))
     );
 
-        for (const { tc, out } of toolResults) {
-      const payload = out.ok ? out.result : { error: out.error };
+    // ── Compactar cada resultado y agregarlo al historial ─────
+    for (const { tc, out } of toolResults) {
+      const compacted = compact(tc.name, out, ctx);
       dbg(
         `tool ${tc.name} → ${out.ok ? "ok" : "ERROR: " + out.error} | ` +
-          `resultado: ${JSON.stringify(payload).slice(0, 200)}`
+        `compactado: ${JSON.stringify(compacted).slice(0, 200)}`
       );
-
-      // ── CA-10: el LLM NO debe ver las geometrías ──────────
-      // El geojson viaja en la respuesta final al frontend, pero
-      // NO se envía al LLM: infla tokens y no aporta al razonamiento.
-      // Los metadatos (total/shown/truncated) sí se conservan para
-      // que el LLM pueda informar el recorte.
-      let contentForLLM = payload;
-      if (
-        payload &&
-        typeof payload === "object" &&
-        !Array.isArray(payload)
-      ) {
-        const { geojson, ...rest } = payload;
-        if (geojson) {
-          
-          contentForLLM = rest;
-          if (Array.isArray(geojson.features)) {
-            contentForLLM._geojson_hidden = {
-              feature_count: geojson.features.length,
-            };
-          }
-        }
-      }
-
       messages.push({
         role: "tool",
         tool_call_id: tc.id,
         name: tc.name,
-        content: JSON.stringify(contentForLLM),
+        content: JSON.stringify(compacted),
       });
     }
+  }
+}
 
-  if (Date.now() < deadline) {
-    try {
-      const remaining = Math.max(500, deadline - Date.now());
-      dbg(`síntesis forzada: timeout=${remaining}ms`);
+// ─────────────────────────────────────────────────────────────────
+// Compactador: prepara el resultado de una tool para el LLM
+// ─────────────────────────────────────────────────────────────────
 
-      const t2 = Date.now();
-      const final = await llm.chat({
-        system: SYNTHESIS_SYSTEM_PROMPT,
-        messages: buildSynthesisMessages(messages),
-        signal: AbortSignal.timeout(remaining),
-        sessionId,
-      });
-      const l2Ms = Date.now() - t2;
+/**
+ * Reduce el resultado de una tool a lo mínimo que el LLM necesita.
+ *
+ * Reglas:
+ *   - FeatureCollection → guardar en ctx.raw; el LLM ve ref + total + sample.
+ *   - Array de filas → recortar a 40.
+ *   - Objeto con rows → recortar rows a 40.
+ *   - Cualquier otra cosa → devolver tal cual (agregados, stats).
+ */
+function compact(name, out, ctx) {
+  if (!out.ok) return { error: out.error };
 
-      // ── Instrumentación temporal: L2 ────────────────────────
-      console.log(
-        `[orchestrator] L2: ${l2Ms}ms | content_len=${(final.content || "").length}`
-      );
-      // ────────────────────────────────────────────────────────
+  const r = out.result;
 
-      const reply = (final.content || "").trim();
-      if (reply) {
-        dbg(`síntesis forzada OK: ${reply.slice(0, 120)}...`);
-
-        const geojsonMeta = buildGeojsonFromHistory(messages);
-        return {
-          reply,
-          charts: buildChartsFromHistory(messages),
-          geojson: geojsonMeta ? geojsonMeta.geojson : null,
-          notice: buildNoticeFromGeojson(geojsonMeta),
-        };
-      }
-    } catch (err) {
-      dbg("síntesis forzada FALLÓ:", err?.message || err);
-    }
-  } else {
-    console.log(
-      `[orchestrator] L2 SALTED: presupuesto agotado antes de la síntesis`
-    );
-    dbg("presupuesto agotado antes de la síntesis forzada");
+  // FeatureCollection directa (la RPC la devuelve así)
+  if (r && r.type === "FeatureCollection" && Array.isArray(r.features)) {
+    const ref = `fc_${ctx.raw.size + 1}`;
+    ctx.raw.set(ref, r);
+    return {
+      ref,
+      total: r.features.length,
+      sample: r.features.slice(0, 15).map((f) => f.properties),
+      _hint: "Geometrías guardadas. Se pintan en el mapa, no se analizan acá.",
+    };
   }
 
-  const geojsonMeta = buildGeojsonFromHistory(messages);
+  // Array de filas
+  if (Array.isArray(r)) {
+    const ROWS_MAX = 40;
+    if (r.length > ROWS_MAX) {
+      return {
+        rows: r.slice(0, ROWS_MAX),
+        rows_total: r.length,
+        _hint: `Mostrando ${ROWS_MAX} de ${r.length} filas.`,
+      };
+    }
+    return r;
+  }
+
+  // Objeto con .rows
+  if (r && typeof r === "object" && Array.isArray(r.rows)) {
+    const ROWS_MAX = 40;
+    if (r.rows.length > ROWS_MAX) {
+      return {
+        ...r,
+        rows: r.rows.slice(0, ROWS_MAX),
+        rows_total: r.rows.length,
+      };
+    }
+    return r;
+  }
+
+  // Default: agregados, stats, esquema → tal cual
+  return r;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Salida: arma el payload final al frontend
+// ─────────────────────────────────────────────────────────────────
+
+function finish(reply, ctx, messages) {
+  const geojsonMeta = buildGeojsonFromCtx(ctx);
   return {
-    reply:
-      "No pude generar la respuesta a tiempo. Reformula con una pregunta más específica.",
+    reply: String(reply || "").trim() || "Sin respuesta.",
     charts: buildChartsFromHistory(messages),
     geojson: geojsonMeta ? geojsonMeta.geojson : null,
     notice: buildNoticeFromGeojson(geojsonMeta),
   };
 }
+
+// ─────────────────────────────────────────────────────────────────
+// Fusión de geojson desde ctx.raw
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Fusiona todos los FeatureCollections de ctx.raw, respetando el tope de 500.
+ * Devuelve { geojson, total, shown, truncated } o null.
+ */
+function buildGeojsonFromCtx(ctx) {
+  if (!CHAT_GEOJSON_ENABLED) return null;
+  if (!ctx.raw || ctx.raw.size === 0) return null;
+
+  const allFeatures = [];
+  for (const fc of ctx.raw.values()) {
+    if (fc?.type === "FeatureCollection" && Array.isArray(fc.features)) {
+      for (const f of fc.features) {
+        allFeatures.push(f);
+        if (allFeatures.length >= MAX_GEOJSON_FEATURES * 2) break;
+      }
+    }
+  }
+
+  if (allFeatures.length === 0) return null;
+
+  const total = allFeatures.length;
+  const shown = Math.min(total, MAX_GEOJSON_FEATURES);
+  const features = allFeatures.slice(0, shown);
+
+  return {
+    geojson: { type: "FeatureCollection", features },
+    total,
+    shown,
+    truncated: total > shown,
+  };
 }
