@@ -197,6 +197,40 @@ Todas las tools invocan RPCs tipadas en Supabase.
 
 Los args del LLM se normalizan defensivamente antes de tocar la BD.
 
+### 6.4 — Regla de cobertura de datos
+
+Cuando una respuesta del chat dependa de una columna con cobertura incompleta,
+la respuesta debe declarar explícitamente:
+
+- El total de filas consideradas.
+- Cuántas tienen el dato informado.
+- Cuántas no lo tienen ("Sin información", NULL, etc.).
+
+Ejemplo:
+> "De los 920 derechos de agua, 375 tienen uso declarado.
+> De esos 375: 240 para riego, 66 otros usos, 33 minería, 31 consumo humano, 5 industrial.
+> Los 545 restantes no tienen uso informado en la fuente."
+
+Esta regla aplica cuando la cobertura es < 95%. Evita que el LLM responda
+como si los 920 tuvieran uso declarado.
+
+### 6.5 — Regla de cobertura de datos
+
+Cuando una respuesta del chat dependa de una columna con cobertura < 95%,
+la respuesta debe declarar explícitamente:
+
+- El total de filas consideradas.
+- Cuántas tienen el dato informado.
+- Cuántas no lo tienen.
+
+Ejemplo:
+> "De los 920 derechos de agua, 375 tienen uso declarado: 240 riego,
+> 66 otros usos, 33 minería, 31 consumo humano, 5 industrial.
+> Los 545 restantes no tienen uso informado en la fuente."
+
+Esta regla aplica a: `derechos_agua_2025.Uso del Agua` (41% cobertura),
+y cualquier otra columna con cobertura < 95% detectada en Sprint 37.
+
 7. Reglas del frontend
 7.1. Consumo de configuración
 

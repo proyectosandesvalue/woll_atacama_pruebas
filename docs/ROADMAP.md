@@ -83,6 +83,7 @@
 | 31 | Observabilidad y operación | ⏳ pending | alta | 7-8h | 26 |
 | 32 | Marco legal y privacidad | ⏳ pending | media | 5-6h | 24, 31-A |
 | 33 | Entrega y traspaso | ⏳ pending | alta | 10h | Sprints Must |
+| 37 | Auditoría y normalización de datos | ⏳ pending | alta | 20-24h | 23 |
 
 **Leyenda de estados:**
 - ✅ `done` — Completado y en producción.
@@ -541,6 +542,144 @@ El chat responde con texto + charts + **GeoJSON pintado en el mapa**.
 - **CA-2** Ningún acceso crítico depende de una sola persona.
 - **CA-3** El checklist de aceptación está firmado por el cliente.
 
+## Sprint 34 — Refactor de mantenibilidad (frontend)
+
+**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 20-25h · **Dependencias**: 26-D, 28
+**Requiere**: spec madre (`docs/specs/34-refactor-frontend/00-spec-madre.md`).
+
+**Objetivo**: reducir archivos > 500 líneas, separar responsabilidades mezcladas, eliminar
+duplicaciones conocidas. **Sin cambiar comportamiento.** Se hace por fases con tests de
+regresión en cada paso.
+
+**Invariantes:**
+- **INV-1** El visor sigue funcionando idéntico.
+- **INV-2** No se agregan features nuevas.
+- **INV-3** Cada archivo dividido tiene tests que aseguran que el comportamiento es el mismo.
+
+**Sub-sprints**:
+- [ ] **A (5h)** — `attributeTableUtils.js` → `attributeTable/` con `table.js`, `filters.js`, `search.js`, `render.js`, `state.js`. Tests de regresión.
+- [ ] **B (4h)** — `glifyAdapter.js` → `glify/` con `adapter.js`, `colors.js`, `contexts.js`, `sanitize.js`.
+- [ ] **C (4h)** — `layerUtils.js` → `layerLoader/` con `loader.js`, `wms.js`, `glify.js`, `heatmap.js`, `errors.js`.
+- [ ] **D (3h)** — `chatUI.js` → `chat/` con `render.js`, `state.js`, `events.js`, `api.js`.
+- [ ] **E (3h)** — Extraer `transformCoordinates` a `js/utils/geometry.js` único; que ambos workers lo importen.
+- [ ] **F (3h)** — Corregir anti-patrones: `escapeHtml`, `getEstiloCapa`, `appState` sin `setTimeout` top-level, `localStorage` con namespace, `document.getElementById` diferido.
+- [ ] **G (2h)** — Verificación: E2E de los flujos principales + Lighthouse sin regresión.
+
+**Criterios de aceptación**:
+- **CA-1** Ningún archivo de `js/utils/` supera las 300 líneas (excepto `glify-browser.js` que es bundle).
+- **CA-2** Ninguna función supera las 50 líneas.
+- **CA-3** `transformCoordinates` existe una sola vez.
+- **CA-4** Los E2E de Sprint 30 pasan después del refactor.
+- **CA-5** Lighthouse sin regresión.
+
+**Reversión**: un commit por sub-sprint. Si un sub-sprint rompe algo, `git revert` individual.
+
+---
+
+## Sprint 35 — Refactor de estilos CSS
+
+**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 8-10h · **Dependencias**: 34
+**Requiere**: spec simple (no épica).
+
+**Objetivo**: reducir `!important`, sistematizar tokens, separar componentes.
+
+**Sub-sprints**:
+- [ ] **A (3h)** — Auditar `!important`: listar cada uso, agrupar por causa raíz, eliminar la mayor cantidad posible corrigiendo la cascada.
+- [ ] **B (2h)** — Completar sistema de tokens en `base.css`: colores, spacing, tipografía, sombras, bordes, radios, z-index.
+- [ ] **C (3h)** — Dividir `components.css` por dominio: `components/chat.css`, `components/sidebar.css`, `components/table.css`, `components/modal.css`, `components/legend.css`, `components/search.css`.
+- [ ] **D (2h)** — Verificar visualmente todas las pantallas con el CSS refactorizado.
+
+**Criterios de aceptación**:
+- **CA-1** Ningún archivo CSS supera las 500 líneas.
+- **CA-2** El número de `!important` baja al menos un 80% (de ~50 a < 10).
+- **CA-3** Sistema de tokens cubre el 90% de los valores usados.
+- **CA-4** Sin regresión visual en ningún componente.
+
+**Reversión**: un commit por sub-sprint.
+
+---
+
+## Sprint 36 — Refactor de configs de capas
+
+**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 6-8h · **Dependencias**: 29-C
+**Requiere**: spec simple.
+
+**Objetivo**: reducir los 9 archivos `js/config/*.js` (algunos > 700 líneas). Separar por dimensión.
+
+**Sub-sprints**:
+- [ ] **A (2h)** — Dividir `planificacion.js` (~800 líneas) en `planificacion/` con un archivo por grupo de capas.
+- [ ] **B (2h)** — Dividir `agua.js` (~700 líneas) en `agua/` con `derechos.js`, `glaciares.js`, `humedales.js`, `lagunas.js`, `superficial.js`, etc.
+- [ ] **C (1h)** — Dividir `mineria.js` y `energia.js`.
+- [ ] **D (1h)** — Mover lógica repetida (colores, iconos, aliases) a helpers compartidos.
+- [ ] **E (1h)** — Verificación: el visor carga las mismas capas con los mismos estilos.
+
+**Criterios de aceptación**:
+- **CA-1** Ningún archivo de configuración de dimensión supera las 300 líneas.
+- **CA-2** La estructura de capas es idéntica antes y después.
+- **CA-3** `configValidator` sigue sin errores.
+
+**Reversión**: un commit por sub-sprint.
+
+---
+
+### Sprint 37 — Auditoría y normalización de datos
+
+**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 20-24h · **Dependencias**: 23
+**Requiere**: acceso al cliente para validación (37-E).
+
+**Objetivo**: dejar las tablas del catálogo con esquema documentado y columnas
+normalizadas (numéricos como `numeric`, fechas como `date`, categorías con dominios
+cerrados). **No se hace todo de una**: se auditan las 71 tablas, pero se normalizan
+por fases, empezando por las que el chat y la Pieza 2 usan.
+
+### Sprint 37 — Auditoría y normalización de datos
+
+**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 22-26h · **Dependencias**: 23
+**Requiere**: acceso al cliente para validación (37-E).
+
+**Objetivo**: dejar las tablas del catálogo con esquema documentado y columnas
+normalizadas (numéricos como `numeric`, fechas como `date`, categorías con dominios
+cerrados). **No se hace todo de una**: se auditan las 71 tablas, pero se normalizan
+por fases, empezando por las que el chat y la Pieza 2 usan.
+
+**Hallazgos confirmados (2026-10-05):**
+
+| Tabla / Columna | Estado real | Acción |
+|---|---|---|
+| `derechos_agua_2025.Caudal Anual Promedio` | 914/920 (99.3%) coma decimal o entero; 6 con comillas literales | Parser `parse_caudal_cl()` con `TRIM(BOTH '" ')` |
+| `derechos_agua_2025.Naturaleza del Agua` | 4 valores: Subterranea (709), Superficial (110), Superficial y Corriente (99), Superficial y Detenida (2) | Normalizar a 2 categorías + conservar subcategoría |
+| `derechos_agua_2025.Uso del Agua` | **59% (545/920) "Sin informacion"** | Documentar + regla de cobertura en el prompt |
+| `derechos_agua_2025.Tipo Derecho` | Consuntivo (901) / No Consuntivo (19) | Normalizar trivial |
+| `catastro_especies_frutales.sup_frutal` | 2956/2956 numéricos | Castear directo |
+| `catastro_variedades_frutales.superf_fru` | (verificar en 37-A) | Probablemente casteo directo |
+| `decrero_escasez_2021/2022/2023` | Existen, typo en el nombre | Vistas `decreto_escasez_YYYY` |
+| `comunas_poligonos` | Columnas correctas, `SHAPE_Area` numérico | Sin acción |
+| `chat_catalog.attributes` | Guardado como string JSON | Fix con `(p_attributes #>> '{}')::jsonb` |
+
+**Sub-sprints**:
+- [ ] **A (4h) — Inventario y diagnóstico.** Script `scripts/audit-tables.mjs`.
+- [ ] **B (2h) — Clasificación.** Categorías A-G en `docs/DATA_AUDIT.md`.
+- [ ] **B.1 (1h) — Inspección de valores raros de caudal.** Confirmar que son solo comillas literales.
+- [ ] **C (2h) — Modelo de normalización.**
+- [ ] **D (8-10h) — Migraciones de normalización.**
+  - Función `public.parse_caudal_cl(text) RETURNS numeric`.
+  - Tabla `derechos_normalizado`.
+  - Tabla `frutales_normalizado`.
+  - Vistas `decreto_escasez_YYYY`.
+  - Registro en catálogo.
+- [ ] **E (2h) — Verificación con el cliente.**
+- [ ] **E.1 (1h) — Documentar cobertura de uso.**
+- [ ] **E.2 (30 min) — Vistas `decreto_escasez_YYYY`.**
+- [ ] **F (2h) — Fix `chat_upsert_layer`.**
+
+**Criterios de aceptación**:
+- **CA-1** `docs/DATA_AUDIT.md` lista las 71 tablas con problemas clasificados.
+- **CA-2** ≥ 99% de caudales parseados correctamente.
+- **CA-3** Los `attributes` en `chat_catalog` son array jsonb.
+- **CA-4** El cliente validó las interpretaciones.
+- **CA-5** El chat sigue funcionando sin regresiones.
+
+**Reversión**: cada migración es aditiva. Las tablas originales no se tocan.
 ---
 
 ## Ajustes a sprints existentes
@@ -600,6 +739,26 @@ El chat responde con texto + charts + **GeoJSON pintado en el mapa**.
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-10-05 (sesión 4)
+- 📝 Diagnóstico del Sprint 37 cerrado:
+  - `derechos_agua_2025`: 920 filas, caudal en coma decimal (99.3% parseable).
+  - `Uso del Agua`: 59% "Sin informacion" → nueva regla de cobertura en el CONTRACT.
+  - `Naturaleza del Agua`: 4 valores consistentes, normalizables.
+  - `catastro_especies_frutales.sup_frutal`: casteo directo.
+  - `decrero_escasez_*`: typo en el nombre, se crearán vistas con nombre correcto.
+- Próximo: aplicar cambios al ROADMAP + CONTRACT, después arrancar Sprint 23-A.
+
+### 2026-10-05 (sesión 3)
+- 📝 Auditoría externa integrada. Cambio de enfoque en el chat: de 3 capas de LLM
+  a bucle ReAct único + tablas de análisis precalculadas + playbooks.
+- 📝 Nuevo Sprint 37 (auditoría y normalización de datos).
+- 📝 Detectado bug estructural: el `while` del orquestador no itera (los `return`
+  están dentro). Forma parte del Sprint 23-A.
+- 📝 Detectado bug en `vercel.json`: doble clave `functions`.
+- 📝 Detectado bug en el fix de 23-A: `payload.geojson` nunca matchea con la
+  FeatureCollection directa de la RPC.
+- Próximo: 5 queries de diagnóstico → Sprint 37 → Sprint 23 completo.
 
 ### 2026-10-05 (sesión 2)
 - 📝 Agregados Sprints 34-36 (refactor de mantenibilidad, estilos, configs).
@@ -690,6 +849,17 @@ refactor.
 - Un archivo, una responsabilidad.
 - Aplicar a medida que se toca cada archivo, no en un big-bang.
 
+
+Detectados en el diagnóstico inicial (2026-10-05). Sprint 37 los resuelve.
+
+| Tabla | Problema | Sprint |
+|---|---|---|
+| `derechos_agua_2025` | `Caudal Anual Promedio` y `Naturaleza del Agua` son `character varying` | 37-D |
+| `catastro_especies_frutales` | `sup_frutal` y `ano_planta` son `character varying` | 37-D |
+| `catastro_variedades_frutales` | `superf_fru` y `ano_plant` son `character varying` | 37-D |
+| `catastro_especies_frutales` / `catastro_variedades_frutales` | Solapan información. Definir fuente canónica | 37-E |
+| `chat_catalog.attributes` | Guardado como string JSON, no array jsonb | 37-F |
+
 ### Duplicaciones conocidas
 
 | Duplicación | Ubicación | Sprint |
@@ -731,85 +901,7 @@ refactor.
 
 ---
 
-## Sprint 34 — Refactor de mantenibilidad (frontend)
 
-**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 20-25h · **Dependencias**: 26-D, 28
-**Requiere**: spec madre (`docs/specs/34-refactor-frontend/00-spec-madre.md`).
-
-**Objetivo**: reducir archivos > 500 líneas, separar responsabilidades mezcladas, eliminar
-duplicaciones conocidas. **Sin cambiar comportamiento.** Se hace por fases con tests de
-regresión en cada paso.
-
-**Invariantes:**
-- **INV-1** El visor sigue funcionando idéntico.
-- **INV-2** No se agregan features nuevas.
-- **INV-3** Cada archivo dividido tiene tests que aseguran que el comportamiento es el mismo.
-
-**Sub-sprints**:
-- [ ] **A (5h)** — `attributeTableUtils.js` → `attributeTable/` con `table.js`, `filters.js`, `search.js`, `render.js`, `state.js`. Tests de regresión.
-- [ ] **B (4h)** — `glifyAdapter.js` → `glify/` con `adapter.js`, `colors.js`, `contexts.js`, `sanitize.js`.
-- [ ] **C (4h)** — `layerUtils.js` → `layerLoader/` con `loader.js`, `wms.js`, `glify.js`, `heatmap.js`, `errors.js`.
-- [ ] **D (3h)** — `chatUI.js` → `chat/` con `render.js`, `state.js`, `events.js`, `api.js`.
-- [ ] **E (3h)** — Extraer `transformCoordinates` a `js/utils/geometry.js` único; que ambos workers lo importen.
-- [ ] **F (3h)** — Corregir anti-patrones: `escapeHtml`, `getEstiloCapa`, `appState` sin `setTimeout` top-level, `localStorage` con namespace, `document.getElementById` diferido.
-- [ ] **G (2h)** — Verificación: E2E de los flujos principales + Lighthouse sin regresión.
-
-**Criterios de aceptación**:
-- **CA-1** Ningún archivo de `js/utils/` supera las 300 líneas (excepto `glify-browser.js` que es bundle).
-- **CA-2** Ninguna función supera las 50 líneas.
-- **CA-3** `transformCoordinates` existe una sola vez.
-- **CA-4** Los E2E de Sprint 30 pasan después del refactor.
-- **CA-5** Lighthouse sin regresión.
-
-**Reversión**: un commit por sub-sprint. Si un sub-sprint rompe algo, `git revert` individual.
-
----
-
-## Sprint 35 — Refactor de estilos CSS
-
-**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 8-10h · **Dependencias**: 34
-**Requiere**: spec simple (no épica).
-
-**Objetivo**: reducir `!important`, sistematizar tokens, separar componentes.
-
-**Sub-sprints**:
-- [ ] **A (3h)** — Auditar `!important`: listar cada uso, agrupar por causa raíz, eliminar la mayor cantidad posible corrigiendo la cascada.
-- [ ] **B (2h)** — Completar sistema de tokens en `base.css`: colores, spacing, tipografía, sombras, bordes, radios, z-index.
-- [ ] **C (3h)** — Dividir `components.css` por dominio: `components/chat.css`, `components/sidebar.css`, `components/table.css`, `components/modal.css`, `components/legend.css`, `components/search.css`.
-- [ ] **D (2h)** — Verificar visualmente todas las pantallas con el CSS refactorizado.
-
-**Criterios de aceptación**:
-- **CA-1** Ningún archivo CSS supera las 500 líneas.
-- **CA-2** El número de `!important` baja al menos un 80% (de ~50 a < 10).
-- **CA-3** Sistema de tokens cubre el 90% de los valores usados.
-- **CA-4** Sin regresión visual en ningún componente.
-
-**Reversión**: un commit por sub-sprint.
-
----
-
-## Sprint 36 — Refactor de configs de capas
-
-**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 6-8h · **Dependencias**: 29-C
-**Requiere**: spec simple.
-
-**Objetivo**: reducir los 9 archivos `js/config/*.js` (algunos > 700 líneas). Separar por dimensión.
-
-**Sub-sprints**:
-- [ ] **A (2h)** — Dividir `planificacion.js` (~800 líneas) en `planificacion/` con un archivo por grupo de capas.
-- [ ] **B (2h)** — Dividir `agua.js` (~700 líneas) en `agua/` con `derechos.js`, `glaciares.js`, `humedales.js`, `lagunas.js`, `superficial.js`, etc.
-- [ ] **C (1h)** — Dividir `mineria.js` y `energia.js`.
-- [ ] **D (1h)** — Mover lógica repetida (colores, iconos, aliases) a helpers compartidos.
-- [ ] **E (1h)** — Verificación: el visor carga las mismas capas con los mismos estilos.
-
-**Criterios de aceptación**:
-- **CA-1** Ningún archivo de configuración de dimensión supera las 300 líneas.
-- **CA-2** La estructura de capas es idéntica antes y después.
-- **CA-3** `configValidator` sigue sin errores.
-
-**Reversión**: un commit por sub-sprint.
-
----
 
 ## Cambio 3 — Fila en el índice
 
