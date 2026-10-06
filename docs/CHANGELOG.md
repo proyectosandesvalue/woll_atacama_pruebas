@@ -45,6 +45,38 @@
 
 ## [Unreleased]
 
+## [Sprint 23-A] — 2026-10-06
+
+### Fixed
+- Bucle ReAct: los `return` estaban dentro del `while`, ignorando
+  `ORCHESTRATOR_MAX_ITERATIONS`. Ahora sale solo por `finish()`.
+- El LLM ya no recibe el geojson completo: va a `ctx.raw` por invocación.
+- Charts basura: `get_layer_schema` generaba 19 charts. Ahora limitado
+  a 3 totales y 2 por tool, con filtro de relevancia.
+- `get_layer_schema` devolvía ~10 KB. Ahora solo nombres de columnas.
+- `MAX_GEOJSON_FEATURES` estaba usada sin declarar.
+- Doble agrupación generaba chart con labels duplicados y `"null"`.
+  Ahora no genera chart; el LLM presenta tabla markdown.
+- LLM pasaba `tipo` (minúsculas) en lugar de `TIPO`. Regla 13 del
+  prompt lo previene.
+- El LLM no presentaba tabla cuando la tool era
+  `aggregate_by_admin_and_column`. Regla 8 ampliada.
+
+### Changed
+- Prompt: 22 → 13 reglas. Decision tree por tipo de pregunta.
+- Prompt base: 1401 → 568 tokens (-60%).
+- Prompt total: 2534 → 1702 tokens (-33%).
+- `get_layer_schema`: descripción de "Úsala SIEMPRE" a
+  "Úsala SOLO si ya fallaste".
+- Modelo LLM: GLM-5.3-Flash → DeepSeek V4.1 Flash.
+
+### Resultado medible
+- Latencia: 82-180s → 8-20s (**10-20x mejora**).
+- Reply: de `"Sin respuesta."` a análisis territorial real.
+- Charts: de 19 basura a 0-3 relevantes.
+- Steps: de 3 (con cuelgue 51s) a 3 limpios.
+- Prompt: 33% menos tokens por llamada.
+
 ### Added
 - (vacío)
 

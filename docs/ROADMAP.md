@@ -168,8 +168,8 @@ El chat responde con texto + charts + **GeoJSON pintado en el mapa**.
 - [ ] **D** — Verificación + commit + deploy (1h)
 
 **Bloqueantes conocidos**:
-- Sprint 23-A (geojson fuera del LLM) debe ejecutarse antes del cierre de 06.
-- La spec 06 habla de `include_geometry` en `query_layer`; el código implementó `get_layer_features`. Hay que actualizar la spec.
+- [X]Sprint 23-A (geojson fuera del LLM) debe ejecutarse antes del cierre de 06.
+- []La spec 06 habla de `include_geometry` en `query_layer`; el código implementó `get_layer_features`. Hay que actualizar la spec.
 
 **Pendientes de decisión**:
 - Máximo de features por respuesta (500 en spec, 1000 en RPC — revisar tras Sprint 23-A).
@@ -739,6 +739,19 @@ por fases, empezando por las que el chat y la Pieza 2 usan.
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-10-06
+- ✅ **Sprint 23-A completado** (backend del chat).
+  - Bucle ReAct con salida única (`finish`). Sin returns internos.
+  - `ctx.raw` como almacén por invocación para geojson.
+  - Charts limitados (3 total, 2 por schema), filtro de relevancia.
+  - Prompt: 22 → 13 reglas. Base: 1401 → 568 tokens.
+  - Modelo: GLM-5.3-Flash → DeepSeek V4.1 Flash.
+  - Case-sensitivity en columnas (regla 13).
+  - Doble agrupación sin chart, con tabla markdown (regla 8).
+  - Latencia: 82s → 9s. Reply: de "Sin respuesta." a análisis real.
+- 📝 Pendiente del Sprint 23: 23-B a 23-G (hotfixes API).
+- 📝 Próximo: Sprint 06-B (frontend del geojson en el mapa).
 
 ### 2026-10-05 (sesión 4)
 - 📝 Diagnóstico del Sprint 37 cerrado:
