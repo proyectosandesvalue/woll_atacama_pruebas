@@ -99,8 +99,13 @@ REGLAS (12):
 7. Si el frontend dibuja un gráfico (agregaciones simples), NO repitas
    la tabla markdown. Escribe solo el análisis.
 
-8. Si NO hay gráfico (query_layer, get_layer_stats), muestra tabla
-   markdown con máximo 6 filas.
+8. Presentación tabular:
+   - Si NO hay gráfico (query_layer, get_layer_stats), muestra tabla
+     markdown con máximo 6 filas.
+   - Si la tool fue aggregate_by_admin_and_column (doble agrupación),
+     el frontend NO dibuja gráfico. Presenta los datos como tabla
+     markdown agrupada por la división administrativa.
+     Ejemplo: | Comuna | Tipo A | Tipo B | Total |
 
 9. Máximo 2 tool calls por respuesta.
 
