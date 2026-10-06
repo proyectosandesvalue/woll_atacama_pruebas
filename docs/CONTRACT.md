@@ -189,6 +189,17 @@ Reglas:
 - El frontend debe usar `charts` si está presente y no vacío, sino `chart`.
 - Cuando se estabilice la migración, `chart` se eliminará.
 
+### 6.2.1. Gráficos
+
+- Agregaciones simples (`aggregate_layer`, `aggregate_by_admin`,
+  `aggregate_near_layer`) → el frontend dibuja 1 chart.
+- Doble agrupación (`aggregate_by_admin_and_column`) → NO se dibuja chart.
+  El LLM presenta tabla markdown en el `reply`.
+- Máximo 3 charts totales por respuesta.
+- Máximo 2 charts por `get_layer_schema`.
+- Filtro de relevancia: se descartan columnas con IDs, nombres o valores
+  concentrados (>90% en un solo valor).
+
 6.3. Cero SQL generado por el LLM
 
 El LLM nunca escribe SQL.
