@@ -552,13 +552,19 @@ async function handleSend() {
     if (messageHistory.length > MAX_HISTORY) {
       messageHistory = messageHistory.slice(-MAX_HISTORY);
     }
-  } catch (err) {
+    } catch (err) {
     typing.remove();
-    addMessage(
-      `⚠️ ${err?.message || "Lo siento, hubo un error al procesar tu solicitud."}`,
-      "error"
-    );
+    const msg = err?.message || "Lo siento, hubo un error al procesar tu solicitud.";
+
+    // Mensaje amigable si es un error temporal del proveedor LLM.
+    const friendly =
+      /saturado|UNAVAILABLE|503/i.test(msg)
+        ? "El asistente está temporalmente saturado. Esperá unos segundos y vuelve a intentar."
+        : msg;
+
+    addMessage(`⚠️ ${friendly}`, "error");
     log.error("Error al enviar consulta al asistente:", err);
+
   } finally {
     isSending = false;
     if (sendBtn) sendBtn.disabled = false;

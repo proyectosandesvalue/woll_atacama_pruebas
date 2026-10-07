@@ -114,7 +114,7 @@ REGLAS (18):
 9. Número de tool calls:
    - Preguntas simples: hasta 2 tools.
    - Preguntas complejas (comparaciones, cruces): hasta 4 tools.
-   - Si necesitás más de 4, pedile al usuario que acote.
+   - Si necesitas más de 4, pidele al usuario que acote.
 
 10. Si una tool falla, dilo explícitamente y sugiere alternativa.
 
@@ -609,34 +609,52 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   }
   messages.push({ role: "user", content: String(text || "").trim() });
 
-  // ── Bucle ReAct ────────────────────────────────────────────
-  // Sale SOLO por `finish()`. Sin returns internos.
-  // En el último paso, `toolChoice: "none"` fuerza texto plano → salida.
+
   let step = 0;
   while (true) {
     step += 1;
     const isLast =
       step >= maxSteps || Date.now() > deadline - RESERVE_MS;
 
-    let response;
+        let response;
     const t1 = Date.now();
-    try {
-            response = await llm.chat({
-        system,
-        messages,
-        tools: TOOL_DEFINITIONS,
-        toolChoice: isLast ? "none" : "auto",
-        reasoningEffort: "low",
-        sessionId,
-      });
-    } catch (err) {
-      console.error(
-        `[orchestrator] LLM call failed (step ${step}):`,
-        err?.message || err,
-        err?.stack || ""
-      );
-      throw err;
+    const MAX_RETRIES = 2;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        response = await llm.chat({
+          system,
+          messages,
+          tools: TOOL_DEFINITIONS,
+          toolChoice: isLast ? "none" : "auto",
+          reasoningEffort: "low",
+          sessionId,
+        });
+        break; // OK, salir del retry.
+      } catch (err) {
+        const isRetryable = err?.retryable === true;
+        const hasRetriesLeft = attempt < MAX_RETRIES;
+
+        if (isRetryable && hasRetriesLeft) {
+          const delayMs = 1000 * Math.pow(2, attempt); // 1s, 2s
+          console.warn(
+            `[orchestrator] LLM 503 (intento ${attempt + 1}/${MAX_RETRIES + 1}). ` +
+              `Reintentando en ${delayMs}ms...`
+          );
+          await new Promise((r) => setTimeout(r, delayMs));
+          continue;
+        }
+
+        // No retryable o sin reintentos: fallar.
+        console.error(
+          `[orchestrator] LLM call failed (step ${step}):`,
+          err?.message || err,
+          err?.stack || ""
+        );
+        throw err;
+      }
     }
+
     const stepMs = Date.now() - t1;
 
     console.log(

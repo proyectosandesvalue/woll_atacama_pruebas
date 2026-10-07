@@ -109,11 +109,23 @@ export function createProvider(config) {
       const text = await res.text().catch(() => "");
       if (res.status === 429 || res.status === 413 || /rate_limit/i.test(text)) {
         throw new Error(
-          "El proveedor de IA alcanzó su límite de tokens por minuto (TPM). " +
-            "Reintenta en unos segundos o sube el plan del proveedor LLM. Detalle: " +
+          "El proveedor de IA alcanzó su límite, experimentamos alta demanda. " +
+            "Esto es tempotal, Reintenta en unos segundos. Detalle: " +
             (text || res.statusText).slice(0, 300)
         );
       }
+
+      if (res.status === 503 || /UNAVAILABLE/i.test(text)) {
+        const err = new Error(
+          "El servicio de IA está temporalmente saturado. " +
+            "Reintentando en unos segundos... Detalle: " +
+            (text || res.statusText).slice(0, 200)
+        );
+        err.retryable = true;
+        err.status = 503;
+        throw err;
+      }
+
       throw new Error(`LLM ${res.status}: ${text || res.statusText}`);
     }
     const data = await res.json();
