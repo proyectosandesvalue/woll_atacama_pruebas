@@ -5,21 +5,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Plataforma Woll Atacama</title>
+
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- MarkerCluster -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
   <!-- Tipografía -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+
   <!-- DOMPurify para sanitización XSS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js"></script>
+
   <!-- Material Symbols Outlined -->
-  <link
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
   <!-- Estilos propios -->
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
@@ -29,7 +32,10 @@
 </head>
 
 <body>
-  <!--HEADER -->
+
+  <!-- ════════════════════════════════════════════════════════════
+       HEADER
+       ════════════════════════════════════════════════════════════ -->
   <header class="header header-custom">
     <!-- Izquierda: Marca -->
     <div class="header-left">
@@ -38,6 +44,7 @@
         <img src="assets/img/woll-logo-para-azul.png" alt="WoLL Atacama" class="brand-logo-img dark-logo" />
       </div>
     </div>
+
     <!-- Centro: Buscador -->
     <div class="header-center">
       <div class="search-bar search-bar-rounded" id="searchBarWrapper">
@@ -46,7 +53,8 @@
         <div id="search-results-anchor"></div>
       </div>
     </div>
-    <!-- Sector Derecho: Acciones -->
+
+    <!-- Derecha: Acciones -->
     <div class="header-right header-right-custom">
       <div class="header-divider hide-on-mobile"></div>
       <div class="header-actions">
@@ -73,26 +81,26 @@
     </div>
   </header>
 
+  <!-- ════════════════════════════════════════════════════════════
+       LAYOUT PRINCIPAL
+       ════════════════════════════════════════════════════════════ -->
   <main class="main-layout">
-    <!-- SIDEBAR IZQUIERDO -->
+
+    <!-- SIDEBAR IZQUIERDO — Capas -->
     <aside class="sidebar sidebar-left" id="sidebarLeft" aria-label="Panel de capas">
-      <!-- Cabecera -->
       <div class="sidebar-header">
         <span class="sidebar-title sidebar-title--icon sidebar-label">
           <span class="material-symbols-outlined sidebar-title-icon">layers</span>
           Capas
         </span>
       </div>
-      <!-- Contenido con scroll -->
+
       <div class="sidebar-content">
-        <!-- Sección: Capas Temáticas -->
         <nav class="sidebar-nav">
-          <!-- Lista maestra de capas temáticas. actualizarCapasSidebar() escribe en este <ul> -->
           <div class="sidebar-layers" id="sidebar-layers">
             <ul id="sidebar-layers-master" class="layer-list-master"></ul>
           </div>
         </nav>
-        <!-- Sección: Capas Base  -->
         <nav class="sidebar-nav">
           <div class="sidebar-section-header sidebar-label">
             <span class="material-symbols-outlined sidebar-section-icon">grid_view</span>
@@ -103,17 +111,16 @@
           </div>
         </nav>
       </div>
-      <!-- Botón cerrar (mobile overlay) -->
+
       <button class="sidebar-close-btn mobile-only" id="closeLeftSidebarBtn" aria-label="Cerrar panel de capas">
         <span class="material-symbols-outlined">close</span>
       </button>
     </aside>
 
-
-    <!-- MAPCANVAS -->
+    <!-- MAPA -->
     <div class="map-canvas">
-      <!-- Contenedor real de Leaflet -->
       <div id="map"></div>
+
       <!-- Panel inferior: Tabla de Atributos -->
       <div id="attribute-table-panel" class="attribute-table-panel">
         <div id="attribute-table-resizer" class="attribute-table-resizer"></div>
@@ -130,8 +137,7 @@
             <button id="filterAttributeTableBtn" class="icon-btn" aria-label="Filtrar datos" title="Filtrar datos">
               <span class="material-symbols-outlined">filter_alt</span>
             </button>
-            <button id="fullscreenAttributeTableBtn" class="icon-btn" aria-label="Pantalla completa"
-              title="Pantalla completa">
+            <button id="fullscreenAttributeTableBtn" class="icon-btn" aria-label="Pantalla completa" title="Pantalla completa">
               <span class="material-symbols-outlined" id="fullscreenAttributeTableIcon">open_in_full</span>
             </button>
             <button id="closeAttributeTableBtn" class="icon-btn" aria-label="Cerrar tabla" title="Cerrar tabla">
@@ -140,12 +146,10 @@
           </div>
         </div>
         <div class="attribute-table-body">
-          <!-- Spinner de carga -->
           <div id="attribute-table-loading" class="attribute-table-loading" style="display: none;">
             <span class="material-symbols-outlined loading-spinner">sync</span>
             <span>Cargando datos de la capa...</span>
           </div>
-          <!-- Contenedor de la tabla -->
           <div class="table-responsive">
             <table id="attribute-table" class="attribute-table">
               <thead id="attribute-table-head"></thead>
@@ -154,7 +158,8 @@
           </div>
         </div>
       </div>
-      <!-- Controles de zoom (sobre el mapa, arriba derecha) -->
+
+      <!-- Controles de zoom -->
       <div class="zoom-controls">
         <button class="map-btn" id="zoomInBtn" aria-label="Acercar">
           <span class="material-symbols-outlined">add</span>
@@ -163,18 +168,18 @@
           <span class="material-symbols-outlined">remove</span>
         </button>
       </div>
-      <!-- Controles de navegación + tema (sobre el mapa, derecha centro) -->
+
+      <!-- Controles de navegación + tema -->
       <div class="nav-controls">
         <button class="map-btn" id="locateBtn" aria-label="Mi ubicación">
           <span class="material-symbols-outlined">my_location</span>
         </button>
-        <!-- Toggle dark / light del mapa -->
-        <button class="map-btn theme-toggle-btn" id="themeToggle" aria-label="Cambiar tema"
-          title="Cambiar entre modo oscuro y claro">
+        <button class="map-btn theme-toggle-btn" id="themeToggle" aria-label="Cambiar tema" title="Cambiar entre modo oscuro y claro">
           <span class="material-symbols-outlined" id="themeIcon">light_mode</span>
         </button>
       </div>
-      <!-- Barra de coordenadas (fondo del mapa) -->
+
+      <!-- Barra de coordenadas -->
       <div class="coords-bar" id="coordsBar">
         <span id="coordLat">Lat: —</span>
         <span class="coords-divider"></span>
@@ -184,21 +189,19 @@
       </div>
     </div>
 
-
-    <!-- SIDEBAR DERECHO -->
+    <!-- SIDEBAR DERECHO — Leyenda -->
     <aside class="sidebar sidebar-right" id="sidebarRight" aria-label="Panel de información">
-      <!-- Cabecera (homologada con Capas y Asistente IA) -->
       <div class="sidebar-header">
         <span class="sidebar-title sidebar-title--icon">
           <span class="material-symbols-outlined sidebar-title-icon">map</span>
           Leyenda
         </span>
       </div>
-      <!-- ── Contenido: Leyenda -->
+
       <div class="tab-content active" id="tab-leyenda" role="tabpanel">
         <div id="sidebar-legend"></div>
       </div>
-      <!-- Botón cerrar (mobile overlay) -->
+
       <button class="sidebar-close-btn mobile-only" id="closeRightSidebarBtn" aria-label="Cerrar panel de información">
         <span class="material-symbols-outlined">close</span>
       </button>
@@ -216,48 +219,48 @@
           <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
         </button>
       </div>
-      <div class="sidebar-content" id="sidebarInfoContent" style="padding: 16px;">
-      </div>
+      <div class="sidebar-content" id="sidebarInfoContent" style="padding: 16px;"></div>
       <div class="sidebar-footer"
         style="padding: 8px 16px; border-top: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-2); flex-shrink: 0;">
         <span style="font-size: 0.75rem; color: var(--text-tertiary); font-weight: 500;">Tamaño de texto</span>
         <div style="display: flex; gap: 4px;">
-          <button class="icon-btn" id="decreaseFontSizeBtn" aria-label="Reducir texto"
-            style="width: 24px; height: 24px;" title="Reducir tamaño de letra">
+          <button class="icon-btn" id="decreaseFontSizeBtn" aria-label="Reducir texto" style="width: 24px; height: 24px;" title="Reducir tamaño de letra">
             <span class="material-symbols-outlined" style="font-size: 16px;">text_decrease</span>
           </button>
-          <button class="icon-btn" id="increaseFontSizeBtn" aria-label="Aumentar texto"
-            style="width: 24px; height: 24px;" title="Aumentar tamaño de letra">
+          <button class="icon-btn" id="increaseFontSizeBtn" aria-label="Aumentar texto" style="width: 24px; height: 24px;" title="Aumentar tamaño de letra">
             <span class="material-symbols-outlined" style="font-size: 16px;">text_increase</span>
           </button>
         </div>
       </div>
     </aside>
 
-    <!-- SIDEBAR CHAT IA — Se desliza desde el derecho (navbar → icono forum) -->
+    <!-- SIDEBAR CHAT IA -->
     <aside class="sidebar sidebar-chat" id="chatSidebar" aria-label="Asistente con inteligencia artificial"
       aria-hidden="true" inert>
+
       <!-- Cabecera -->
       <div class="sidebar-header chat-header">
-  <span class="sidebar-title chat-title">
-    <span class="material-symbols-outlined chat-title-icon">auto_awesome</span>
-    Asistente IA
-  </span>
-    <div class="chat-actions">
-    <button class="icon-btn" id="chatInfoBtn" aria-label="Información del asistente" title="Información">
-      <span class="material-symbols-outlined">info</span>
-    </button>
-    <button class="icon-btn" id="clearChatBtn" aria-label="Limpiar conversación" title="Limpiar conversación">
-      <span class="material-symbols-outlined">delete_sweep</span>
-    </button>
-    <button class="icon-btn" id="closeChatSidebarBtn" aria-label="Cerrar asistente" title="Cerrar">
-      <span class="material-symbols-outlined">close</span>
-    </button>
-  </div>
+        <span class="sidebar-title chat-title">
+          <span class="material-symbols-outlined chat-title-icon">auto_awesome</span>
+          Asistente IA
+        </span>
+        <div class="chat-actions">
+          <button class="icon-btn" id="chatInfoBtn" aria-label="Información del asistente" title="Información">
+            <span class="material-symbols-outlined">info</span>
+          </button>
+          <button class="icon-btn" id="clearChatBtn" aria-label="Limpiar conversación" title="Limpiar conversación">
+            <span class="material-symbols-outlined">delete_sweep</span>
+          </button>
+          <button class="icon-btn" id="closeChatSidebarBtn" aria-label="Cerrar asistente" title="Cerrar">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      </div>
 
-      <!-- Conversación + entrada (reutiliza las clases .ai-chat-* del design system) -->
+      <!-- Conversación + entrada -->
       <div class="ai-chat-container">
-                <div class="ai-chat-messages" id="ai-chat-messages" role="log" aria-live="polite">
+
+        <div class="ai-chat-messages" id="ai-chat-messages" role="log" aria-live="polite">
           <div class="ai-message assistant">¡Hola! Soy tu asistente de IA del Visor Territorial WoLL.
             Puedo analizar las capas del visor, calcular estadísticas y explicarte cómo se relacionan
             entre dimensiones. ¿Qué quieres saber?</div>
@@ -284,37 +287,35 @@
           </div>
         </div>
 
-        <form class="ai-chat-input-area" id="ai-chat-form" autocomplete="off">
-          <div class="ai-chat-input-row">
-            <input class="ai-chat-input" id="ai-chat-input" type="text" placeholder="Escribe tu consulta aquí..."
-              aria-label="Consulta para el asistente" autocomplete="off" />
-            <button class="ai-chat-send-btn" id="ai-chat-send" type="submit" aria-label="Enviar mensaje"
-              title="Enviar">
-              <span class="material-symbols-outlined">send</span>
-            </button>
-          </div>
-        </form>
-
-
-        <!-- Botón "Quitar resultados del mapa" (dentro del chat) -->
+        <!-- Botón "Quitar resultados del mapa" (entre mensajes y formulario) -->
         <button id="chatClearResultsBtn" class="chat-clear-results-btn" hidden
                 aria-label="Quitar resultados del mapa" title="Quitar resultados del mapa">
           <span class="material-symbols-outlined">close</span>
           Quitar resultados del mapa
         </button>
 
+        <!-- Formulario de entrada -->
         <form class="ai-chat-input-area" id="ai-chat-form" autocomplete="off">
-
+          <div class="ai-chat-input-row">
+            <input class="ai-chat-input" id="ai-chat-input" type="text" placeholder="Escribe tu consulta aquí..."
+              aria-label="Consulta para el asistente" autocomplete="off" />
+            <button class="ai-chat-send-btn" id="ai-chat-send" type="submit" aria-label="Enviar mensaje" title="Enviar">
+              <span class="material-symbols-outlined">send</span>
+            </button>
+          </div>
+        </form>
       </div>
     </aside>
+
   </main>
 
+  <!-- ════════════════════════════════════════════════════════════
+       MODALES
+       ════════════════════════════════════════════════════════════ -->
 
   <!-- MODAL DE BIENVENIDA -->
   <dialog class="welcome-dialog" id="welcomeModal" aria-labelledby="welcomeModalTitle">
-
     <div class="welcome-dialog-inner">
-
       <div class="welcome-dialog-header">
         <h2 class="welcome-dialog-title" id="welcomeModalTitle">Bienvenido/a</h2>
         <button class="welcome-dialog-close" id="welcomeModalClose" aria-label="Cerrar">
@@ -405,9 +406,7 @@
       <div class="welcome-dialog-footer">
         <button class="btn-primary-action" id="welcomeModalCloseFooter">Comenzar exploración</button>
       </div>
-
     </div>
-
   </dialog>
 
   <!-- MODAL DE DESCARGA DE CAPAS -->
@@ -420,16 +419,14 @@
         </button>
       </div>
       <div class="welcome-dialog-body" style="padding-bottom: 30px;">
-        <p>Selecciona el formato en el que deseas descargar los datos de la capa <strong
-            id="downloadModalLayerName"></strong>:</p>
+        <p>Selecciona el formato en el que deseas descargar los datos de la capa <strong id="downloadModalLayerName"></strong>:</p>
 
         <div class="download-options-container">
           <button id="btnDownloadGeoJSON" class="download-option-btn">
             <span class="material-symbols-outlined download-icon">data_object</span>
             <div class="download-text">
               <span class="download-title">GeoJSON</span>
-              <span class="download-desc">Geometría espacial y datos completos. Ideal para uso en software SIG (QGIS,
-                ArcGIS).</span>
+              <span class="download-desc">Geometría espacial y datos completos. Ideal para uso en software SIG (QGIS, ArcGIS).</span>
             </div>
           </button>
 
@@ -437,8 +434,7 @@
             <span class="material-symbols-outlined download-icon">table</span>
             <div class="download-text">
               <span class="download-title">Tabla CSV (Excel)</span>
-              <span class="download-desc">Exporta solo los atributos tabulares visibles. Ideal para análisis en Excel o
-                bases de datos.</span>
+              <span class="download-desc">Exporta solo los atributos tabulares visibles. Ideal para análisis en Excel o bases de datos.</span>
             </div>
           </button>
         </div>
@@ -492,7 +488,56 @@
     </div>
   </dialog>
 
-  <!-- OVERLAY DE BÚSQUEDA MOBILE, Se activa desde el botón de búsqueda del sidebar. -->
+  <!-- MODAL DE INFORMACIÓN DEL CHAT -->
+  <dialog class="welcome-dialog chat-info-dialog" id="chatInfoModal" aria-labelledby="chatInfoModalTitle">
+    <div class="welcome-dialog-inner">
+      <div class="welcome-dialog-header">
+        <h2 class="welcome-dialog-title" id="chatInfoModalTitle">Asistente IA — Información</h2>
+        <button class="welcome-dialog-close" id="chatInfoModalClose" aria-label="Cerrar">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="welcome-dialog-body">
+        <strong>¿Qué puede hacer el asistente?</strong>
+        <ul>
+          <li>Consultar capas del visor (agua, minería, energía, agricultura, riesgos, suelo, planificación).</li>
+          <li>Calcular estadísticas: conteos, distribuciones, promedios.</li>
+          <li>Comparar capas: glaciares vs humedales, derechos de agua vs producción.</li>
+          <li>Calcular proximidad: elementos a menos de X metros de otros.</li>
+          <li>Ubicar elementos en el mapa (plantas, yacimientos, glaciares, etc.).</li>
+        </ul>
+
+        <strong>¿Qué NO puede hacer el asistente?</strong>
+        <ul>
+          <li>Responder preguntas fuera del dominio del visor (clima general, noticias, código, etc.).</li>
+          <li>Consultar datos fuera de la Región de Atacama.</li>
+          <li>Inventar datos. Solo usa la base de datos real del visor.</li>
+        </ul>
+
+        <strong>Ejemplos de consultas válidas:</strong>
+        <ul>
+          <li>¿Cuántas lagunas hay por comuna?</li>
+          <li>¿Dónde están las plantas desaladoras?</li>
+          <li>Muéstrame los bienes nacionales por comuna y tipo.</li>
+          <li>Compárame glaciares y humedales por comuna.</li>
+          <li>¿Cuántos derechos de agua hay a menos de 1 km de un río?</li>
+        </ul>
+
+        <strong>Formato de la respuesta:</strong>
+        <ul>
+          <li>Texto en lenguaje natural (como un analista territorial).</li>
+          <li>Tabla markdown cuando aplique.</li>
+          <li>Gráfico cuando sea una agregación simple.</li>
+          <li>Elementos pintados en el mapa cuando se pida ver ubicaciones.</li>
+        </ul>
+
+        <strong>Modelo de IA:</strong>
+        <p>Gemini 3.1 Flash-Lite (Google).</p>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- OVERLAY DE BÚSQUEDA MOBILE -->
   <div class="mobile-search-overlay" id="mobileSearchOverlay" aria-hidden="true">
     <div class="mobile-search-overlay-inner">
       <div class="mobile-search-bar">
@@ -507,79 +552,24 @@
     </div>
   </div>
 
-    <!-- Botón flotante "Quitar resultados" — solo mobile cuando el chat está cerrado -->
+  <!-- BOTÓN FLOTANTE "QUITAR RESULTADOS" (solo mobile, chat cerrado) -->
   <button id="chatClearResultsMobileBtn" class="chat-clear-results-mobile-btn" hidden
           aria-label="Quitar resultados del mapa" title="Quitar resultados del mapa">
     <span class="material-symbols-outlined">close</span>
   </button>
 
-  <!-- Modal de información del chat -->
-<dialog class="welcome-dialog chat-info-dialog" id="chatInfoModal" aria-labelledby="chatInfoModalTitle">
-  <div class="welcome-dialog-inner">
-    <div class="welcome-dialog-header">
-      <h2 class="welcome-dialog-title" id="chatInfoModalTitle">Asistente IA — Información</h2>
-      <button class="welcome-dialog-close" id="chatInfoModalClose" aria-label="Cerrar">
-        <span class="material-symbols-outlined">close</span>
-      </button>
-    </div>
-    <div class="welcome-dialog-body">
-      <strong>¿Qué puede hacer el asistente?</strong>
-      <ul>
-        <li>Consultar capas del visor (agua, minería, energía, agricultura, riesgos, suelo, planificación).</li>
-        <li>Calcular estadísticas: conteos, distribuciones, promedios.</li>
-        <li>Comparar capas: glaciares vs humedales, derechos de agua vs producción.</li>
-        <li>Calcular proximidad: elementos a menos de X metros de otros.</li>
-        <li>Ubicar elementos en el mapa (plantas, yacimientos, glaciares, etc.).</li>
-      </ul>
-
-      <strong>¿Qué NO puede hacer el asistente?</strong>
-      <ul>
-        <li>Responder preguntas fuera del dominio del visor (clima general, noticias, código, etc.).</li>
-        <li>Consultar datos fuera de la Región de Atacama.</li>
-        <li>Inventar datos. Solo usa la base de datos real del visor.</li>
-      </ul>
-
-      <strong>Ejemplos de consultas válidas:</strong>
-      <ul>
-        <li>¿Cuántas lagunas hay por comuna?</li>
-        <li>¿Dónde están las plantas desaladoras?</li>
-        <li>Muéstrame los bienes nacionales por comuna y tipo.</li>
-        <li>Compárame glaciares y humedales por comuna.</li>
-        <li>¿Cuántos derechos de agua hay a menos de 1 km de un río?</li>
-      </ul>
-
-      <strong>Formato de la respuesta:</strong>
-      <ul>
-        <li>Texto en lenguaje natural (como un analista territorial).</li>
-        <li>Tabla markdown cuando aplique.</li>
-        <li>Gráfico cuando sea una agregación simple.</li>
-        <li>Elementos pintados en el mapa cuando se pida ver ubicaciones.</li>
-      </ul>
-
-      <strong>Modelo de IA:</strong>
-      <p>Gemini 3.1 Flash-Lite (Google).</p>
-    </div>
-  </div>
-</dialog>
-
-  <!-- Leaflet -->
+  <!-- ════════════════════════════════════════════════════════════
+       SCRIPTS
+       ════════════════════════════════════════════════════════════ -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- MarkerCluster -->
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-  <!-- Turf.js (geometría) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
-  <!-- Chart.js (gráficos en respuestas del chat IA) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <!-- WebGL Heatmap para Leaflet -->
   <script src="./js/utils/webgl-heatmap.js"></script>
   <script src="./js/utils/leaflet-webgl-heatmap.js"></script>
-  <!-- Leaflet.glify — Renderer WebGL para polígonos y líneas de alta densidad -->
   <script src="./js/lib/glify-browser.js"></script>
-  <!-- Lógica de módulos de app -->
   <script type="module" src="js/app.js"></script>
-  <!-- UI Shell: tema, tabs, sidebar, modal, responsive -->
   <script type="module" src="js/script.js"></script>
 
 </body>
-
 </html>
