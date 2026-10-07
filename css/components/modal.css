@@ -1,0 +1,661 @@
+/* ============================================================
+   MODAL.CSS — Modales (bienvenida, descarga, filtro) + botones
+   Visor WoLL — Interfaz v2
+   ============================================================ */
+
+/* BASE DE MODALES (<dialog>) */
+
+.welcome-dialog,
+.download-dialog,
+.filter-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  width: min(560px, 92vw);
+  max-height: 88vh;
+  padding: 0;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  color: var(--text-primary);
+}
+
+.welcome-dialog::backdrop,
+.download-dialog::backdrop,
+.filter-dialog::backdrop {
+  background: var(--dialog-backdrop);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.welcome-dialog-inner {
+  display: flex;
+  flex-direction: column;
+  max-height: 88vh;
+}
+
+.welcome-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--dialog-header-bg);
+  border-bottom: 1px solid var(--dialog-border);
+  flex-shrink: 0;
+}
+
+.welcome-dialog-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.welcome-dialog-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--border-radius-sm);
+  color: var(--text-tertiary);
+  background: transparent;
+  transition: var(--transition-fast);
+}
+
+.welcome-dialog-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+}
+
+.welcome-dialog-close .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.welcome-dialog-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 0.85rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.welcome-dialog-body strong {
+  color: var(--text-primary);
+}
+
+.welcome-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+}
+
+.welcome-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.83rem;
+}
+
+.welcome-list-icon {
+  font-size: 18px;
+  color: var(--color-accent);
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+/* MODAL DE BIENVENIDA (específico) */
+
+#welcomeModal {
+  width: min(780px, 94vw);
+}
+
+#welcomeModal .welcome-dialog-title {
+  position: relative;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-brand-text);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+#welcomeModal .welcome-dialog-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 45px;
+  height: 4px;
+  background-color: var(--color-accent);
+  border-radius: 2px;
+}
+
+#welcomeModal .welcome-dialog-header {
+  border-bottom: none;
+  background: transparent;
+  padding: 24px 24px 0 24px;
+}
+
+#welcomeModal .welcome-dialog-body {
+  padding: 24px;
+}
+
+#welcomeModal .welcome-dialog-footer {
+  border-top: 1px solid var(--border-subtle);
+  background: transparent;
+  padding: 16px 24px;
+}
+
+.welcome-dialog-body-split {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .welcome-dialog-body-split {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .welcome-body-right {
+    position: static;
+  }
+  #welcomeModal .welcome-dialog-title::after {
+    width: 35px;
+  }
+}
+
+/* ── Columna izquierda: texto del proyecto ─── */
+
+.welcome-body-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 0.87rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.welcome-body-left p {
+  margin: 0;
+}
+
+.welcome-lead {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-primary);
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.welcome-lead strong {
+  color: var(--color-brand-text);
+}
+
+.welcome-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--color-brand-text);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.welcome-callout strong {
+  color: var(--text-primary);
+}
+
+.welcome-callout a {
+  color: var(--color-brand-text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.welcome-callout-icon {
+  flex-shrink: 0;
+  font-size: 18px;
+  color: var(--color-brand-text);
+  margin-top: 2px;
+}
+
+.welcome-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.welcome-meta-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--text-tertiary);
+}
+
+.welcome-meta-icon {
+  flex-shrink: 0;
+  font-size: 15px;
+  margin-top: 2px;
+  color: var(--text-tertiary);
+}
+
+/* ── Columna derecha: tarjeta de novedades ──── */
+
+.welcome-body-right {
+  position: sticky;
+  top: 8px;
+  background-color: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.welcome-right-title {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--color-brand-text);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
+}
+
+.welcome-body-right .welcome-list {
+  gap: 20px;
+}
+
+.welcome-body-right .welcome-list li {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.welcome-body-right .welcome-list-icon {
+  color: var(--color-brand-text);
+  font-size: 20px;
+}
+
+.welcome-body-right .welcome-list-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.welcome-disclaimer {
+  font-size: 0.77rem;
+  color: var(--text-tertiary);
+  padding: 10px;
+  background: var(--bg-surface-2);
+  border-radius: var(--border-radius);
+  border-left: 3px solid var(--color-warning);
+}
+
+.welcome-logos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.welcome-logos a {
+  display: flex;
+  align-items: center;
+}
+
+.welcome-logos img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.welcome-logos img:hover {
+  opacity: 1;
+}
+
+.welcome-dialog-footer {
+  padding: 14px 20px;
+  background: var(--dialog-header-bg);
+  border-top: 1px solid var(--dialog-border);
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+/* MODAL DE DESCARGA */
+
+.download-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.download-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.download-option-btn:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--color-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.download-icon {
+  font-size: 32px;
+  color: var(--color-accent);
+}
+
+.download-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.download-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.download-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* MODAL DE FILTRADO DE CAPAS */
+
+.filter-modal-subtitle {
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.filter-controls {
+  margin-bottom: 8px;
+}
+
+.filter-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-select-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.filter-select-group .form-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--border-radius);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.filter-values-container {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius);
+  background: var(--bg-surface-2);
+  overflow: visible;
+}
+
+.filter-values-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.filter-values-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.filter-values-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-values-actions .btn {
+  font-size: 0.7rem;
+  color: var(--color-accent);
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.filter-values-actions .btn:hover {
+  text-decoration: underline;
+}
+
+.filter-values-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.filter-value-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.filter-value-item:hover {
+  background: var(--bg-surface-hover);
+}
+
+.filter-value-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.filter-value-item label {
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  flex: 1;
+  word-break: break-word;
+}
+
+.filter-active-filters {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius);
+  background: var(--bg-surface-2);
+  overflow: hidden;
+}
+
+.filter-active-header {
+  padding: 8px 12px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.filter-active-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.filter-active-list {
+  padding: 8px 0;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.filter-active-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  gap: 8px;
+}
+
+.filter-active-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.filter-active-attr {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.filter-active-values {
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+.filter-active-remove {
+  background: none;
+  border: none;
+  color: var(--color-danger);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.filter-active-remove:hover {
+  color: var(--color-danger-hover);
+}
+
+.filter-empty {
+  text-align: center;
+  padding: 12px;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+}
+
+/* Nota: `.welcome-dialog-footer` tiene DOS definiciones en el original.
+   La segunda (con justify-content: space-between) es la del filter-dialog.
+   Acá la dejamos porque el filter-dialog la necesita. */
+.welcome-dialog-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* BOTONES (btn + variantes) */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 16px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  font-family: var(--font-body);
+}
+
+.btn-primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border-color: var(--btn-primary-bg);
+}
+
+.btn-primary:hover {
+  background: var(--btn-primary-hover);
+}
+
+.btn-secondary {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border: 2px solid var(--btn-secondary-border);
+}
+
+.btn-secondary:hover {
+  background: var(--layer-item-hover);
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--color-brand-text);
+  border: none;
+  padding: 0 8px;
+  height: auto;
+  font-size: 0.78rem;
+}
+
+.btn-danger:hover {
+  color: var(--color-brand-hover);
+}
+
+/* Botón grande del welcome modal */
+.btn-primary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  padding: 0 20px;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-lift);
+}
+
+.btn-primary-action:hover {
+  background: var(--btn-primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary-action:active {
+  transform: translateY(0);
+}
