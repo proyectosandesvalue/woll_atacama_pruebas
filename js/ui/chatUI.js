@@ -3,11 +3,10 @@
  *
  * Icono en la navbar + sidebar deslizante desde el derecho (mismo patrón
  * visual que el sidebar de Leyenda). Renderiza la conversación y envía las
- * consultas a `chatAssistant`, que en la fase 1 delega en /api/chat
- * (Supabase + Groq, server-side).
+ * consultas a `chatAssistant`, que delega en /api/chat.
  *
- * El chat puede adjuntar `chart` en la respuesta (gráfico generado por el
- * orquestador a partir de una agregación); se renderiza con Chart.js.
+ * El chat puede adjuntar `chart` y `geojson` en la respuesta.
+ * El geojson se pinta en el mapa vía `chatMapUtils`.
  *
  * Ubicación: /js/ui/chatUI.js
  * @module ui/chatUI
@@ -15,6 +14,8 @@
 
 import { sendMessage } from "../utils/chatAssistant.js";
 import { createContextLogger } from "../utils/logger.js";
+import { showResults, clearResults } from "../utils/chatMapUtils.js";
+import { appState } from "../store/appState.js";
 
 const log = createContextLogger("ChatUI");
 
@@ -23,6 +24,7 @@ let chatSidebar = null;
 let chatBtn = null;
 let closeBtn = null;
 let clearBtn = null;
+let clearResultsBtn = null;
 let messagesEl = null;
 let inputEl = null;
 let sendBtn = null;
@@ -58,19 +60,6 @@ function scrollToBottom() {
 }
 
 /**
- * Renderiza un mensaje en la conversación. Acepta un payload simple
- * ({text, sender}) o uno estructurado del backend ({reply, chart,
- * sender}).
- *
- * Markdown mínimo: **negrita**, saltos de línea. La sanitización es
- * estructural — usamos textContent en un fragmento por línea, sin
- * innerHTML para el contenido del usuario o del LLM.
- *
- * @param {string|{reply:string, chart?:object}} payload
- * @param {string} sender - "user" | "assistant" | "error"
- * @returns {HTMLElement} Elemento creado
- */
-/**
  * Renderiza un mensaje en la conversación.
  * Soporta: **negrita**, tablas markdown simples, listas con guiones,
  * saltos de línea. Sanitización estructural (textContent + nodos).
@@ -92,13 +81,13 @@ function addMessage(payload, sender) {
   }
 
   // Render de gráficos.
-  //  1. Preferimos `charts` (array) si existe y tiene items.
-  //  2. Fallback a `chart` (singular) por compatibilidad con respuestas antiguas.
-  //  3. Si hay varios charts, se apilan verticalmente en orden.
   if (typeof payload === "object" && payload) {
-    const chartsList = Array.isArray(payload.charts) && payload.charts.length > 0
-      ? payload.charts
-      : (payload.chart ? [payload.chart] : []);
+    const chartsList =
+      Array.isArray(payload.charts) && payload.charts.length > 0
+        ? payload.charts
+        : payload.chart
+          ? [payload.chart]
+          : [];
 
     for (const chart of chartsList) {
       if (chart && typeof chart === "object") {
@@ -130,11 +119,8 @@ function renderRichText(text, container) {
     // ── Tabla markdown ──
     if (isTableRow(line) && i + 1 < lines.length && isSeparatorRow(lines[i + 1])) {
       const tableLines = [];
-      // Cabecera
       tableLines.push(line);
-      // Separador
       i++;
-      // Filas del cuerpo (mientras sigan siendo filas de tabla)
       i++;
       while (i < lines.length && isTableRow(lines[i])) {
         tableLines.push(lines[i]);
@@ -171,20 +157,17 @@ function renderRichText(text, container) {
 }
 
 function isTableRow(line) {
-  // Debe empezar y terminar con |, y tener al menos 2 pipes internos
   const trimmed = line.trim();
   return /^\|.*\|$/.test(trimmed) && (trimmed.match(/\|/g) || []).length >= 2;
 }
 
 function isSeparatorRow(line) {
-  // |---|---| o |:---|:---:|
   const trimmed = line.trim();
   return /^\|[\s:|-]+\|$/.test(trimmed) && /-/.test(trimmed);
 }
 
 /**
  * Construye un elemento <table> desde las líneas markdown.
- * tableLines: [cabecera, ...filas]
  */
 function buildTable(tableLines) {
   const wrap = document.createElement("div");
@@ -245,8 +228,7 @@ function buildList(items) {
 }
 
 /**
- * Renderiza una línea de markdown mínima (**x**) usando exclusivamente
- * textContent y nodos seguros. No hay innerHTML en el contenido del LLM.
+ * Renderiza una línea de markdown mínima (**x**).
  */
 function renderMarkdownLine(line, container) {
   const parts = line.split(/(\*\*[^*]+\*\*)/g);
@@ -264,7 +246,6 @@ function renderMarkdownLine(line, container) {
 
 /**
  * Paleta de colores para gráficos tipo pie.
- * Extraída del design system (tokens de base.css).
  */
 const CHART_PALETTE = [
   "#1A19CC",
@@ -281,9 +262,6 @@ const CHART_PALETTE = [
 
 /**
  * Renderiza un gráfico en un contenedor con Chart.js.
- * Si Chart.js no está disponible, muestra un mensaje explícito en lugar
- * de omitirlo silenciosamente (el usuario debe saber que el gráfico no
- * se pudo dibujar).
  */
 function renderChart(chart, container) {
   const wrap = document.createElement("div");
@@ -322,19 +300,18 @@ function renderChart(chart, container) {
 
   container.appendChild(wrap);
 
-  const type = chart.type === "pie"
-    ? "pie"
-    : chart.type === "horizontalBar"
-      ? "bar"
-      : chart.type === "line"
-        ? "line"
-        : "bar";
+  const type =
+    chart.type === "pie"
+      ? "pie"
+      : chart.type === "horizontalBar"
+        ? "bar"
+        : chart.type === "line"
+          ? "line"
+          : "bar";
 
   const isHorizontal = chart.type === "horizontalBar";
   const isPie = type === "pie";
 
-  // Para pie: los labels van en la leyenda, no en las porciones.
-  // Para bar: los labels van en el eje X (o Y si es horizontal).
   try {
     new window.Chart(canvas.getContext("2d"), {
       type,
@@ -450,6 +427,9 @@ function closeChat() {
   chatBtn?.focus({ preventScroll: true });
   resetLayoutScroll();
   log.debug("Panel de chat cerrado");
+
+  // NO limpiar resultados al cerrar: el usuario puede querer ver el mapa.
+  // Los resultados se limpian al enviar una nueva consulta o al pulsar "Quitar".
 }
 
 function toggleChat() {
@@ -458,20 +438,38 @@ function toggleChat() {
 }
 
 /**
+ * Muestra u oculta el botón de "Quitar resultados" según si hay
+ * resultados pintados en el mapa.
+ */
+function updateClearResultsBtn() {
+  if (!clearResultsBtn) return;
+  const hasResults = appState.chat.resultsLayer !== null;
+  if (hasResults) {
+    clearResultsBtn.removeAttribute("hidden");
+  } else {
+    clearResultsBtn.setAttribute("hidden", "");
+  }
+}
+
+/**
  * Limpia la conversación: borra el historial en memoria y los mensajes
  * renderizados (excepto el mensaje de bienvenida original).
+ * También limpia los resultados pintados en el mapa.
  */
 function clearConversation() {
   messageHistory = [];
 
-  // Conservar el primer mensaje (bienvenida del HTML).
-  const firstMessage = messagesEl.querySelector(".ai-message.assistant:not(.typing)");
+  const firstMessage = messagesEl.querySelector(
+    ".ai-message.assistant:not(.typing)"
+  );
 
-  // Borrar todo y volver a insertar el saludo si existía.
   messagesEl.innerHTML = "";
   if (firstMessage) {
     messagesEl.appendChild(firstMessage);
   }
+
+  clearResults();
+  updateClearResultsBtn();
 
   log.debug("Conversación limpiada");
 }
@@ -489,16 +487,38 @@ async function handleSend() {
   addMessage(text, "user");
   messageHistory.push({ role: "user", content: text });
 
+  // Al enviar una nueva consulta, limpiar los resultados anteriores del mapa.
+  clearResults();
+  updateClearResultsBtn();
+
   const typing = addTypingIndicator();
 
   try {
-        const payload = await sendMessage(text, messageHistory.slice(0, -1));
+    const payload = await sendMessage(text, messageHistory.slice(0, -1));
     typing.remove();
     addMessage(payload, "assistant");
+
+    // Si la respuesta trae geojson, pintarlo en el mapa.
+    if (payload?.geojson && payload.geojson.type === "FeatureCollection") {
+      try {
+        const painted = showResults(payload.geojson);
+        if (painted) updateClearResultsBtn();
+      } catch (err) {
+        log.warn("No se pudo pintar el geojson:", err);
+      }
+    }
+
     const replyText = payload?.reply || "Sin respuesta.";
 
-    const isDomainBlock = /^⚠️\s*No puedo responder/i.test(replyText.trim())
-      || replyText.includes("solo puedo ayudarte con consultas sobre los datos del portal");
+    // NO guardar bloqueos de dominio en el historial.
+    // Motivo: si el LLM ve un turno previo donde bloqueó una pregunta,
+    // se confunde y responde esa pregunta bloqueada en el turno actual
+    // (ej: alucinaba la fecha después de que el clasificador la bloqueó).
+    const isDomainBlock =
+      /^⚠️\s*No puedo responder/i.test(replyText.trim()) ||
+      replyText.includes(
+        "solo puedo ayudarte con consultas sobre los datos del portal"
+      );
 
     if (!isDomainBlock) {
       messageHistory.push({ role: "assistant", content: replyText });
@@ -531,6 +551,7 @@ export function initChatUI() {
   chatBtn = document.getElementById("chatSidebarBtn");
   closeBtn = document.getElementById("closeChatSidebarBtn");
   clearBtn = document.getElementById("clearChatBtn");
+  clearResultsBtn = document.getElementById("chatClearResultsBtn");
   messagesEl = document.getElementById("ai-chat-messages");
   inputEl = document.getElementById("ai-chat-input");
   sendBtn = document.getElementById("ai-chat-send");
@@ -540,8 +561,7 @@ export function initChatUI() {
     return;
   }
 
-  // Normalizar el mensaje de bienvenida (partido en varias líneas en el
-  // HTML fuente; con white-space: pre-wrap se verían saltos raros).
+  // Normalizar el mensaje de bienvenida.
   Array.from(messagesEl.children).forEach((el) => {
     el.textContent = el.textContent.replace(/\s+/g, " ").trim();
   });
@@ -552,6 +572,12 @@ export function initChatUI() {
     if (window.confirm("¿Limpiar la conversación actual?")) {
       clearConversation();
     }
+  });
+
+  // Listener del botón "Quitar resultados" (una sola vez).
+  clearResultsBtn?.addEventListener("click", () => {
+    clearResults();
+    updateClearResultsBtn();
   });
 
   inputEl.addEventListener("keydown", (e) => {

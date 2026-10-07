@@ -3945,3 +3945,42 @@ mark {
 .leaflet-container a.leaflet-popup-close-button {
   color: var(--text-secondary);
 }
+
+/* ── Botón "Quitar resultados del mapa" (chat) ──────────────── */
+.chat-clear-results-btn {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--bg-app, #fff);
+  color: var(--text-primary, #1a1a1a);
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 24px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chat-clear-results-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.chat-clear-results-btn[hidden] {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .chat-clear-results-btn {
+    bottom: 70px;
+    right: 12px;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+}

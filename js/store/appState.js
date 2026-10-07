@@ -62,6 +62,14 @@ export const appState = {
     pendingOperations: new Map(),
   },
 
+    /** Estado del chat IA */
+  chat: {
+    /** @type {L.Layer|null} Capa temporal de resultados geojson del chat */
+    resultsLayer: null,
+    /** @type {L.Map|null} Pane dedicado para las capas de resultados */
+    resultsPane: null,
+  },
+
   /** Promise para esperar a que el mapa esté listo */
   mapReady: null,
   /** @private */
