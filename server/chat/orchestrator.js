@@ -597,11 +597,12 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
     let response;
     const t1 = Date.now();
     try {
-      response = await llm.chat({
+            response = await llm.chat({
         system,
         messages,
         tools: TOOL_DEFINITIONS,
         toolChoice: isLast ? "none" : "auto",
+        reasoningEffort: "low",
         sessionId,
       });
     } catch (err) {
