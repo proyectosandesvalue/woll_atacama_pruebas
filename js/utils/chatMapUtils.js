@@ -77,14 +77,13 @@ function classifyFeatures(features) {
   return { points, lines, polygons };
 }
 
-/**
- * Construye un popup con las propiedades de la feature.
- * Escapa HTML para evitar XSS.
+/*
+ * @param {object} feature - Feature GeoJSON.
+ * @returns {string} HTML del popup o cadena vacía.
  */
 function buildPopup(feature) {
   const props = feature?.properties || {};
-  const keys = Object.keys(props).slice(0, 8);
-  if (keys.length === 0) return "";
+  if (Object.keys(props).length === 0) return "";
 
   const escapeHtml = (s) =>
     String(s)
@@ -93,18 +92,29 @@ function buildPopup(feature) {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
 
-  // Título del popup: usa "Nombre" o "name" si existe.
-  const titleKey = keys.find((k) => /^nombre$|^name$/i.test(k));
+  // Campos técnicos que NO se muestran al usuario.
+  const TECH_FIELDS =
+    /^(id|fid|objectid|gid|geom|geometry|the_geom|shape_leng|shape_area)$/i;
+
+  // Filtrar campos técnicos y vacíos.
+  const keys = Object.keys(props).filter(
+    (k) => !TECH_FIELDS.test(k) && props[k] != null && props[k] !== ""
+  );
+
+  if (keys.length === 0) return "";
+
+  // Título: primer campo que parezca "nombre".
+  const titleKey = keys.find((k) => /^nombre$|^name$|^titulo$|^título$/i.test(k));
   const title = titleKey ? escapeHtml(props[titleKey]) : "";
 
-  // Filas: excluir la del título.
+  // Resto de campos como párrafos.
   const rows = keys
     .filter((k) => k !== titleKey)
+    .slice(0, 10)
     .map((k) => {
       const v = props[k];
-      if (v == null || v === "") return "";
       const str = String(v);
-      const truncated = str.length > 120 ? str.slice(0, 120) + "…" : str;
+      const truncated = str.length > 140 ? str.slice(0, 140) + "…" : str;
       return `<p><strong>${escapeHtml(k)}:</strong> ${escapeHtml(truncated)}</p>`;
     })
     .filter(Boolean)

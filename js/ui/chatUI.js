@@ -510,7 +510,9 @@ async function handleSend() {
   addMessage(text, "user");
   messageHistory.push({ role: "user", content: text });
 
-  // Al enviar una nueva consulta, limpiar los resultados anteriores del mapa.
+  const examplesEl = document.getElementById("ai-chat-examples");
+  if (examplesEl) examplesEl.style.display = "none";
+
   clearResults();
   updateClearResultsBtn();
 
@@ -647,6 +649,27 @@ export function initChatUI() {
   clearResultsMobileBtn?.addEventListener("click", () => {
     clearResults();
     updateClearResultsBtn();
+  });
+
+  document.querySelectorAll(".ai-chat-example-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const query = chip.getAttribute("data-query") || chip.textContent.trim();
+      if (!query || isSending) return;
+      if (inputEl) inputEl.value = query;
+      handleSend();
+    });
+  });
+
+    // Modal de información del chat.
+  const infoBtn = document.getElementById("chatInfoBtn");
+  const infoModal = document.getElementById("chatInfoModal");
+  const infoCloseBtn = document.getElementById("chatInfoModalClose");
+
+  infoBtn?.addEventListener("click", () => {
+    infoModal?.showModal();
+  });
+  infoCloseBtn?.addEventListener("click", () => {
+    infoModal?.close();
   });
 
   log.log("UI de Chat IA inicializada");

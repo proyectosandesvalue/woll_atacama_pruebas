@@ -4046,3 +4046,84 @@ mark {
     padding: 6px 12px;
   }
 }
+
+/* ── Chips de ejemplos del chat ─────────────────────────────── */
+.ai-chat-examples {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ai-chat-examples-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ai-chat-examples-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ai-chat-example-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--bg-surface-2);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-align: left;
+  font-family: var(--font-body);
+}
+
+.ai-chat-example-chip:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--color-accent);
+}
+
+.ai-chat-example-chip:active {
+  transform: scale(0.98);
+}
+
+/* ── Modal de información del chat ──────────────────────────── */
+.chat-info-dialog {
+  width: min(640px, 92vw);
+  max-height: 80vh;
+}
+
+.chat-info-dialog .welcome-dialog-body {
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.chat-info-dialog ul {
+  padding-left: 20px;
+  margin: 4px 0 12px;
+}
+
+.chat-info-dialog li {
+  margin-bottom: 4px;
+  color: var(--text-secondary);
+}
+
+.chat-info-dialog strong {
+  color: var(--text-primary);
+  font-weight: 600;
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 4px;
+}
+
+.chat-info-dialog strong:first-child {
+  margin-top: 0;
+}

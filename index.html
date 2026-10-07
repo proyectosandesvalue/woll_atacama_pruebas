@@ -243,7 +243,10 @@
     <span class="material-symbols-outlined chat-title-icon">auto_awesome</span>
     Asistente IA
   </span>
-  <div class="chat-actions">
+    <div class="chat-actions">
+    <button class="icon-btn" id="chatInfoBtn" aria-label="Información del asistente" title="Información">
+      <span class="material-symbols-outlined">info</span>
+    </button>
     <button class="icon-btn" id="clearChatBtn" aria-label="Limpiar conversación" title="Limpiar conversación">
       <span class="material-symbols-outlined">delete_sweep</span>
     </button>
@@ -251,14 +254,34 @@
       <span class="material-symbols-outlined">close</span>
     </button>
   </div>
-</div>
 
       <!-- Conversación + entrada (reutiliza las clases .ai-chat-* del design system) -->
       <div class="ai-chat-container">
-        <div class="ai-chat-messages" id="ai-chat-messages" role="log" aria-live="polite">
+                <div class="ai-chat-messages" id="ai-chat-messages" role="log" aria-live="polite">
           <div class="ai-message assistant">¡Hola! Soy tu asistente de IA del Visor Territorial WoLL.
             Puedo analizar las capas del visor, calcular estadísticas y explicarte cómo se relacionan
             entre dimensiones. ¿Qué quieres saber?</div>
+
+          <div class="ai-chat-examples" id="ai-chat-examples">
+            <div class="ai-chat-examples-title">Ejemplos de consultas:</div>
+            <div class="ai-chat-examples-list">
+              <button class="ai-chat-example-chip" data-query="¿Cuántas lagunas hay por comuna?">
+                ¿Cuántas lagunas hay por comuna?
+              </button>
+              <button class="ai-chat-example-chip" data-query="¿Dónde están las plantas desaladoras?">
+                ¿Dónde están las plantas desaladoras?
+              </button>
+              <button class="ai-chat-example-chip" data-query="Muéstrame los bienes nacionales por comuna y tipo">
+                Muéstrame los bienes nacionales por comuna y tipo
+              </button>
+              <button class="ai-chat-example-chip" data-query="Compárame glaciares y humedales por comuna">
+                Compárame glaciares y humedales por comuna
+              </button>
+              <button class="ai-chat-example-chip" data-query="¿Cuántos salares hay en Atacama?">
+                ¿Cuántos salares hay en Atacama?
+              </button>
+            </div>
+          </div>
         </div>
 
         <form class="ai-chat-input-area" id="ai-chat-form" autocomplete="off">
@@ -272,12 +295,6 @@
           </div>
         </form>
 
-              <div class="ai-chat-container">
-        <div class="ai-chat-messages" id="ai-chat-messages" role="log" aria-live="polite">
-          <div class="ai-message assistant">¡Hola! Soy tu asistente de IA del Visor Territorial WoLL.
-            Puedo analizar las capas del visor, calcular estadísticas y explicarte cómo se relacionan
-            entre dimensiones. ¿Qué quieres saber?</div>
-        </div>
 
         <!-- Botón "Quitar resultados del mapa" (dentro del chat) -->
         <button id="chatClearResultsBtn" class="chat-clear-results-btn" hidden
@@ -496,6 +513,54 @@
     <span class="material-symbols-outlined">close</span>
   </button>
 
+  <!-- Modal de información del chat -->
+<dialog class="welcome-dialog chat-info-dialog" id="chatInfoModal" aria-labelledby="chatInfoModalTitle">
+  <div class="welcome-dialog-inner">
+    <div class="welcome-dialog-header">
+      <h2 class="welcome-dialog-title" id="chatInfoModalTitle">Asistente IA — Información</h2>
+      <button class="welcome-dialog-close" id="chatInfoModalClose" aria-label="Cerrar">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    <div class="welcome-dialog-body">
+      <strong>¿Qué puede hacer el asistente?</strong>
+      <ul>
+        <li>Consultar capas del visor (agua, minería, energía, agricultura, riesgos, suelo, planificación).</li>
+        <li>Calcular estadísticas: conteos, distribuciones, promedios.</li>
+        <li>Comparar capas: glaciares vs humedales, derechos de agua vs producción.</li>
+        <li>Calcular proximidad: elementos a menos de X metros de otros.</li>
+        <li>Ubicar elementos en el mapa (plantas, yacimientos, glaciares, etc.).</li>
+      </ul>
+
+      <strong>¿Qué NO puede hacer el asistente?</strong>
+      <ul>
+        <li>Responder preguntas fuera del dominio del visor (clima general, noticias, código, etc.).</li>
+        <li>Consultar datos fuera de la Región de Atacama.</li>
+        <li>Inventar datos. Solo usa la base de datos real del visor.</li>
+      </ul>
+
+      <strong>Ejemplos de consultas válidas:</strong>
+      <ul>
+        <li>¿Cuántas lagunas hay por comuna?</li>
+        <li>¿Dónde están las plantas desaladoras?</li>
+        <li>Muéstrame los bienes nacionales por comuna y tipo.</li>
+        <li>Compárame glaciares y humedales por comuna.</li>
+        <li>¿Cuántos derechos de agua hay a menos de 1 km de un río?</li>
+      </ul>
+
+      <strong>Formato de la respuesta:</strong>
+      <ul>
+        <li>Texto en lenguaje natural (como un analista territorial).</li>
+        <li>Tabla markdown cuando aplique.</li>
+        <li>Gráfico cuando sea una agregación simple.</li>
+        <li>Elementos pintados en el mapa cuando se pida ver ubicaciones.</li>
+      </ul>
+
+      <strong>Modelo de IA:</strong>
+      <p>Gemini 3.1 Flash-Lite (Google).</p>
+    </div>
+  </div>
+</dialog>
 
   <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
