@@ -593,9 +593,10 @@ export function initChatUI() {
   }
 
   // Normalizar el mensaje de bienvenida.
-  Array.from(messagesEl.children).forEach((el) => {
-    el.textContent = el.textContent.replace(/\s+/g, " ").trim();
-  });
+  const welcomeMsg = messagesEl.querySelector(".ai-message.assistant");
+  if (welcomeMsg) {
+    welcomeMsg.textContent = welcomeMsg.textContent.replace(/\s+/g, " ").trim();
+  }
 
   chatBtn.addEventListener("click", toggleChat);
   closeBtn?.addEventListener("click", closeChat);
