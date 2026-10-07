@@ -4029,23 +4029,6 @@ mark {
   }
 }
 
-.chat-clear-results-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-}
-
-.chat-clear-results-btn[hidden] {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .chat-clear-results-btn {
-    bottom: 70px;
-    right: 12px;
-    font-size: 0.8rem;
-    padding: 6px 12px;
-  }
-}
 
 /* ── Chips de ejemplos del chat ─────────────────────────────── */
 .ai-chat-examples {
@@ -4098,7 +4081,6 @@ mark {
   transform: scale(0.98);
 }
 
-/* ── Modal de información del chat ──────────────────────────── */
 /* ── Modal de información del chat ──────────────────────────── */
 .chat-info-dialog {
   width: min(640px, 92vw);
