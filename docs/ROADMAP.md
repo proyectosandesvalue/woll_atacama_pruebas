@@ -56,6 +56,7 @@
 | 04 | Rate limiting + filtros de dominio | ✅ done | alta | — | — |
 | 05 | Multi-chart agnóstico | ✅ done | alta | — | — |
 | 06 | Respuesta geoespacial (GeoJSON en mapa) | 🔄 in-progress | alta | 4-6h | — |
+| 06-B.7 | Pintado multi-capa del chat | ⏳ pending | alta | 3-4h | 06-B.2 |
 | 07 | `/api/config` + snapshot | ⏳ pending | alta | 3-4h | — |
 | 08 | Migración a PostGIS (fuente principal) | ⏳ pending | alta | 40-46h | 07 |
 | 09 | Soporte de imágenes raster | 🚫 blocked | media | 2-25h | decisión técnica |
@@ -163,9 +164,9 @@ El chat responde con texto + charts + **GeoJSON pintado en el mapa**.
 
 **Sub-sprints**:
 - [x] **A** — Backend: `get_layer_features` + extracción de geojson (2h) — commit `3a21572`
-- [ ] **B** — Frontend: `chatMapUtils.js` + integración en `chatUI.js` (3h)
+- [X] **B** — Frontend: `chatMapUtils.js` + integración en `chatUI.js` (3h)
 - [X] **C** — Reglas del prompt sobre cuándo devolver geojson (1h)
-- [ ] **D** — Verificación + commit + deploy (1h)
+- [X] **D** — Verificación + commit + deploy (1h)
 
 **Bloqueantes conocidos**:
 - [X]Sprint 23-A (geojson fuera del LLM) debe ejecutarse antes del cierre de 06.
@@ -175,6 +176,46 @@ El chat responde con texto + charts + **GeoJSON pintado en el mapa**.
 - Máximo de features por respuesta (500 en spec, 1000 en RPC — revisar tras Sprint 23-A).
 - Comportamiento móvil (colapsar chat + botón "Volver al chat").
 
+### Sprint 06-B.7 — Pintado multi-capa del chat
+
+**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 3-4h
+**Dependencias**: 06-B.2 (backend informa layer_id)
+
+**Objetivo**: que el chat pueda pintar varias capas simultáneas, cada una
+con un color distinto, y que persistan hasta que el usuario las quite.
+
+**Comportamiento esperado**:
+- Si el usuario pide 2 capas ("muéstrame las plantas desaladoras y los
+  puertos"), cada una se pinta con un color distinto.
+- Si el usuario pide una nueva capa ("muéstrame los humedales"), las
+  anteriores **siguen visibles**.
+- El usuario puede quitar todas las capas con el botón "Quitar resultados".
+- El usuario puede quitar una capa específica (necesita UI nueva).
+- La leyenda muestra qué color corresponde a cada capa.
+
+**Sub-sprints**:
+- [ ] **A (1h)** — `appState.chat.resultsLayers` (array) en lugar de
+  `resultsLayer` (objeto único).
+- [ ] **B (1h)** — `showResults()` agrega al array en lugar de reemplazar;
+  paleta de colores rotativa.
+- [ ] **C (1h)** — `clearResults()` limpia todas; `clearResultsByLayerId()`
+  limpia una específica.
+- [ ] **D (1h)** — UI: leyenda que muestra el nombre de cada capa + botón
+  para quitar una capa específica.
+
+**CA**:
+- **CA-1** Si el usuario pide 2 capas, cada una se pinta con un color
+  distinto.
+- **CA-2** Si el usuario pide una 3ra capa, las 2 anteriores siguen
+  visibles.
+- **CA-3** El usuario puede quitar todas las capas con el botón
+  "Quitar resultados".
+- **CA-4** El usuario puede quitar una capa específica.
+- **CA-5** La leyenda muestra qué color corresponde a cada capa.
+- **CA-6** Si el usuario pide más capas que colores disponibles, se
+  recicla la paleta con una nota.
+
+**Reversión**: un commit por sub-sprint.
 ---
 
 ## Sprints planificados — Producto (07-21)

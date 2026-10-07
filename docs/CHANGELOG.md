@@ -45,6 +45,43 @@
 
 ## [Unreleased]
 
+### Sprint 06-B, 06-C — Frontend geojson + Prompt + Fixes (2026-10-07)
+
+#### Added
+- `js/utils/chatMapUtils.js`: pinta FeatureCollections del chat en el mapa
+  con estilos destacados por tipo de geometría (punto/línea/polígono).
+- `appState.chat.resultsLayer` y `appState.chat.resultsPane`.
+- Botón "Quitar resultados del mapa" (dentro del chat).
+- Botón flotante para mobile cuando el chat está cerrado.
+- Chips de ejemplos en el chat (5 consultas clickeables).
+- Modal de información del asistente (accesible desde el header del chat).
+- Regla 17 del prompt: precisión en el conteo ("polígonos" no "glaciares").
+- Regla 18 del prompt: contexto del historial (ignorar bloqueos previos).
+
+#### Fixed
+- Bug crítico: `initChatUI` hacía `textContent` sobre todos los hijos de
+  `ai-chat-messages`, destruyendo la estructura de los chips de ejemplos.
+  Ahora normaliza solo el mensaje de bienvenida.
+- Popup del chat: ahora filtra campos técnicos (`id`, `fid`, `geom`) y usa
+  el estilo `.custom-popup` del visor.
+- Bug de la fecha alucinada: bloqueos de dominio no se guardan en el
+  historial. Evita que el LLM responda una pregunta bloqueada en el
+  turno siguiente.
+- Estructura HTML: cerrado el `<main>` faltante.
+- Bloque CSS duplicado del botón "Quitar resultados".
+- Cache-busting (`?v=20261007`) en los links de CSS.
+
+#### Changed
+- Prompt del asistente: 22 → 18 reglas (con decision tree por tipo
+  de pregunta).
+- Modelo LLM: DeepSeek V4.1 Flash → Gemini 3.1 Flash-Lite.
+- Retry automático en errores 503 con backoff exponencial (1s, 2s).
+
+#### Resultado
+- Latencia: ~82s (GLM) → ~6-10s (Gemini).
+- Chat funcional con respuestas correctas y ancho de bandas gestionado.
+- Chips y modal de info funcionando.
+
 ### Sprint 06-C — Reglas del prompt para geojson (2026-10-07)
 
 #### Added
