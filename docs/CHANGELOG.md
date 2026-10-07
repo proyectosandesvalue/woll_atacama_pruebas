@@ -45,6 +45,31 @@
 
 ## [Unreleased]
 
+### Sprint 06-C — Reglas del prompt para geojson (2026-10-07)
+
+#### Added
+- Regla 17: PRECISIÓN EN EL CONTEO. El LLM dice "polígonos de
+  glaciares", no "380 glaciares".
+- Regla 18: CONTEXTO DEL HISTORIAL. Si el historial tiene un bloqueo
+  de dominio previo, el LLM lo ignora y responde solo la pregunta actual.
+
+#### Fixed
+- Bug: el LLM alucinaba la fecha después de que el clasificador
+  bloqueara "¿Qué día es hoy?". El turno bloqueado se guardaba en el
+  historial y confundía al LLM.
+  - Fix en chatUI.js: no guardar bloqueos de dominio en el historial.
+- Bug: el LLM decía "he pintado en el mapa" aunque el frontend no lo
+  hacía.
+  - Fix en regla 13: "el SISTEMA las pintará" en lugar de "he pintado".
+- Encabezado del prompt decía "REGLAS (16)" pero había 18 reglas.
+  Corregido a "REGLAS (18)".
+
+#### Modelo LLM
+- Migración de GLM-5.3-Flash a Gemini 3.1 Flash-Lite.
+- Latencia: ~82s → ~6s (14x mejora).
+- Costo: $0.25 input / $1.50 output por 1M tokens.
+- Sin bugs de DSML (DeepSeek) ni de tool_choice:none (GPT-OSS).
+
 ## [Sprint 23-A] — 2026-10-06
 
 ### Fixed

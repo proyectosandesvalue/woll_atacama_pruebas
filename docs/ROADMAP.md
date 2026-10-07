@@ -164,7 +164,7 @@ El chat responde con texto + charts + **GeoJSON pintado en el mapa**.
 **Sub-sprints**:
 - [x] **A** — Backend: `get_layer_features` + extracción de geojson (2h) — commit `3a21572`
 - [ ] **B** — Frontend: `chatMapUtils.js` + integración en `chatUI.js` (3h)
-- [ ] **C** — Reglas del prompt sobre cuándo devolver geojson (1h)
+- [X] **C** — Reglas del prompt sobre cuándo devolver geojson (1h)
 - [ ] **D** — Verificación + commit + deploy (1h)
 
 **Bloqueantes conocidos**:
@@ -739,6 +739,16 @@ por fases, empezando por las que el chat y la Pieza 2 usan.
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-10-07
+- ✅ **Sprint 06-C completado**: reglas del prompt para geojson.
+  - Regla 13: el LLM no dice "he pintado en el mapa".
+  - Regla 17: precisión en el conteo ("polígonos", no "glaciares").
+  - Regla 18: contexto del historial (ignorar bloqueos previos).
+  - Fix en chatUI.js: no guardar bloqueos en el historial.
+  - Migración a Gemini 3.1 Flash-Lite (~6s vs ~82s con GLM).
+- 📝 Pendiente del Sprint 06: 06-B (frontend pinta geojson) y 06-D.
+- 📝 Próximo: 06-B (frontend del geojson en el mapa).
 
 ### 2026-10-06
 - ✅ **Sprint 23-A completado** (backend del chat).
