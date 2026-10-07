@@ -271,6 +271,23 @@
             </button>
           </div>
         </form>
+
+              <div class="ai-chat-container">
+        <div class="ai-chat-messages" id="ai-chat-messages" role="log" aria-live="polite">
+          <div class="ai-message assistant">¡Hola! Soy tu asistente de IA del Visor Territorial WoLL.
+            Puedo analizar las capas del visor, calcular estadísticas y explicarte cómo se relacionan
+            entre dimensiones. ¿Qué quieres saber?</div>
+        </div>
+
+        <!-- Botón "Quitar resultados del mapa" (dentro del chat) -->
+        <button id="chatClearResultsBtn" class="chat-clear-results-btn" hidden
+                aria-label="Quitar resultados del mapa" title="Quitar resultados del mapa">
+          <span class="material-symbols-outlined">close</span>
+          Quitar resultados del mapa
+        </button>
+
+        <form class="ai-chat-input-area" id="ai-chat-form" autocomplete="off">
+
       </div>
     </aside>
   </main>
@@ -473,12 +490,12 @@
     </div>
   </div>
 
-  <!-- Botón flotante para quitar resultados del chat -->
-<button id="chatClearResultsBtn" class="chat-clear-results-btn" hidden
-        aria-label="Quitar resultados del mapa" title="Quitar resultados del mapa">
-  <span class="material-symbols-outlined">close</span>
-  Quitar resultados
-</button>
+    <!-- Botón flotante "Quitar resultados" — solo mobile cuando el chat está cerrado -->
+  <button id="chatClearResultsMobileBtn" class="chat-clear-results-mobile-btn" hidden
+          aria-label="Quitar resultados del mapa" title="Quitar resultados del mapa">
+    <span class="material-symbols-outlined">close</span>
+  </button>
+
 
   <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

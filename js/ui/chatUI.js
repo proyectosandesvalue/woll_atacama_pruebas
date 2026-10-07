@@ -25,6 +25,7 @@ let chatBtn = null;
 let closeBtn = null;
 let clearBtn = null;
 let clearResultsBtn = null;
+let clearResultsMobileBtn = null;
 let messagesEl = null;
 let inputEl = null;
 let sendBtn = null;
@@ -412,6 +413,8 @@ function openChat() {
     resetLayoutScroll();
   }, TRANSITION_MS);
   log.debug("Panel de chat abierto");
+
+    updateClearResultsBtn();
 }
 
 function closeChat() {
@@ -428,6 +431,8 @@ function closeChat() {
   resetLayoutScroll();
   log.debug("Panel de chat cerrado");
 
+  updateClearResultsBtn();
+
   // NO limpiar resultados al cerrar: el usuario puede querer ver el mapa.
   // Los resultados se limpian al enviar una nueva consulta o al pulsar "Quitar".
 }
@@ -438,16 +443,34 @@ function toggleChat() {
 }
 
 /**
- * Muestra u oculta el botón de "Quitar resultados" según si hay
+ * Muestra u oculta los botones de "Quitar resultados" según si hay
  * resultados pintados en el mapa.
+ *   - Botón dentro del chat: siempre que haya resultados.
+ *   - Botón flotante: solo en mobile y solo si el chat está cerrado.
  */
 function updateClearResultsBtn() {
-  if (!clearResultsBtn) return;
   const hasResults = appState.chat.resultsLayer !== null;
-  if (hasResults) {
-    clearResultsBtn.removeAttribute("hidden");
-  } else {
-    clearResultsBtn.setAttribute("hidden", "");
+
+  // Botón dentro del chat.
+  if (clearResultsBtn) {
+    if (hasResults) {
+      clearResultsBtn.removeAttribute("hidden");
+    } else {
+      clearResultsBtn.setAttribute("hidden", "");
+    }
+  }
+
+  // Botón flotante (mobile, chat cerrado).
+  if (clearResultsMobileBtn) {
+    const isMobileViewport = window.innerWidth < 769;
+    const isChatOpen = isOpen;
+    const shouldShow = hasResults && isMobileViewport && !isChatOpen;
+
+    if (shouldShow) {
+      clearResultsMobileBtn.removeAttribute("hidden");
+    } else {
+      clearResultsMobileBtn.setAttribute("hidden", "");
+    }
   }
 }
 
@@ -605,6 +628,19 @@ export function initChatUI() {
 
   ["mobileLeftSidebarBtn", "mobileRightSidebarBtn"].forEach((id) => {
     document.getElementById(id)?.addEventListener("click", () => closeChat());
+  });
+
+    clearResultsBtn = document.getElementById("chatClearResultsBtn");
+  clearResultsMobileBtn = document.getElementById("chatClearResultsMobileBtn");
+
+  clearResultsBtn?.addEventListener("click", () => {
+    clearResults();
+    updateClearResultsBtn();
+  });
+
+  clearResultsMobileBtn?.addEventListener("click", () => {
+    clearResults();
+    updateClearResultsBtn();
   });
 
   log.log("UI de Chat IA inicializada");

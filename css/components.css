@@ -3946,25 +3946,87 @@ mark {
   color: var(--text-secondary);
 }
 
-/* ── Botón "Quitar resultados del mapa" (chat) ──────────────── */
+/* ── Botón "Quitar resultados del mapa" (dentro del chat) ──── */
 .chat-clear-results-btn {
-  position: fixed;
-  bottom: 80px;
-  right: 20px;
-  z-index: 1200;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 14px;
-  background: var(--bg-app, #fff);
-  color: var(--text-primary, #1a1a1a);
-  border: 1px solid var(--border-color, #ddd);
-  border-radius: 24px;
-  font-size: 0.85rem;
+  margin: 8px 12px 0;
+  padding: 8px 12px;
+  background: var(--bg-surface-2);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius);
+  font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.chat-clear-results-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+.chat-clear-results-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.chat-clear-results-btn[hidden] {
+  display: none;
+}
+
+/* ── Botón flotante "Quitar resultados" — solo mobile, chat cerrado ── */
+.chat-clear-results-mobile-btn {
+  display: none;  /* oculto en desktop */
+}
+
+@media (max-width: 768px) {
+  .chat-clear-results-mobile-btn {
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    z-index: 1140;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+  }
+
+  .chat-clear-results-mobile-btn:hover {
+    background: var(--bg-surface-hover);
+    transform: translateY(-1px);
+  }
+
+  .chat-clear-results-mobile-btn .material-symbols-outlined {
+    font-size: 22px;
+  }
+
+  .chat-clear-results-mobile-btn[hidden] {
+    display: none;
+  }
+
+  /* Popup de Leaflet responsive */
+  .leaflet-popup-content-wrapper {
+    max-width: 90vw !important;
+  }
+
+  .leaflet-popup-content {
+    min-width: 180px;
+    max-width: 80vw;
+    margin: 8px 10px;
+  }
 }
 
 .chat-clear-results-btn:hover {

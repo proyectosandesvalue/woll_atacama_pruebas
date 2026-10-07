@@ -93,17 +93,31 @@ function buildPopup(feature) {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
 
+  // Título del popup: usa "Nombre" o "name" si existe.
+  const titleKey = keys.find((k) => /^nombre$|^name$/i.test(k));
+  const title = titleKey ? escapeHtml(props[titleKey]) : "";
+
+  // Filas: excluir la del título.
   const rows = keys
+    .filter((k) => k !== titleKey)
     .map((k) => {
       const v = props[k];
       if (v == null || v === "") return "";
-      return `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(v)}</td></tr>`;
+      const str = String(v);
+      const truncated = str.length > 120 ? str.slice(0, 120) + "…" : str;
+      return `<p><strong>${escapeHtml(k)}:</strong> ${escapeHtml(truncated)}</p>`;
     })
     .filter(Boolean)
     .join("");
 
-  if (!rows) return "";
-  return `<table style="font-size:12px;border-collapse:collapse">${rows}</table>`;
+  if (!rows && !title) return "";
+
+  return `
+    <div class="custom-popup">
+      ${title ? `<div class="popup-title">${title}</div>` : ""}
+      ${rows}
+    </div>
+  `;
 }
 
 /**
