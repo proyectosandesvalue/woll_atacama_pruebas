@@ -628,14 +628,21 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
     }
 
     // ── Tool calls: guardar turno del asistente ───────────────
-    messages.push({
+        messages.push({
       role: "assistant",
       content: response.content || "",
-      tool_calls: response.toolCalls.map((tc) => ({
-        id: tc.id,
-        type: "function",
-        function: { name: tc.name, arguments: JSON.stringify(tc.arguments) },
-      })),
+      tool_calls: response.toolCalls.map((tc) => {
+        const mapped = {
+          id: tc.id,
+          type: "function",
+          function: { name: tc.name, arguments: JSON.stringify(tc.arguments) },
+        };
+        
+        if (tc.extra_content) {
+          mapped.extra_content = tc.extra_content;
+        }
+        return mapped;
+      }),
     });
 
     // ── Ejecutar tools en paralelo ────────────────────────────

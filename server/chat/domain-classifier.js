@@ -124,17 +124,21 @@ export async function classifyDomain(text, sessionId = null) {
   }
 
   try {
-    const llm = await getLLM();
+    const llm = await getLLM();  
     const response = await llm.chat({
       system: CLASSIFIER_SYSTEM_PROMPT,
       messages: [{ role: "user", content: text }],
-      maxTokens: 5,
+      maxTokens: 64, 
       temperature: 0,
+      reasoningEffort: "low",
       sessionId,
     });
 
     const raw = (response.content || "").trim().toUpperCase();
     const result = raw.startsWith("OUT") ? "OUT" : "IN";
+    if (!raw) {
+      log.warn(`Clasificador devolvió vacío. Fail-open → IN.`);
+    }
 
     log.debug(`Clasificación: ${raw} → ${result}`);
     setInCache(key, result);

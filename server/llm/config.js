@@ -36,5 +36,7 @@ export function getLLMConfig() {
     apiKey: required("LLM_API_KEY"),
     maxTokens: optional("LLM_MAX_TOKENS", 1024),
     temperature: optional("LLM_TEMPERATURE", 0.7),
+    supportsParallelTools:
+      process.env.LLM_SUPPORTS_PARALLEL_TOOLS !== "false",
   };
 }

@@ -52,9 +52,10 @@ export function createProvider(config) {
    *   system: string,
    *   messages: Array,
    *   tools?: Array,
-   *   toolChoice?: string|object,
+   *   Choice?: string|object,
    *   maxTokens?: number,
    *   temperature?: number,
+   *   reasoningEffort?: string,
    *   signal?: AbortSignal,
    *   sessionId?: string,
    * }} args
@@ -75,16 +76,24 @@ export function createProvider(config) {
       }
     }
 
-    const body = {
+        const body = {
       model: config.model,
       messages: openaiMessages,
       temperature: args.temperature ?? config.temperature,
       max_tokens: args.maxTokens ?? config.maxTokens,
     };
+
+    if (args.reasoningEffort) {
+      body.reasoning_effort = args.reasoningEffort;
+    }
+
     if (args.tools && args.tools.length > 0) {
       body.tools = args.tools;
       body.tool_choice = args.toolChoice ?? "auto";
-      body.parallel_tool_calls = true;
+    
+      if (config.supportsParallelTools !== false) {
+        body.parallel_tool_calls = true;
+      }
     }
 
     const reqHeaders = buildHeaders(args.sessionId);
@@ -112,16 +121,23 @@ export function createProvider(config) {
     const msg = choice?.message || {};
     return {
       content: msg.content ?? null,
-      toolCalls:
+            toolCalls:
         Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0
-          ? msg.tool_calls.map((tc) => ({
-              id: tc.id,
-              name: tc.function?.name,
-              arguments:
-                typeof tc.function?.arguments === "string"
-                  ? safeParseJSON(tc.function.arguments)
-                  : tc.function?.arguments || {},
-            }))
+          ? msg.tool_calls.map((tc) => {
+              const mapped = {
+                id: tc.id,
+                name: tc.function?.name,
+                arguments:
+                  typeof tc.function?.arguments === "string"
+                    ? safeParseJSON(tc.function.arguments)
+                    : tc.function?.arguments || {},
+              };
+           
+              if (tc.extra_content) {
+                mapped.extra_content = tc.extra_content;
+              }
+              return mapped;
+            })
           : null,
       raw: data,
     };
