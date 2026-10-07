@@ -1,0 +1,124 @@
+/* ============================================================
+   MAP.CSS — Controles del mapa y popups de Leaflet
+   Visor WoLL — Interfaz v2
+   ============================================================ */
+
+/* CONTROLES FLOTANTES DEL MAPA */
+
+.map-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  color: var(--navbar-icon-color);
+  box-shadow: var(--shadow-map);
+  cursor: pointer;
+  transition: var(--transition-lift);
+  flex-shrink: 0;
+}
+
+.map-btn:hover {
+  background: var(--map-control-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.map-btn:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle-btn {
+  color: var(--text-secondary);
+}
+
+/* BARRA DE COORDENADAS */
+
+.coords-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--coords-text);
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.coords-divider {
+  width: 1px;
+  height: 12px;
+  background: var(--border-default);
+  flex-shrink: 0;
+}
+
+/* POPUPS DE LEAFLET */
+
+.custom-popup {
+  font-family: var(--font-body);
+  font-size: 0.73rem;
+  line-height: 1.45;
+  color: var(--text-primary);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.custom-popup .popup-title {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-brand-text);
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 5px;
+}
+
+.custom-popup p {
+  margin: 3px 0;
+}
+
+.custom-popup a {
+  color: var(--color-brand-text);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.custom-popup a:hover {
+  text-decoration: underline;
+}
+
+.leaflet-popup-content {
+  margin: 10px 14px;
+  min-width: 160px;
+  max-width: 280px;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Tema oscuro */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--dialog-bg);
+  color: var(--text-primary);
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--text-secondary);
+}

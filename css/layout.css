@@ -1,0 +1,387 @@
+/* ============================================================
+   LAYOUT.CSS — Header, main-layout, tabs y estructura
+   Visor WoLL — Interfaz v2
+   ============================================================ */
+
+
+/*  HEADER  */
+
+
+.header {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) 1fr minmax(0, auto);
+  align-items: center;
+  gap: 0;
+  height: var(--navbar-height);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 0 12px 0 0;
+  z-index: 1000;
+  position: relative;
+}
+
+.header.header-custom {
+  background: var(--bg-surface-2);
+  backdrop-filter: none;
+  border-bottom: none;
+  box-shadow: var(--shadow-sm);
+  padding: 0 24px;
+}
+
+.header h1,
+.header h2,
+.header h3,
+.header h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 16px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.header-left > :not(.brand) {
+  display: none;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo-img {
+  height: 36px;
+  max-height: 36px;
+  width: auto;
+  max-width: 160px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* Logos según tema */
+[data-theme="light"] .brand-logo-img.dark-logo {
+  display: none;
+}
+
+[data-theme="light"] .brand-logo-img.light-logo {
+  display: block;
+}
+
+[data-theme="dark"] .brand-logo-img.light-logo {
+  display: none;
+}
+
+[data-theme="dark"] .brand-logo-img.dark-logo {
+  display: block;
+}
+
+:root .brand-logo-img.dark-logo {
+  display: none;
+}
+
+:root .brand-logo-img.light-logo {
+  display: block;
+}
+
+.brand-title {
+  font-size: var(--text-label-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  font-family: var(--font-body);
+}
+
+.brand-subtitle {
+  display: block;
+  font-weight: 400;
+  font-size: 0.70rem;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+}
+
+/* ── Header center: buscador ───────────────────────────────── */
+
+.header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 16px;
+  min-width: 0;
+}
+
+.search-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 480px;
+}
+
+.search-bar-rounded {
+  width: 100%;
+  max-width: 480px;
+}
+
+.search-bar-rounded .search-input {
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 18px;
+  color: var(--navbar-icon-color);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  background: var(--search-bg);
+  border: 1px solid var(--search-border);
+  border-radius: var(--border-radius);
+  padding: 0 12px 0 40px;
+  font-size: 0.825rem;
+  color: var(--search-text);
+  outline: none;
+  text-align: center;
+  transition: var(--transition-fast);
+}
+
+.search-input::placeholder {
+  color: var(--search-placeholder);
+  font-size: 0.825rem;
+}
+
+.search-input:focus {
+  border-color: var(--search-focus-border);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
+#search-results-anchor {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 600;
+}
+
+/* ── Header right: acciones ────────────────────────────────── */
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 100%;
+}
+
+.header-right-custom {
+  gap: 16px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.80rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.nav-link .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.nav-link:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+  text-decoration: none;
+}
+
+.header-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--border-default);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hide-on-mobile {
+  display: flex;
+}
+
+/* ── Botón icono genérico ──────────────────────────────────── */
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--border-radius-sm);
+  color: var(--navbar-icon-color);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.icon-btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.icon-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+}
+
+.icon-btn:active {
+  background: var(--bg-surface-active);
+}
+
+.icon-btn--active,
+.icon-btn--active:hover {
+  color: var(--color-accent);
+  background: var(--bg-surface-active);
+}
+
+[data-theme="light"] .icon-btn--active,
+[data-theme="light"] .icon-btn--active:hover {
+  color: var(--color-brand-text);
+  background: var(--color-brand-subtle);
+}
+
+/* MAIN LAYOUT */
+
+.main-layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-left-width) 1fr var(--sidebar-right-width);
+  grid-template-rows: 1fr;
+  height: calc(100vh - var(--navbar-height));
+  height: calc(100dvh - var(--navbar-height));
+  overflow: hidden;
+  position: relative;
+}
+
+.map-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-surface-2);
+  z-index: 1;
+}
+
+/* SIDEBAR TABS (barra superior de los sidebars) */
+
+.sidebar-tabs {
+  display: flex;
+  align-items: stretch;
+  height: 44px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface-2);
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--tab-text);
+  background: var(--tab-bg);
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+  position: relative;
+}
+
+.tab-btn .tab-icon {
+  font-size: 16px;
+}
+
+.tab-btn:hover {
+  color: var(--tab-active-text);
+  background: var(--tab-hover-bg);
+}
+
+.tab-btn--active {
+  color: var(--tab-active-text);
+  border-bottom-color: var(--tab-active-indicator);
+  font-weight: 600;
+}
+
+.tab-content {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-direction: column;
+}
+
+.tab-content.active {
+  display: flex;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .search-bar-rounded {
+    display: none;
+  }
+  .hide-on-mobile {
+    display: none;
+  }
+  .header.header-custom {
+    padding: 0 12px;
+  }
+}
