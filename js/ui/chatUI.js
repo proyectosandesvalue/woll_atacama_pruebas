@@ -492,11 +492,19 @@ async function handleSend() {
   const typing = addTypingIndicator();
 
   try {
-    const payload = await sendMessage(text, messageHistory.slice(0, -1));
+        const payload = await sendMessage(text, messageHistory.slice(0, -1));
     typing.remove();
     addMessage(payload, "assistant");
     const replyText = payload?.reply || "Sin respuesta.";
-    messageHistory.push({ role: "assistant", content: replyText });
+
+    const isDomainBlock = /^⚠️\s*No puedo responder/i.test(replyText.trim())
+      || replyText.includes("solo puedo ayudarte con consultas sobre los datos del portal");
+
+    if (!isDomainBlock) {
+      messageHistory.push({ role: "assistant", content: replyText });
+    } else {
+      log.debug("Bloqueo de dominio detectado; no se guarda en el historial.");
+    }
 
     if (messageHistory.length > MAX_HISTORY) {
       messageHistory = messageHistory.slice(-MAX_HISTORY);
