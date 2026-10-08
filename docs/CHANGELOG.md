@@ -45,6 +45,36 @@
 
 ## [Unreleased]
 
+## [Sprint 06-B.4] — 2026-10-08
+
+### Added
+- Coropleta de puntos por comuna: cuando el usuario pregunta
+  "¿cuántos X por comuna?", los elementos de la capa se pintan
+  en el mapa con color según su comuna.
+- `geojson_meta.style_hint` en el payload del chat:
+  `{ attribute: "COMUNA", kind: "choropleth-points", palette: null }`.
+- Post-procesamiento determinístico en el orquestador:
+  `maybeFetchFeaturesForStyle()` fuerza `get_layer_features` si el
+  LLM no lo hizo.
+- Leyenda dinámica integrada en `#sidebar-legend`: la sección
+  "Resultados del chat · por comuna" aparece arriba de las
+  leyendas del visor.
+- `ATTRIBUTE_PALETTE` (12 colores) con asignación estable por valor.
+- Regla 19 del prompt: forzar `aggregate_by_admin` + `get_layer_features`
+  cuando el usuario pide "por comuna + elementos".
+
+### Fixed
+- `chatAssistant.js` filtraba `geojson_meta`, `notice` y `charts`.
+  Ahora propaga todos los campos del backend.
+- `makeFeatureStyler` con `fillOpacity: 0.55` (antes 0.15) para que
+  el relleno del color sea visible.
+- Vértice y relleno del mismo color (antes el punto usaba blanco fijo).
+- La sección del chat en la leyenda se limpia al limpiar resultados
+  del mapa.
+
+### Tests
+- 104/104.
+
 ## [Sprint 06-B.2] — 2026-10-08
 
 ### Added
