@@ -77,7 +77,7 @@ GEOMETRÍAS PARA EL MAPA:
 ESTADÍSTICAS GENERALES DE UNA CAPA:
   → get_layer_stats
 
-REGLAS (18):
+REGLAS (19):
 
 1. ACTÚA DIRECTO. La primera acción SIEMPRE es llamar a la tool
    correcta. NO revises el esquema ni hagas consultas exploratorias
@@ -166,6 +166,19 @@ REGLAS (18):
     únicos puede ser menor".
 
 18. CONTEXTO DEL HISTORIAL:
+    Si el historial muestra que intentaste responder una pregunta
+    fuera de dominio (con un mensaje como "No puedo responder esa
+    pregunta"), NO respondas esa pregunta en el turno actual. Ignorá
+    ese turno previo. Respondé SOLO la pregunta actual del usuario.
+
+19. PREGUNTAS "POR COMUNA" CON ELEMENTOS:
+    Si el usuario pregunta "¿cuántos X por comuna?" o "muéstrame
+    los X por comuna", llama a DOS tools:
+      (a) aggregate_by_admin con layer_id y admin_level="comuna"
+          (para el conteo).
+      (b) get_layer_features con el mismo layer_id
+          (para pintar los elementos, coloreados por comuna).
+    El frontend coloreará cada elemento según su campo COMUNA.
 
 CATÁLOGO:
 `;
@@ -241,6 +254,42 @@ async function buildSystemPrompt() {
   return full;
 }
 
+
+/**
+ * Detecta si el usuario pidió ver los elementos coloreados por comuna.
+ * Se usa para agregar `style_hint` a `geojson_meta`, que el frontend
+ * usa para colorear las features por el campo COMUNA.
+ *
+ * Ejemplos:
+ *   - "¿cuántos glaciares por comuna?"
+ *   - "muéstrame los humedales de cada comuna"
+ *   - "distribución de plantas desaladoras por comuna"
+ */
+function detectStyleHint(userText) {
+  if (!userText || typeof userText !== "string") return null;
+  const t = userText.toLowerCase();
+
+  // Patrón 1: pide agrupación por comuna.
+  const pidePorComuna =
+    /\bpor\s+comuna\b|\bpor\s+comunas\b|\bseg[uú]n\s+comuna\b|\bcada\s+comuna\b|\ben\s+qu[eé]\s+comuna\b|\bde\s+cada\s+comuna\b/.test(
+      t
+    );
+
+  // Patrón 2: pide ver/pintar/mostrar elementos.
+  const pideElementos =
+    /\bmu[eé]strame\b|\bpinta\b|\bd[oó]nde\s+est[aá]n\b|\bubicaci[oó]n\b|\bmapa\b|\bver\b|\bcu[aá]nt[oa]s?\b|\bdistribu[ií]dos?\b|\bdistribuci[oó]n\b/.test(
+      t
+    );
+
+  if (pidePorComuna && pideElementos) {
+    return {
+      attribute: "COMUNA",
+      kind: "choropleth-points",
+      palette: null, // el frontend usa su paleta por defecto
+    };
+  }
+  return null;
+}
 
 /**
  * Genera el `notice` determinístico cuando el geojson fue truncado.
@@ -667,7 +716,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
     // ── Salida: el LLM no pidió más tools ─────────────────────
     if (!response.toolCalls || response.toolCalls.length === 0) {
       dbg(`step ${step}: sin tool_calls → salida`);
-      return finish(response.content, ctx, messages);
+      return finish(response.content, ctx, messages, text);
     }
 
     // ── Tool calls: guardar turno del asistente ───────────────
@@ -797,8 +846,9 @@ function compact(name, out, ctx) {
 // Salida: arma el payload final al frontend
 // ─────────────────────────────────────────────────────────────────
 
-function finish(reply, ctx, messages) {
+function finish(reply, ctx, messages, userText = "") {
   const geojsonMeta = buildGeojsonFromCtx(ctx);
+  const styleHint = geojsonMeta ? detectStyleHint(userText) : null;
   return {
     reply: String(reply || "").trim() || "Sin respuesta.",
     charts: buildChartsFromHistory(messages),
@@ -810,6 +860,7 @@ function finish(reply, ctx, messages) {
           feature_count: geojsonMeta.shown,
           total: geojsonMeta.total,
           truncated: geojsonMeta.truncated,
+          style_hint: styleHint,
         }
       : null,
     notice: buildNoticeFromGeojson(geojsonMeta),
@@ -820,10 +871,6 @@ function finish(reply, ctx, messages) {
 // Fusión de geojson desde ctx.raw
 // ─────────────────────────────────────────────────────────────────
 
-/**
- * Fusiona todos los FeatureCollections de ctx.raw, respetando el tope de 500.
- * Devuelve { geojson, total, shown, truncated } o null.
- */
 /**
  * Fusiona todos los FeatureCollections de ctx.raw, respetando el tope de 500.
  * Devuelve { geojson, total, shown, truncated, layerId, layerIds } o null.

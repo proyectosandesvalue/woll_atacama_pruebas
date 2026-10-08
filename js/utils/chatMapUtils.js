@@ -5,6 +5,9 @@
  * cuando el LLM usa la tool `get_layer_features`. Este módulo lo pinta
  * en una capa temporal destacada, con zoom automático.
  *
+ * Soporta `styleConfig` opcional para colorear las features según un
+ * atributo (por ejemplo, COMUNA) y generar una leyenda dinámica.
+ *
  * @module utils/chatMapUtils
  */
 
@@ -17,8 +20,7 @@ const PANE_NAME = "chatResults";
 const PANE_ZINDEX = 1000;
 
 /**
- * Estilos destacados por tipo de geometría.
- * Colores que contrastan con las capas normales del visor.
+ * Estilos por defecto por tipo de geometría.
  */
 const STYLES = {
   point: {
@@ -44,8 +46,36 @@ const STYLES = {
 };
 
 /**
+ * Paleta de colores para colorear por atributo.
+ * Cicla si hay más valores únicos que colores.
+ */
+const ATTRIBUTE_PALETTE = [
+  "#1A19CC", // azul WoLL
+  "#FFB93D", // amarillo
+  "#2f3562", // azul oscuro
+  "#8b8aff", // lavanda
+  "#FF7A45", // naranja
+  "#38A78C", // verde
+  "#D94A8C", // magenta
+  "#5B9BD5", // celeste
+  "#A67C52", // marrón
+  "#7D5BA6", // violeta
+  "#F4A261", // durazno
+  "#2A9D8F", // verde azulado
+];
+
+// ── Utilidades HTML ────────────────────────────────────────────
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
  * Asegura que exista el pane dedicado a los resultados del chat.
- * Se crea una sola vez y se reutiliza.
  */
 function ensurePane(map) {
   if (appState.chat.resultsPane && map.getPane(PANE_NAME)) {
@@ -59,7 +89,6 @@ function ensurePane(map) {
 
 /**
  * Recorre el geojson y agrupa las features por tipo de geometría.
- * (Point/MultiPoint, LineString/MultiLineString, Polygon/MultiPolygon).
  */
 function classifyFeatures(features) {
   const points = [];
@@ -77,20 +106,88 @@ function classifyFeatures(features) {
   return { points, lines, polygons };
 }
 
-/*
- * @param {object} feature - Feature GeoJSON.
- * @returns {string} HTML del popup o cadena vacía.
+/**
+ * Devuelve un color estable para cada valor (usando un Map de cache).
+ */
+function getColorForValue(value, cache) {
+  const key = value == null || value === "" ? "(sin dato)" : String(value);
+  if (cache.has(key)) return cache.get(key);
+  const color = ATTRIBUTE_PALETTE[cache.size % ATTRIBUTE_PALETTE.length];
+  cache.set(key, color);
+  return color;
+}
+
+/**
+ * Construye un styleConfig a partir de options.styleConfig o options.style_hint.
+ * Devuelve null si no hay attribute.
+ */
+function buildStyleConfig(options) {
+  const hint = options?.styleConfig || options?.style_hint;
+  if (!hint || !hint.attribute) return null;
+  return {
+    attribute: hint.attribute,
+    palette: hint.palette || ATTRIBUTE_PALETTE,
+    kind: hint.kind || "choropleth-points",
+  };
+}
+
+/**
+ * Devuelve una función de estilo Leaflet que aplica color por feature
+ * según el atributo del styleConfig. Si no hay styleConfig, devuelve
+ * el estilo base sin cambios.
+ */
+function makeFeatureStyler(baseStyle, styleConfig, colorCache) {
+  if (!styleConfig) {
+    return () => baseStyle;
+  }
+  const attr = styleConfig.attribute;
+  return (feature) => {
+    const value = feature?.properties?.[attr];
+    const color = getColorForValue(value, colorCache);
+    return {
+      ...baseStyle,
+      fillColor: color,
+      color: color, // para líneas
+    };
+  };
+}
+
+/**
+ * Genera el HTML de la leyenda a partir del colorCache.
+ */
+function buildLegendHtml(colorCache, attributeLabel) {
+  if (!colorCache || colorCache.size === 0) return "";
+  const entries = Array.from(colorCache.entries()).sort(([a], [b]) =>
+    String(a).localeCompare(String(b), "es")
+  );
+  const rows = entries
+    .map(
+      ([value, color]) => `
+      <div class="legend-item">
+        <span class="legend-swatch" style="background:${color}"></span>
+        <span class="legend-label">${escapeHtml(value)}</span>
+      </div>
+    `
+    )
+    .join("");
+  return `<div class="legend-title">${escapeHtml(attributeLabel)}</div>${rows}`;
+}
+
+/**
+ * Renderiza la leyenda en el panel de leyenda del sidebar derecho.
+ */
+function renderLegend(html) {
+  const container = document.getElementById("sidebar-legend");
+  if (!container) return;
+  container.innerHTML = html;
+}
+
+/**
+ * Construye el HTML del popup para una feature.
  */
 function buildPopup(feature) {
   const props = feature?.properties || {};
   if (Object.keys(props).length === 0) return "";
-
-  const escapeHtml = (s) =>
-    String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
 
   // Campos técnicos que NO se muestran al usuario.
   const TECH_FIELDS =
@@ -104,7 +201,9 @@ function buildPopup(feature) {
   if (keys.length === 0) return "";
 
   // Título: primer campo que parezca "nombre".
-  const titleKey = keys.find((k) => /^nombre$|^name$|^titulo$|^título$/i.test(k));
+  const titleKey = keys.find((k) =>
+    /^nombre$|^name$|^titulo$|^título$/i.test(k)
+  );
   const title = titleKey ? escapeHtml(props[titleKey]) : "";
 
   // Resto de campos como párrafos.
@@ -136,6 +235,7 @@ function buildPopup(feature) {
  * @param {object} geojson - FeatureCollection
  * @param {object} [options]
  * @param {boolean} [options.fitBounds=true] - Hacer zoom a la extensión
+ * @param {object} [options.styleConfig] - { attribute, palette, kind }
  * @returns {boolean} true si se pintó algo
  */
 export function showResults(geojson, options = {}) {
@@ -145,7 +245,11 @@ export function showResults(geojson, options = {}) {
     return false;
   }
 
-  if (!geojson || geojson.type !== "FeatureCollection" || !Array.isArray(geojson.features)) {
+  if (
+    !geojson ||
+    geojson.type !== "FeatureCollection" ||
+    !Array.isArray(geojson.features)
+  ) {
     log.warn("showResults: geojson inválido", geojson);
     return false;
   }
@@ -158,48 +262,78 @@ export function showResults(geojson, options = {}) {
   // Limpiar capa anterior antes de pintar la nueva.
   clearResults();
 
+  const styleConfig = buildStyleConfig(options);
+  const colorCache = new Map();
+
   const pane = ensurePane(map);
   const { points, lines, polygons } = classifyFeatures(geojson.features);
 
   const layers = [];
 
+  const polygonStyleFn = makeFeatureStyler(
+    STYLES.polygon,
+    styleConfig,
+    colorCache
+  );
+  const lineStyleFn = makeFeatureStyler(STYLES.line, styleConfig, colorCache);
+
   if (polygons.length > 0) {
     layers.push(
-      L.geoJSON({ type: "FeatureCollection", features: polygons }, {
-        pane: PANE_NAME,
-        style: () => STYLES.polygon,
-        onEachFeature: (feature, layer) => {
-          const popup = buildPopup(feature);
-          if (popup) layer.bindPopup(popup);
-        },
-      })
+      L.geoJSON(
+        { type: "FeatureCollection", features: polygons },
+        {
+          pane: PANE_NAME,
+          style: polygonStyleFn,
+          onEachFeature: (feature, layer) => {
+            const popup = buildPopup(feature);
+            if (popup) layer.bindPopup(popup);
+          },
+        }
+      )
     );
   }
 
   if (lines.length > 0) {
     layers.push(
-      L.geoJSON({ type: "FeatureCollection", features: lines }, {
-        pane: PANE_NAME,
-        style: () => STYLES.line,
-        onEachFeature: (feature, layer) => {
-          const popup = buildPopup(feature);
-          if (popup) layer.bindPopup(popup);
-        },
-      })
+      L.geoJSON(
+        { type: "FeatureCollection", features: lines },
+        {
+          pane: PANE_NAME,
+          style: lineStyleFn,
+          onEachFeature: (feature, layer) => {
+            const popup = buildPopup(feature);
+            if (popup) layer.bindPopup(popup);
+          },
+        }
+      )
     );
   }
 
   if (points.length > 0) {
     layers.push(
-      L.geoJSON({ type: "FeatureCollection", features: points }, {
-        pane: PANE_NAME,
-        pointToLayer: (feature, latlng) =>
-          L.circleMarker(latlng, { ...STYLES.point, pane: PANE_NAME }),
-        onEachFeature: (feature, layer) => {
-          const popup = buildPopup(feature);
-          if (popup) layer.bindPopup(popup);
-        },
-      })
+      L.geoJSON(
+        { type: "FeatureCollection", features: points },
+        {
+          pane: PANE_NAME,
+          pointToLayer: (feature, latlng) => {
+            let style = { ...STYLES.point, pane: PANE_NAME };
+            if (styleConfig) {
+              const value = feature?.properties?.[styleConfig.attribute];
+              const color = getColorForValue(value, colorCache);
+              style = {
+                ...style,
+                fillColor: color,
+                color: "#FFFFFF", // mantener el borde blanco
+              };
+            }
+            return L.circleMarker(latlng, style);
+          },
+          onEachFeature: (feature, layer) => {
+            const popup = buildPopup(feature);
+            if (popup) layer.bindPopup(popup);
+          },
+        }
+      )
     );
   }
 
@@ -216,6 +350,12 @@ export function showResults(geojson, options = {}) {
     } catch (err) {
       log.warn("fitBounds falló:", err);
     }
+  }
+
+  // Leyenda dinámica si hay styleConfig.
+  if (styleConfig) {
+    const legendHtml = buildLegendHtml(colorCache, styleConfig.attribute);
+    renderLegend(legendHtml);
   }
 
   log.debug(`Resultados pintados: ${geojson.features.length} features`);

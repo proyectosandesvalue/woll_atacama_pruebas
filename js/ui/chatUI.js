@@ -62,8 +62,6 @@ function scrollToBottom() {
 
 /**
  * Renderiza un mensaje en la conversación.
- * Soporta: **negrita**, tablas markdown simples, listas con guiones,
- * saltos de línea. Sanitización estructural (textContent + nodos).
  */
 function addMessage(payload, sender) {
   const msg = document.createElement("div");
@@ -104,11 +102,6 @@ function addMessage(payload, sender) {
 
 /**
  * Renderiza texto enriquecido en el contenedor.
- * Procesa línea por línea detectando:
- *   - Tablas markdown (| col | col |)
- *   - Listas (- item)
- *   - Párrafos normales
- *   - **negrita** inline
  */
 function renderRichText(text, container) {
   const lines = text.split(/\r?\n/);
@@ -414,7 +407,7 @@ function openChat() {
   }, TRANSITION_MS);
   log.debug("Panel de chat abierto");
 
-    updateClearResultsBtn();
+  updateClearResultsBtn();
 }
 
 function closeChat() {
@@ -445,8 +438,6 @@ function toggleChat() {
 /**
  * Muestra u oculta los botones de "Quitar resultados" según si hay
  * resultados pintados en el mapa.
- *   - Botón dentro del chat: siempre que haya resultados.
- *   - Botón flotante: solo en mobile y solo si el chat está cerrado.
  */
 function updateClearResultsBtn() {
   const hasResults = appState.chat.resultsLayer !== null;
@@ -526,7 +517,9 @@ async function handleSend() {
     // Si la respuesta trae geojson, pintarlo en el mapa.
     if (payload?.geojson && payload.geojson.type === "FeatureCollection") {
       try {
-        const painted = showResults(payload.geojson);
+        const painted = showResults(payload.geojson, {
+          styleConfig: payload?.geojson_meta?.style_hint || null,
+        });
         if (painted) updateClearResultsBtn();
       } catch (err) {
         log.warn("No se pudo pintar el geojson:", err);
@@ -536,9 +529,6 @@ async function handleSend() {
     const replyText = payload?.reply || "Sin respuesta.";
 
     // NO guardar bloqueos de dominio en el historial.
-    // Motivo: si el LLM ve un turno previo donde bloqueó una pregunta,
-    // se confunde y responde esa pregunta bloqueada en el turno actual
-    // (ej: alucinaba la fecha después de que el clasificador la bloqueó).
     const isDomainBlock =
       /^⚠️\s*No puedo responder/i.test(replyText.trim()) ||
       replyText.includes(
@@ -554,11 +544,10 @@ async function handleSend() {
     if (messageHistory.length > MAX_HISTORY) {
       messageHistory = messageHistory.slice(-MAX_HISTORY);
     }
-    } catch (err) {
+  } catch (err) {
     typing.remove();
     const msg = err?.message || "Lo siento, hubo un error al procesar tu solicitud.";
 
-    // Mensaje amigable si es un error temporal del proveedor LLM.
     const friendly =
       /saturado|UNAVAILABLE|503/i.test(msg)
         ? "El asistente está temporalmente saturado. Esperá unos segundos y vuelve a intentar."
@@ -566,7 +555,6 @@ async function handleSend() {
 
     addMessage(`⚠️ ${friendly}`, "error");
     log.error("Error al enviar consulta al asistente:", err);
-
   } finally {
     isSending = false;
     if (sendBtn) sendBtn.disabled = false;
@@ -583,6 +571,7 @@ export function initChatUI() {
   closeBtn = document.getElementById("closeChatSidebarBtn");
   clearBtn = document.getElementById("clearChatBtn");
   clearResultsBtn = document.getElementById("chatClearResultsBtn");
+  clearResultsMobileBtn = document.getElementById("chatClearResultsMobileBtn");
   messagesEl = document.getElementById("ai-chat-messages");
   inputEl = document.getElementById("ai-chat-input");
   sendBtn = document.getElementById("ai-chat-send");
@@ -606,10 +595,25 @@ export function initChatUI() {
     }
   });
 
-  // Listener del botón "Quitar resultados" (una sola vez).
+  // Listeners de "Quitar resultados" (una sola vez).
   clearResultsBtn?.addEventListener("click", () => {
     clearResults();
     updateClearResultsBtn();
+  });
+
+  clearResultsMobileBtn?.addEventListener("click", () => {
+    clearResults();
+    updateClearResultsBtn();
+  });
+
+  // Chips de ejemplos.
+  document.querySelectorAll(".ai-chat-example-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const query = chip.getAttribute("data-query") || chip.textContent.trim();
+      if (!query || isSending) return;
+      if (inputEl) inputEl.value = query;
+      handleSend();
+    });
   });
 
   inputEl.addEventListener("keydown", (e) => {
@@ -639,29 +643,7 @@ export function initChatUI() {
     document.getElementById(id)?.addEventListener("click", () => closeChat());
   });
 
-    clearResultsBtn = document.getElementById("chatClearResultsBtn");
-  clearResultsMobileBtn = document.getElementById("chatClearResultsMobileBtn");
-
-  clearResultsBtn?.addEventListener("click", () => {
-    clearResults();
-    updateClearResultsBtn();
-  });
-
-  clearResultsMobileBtn?.addEventListener("click", () => {
-    clearResults();
-    updateClearResultsBtn();
-  });
-
-  document.querySelectorAll(".ai-chat-example-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      const query = chip.getAttribute("data-query") || chip.textContent.trim();
-      if (!query || isSending) return;
-      if (inputEl) inputEl.value = query;
-      handleSend();
-    });
-  });
-
-    // Modal de información del chat.
+  // Modal de información del chat.
   const infoBtn = document.getElementById("chatInfoBtn");
   const infoModal = document.getElementById("chatInfoModal");
   const infoCloseBtn = document.getElementById("chatInfoModalClose");
