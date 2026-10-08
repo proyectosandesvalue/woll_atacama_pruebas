@@ -149,6 +149,8 @@ woll_atacama_pruebas/
 
 **6.1. Contrato de respuesta**
 
+**6.1. Contrato de respuesta**
+
 ```json
 {
   "reply": "string",
@@ -156,21 +158,37 @@ woll_atacama_pruebas/
   "chart": { ... } | null,
   "charts": [ ... ],
   "geojson": { "type": "FeatureCollection", "features": [...] } | null,
+  "geojson_meta": {
+    "layer_id": "string | null",
+    "layer_ids": ["string"],
+    "feature_count": 0,
+    "total": 0,
+    "truncated": false
+  } | null,
   "citations": [ ... ]
 }
 
 Reglas:
 
-- reply siempre presente (nunca vacío).
-- chart, geojson, citations opcionales. null si no aplican.
-- El frontend tolera todos los campos ausentes.
-- Cualquier cambio al contrato requiere actualizar frontend y backend en el mismo commit.
-**Reglas del campo `notice`**:
-- Es un aviso determinístico generado por el **backend**, no por el LLM.
-- Uso actual: informar truncado de resultados geoespaciales
-  ("Mostrando 500 de 600 resultados en el mapa.").
-- El frontend lo renderiza destacado, debajo del `reply`.
-- Si no hay aviso, es `null`.
+-Reglas:
+
+ - reply siempre presente (nunca vacío).
+ - chart, charts, geojson, geojson_meta, citations son opcionales. null si no aplican.
+ - El frontend tolera todos los campos ausentes.
+ - Cualquier cambio al contrato requiere actualizar frontend y backend en el mismo commit.
+
+Reglas del campo notice:
+
+ - Es un aviso determinístico generado por el backend, no por el LLM.
+ - Uso actual: informar truncado de resultados geoespaciales
+("Mostrando 500 de 600 resultados en el mapa.").
+ - El frontend lo renderiza destacado, debajo del reply.
+ - Si no hay aviso, es null.
+
+Reglas del campo geojson_meta:
+ - Solo aparece cuando geojson también está presente (nunca es null si geojson tiene features).
+ - Es metadata generada por el backend (no por el LLM).
+ - El LLM nunca ve geojson_meta ni geojson (se remueven antes de enviar al modelo).
 
 6.2. Tools
 

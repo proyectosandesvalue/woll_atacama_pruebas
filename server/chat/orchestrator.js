@@ -723,9 +723,12 @@ function compact(name, out, ctx) {
   const r = out.result;
 
   // ── FeatureCollection directa ──────────────────────────────
-  if (r && r.type === "FeatureCollection" && Array.isArray(r.features)) {
+    if (r && r.type === "FeatureCollection" && Array.isArray(r.features)) {
     const ref = `fc_${ctx.raw.size + 1}`;
-    ctx.raw.set(ref, r);
+    ctx.raw.set(ref, {
+      ...r,
+      _layer_id: r._layer_id || null,
+    });
     return {
       ref,
       total: r.features.length,
@@ -800,6 +803,15 @@ function finish(reply, ctx, messages) {
     reply: String(reply || "").trim() || "Sin respuesta.",
     charts: buildChartsFromHistory(messages),
     geojson: geojsonMeta ? geojsonMeta.geojson : null,
+    geojson_meta: geojsonMeta
+      ? {
+          layer_id: geojsonMeta.layerId || null,
+          layer_ids: geojsonMeta.layerIds || [],
+          feature_count: geojsonMeta.shown,
+          total: geojsonMeta.total,
+          truncated: geojsonMeta.truncated,
+        }
+      : null,
     notice: buildNoticeFromGeojson(geojsonMeta),
   };
 }
@@ -812,13 +824,24 @@ function finish(reply, ctx, messages) {
  * Fusiona todos los FeatureCollections de ctx.raw, respetando el tope de 500.
  * Devuelve { geojson, total, shown, truncated } o null.
  */
+/**
+ * Fusiona todos los FeatureCollections de ctx.raw, respetando el tope de 500.
+ * Devuelve { geojson, total, shown, truncated, layerId, layerIds } o null.
+ */
 function buildGeojsonFromCtx(ctx) {
   if (!CHAT_GEOJSON_ENABLED) return null;
   if (!ctx.raw || ctx.raw.size === 0) return null;
 
   const allFeatures = [];
+  const layerIds = new Set();
+  let firstLayerId = null;
+
   for (const fc of ctx.raw.values()) {
     if (fc?.type === "FeatureCollection" && Array.isArray(fc.features)) {
+      if (fc._layer_id) {
+        layerIds.add(fc._layer_id);
+        if (!firstLayerId) firstLayerId = fc._layer_id;
+      }
       for (const f of fc.features) {
         allFeatures.push(f);
         if (allFeatures.length >= MAX_GEOJSON_FEATURES * 2) break;
@@ -837,5 +860,7 @@ function buildGeojsonFromCtx(ctx) {
     total,
     shown,
     truncated: total > shown,
+    layerId: firstLayerId,
+    layerIds: Array.from(layerIds),
   };
 }

@@ -43,11 +43,16 @@ export default {
   },
 
   run: async ({ layer_id, filters, limit }) => {
-    const db = await getDB();
-    return db.rpc("chat_layer_features", {
-      p_layer: layer_id,
-      p_filters: filters ?? {},
-      p_limit: limit ?? 500,
-    });
-  },
-};
+  const db = await getDB();
+  const result = await db.rpc("chat_layer_features", {
+    p_layer: layer_id,
+    p_filters: filters ?? {},
+    p_limit: limit ?? 500,
+  });
+
+  return {
+    ...result,
+    _layer_id: layer_id,
+  };
+},
+} 
