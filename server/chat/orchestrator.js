@@ -713,9 +713,15 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       `content_preview=${JSON.stringify((response.content || "").slice(0, 100))}`
     );
 
-    // ── Salida: el LLM no pidió más tools ─────────────────────
+        // ── Salida: el LLM no pidió más tools ─────────────────────
     if (!response.toolCalls || response.toolCalls.length === 0) {
       dbg(`step ${step}: sin tool_calls → salida`);
+
+      // Post-procesamiento determinístico: si el usuario pidió
+      // "por comuna + elementos" y el LLM no llamó a
+      // get_layer_features, la llamamos nosotros.
+      await maybeFetchFeaturesForStyle(ctx, text);
+
       return finish(response.content, ctx, messages, text);
     }
 
@@ -737,13 +743,25 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       }),
     });
 
-    // ── Ejecutar tools en paralelo ────────────────────────────
+        // ── Ejecutar tools en paralelo ────────────────────────────
     const toolResults = await Promise.all(
       response.toolCalls.map(async (tc) => ({
         tc,
         out: await runTool(tc.name, tc.arguments),
       }))
     );
+
+    // Guardar el layer_id del último aggregate_by_admin.
+    // Se usa en `maybeFetchFeaturesForStyle` para forzar get_layer_features.
+    for (const { tc, out } of toolResults) {
+      if (tc.name === "aggregate_by_admin" && out.ok) {
+        const lid = tc.arguments?.layer_id;
+        if (typeof lid === "string" && lid.length > 0) {
+          ctx.lastAggregateLayerId = lid;
+          dbg(`ctx.lastAggregateLayerId = ${lid}`);
+        }
+      }
+    }
 
     // ── Compactar cada resultado y agregarlo al historial ─────
     for (const { tc, out } of toolResults) {
@@ -759,6 +777,67 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
         content: JSON.stringify(compacted),
       });
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Post-procesamiento determinístico para style_hint
+// ─────────────────────────────────────────────────────────────────
+
+/**
+ * Si el usuario pidió "por comuna" + elementos pero el LLM no llamó
+ * a get_layer_features, la llamamos desde acá. Esto evita depender de
+ * la no-determinación del LLM.
+ *
+ * Guarda las features en `ctx.raw` como cualquier otra FC, así `finish()`
+ * las recoge y adjunta el geojson + geojson_meta.style_hint.
+ */
+async function maybeFetchFeaturesForStyle(ctx, userText) {
+  // 1. ¿Aplica? Solo si la pregunta pide "por comuna" + elementos.
+  const hint = detectStyleHint(userText);
+  if (!hint) return;
+
+  // 2. ¿Ya hay geojson en ctx.raw? Si sí, no hacer nada.
+  if (ctx.raw && ctx.raw.size > 0) {
+    dbg("maybeFetchFeaturesForStyle: ctx.raw ya tiene datos, skip");
+    return;
+  }
+
+  // 3. Recuperar el layer_id del último aggregate_by_admin.
+  const lastLayerId = ctx.lastAggregateLayerId;
+  if (!lastLayerId) {
+    dbg("maybeFetchFeaturesForStyle: no hay lastAggregateLayerId, skip");
+    return;
+  }
+
+  // 4. Ejecutar get_layer_features.
+  dbg(`maybeFetchFeaturesForStyle: forzando get_layer_features(${lastLayerId})`);
+
+  try {
+    const out = await runTool("get_layer_features", {
+      layer_id: lastLayerId,
+    });
+    if (!out.ok) {
+      dbg(
+        `maybeFetchFeaturesForStyle: get_layer_features falló: ${out.error}`
+      );
+      return;
+    }
+    const r = out.result;
+    if (r && r.type === "FeatureCollection" && Array.isArray(r.features)) {
+      const ref = `fc_forced_${ctx.raw.size + 1}`;
+      ctx.raw.set(ref, {
+        ...r,
+        _layer_id: r._layer_id || lastLayerId,
+      });
+      dbg(
+        `maybeFetchFeaturesForStyle: OK, ${r.features.length} features guardadas`
+      );
+    }
+  } catch (err) {
+    dbg(
+      `maybeFetchFeaturesForStyle: excepción: ${err?.message || err}`
+    );
   }
 }
 
