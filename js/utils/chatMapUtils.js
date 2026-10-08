@@ -41,7 +41,7 @@ const STYLES = {
     weight: 3,
     opacity: 0.9,
     fillColor: "#FF3B30",
-    fillOpacity: 0.15,
+    fillOpacity: 0.25,
   },
 };
 
@@ -135,6 +135,11 @@ function buildStyleConfig(options) {
  * Devuelve una función de estilo Leaflet que aplica color por feature
  * según el atributo del styleConfig. Si no hay styleConfig, devuelve
  * el estilo base sin cambios.
+ *
+ * Cuando se colorea por atributo:
+ *   - Vértice y relleno usan el MISMO color (más coherente visualmente).
+ *   - fillOpacity más alto (0.55) para que el color se vea.
+ *   - weight más fino (2) para no tapar el relleno.
  */
 function makeFeatureStyler(baseStyle, styleConfig, colorCache) {
   if (!styleConfig) {
@@ -146,8 +151,11 @@ function makeFeatureStyler(baseStyle, styleConfig, colorCache) {
     const color = getColorForValue(value, colorCache);
     return {
       ...baseStyle,
+      color: color,
       fillColor: color,
-      color: color, // para líneas
+      fillOpacity: 0.55,
+      weight: 2,
+      opacity: 1,
     };
   };
 }
@@ -345,16 +353,16 @@ export function showResults(geojson, options = {}) {
           pointToLayer: (feature, latlng) => {
             let style = { ...STYLES.point, pane: PANE_NAME };
             if (styleConfig) {
-              const value = feature?.properties?.[styleConfig.attribute];
-              const color = getColorForValue(value, colorCache);
-              style = {
+                const value = feature?.properties?.[styleConfig.attribute];
+                const color = getColorForValue(value, colorCache);
+                style = {
                 ...style,
                 fillColor: color,
-                color: "#FFFFFF", // mantener el borde blanco
-              };
+                color: color,  // vértice del mismo color que el relleno
+                };
             }
             return L.circleMarker(latlng, style);
-          },
+            },
           onEachFeature: (feature, layer) => {
             const popup = buildPopup(feature);
             if (popup) layer.bindPopup(popup);
