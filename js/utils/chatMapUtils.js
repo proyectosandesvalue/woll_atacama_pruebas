@@ -153,14 +153,15 @@ function makeFeatureStyler(baseStyle, styleConfig, colorCache) {
 }
 
 /**
- * Genera el HTML de la leyenda a partir del colorCache.
+ * Genera el HTML de la lista de swatches a partir del colorCache.
+ * El título se agrega en renderLegend (no acá).
  */
-function buildLegendHtml(colorCache, attributeLabel) {
+function buildLegendHtml(colorCache) {
   if (!colorCache || colorCache.size === 0) return "";
   const entries = Array.from(colorCache.entries()).sort(([a], [b]) =>
     String(a).localeCompare(String(b), "es")
   );
-  const rows = entries
+  return entries
     .map(
       ([value, color]) => `
       <div class="legend-item">
@@ -170,16 +171,37 @@ function buildLegendHtml(colorCache, attributeLabel) {
     `
     )
     .join("");
-  return `<div class="legend-title">${escapeHtml(attributeLabel)}</div>${rows}`;
 }
 
 /**
- * Renderiza la leyenda en el panel de leyenda del sidebar derecho.
+ * Inyecta la leyenda del chat como una sección más dentro del contenedor
+ * #sidebar-legend. NO reemplaza la leyenda del visor: se apila arriba.
+ *
+ * Si html está vacío, elimina la sección del chat.
  */
-function renderLegend(html) {
+function renderLegend(html, attributeLabel = "") {
   const container = document.getElementById("sidebar-legend");
   if (!container) return;
-  container.innerHTML = html;
+
+  // Eliminar la sección previa del chat si existía.
+  const previous = container.querySelector(".chat-legend-section");
+  if (previous) previous.remove();
+
+  if (!html || !html.trim()) return;
+
+  // Crear la nueva sección.
+  const section = document.createElement("div");
+  section.className = "chat-legend-section legend-container mb-3";
+  section.innerHTML = `
+    <h6 class="fw-bold text-primary mb-2 legend-title chat-legend-title">
+      <span class="material-symbols-outlined chat-legend-title-icon">auto_awesome</span>
+      Resultados del chat${attributeLabel ? ` · ${attributeLabel}` : ""}
+    </h6>
+    <div class="chat-legend-body">${html}</div>
+  `;
+
+  // Insertar al principio del contenedor para que aparezca arriba.
+  container.insertBefore(section, container.firstChild);
 }
 
 /**
@@ -259,11 +281,16 @@ export function showResults(geojson, options = {}) {
     return false;
   }
 
-  // Limpiar capa anterior antes de pintar la nueva.
+    // Limpiar capa anterior antes de pintar la nueva.
   clearResults();
 
   const styleConfig = buildStyleConfig(options);
   const colorCache = new Map();
+
+  // Limpiar la sección del chat en la leyenda si no vamos a colorear.
+  if (!styleConfig) {
+    renderLegend("");
+  }
 
   const pane = ensurePane(map);
   const { points, lines, polygons } = classifyFeatures(geojson.features);
@@ -352,10 +379,13 @@ export function showResults(geojson, options = {}) {
     }
   }
 
-  // Leyenda dinámica si hay styleConfig.
+    // Leyenda dinámica si hay styleConfig.
   if (styleConfig) {
-    const legendHtml = buildLegendHtml(colorCache, styleConfig.attribute);
-    renderLegend(legendHtml);
+    const attributeLabel = styleConfig.attribute
+      ? `por ${styleConfig.attribute.toLowerCase()}`
+      : "";
+    const legendHtml = buildLegendHtml(colorCache);
+    renderLegend(legendHtml, attributeLabel);
   }
 
   log.debug(`Resultados pintados: ${geojson.features.length} features`);
@@ -365,12 +395,22 @@ export function showResults(geojson, options = {}) {
 /**
  * Limpia la capa de resultados del mapa.
  */
+/**
+ * Limpia la capa de resultados del mapa y su sección en la leyenda.
+ */
 export function clearResults() {
   const layer = appState.chat.resultsLayer;
   if (layer && appState.map && appState.map.hasLayer(layer)) {
     appState.map.removeLayer(layer);
   }
   appState.chat.resultsLayer = null;
+
+  // Quitar la sección del chat de la leyenda.
+  const container = document.getElementById("sidebar-legend");
+  if (container) {
+    const section = container.querySelector(".chat-legend-section");
+    if (section) section.remove();
+  }
 }
 
 /**

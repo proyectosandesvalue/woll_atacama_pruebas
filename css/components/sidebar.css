@@ -852,9 +852,33 @@
   line-height: 1.5;
 }
 
-/* LEYENDA DE RESULTADOS DEL CHAT (cuando el chat pinta features coloreadas por atributo) */
+/* LEYENDA DEL CHAT — Sección integrada en #sidebar-legend */
 
-#sidebar-legend .legend-item {
+.chat-legend-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.80rem;
+  font-weight: 700;
+  color: var(--color-brand-text, #B50000);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--border-subtle);
+}
+
+.chat-legend-title-icon {
+  font-size: 16px;
+  color: var(--color-brand-text, #B50000);
+  flex-shrink: 0;
+}
+
+.chat-legend-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-legend-body .legend-item {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -863,7 +887,7 @@
   padding: 3px 0;
 }
 
-#sidebar-legend .legend-swatch {
+.chat-legend-body .legend-swatch {
   width: 14px;
   height: 14px;
   border-radius: 3px;
@@ -871,7 +895,7 @@
   border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
-#sidebar-legend .legend-label {
+.chat-legend-body .legend-label {
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
