@@ -96,16 +96,18 @@ export default async function handler(req, res) {
     }
 
     // ── Paso 6: orquestador ───────────────────────────────────
-    const payload = await runOrchestrator({ text, history, sessionId });
+      const payload = await runOrchestrator({ text, history, sessionId });
     const charts = Array.isArray(payload?.charts) ? payload.charts : [];
     const normalized = {
-  reply: payload?.reply || "Sin respuesta.",
-  notice: payload?.notice ?? null,
-  geojson: payload?.geojson ?? null,
-  chart: charts.length === 1 ? charts[0] : null,
-  charts,
-};
+      reply: payload?.reply || "Sin respuesta.",
+      notice: payload?.notice ?? null,
+      geojson: payload?.geojson ?? null,
+      geojson_meta: payload?.geojson_meta ?? null,
+      chart: charts.length === 1 ? charts[0] : null,
+      charts,
+    };
     return res.status(200).json(normalized);
+
   } catch (err) {
   const errInfo = {
     message: err?.message || String(err),
