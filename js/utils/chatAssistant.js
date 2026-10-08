@@ -72,8 +72,11 @@ export async function sendMessage(text, history = []) {
     const data = await response.json();
     return {
       reply: typeof data.reply === "string" ? data.reply : "Sin respuesta.",
+      notice: data.notice ?? null,
       chart: data.chart ?? null,
+      charts: Array.isArray(data.charts) ? data.charts : [],
       geojson: data.geojson ?? null,
+      geojson_meta: data.geojson_meta ?? null,
     };
   } catch (err) {
     log.error("[ChatIA] sendMessage error:", err);
