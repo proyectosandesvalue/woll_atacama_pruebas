@@ -1,0 +1,308 @@
+/* ============================================================
+   TABLE.CSS — Tabla de atributos
+   Visor WoLL
+   ============================================================ */
+
+/* PANEL DE TABLA DE ATRIBUTOS */
+
+.attribute-table-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 35%;
+  min-height: 200px;
+  max-height: 80vh;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 2000;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.attribute-table-panel.show {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.attribute-table-panel.fullscreen {
+  height: 100% !important;
+  max-height: 100% !important;
+  top: 0;
+  bottom: 0;
+  z-index: 2500;
+  border-top: none;
+}
+
+.attribute-table-resizer {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  cursor: ns-resize;
+  z-index: 2010;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+
+.attribute-table-resizer:hover,
+.attribute-table-resizer.resizing {
+  background: var(--color-accent);
+}
+
+/* HEADER DE LA TABLA */
+
+.attribute-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-surface-2);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.attribute-table-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.attribute-table-icon {
+  color: var(--color-accent);
+  font-size: 20px;
+}
+
+.attribute-table-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.attribute-table-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-surface-3);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.attribute-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Barra de búsqueda en la tabla ── */
+
+.attribute-table-search-bar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-surface-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.attribute-table-search-bar.active {
+  display: flex;
+}
+
+.search-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-body);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--accent-primary);
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.search-field-select {
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-body);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.search-field-select:focus {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+
+.search-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-fast);
+}
+
+.search-clear-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+}
+
+/* BODY DE LA TABLA */
+
+.attribute-table-body {
+  flex-grow: 1;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-body);
+}
+
+.table-responsive {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.table-responsive::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: var(--bg-surface-2);
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: var(--border-subtle);
+  border-radius: 6px;
+  border: 2px solid var(--bg-surface-2);
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.attribute-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.attribute-table th,
+.attribute-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--border-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.attribute-table th:last-child,
+.attribute-table td:last-child {
+  border-right: none;
+}
+
+.attribute-table th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-surface-2);
+  color: var(--text-primary);
+  font-weight: 600;
+  z-index: 10;
+  box-shadow: 0 1px 0 var(--border-subtle);
+}
+
+.col-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  background: transparent;
+  transition: background 0.2s;
+  z-index: 11;
+}
+
+.col-resizer:hover,
+.col-resizer.resizing {
+  background: var(--color-accent);
+}
+
+.attribute-table tbody tr {
+  background: var(--bg-surface);
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.attribute-table tbody tr:hover {
+  background: var(--layer-item-hover);
+}
+
+.attribute-table tbody tr.row-active {
+  background: rgba(var(--color-accent-rgb), 0.15);
+  border-left: 3px solid var(--color-accent);
+}
+
+.attribute-table tbody td {
+  color: var(--text-secondary);
+}
+
+/* ESTADOS (loading) */
+
+.attribute-table-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  opacity: 0.9;
+  z-index: 20;
+  color: var(--text-primary);
+  font-size: 14px;
+  gap: 12px;
+}
+
+.loading-spinner {
+  font-size: 24px;
+  color: var(--color-accent);
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
