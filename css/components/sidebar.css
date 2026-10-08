@@ -748,12 +748,15 @@
   background-color: var(--bg-header);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
+  font-size: var(--popup-font-size, 0.9rem);
+  line-height: 1.6;
+  transition: font-size 0.2s ease;
 }
 
 .sidebar-info .custom-popup {
   color: var(--text-primary);
   padding: 0;
-  font-size: var(--popup-font-size, 0.75rem);
+  font-size: inherit;
   transition: font-size 0.2s ease;
 }
 
