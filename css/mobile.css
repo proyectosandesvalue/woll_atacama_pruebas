@@ -416,28 +416,28 @@
   }
 
   /* ===== POPUPS MOBILE ===== */
-  .custom-popup {
+   .leaflet-popup {
     font-size: 10px !important;
     overflow-wrap: break-word;
     word-wrap: break-word;
     word-break: break-word;
   }
 
-  .custom-popup .popup-title {
+   .leaflet-popup .popup-title {
     font-size: 11px !important;
     margin-bottom: 6px !important;
   }
 
-  .custom-popup p {
+   .leaflet-popup p {
     font-size: 9.5px !important;
     margin: 2px 0 !important;
   }
 
-  .custom-popup p strong {
+   .leaflet-popup p strong {
     font-size: 9.5px !important;
   }
 
-  .custom-popup a {
+   .leaflet-popup a {
     font-size: 9.5px !important;
     word-break: break-all;
   }
@@ -471,18 +471,18 @@
     font-size: 0.55rem;
   }
 
-  .custom-popup {
+    .leaflet-popup .custom-popup {
     font-size: 9.5px !important;
     overflow-wrap: break-word;
     word-wrap: break-word;
     word-break: break-word;
   }
 
-  .custom-popup .popup-title {
+    .leaflet-popup .custom-popup .popup-title {
     font-size: 10px !important;
   }
 
-  .custom-popup p {
+     .leaflet-popup .custom-popup p {
     font-size: 8.5px !important;
   }
 
