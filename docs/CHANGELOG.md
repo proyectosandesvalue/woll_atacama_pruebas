@@ -45,6 +45,30 @@
 
 ## [Unreleased]
 
+## [Sprint 06-B.2] — 2026-10-08
+
+### Added
+- Campo `geojson_meta` en la respuesta de `/api/chat`:
+  `{ layer_id, layer_ids, feature_count, total, truncated }`.
+- La tool `get_layer_features` devuelve `_layer_id` en el payload
+  (metadata, no se expone al LLM).
+- `buildGeojsonFromCtx()` extrae `layerId` y `layerIds` de `ctx.raw`.
+- `finish()` expone `geojson_meta` en el payload final.
+
+### Fixed
+- `api/chat.js` descartaba `geojson_meta` al normalizar el payload.
+  Ahora se propaga correctamente.
+
+### Docs
+- `docs/CONTRACT.md` §6.1: documentado el campo `geojson_meta`.
+
+### Notas
+- El LLM sigue sin ver geometrías ni metadata interna. `compact()`
+  devuelve solo `{ ref, total, sample, _hint }`.
+- Prerequisito de 06-B.3 (colorear por campo) y 06-B.4 (coropleta
+  por comuna).
+- Tests: 104/104.
+
 ### Sprint 06-B, 06-C — Frontend geojson + Prompt + Fixes (2026-10-07)
 
 #### Added

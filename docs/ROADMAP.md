@@ -781,6 +781,14 @@ por fases, empezando por las que el chat y la Pieza 2 usan.
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
+### 2026-10-08
+- ✅ **Sprint 06-B.2 completado.**
+  - `geojson_meta` en el payload de `/api/chat`.
+  - Tool `get_layer_features` devuelve `_layer_id`.
+  - Fix en `api/chat.js` que descartaba el campo.
+  - Prerequisito de 06-B.3 y 06-B.4.
+- 📝 Próximo: **Sprint 06-B.4 — coropleta de puntos por comuna**.
+
 ### 2026-10-07
 - ✅ **Sprint 06-C completado**: reglas del prompt para geojson.
   - Regla 13: el LLM no dice "he pintado en el mapa".
