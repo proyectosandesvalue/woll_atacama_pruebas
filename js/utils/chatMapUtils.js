@@ -178,6 +178,18 @@ function buildLegendHtml(colorCache) {
     .join("");
 }
 
+
+function capitalize(str) {
+  if (!str || typeof str !== "string") return str;
+  return str
+    .replace(/_/g, " ")
+    .split(" ")
+    .map((w) =>
+      w.length === 0 ? w : w[0].toUpperCase() + w.slice(1).toLowerCase()
+    )
+    .join(" ");
+}
+
 /**
  * Renderiza la leyenda multi-sección: una por capa con su nombre visible.
  * Cada sección tiene un botón para quitar esa capa específica.
@@ -201,7 +213,11 @@ function renderLegend() {
     section.className = "chat-legend-section legend-container mb-3";
     section.dataset.layerId = layer.layerId || "";
 
-    const titleText = layer.layerLabel || layer.layerId || "Capa";
+    const titleText =
+        (layer.layerLabel && String(layer.layerLabel).trim()) ||
+        capitalize(layer.layerId) ||
+        "Capa";
+        
     const attributeLabel = layer.styleHint?.attribute
       ? ` · por ${layer.styleHint.attribute.toLowerCase()}`
       : "";
