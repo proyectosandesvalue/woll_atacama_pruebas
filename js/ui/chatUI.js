@@ -547,7 +547,10 @@ async function handleSend() {
         const painted = showResults(payload.geojson, {
           styleConfig: payload?.geojson_meta?.style_hint || null,
           layerId: payload?.geojson_meta?.layer_id || null,
-          layerLabel: payload?.geojson_meta?.layer_label || null,
+          layerLabel:
+            payload?.geojson_meta?.layer_label ||
+            payload?.geojson_layers?.[0]?.layer_label ||
+            null,
         });
         if (painted) updateClearResultsBtn();
       } catch (err) {
