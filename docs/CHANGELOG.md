@@ -45,6 +45,26 @@
 
 ## [Unreleased]
 
+## [Sprint 06-B.3] — 2026-10-10
+
+### Added
+- Colorear features por cualquier campo, no solo COMUNA.
+- `get_layer_features` acepta un nuevo parámetro opcional `color_by`.
+- `detectStyleHint(userText, ctx)` generalizado con prioridad:
+  1. `ctx.lastColorBy` (si el LLM lo pasó a la tool).
+  2. Regex `por comuna/provincia/region`.
+  3. Regex genérico `por <campo>` → CAMPO en mayúsculas.
+- Regla 19 del prompt generalizada para soportar cualquier campo.
+
+### Notas
+- El fallback genérico puede intentar colorear por columnas que no
+  existen en una capa. El orquestador maneja el error silenciosamente
+  (el geojson se pinta sin colorear).
+- Auditoría de columnas por capa pendiente (ver ROADMAP).
+
+### Tests
+- 104/104.
+
 ## [Sprint 06-B.4] — 2026-10-08
 
 ### Added
