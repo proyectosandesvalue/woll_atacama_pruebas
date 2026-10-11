@@ -171,14 +171,22 @@ REGLAS (19):
     pregunta"), NO respondas esa pregunta en el turno actual. Ignorá
     ese turno previo. Respondé SOLO la pregunta actual del usuario.
 
-19. PREGUNTAS "POR COMUNA" CON ELEMENTOS:
-    Si el usuario pregunta "¿cuántos X por comuna?" o "muéstrame
-    los X por comuna", llama a DOS tools:
-      (a) aggregate_by_admin con layer_id y admin_level="comuna"
-          (para el conteo).
-      (b) get_layer_features con el mismo layer_id
-          (para pintar los elementos, coloreados por comuna).
-    El frontend coloreará cada elemento según su campo COMUNA.
+19. PREGUNTAS "POR <CAMPO>" CON ELEMENTOS:
+    Si el usuario pregunta "¿cuántos X por <campo>?" o "muéstrame
+    los X por <campo>", llama a DOS tools:
+      (a) Para el conteo:
+          - aggregate_by_admin si <campo> es comuna/provincia/región.
+          - aggregate_layer si <campo> es otro (tipo, uso, estado, etc.).
+      (b) get_layer_features con layer_id Y color_by=<campo>
+          (para pintar los elementos, coloreados por ese campo).
+    Ejemplos:
+      "¿Cuántos glaciares por comuna?"  → color_by="COMUNA"
+      "¿Cuántos glaciares por tipo?"    → color_by="TIPO"
+      "Distribución de humedales por clasificación"
+                                        → color_by="CLASIFICACION"
+      "Muéstrame los yacimientos por estado"
+                                        → color_by="ESTADO"
+    El frontend coloreará cada elemento según ese campo.
 
 CATÁLOGO:
 `;
@@ -256,38 +264,60 @@ async function buildSystemPrompt() {
 
 
 /**
- * Detecta si el usuario pidió ver los elementos coloreados por comuna.
- * Se usa para agregar `style_hint` a `geojson_meta`, que el frontend
- * usa para colorear las features por el campo COMUNA.
+ * Detecta si el usuario pidió colorear los elementos por algún campo.
  *
- * Ejemplos:
- *   - "¿cuántos glaciares por comuna?"
- *   - "muéstrame los humedales de cada comuna"
- *   - "distribución de plantas desaladoras por comuna"
+ * Prioridad:
+ *   1. Si el LLM pasó color_by a get_layer_features, usar ese campo.
+ *   2. Si la pregunta menciona "por comuna/provincia/región", usar el
+ *      campo administrativo correspondiente.
+ *   3. Si la pregunta menciona "por <campo>" con un campo del catálogo,
+ *      usar ese campo (heurística por regex).
+ *   4. Si nada matchea, null.
+ *
+ * Devuelve { attribute, kind, palette } o null.
  */
-function detectStyleHint(userText) {
+function detectStyleHint(userText, ctx) {
+  // 1. Prioridad: color_by que el LLM ya pasó a la tool.
+  if (ctx && ctx.lastColorBy) {
+    return {
+      attribute: ctx.lastColorBy,
+      kind: "choropleth-points",
+      palette: null,
+    };
+  }
+
   if (!userText || typeof userText !== "string") return null;
   const t = userText.toLowerCase();
 
-  // Patrón 1: pide agrupación por comuna.
-  const pidePorComuna =
-    /\bpor\s+comuna\b|\bpor\s+comunas\b|\bseg[uú]n\s+comuna\b|\bcada\s+comuna\b|\ben\s+qu[eé]\s+comuna\b|\bde\s+cada\s+comuna\b/.test(
-      t
-    );
-
-  // Patrón 2: pide ver/pintar/mostrar elementos.
-  const pideElementos =
-    /\bmu[eé]strame\b|\bpinta\b|\bd[oó]nde\s+est[aá]n\b|\bubicaci[oó]n\b|\bmapa\b|\bver\b|\bcu[aá]nt[oa]s?\b|\bdistribu[ií]dos?\b|\bdistribuci[oó]n\b/.test(
-      t
-    );
-
-  if (pidePorComuna && pideElementos) {
-    return {
-      attribute: "COMUNA",
-      kind: "choropleth-points",
-      palette: null, // el frontend usa su paleta por defecto
-    };
+  // 2. Fallback determinístico: "por comuna/provincia/región".
+  const adminMatch = t.match(
+    /\bpor\s+(comuna|comunas|provincia|provincias|regi[oó]n|regiones)\b/
+  );
+  if (adminMatch) {
+    const word = adminMatch[1];
+    const attribute =
+      word.startsWith("comun") ? "COMUNA"
+      : word.startsWith("provinc") ? "PROVINCIA"
+      : "REGION";
+    return { attribute, kind: "choropleth-points", palette: null };
   }
+
+  // 3. Fallback genérico: "por <campo>" (cualquier campo).
+  const genericMatch = t.match(/\bpor\s+([a-záéíóúñ_]{3,30})\b/);
+  if (genericMatch) {
+    const raw = genericMatch[1];
+    // Ignorar palabras comunes que no son campos.
+    const stopwords = new Set([
+      "favor", "ejemplo", "ahora", "favor", "default",
+      "comuna", "provincia", "region", "parte", "tipo",
+    ]);
+    if (!stopwords.has(raw)) {
+      // Convertir a mayúsculas (los campos del catálogo están en mayúsculas).
+      const attribute = raw.toUpperCase();
+      return { attribute, kind: "choropleth-points", palette: null };
+    }
+  }
+
   return null;
 }
 
@@ -751,14 +781,22 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       }))
     );
 
-    // Guardar el layer_id del último aggregate_by_admin.
-    // Se usa en `maybeFetchFeaturesForStyle` para forzar get_layer_features.
+    // Guardar metadata útil de las tools.
+    //   - lastAggregateLayerId: layer_id del último aggregate_by_admin.
+    //   - lastColorBy: campo que el LLM pasó a get_layer_features.
     for (const { tc, out } of toolResults) {
       if (tc.name === "aggregate_by_admin" && out.ok) {
         const lid = tc.arguments?.layer_id;
         if (typeof lid === "string" && lid.length > 0) {
           ctx.lastAggregateLayerId = lid;
           dbg(`ctx.lastAggregateLayerId = ${lid}`);
+        }
+      }
+      if (tc.name === "get_layer_features" && out.ok) {
+        const cb = tc.arguments?.color_by;
+        if (typeof cb === "string" && cb.length > 0) {
+          ctx.lastColorBy = cb;
+          dbg(`ctx.lastColorBy = ${cb}`);
         }
       }
     }
@@ -794,7 +832,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
  */
 async function maybeFetchFeaturesForStyle(ctx, userText) {
   // 1. ¿Aplica? Solo si la pregunta pide "por comuna" + elementos.
-  const hint = detectStyleHint(userText);
+  const hint = detectStyleHint(userText, ctx);
   if (!hint) return;
 
   // 2. ¿Ya hay geojson en ctx.raw? Si sí, no hacer nada.
@@ -927,7 +965,7 @@ function compact(name, out, ctx) {
 
 function finish(reply, ctx, messages, userText = "") {
   const geojsonMeta = buildGeojsonFromCtx(ctx);
-  const styleHint = geojsonMeta ? detectStyleHint(userText) : null;
+  const styleHint = geojsonMeta ? detectStyleHint(userText, ctx) : null;
   return {
     reply: String(reply || "").trim() || "Sin respuesta.",
     charts: buildChartsFromHistory(messages),

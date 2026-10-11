@@ -19,7 +19,8 @@ export default {
         "Devuelve las features de una capa como FeatureCollection para pintarlas " +
         "en el mapa. Úsala cuando el usuario pida VER los elementos, ubicarlos, o " +
         "combinarlos con una ubicación concreta. Límite: 500 features. Acepta " +
-        "filtros por columna=valor.",
+        "filtros por columna=valor y un parámetro opcional color_by para colorear " +
+        "las features por una columna categórica (ej: COMUNA, TIPO, ESTADO).",
       parameters: {
         type: "object",
         properties: {
@@ -35,6 +36,13 @@ export default {
             minimum: 1,
             maximum: 1000,
           },
+          color_by: {
+            type: "string",
+            description:
+              "Opcional. Nombre de la columna por la que se colorearán las " +
+              "features en el mapa. Ej: COMUNA, TIPO, USO, ESTADO. Solo se usa " +
+              "para generar la leyenda visual; no afecta a los datos.",
+          },
         },
         required: ["layer_id"],
         additionalProperties: false,
@@ -42,17 +50,18 @@ export default {
     },
   },
 
-  run: async ({ layer_id, filters, limit }) => {
-  const db = await getDB();
-  const result = await db.rpc("chat_layer_features", {
-    p_layer: layer_id,
-    p_filters: filters ?? {},
-    p_limit: limit ?? 500,
-  });
+  run: async ({ layer_id, filters, limit, color_by }) => {
+    const db = await getDB();
+    const result = await db.rpc("chat_layer_features", {
+      p_layer: layer_id,
+      p_filters: filters ?? {},
+      p_limit: limit ?? 500,
+    });
 
-  return {
-    ...result,
-    _layer_id: layer_id,
-  };
-},
-} 
+    return {
+      ...result,
+      _layer_id: layer_id,
+      _color_by: color_by || null,
+    };
+  },
+};
