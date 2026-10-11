@@ -752,7 +752,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       // get_layer_features, la llamamos nosotros.
       await maybeFetchFeaturesForStyle(ctx, text);
 
-      return finish(response.content, ctx, messages, text);
+      return await finish(response.content, ctx, messages, text);
     }
 
     // ── Tool calls: guardar turno del asistente ───────────────
@@ -963,12 +963,11 @@ function compact(name, out, ctx) {
 // Salida: arma el payload final al frontend
 // ─────────────────────────────────────────────────────────────────
 
-function finish(reply, ctx, messages, userText = "") {
-  const geojsonLayers = buildGeojsonLayersFromCtx(ctx, userText);
+async function finish(reply, ctx, messages, userText = "") {
+  const geojsonLayers = await buildGeojsonLayersFromCtx(ctx, userText);
   return {
     reply: String(reply || "").trim() || "Sin respuesta.",
     charts: buildChartsFromHistory(messages),
-    // Compat: geojson único (concatenación) + geojson_meta.
     geojson: geojsonLayers.length > 0 ? geojsonLayers[0].geojson : null,
     geojson_meta: geojsonLayers.length > 0
       ? {
@@ -981,7 +980,6 @@ function finish(reply, ctx, messages, userText = "") {
           style_hint: geojsonLayers[0].style_hint || null,
         }
       : null,
-    // Nuevo: array de capas separadas.
     geojson_layers: geojsonLayers,
     notice: null,
   };
@@ -989,14 +987,27 @@ function finish(reply, ctx, messages, userText = "") {
 
 /**
  * Construye un array de capas separadas desde ctx.raw.
- * Cada capa tiene su propio geojson + style_hint.
+ * Usa el `display_name` del catálogo como `layer_label`.
  */
-function buildGeojsonLayersFromCtx(ctx, userText) {
+async function buildGeojsonLayersFromCtx(ctx, userText) {
   if (!CHAT_GEOJSON_ENABLED) return [];
   if (!ctx.raw || ctx.raw.size === 0) return [];
 
   const layers = [];
   const seen = new Set();
+  const styleHint = detectStyleHint(userText, ctx);
+
+  // Obtener el catálogo para lookup de display_name.
+  let catalogMap = new Map();
+  try {
+    const db = await getDB();
+    const catalog = (await db.rpc("chat_catalog")) ?? [];
+    catalogMap = new Map(
+      catalog.map((c) => [c.layer_id, c.display_name || c.layer_id])
+    );
+  } catch {
+    catalogMap = new Map();
+  }
 
   for (const fc of ctx.raw.values()) {
     if (fc?.type !== "FeatureCollection" || !Array.isArray(fc.features)) {
@@ -1009,8 +1020,9 @@ function buildGeojsonLayersFromCtx(ctx, userText) {
     const features = fc.features.slice(0, MAX_GEOJSON_FEATURES);
     layers.push({
       layer_id: layerId,
+      layer_label: catalogMap.get(layerId) || layerId,
       geojson: { type: "FeatureCollection", features },
-      style_hint: detectStyleHint(userText, ctx),
+      style_hint: styleHint,
     });
   }
 

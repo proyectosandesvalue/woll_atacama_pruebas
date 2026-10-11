@@ -14,6 +14,31 @@ const log = createContextLogger('LegendUtils');
  * @param {string} tema - El tema actual.
  * @param {object} temasConfig - El objeto de configuración de temas.
  */
+/**
+ * Preserva la sección del chat antes de regenerar la leyenda,
+ * y la reinserta después.
+ */
+function withChatLegendPreserved(container, fn) {
+  const chatSections = Array.from(
+    container.querySelectorAll(".chat-legend-section")
+  );
+  chatSections.forEach((s) => s.remove());
+
+  try {
+    fn();
+  } finally {
+    // Reinsertar las secciones del chat al principio, en orden inverso.
+    for (let i = chatSections.length - 1; i >= 0; i--) {
+      container.insertBefore(chatSections[i], container.firstChild);
+    }
+  }
+}
+
+/**
+ * Actualiza la leyenda en la sidebar.
+ * @param {string} tema - El tema actual.
+ * @param {object} temasConfig - El objeto de configuración de temas.
+ */
 export function actualizarLeyenda(tema, temasConfig) {
   const sidebarLegendContainer = document.getElementById("sidebar-legend");
 
@@ -22,29 +47,39 @@ export function actualizarLeyenda(tema, temasConfig) {
     return;
   }
 
-  // Limpiar leyenda anterior
-  sidebarLegendContainer.innerHTML = "";
-
   // Validar que existe el tema
   if (!temasConfig || !temasConfig[tema]) {
     log.warn(`No se encontró configuración para el tema: ${tema}`);
-    sidebarLegendContainer.innerHTML =
-      '<p class="text-muted small">No hay leyenda disponible para este tema.</p>';
+    withChatLegendPreserved(sidebarLegendContainer, () => {
+      // Preservar el chat y mostrar mensaje de "no hay leyenda".
+      const msg = document.createElement("p");
+      msg.className = "text-muted small";
+      msg.textContent = "No hay leyenda disponible para este tema.";
+      // Solo agregar si no hay chat activo.
+      if (sidebarLegendContainer.querySelectorAll(".chat-legend-section").length === 0) {
+        sidebarLegendContainer.innerHTML = "";
+        sidebarLegendContainer.appendChild(msg);
+      }
+    });
     return;
   }
 
   const temaConfig = temasConfig[tema];
 
-  // Verificar si existe configuración de leyenda manual
-  if (temaConfig.leyenda && Object.keys(temaConfig.leyenda).length > 0) {
-    log.debug(`Generando leyenda manual para tema: ${tema}`);
-    generarLeyendaManual(tema, temasConfig, sidebarLegendContainer);
-    return;
-  }
+  withChatLegendPreserved(sidebarLegendContainer, () => {
+    // Verificar si existe configuración de leyenda manual
+    if (temaConfig.leyenda && Object.keys(temaConfig.leyenda).length > 0) {
+      log.debug(`Generando leyenda manual para tema: ${tema}`);
+      sidebarLegendContainer.innerHTML = "";
+      generarLeyendaManual(tema, temasConfig, sidebarLegendContainer);
+      return;
+    }
 
-  // Generar leyenda automática con alias (local y global)
-  log.debug(`Generando leyenda automática para tema: ${tema}`);
-  generarLeyendaAutomatica(tema, temasConfig, sidebarLegendContainer);
+    // Generar leyenda automática con alias (local y global)
+    log.debug(`Generando leyenda automática para tema: ${tema}`);
+    sidebarLegendContainer.innerHTML = "";
+    generarLeyendaAutomatica(tema, temasConfig, sidebarLegendContainer);
+  });
 }
 
 /**
@@ -96,9 +131,12 @@ function generarLeyendaManual(tema, temasConfig, container) {
 function generarLeyendaAutomatica(tema, temasConfig, container) {
   const temaConfig = temasConfig[tema];
 
-  if (!temaConfig.estilo) {
-    container.innerHTML =
-      '<p class="text-muted small">No hay información de leyenda disponible.</p>';
+    if (!temaConfig.estilo) {
+    const msg = document.createElement("p");
+    msg.className = "text-muted small";
+    msg.textContent = "No hay información de leyenda disponible.";
+    container.innerHTML = "";
+    container.appendChild(msg);
     return;
   }
 
@@ -107,10 +145,12 @@ function generarLeyendaAutomatica(tema, temasConfig, container) {
   // Obtener solo las capas que están visibles en el mapa
   const capasVisibles = obtenerCapasVisibles(tema, temasConfig);
   log.debug('Capas visibles detectadas:', capasVisibles);
-
   if (capasVisibles.length === 0) {
-    container.innerHTML =
-      '<p class="text-muted small">No hay capas activas. Activa capas para ver su leyenda.</p>';
+    const msg = document.createElement("p");
+    msg.className = "text-muted small";
+    msg.textContent = "No hay capas activas. Activa capas para ver su leyenda.";
+    container.innerHTML = "";
+    container.appendChild(msg);
     return;
   }
 
@@ -183,9 +223,12 @@ function generarLeyendaAutomatica(tema, temasConfig, container) {
     }
   });
 
-  if (!tieneLeyendas) {
-    container.innerHTML =
-      '<p class="text-muted small">Las capas activas no tienen leyenda configurada.</p>';
+    if (!tieneLeyendas) {
+    const msg = document.createElement("p");
+    msg.className = "text-muted small";
+    msg.textContent = "Las capas activas no tienen leyenda configurada.";
+    container.innerHTML = "";
+    container.appendChild(msg);
   }
 }
 
