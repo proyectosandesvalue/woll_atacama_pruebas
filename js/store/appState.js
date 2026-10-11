@@ -64,10 +64,18 @@ export const appState = {
 
     /** Estado del chat IA */
   chat: {
-    /** @type {L.Layer|null} Capa temporal de resultados geojson del chat */
-    resultsLayer: null,
+    /**
+     * Array de capas de resultados del chat.
+     * Cada entrada tiene: { layerId, layerLabel, geojson, styleHint, leafletLayer, paletteFamily }
+     * @type {Array<object>}
+     */
+    resultsLayers: [],
+
     /** @type {L.Map|null} Pane dedicado para las capas de resultados */
     resultsPane: null,
+
+    /** Contador para rotar paletas entre capas */
+    paletteCounter: 0,
   },
 
   /** Promise para esperar a que el mapa esté listo */

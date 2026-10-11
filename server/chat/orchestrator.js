@@ -964,24 +964,57 @@ function compact(name, out, ctx) {
 // ─────────────────────────────────────────────────────────────────
 
 function finish(reply, ctx, messages, userText = "") {
-  const geojsonMeta = buildGeojsonFromCtx(ctx);
-  const styleHint = geojsonMeta ? detectStyleHint(userText, ctx) : null;
+  const geojsonLayers = buildGeojsonLayersFromCtx(ctx, userText);
   return {
     reply: String(reply || "").trim() || "Sin respuesta.",
     charts: buildChartsFromHistory(messages),
-    geojson: geojsonMeta ? geojsonMeta.geojson : null,
-    geojson_meta: geojsonMeta
+    // Compat: geojson único (concatenación) + geojson_meta.
+    geojson: geojsonLayers.length > 0 ? geojsonLayers[0].geojson : null,
+    geojson_meta: geojsonLayers.length > 0
       ? {
-          layer_id: geojsonMeta.layerId || null,
-          layer_ids: geojsonMeta.layerIds || [],
-          feature_count: geojsonMeta.shown,
-          total: geojsonMeta.total,
-          truncated: geojsonMeta.truncated,
-          style_hint: styleHint,
+          layer_id: geojsonLayers[0].layer_id || null,
+          layer_ids: geojsonLayers.map((l) => l.layer_id).filter(Boolean),
+          feature_count: geojsonLayers.reduce(
+            (acc, l) => acc + (l.geojson?.features?.length || 0),
+            0
+          ),
+          style_hint: geojsonLayers[0].style_hint || null,
         }
       : null,
-    notice: buildNoticeFromGeojson(geojsonMeta),
+    // Nuevo: array de capas separadas.
+    geojson_layers: geojsonLayers,
+    notice: null,
   };
+}
+
+/**
+ * Construye un array de capas separadas desde ctx.raw.
+ * Cada capa tiene su propio geojson + style_hint.
+ */
+function buildGeojsonLayersFromCtx(ctx, userText) {
+  if (!CHAT_GEOJSON_ENABLED) return [];
+  if (!ctx.raw || ctx.raw.size === 0) return [];
+
+  const layers = [];
+  const seen = new Set();
+
+  for (const fc of ctx.raw.values()) {
+    if (fc?.type !== "FeatureCollection" || !Array.isArray(fc.features)) {
+      continue;
+    }
+    const layerId = fc._layer_id || null;
+    if (!layerId || seen.has(layerId)) continue;
+    seen.add(layerId);
+
+    const features = fc.features.slice(0, MAX_GEOJSON_FEATURES);
+    layers.push({
+      layer_id: layerId,
+      geojson: { type: "FeatureCollection", features },
+      style_hint: detectStyleHint(userText, ctx),
+    });
+  }
+
+  return layers;
 }
 
 // ─────────────────────────────────────────────────────────────────

@@ -1,12 +1,8 @@
 /**
  * chatMapUtils.js — Pinta los resultados geojson del chat en el mapa.
  *
- * El orquestador puede devolver un FeatureCollection (`payload.geojson`)
- * cuando el LLM usa la tool `get_layer_features`. Este módulo lo pinta
- * en una capa temporal destacada, con zoom automático.
- *
- * Soporta `styleConfig` opcional para colorear las features según un
- * atributo (por ejemplo, COMUNA) y generar una leyenda dinámica.
+ * Soporta múltiples capas simultáneas, cada una con su propio styleConfig
+ * (coloreo por atributo) y su propia familia de paleta.
  *
  * @module utils/chatMapUtils
  */
@@ -21,6 +17,7 @@ const PANE_ZINDEX = 1000;
 
 /**
  * Estilos por defecto por tipo de geometría.
+ * Se usan cuando NO hay styleConfig.
  */
 const STYLES = {
   point: {
@@ -46,23 +43,30 @@ const STYLES = {
 };
 
 /**
- * Paleta de colores para colorear por atributo.
- * Cicla si hay más valores únicos que colores.
+ * 8 familias de paletas. Cada capa usa una familia distinta.
+ * Cuando se superan las 8 capas, se reinicia el ciclo.
  */
-const ATTRIBUTE_PALETTE = [
-  "#1A19CC", // azul WoLL
-  "#FFB93D", // amarillo
-  "#2f3562", // azul oscuro
-  "#8b8aff", // lavanda
-  "#FF7A45", // naranja
-  "#38A78C", // verde
-  "#D94A8C", // magenta
-  "#5B9BD5", // celeste
-  "#A67C52", // marrón
-  "#7D5BA6", // violeta
-  "#F4A261", // durazno
-  "#2A9D8F", // verde azulado
-];
+const PALETTES = {
+  blue: ["#1A19CC", "#5B9BD5", "#2f3562", "#8b8aff", "#4A90E2", "#1F3A93"],
+  green: ["#38A78C", "#2A9D8F", "#7ED9A8", "#1F7A6B", "#4CAF50", "#2E7D32"],
+  orange: ["#FF7A45", "#FFB93D", "#F4A261", "#D95D39", "#E67E22", "#D35400"],
+  magenta: ["#D94A8C", "#A67C52", "#7D5BA6", "#C75A9E", "#E91E63", "#AD1457"],
+  purple: ["#7D5BA6", "#9B59B6", "#8E44AD", "#6C3483", "#BB8FCE", "#4A235A"],
+  teal: ["#2A9D8F", "#38A78C", "#1ABC9C", "#16A085", "#48C9B0", "#0E6251"],
+  red: ["#D95D39", "#E74C3C", "#C0392B", "#FF5552", "#E67E22", "#922B21"],
+  yellow: ["#FFB93D", "#F1C40F", "#F4A261", "#F39C12", "#F7DC6F", "#D4AC0D"],
+};
+
+const PALETTE_FAMILIES = Object.keys(PALETTES);
+
+/**
+ * Devuelve la siguiente familia de paleta en la rotación.
+ */
+function nextPaletteFamily() {
+  const idx = appState.chat.paletteCounter % PALETTE_FAMILIES.length;
+  appState.chat.paletteCounter++;
+  return PALETTE_FAMILIES[idx];
+}
 
 // ── Utilidades HTML ────────────────────────────────────────────
 
@@ -107,48 +111,42 @@ function classifyFeatures(features) {
 }
 
 /**
- * Devuelve un color estable para cada valor (usando un Map de cache).
+ * Devuelve un color estable para cada valor dentro de una familia de paleta.
  */
-function getColorForValue(value, cache) {
+function getColorForValue(value, cache, paletteFamily) {
+  const palette = PALETTES[paletteFamily] || PALETTES.blue;
   const key = value == null || value === "" ? "(sin dato)" : String(value);
   if (cache.has(key)) return cache.get(key);
-  const color = ATTRIBUTE_PALETTE[cache.size % ATTRIBUTE_PALETTE.length];
+  const color = palette[cache.size % palette.length];
   cache.set(key, color);
   return color;
 }
 
 /**
  * Construye un styleConfig a partir de options.styleConfig o options.style_hint.
- * Devuelve null si no hay attribute.
  */
 function buildStyleConfig(options) {
   const hint = options?.styleConfig || options?.style_hint;
   if (!hint || !hint.attribute) return null;
   return {
     attribute: hint.attribute,
-    palette: hint.palette || ATTRIBUTE_PALETTE,
+    paletteFamily: hint.palette_family || null,
     kind: hint.kind || "choropleth-points",
   };
 }
 
 /**
- * Devuelve una función de estilo Leaflet que aplica color por feature
- * según el atributo del styleConfig. Si no hay styleConfig, devuelve
- * el estilo base sin cambios.
- *
- * Cuando se colorea por atributo:
- *   - Vértice y relleno usan el MISMO color (más coherente visualmente).
- *   - fillOpacity más alto (0.55) para que el color se vea.
- *   - weight más fino (2) para no tapar el relleno.
+ * Devuelve una función de estilo Leaflet que aplica color por feature.
  */
 function makeFeatureStyler(baseStyle, styleConfig, colorCache) {
   if (!styleConfig) {
     return () => baseStyle;
   }
   const attr = styleConfig.attribute;
+  const family = styleConfig.paletteFamily || "blue";
   return (feature) => {
     const value = feature?.properties?.[attr];
-    const color = getColorForValue(value, colorCache);
+    const color = getColorForValue(value, colorCache, family);
     return {
       ...baseStyle,
       color: color,
@@ -161,8 +159,7 @@ function makeFeatureStyler(baseStyle, styleConfig, colorCache) {
 }
 
 /**
- * Genera el HTML de la lista de swatches a partir del colorCache.
- * El título se agrega en renderLegend (no acá).
+ * Genera el HTML de la lista de swatches.
  */
 function buildLegendHtml(colorCache) {
   if (!colorCache || colorCache.size === 0) return "";
@@ -182,34 +179,63 @@ function buildLegendHtml(colorCache) {
 }
 
 /**
- * Inyecta la leyenda del chat como una sección más dentro del contenedor
- * #sidebar-legend. NO reemplaza la leyenda del visor: se apila arriba.
- *
- * Si html está vacío, elimina la sección del chat.
+ * Renderiza la leyenda multi-sección: una por capa con su nombre visible.
+ * Cada sección tiene un botón para quitar esa capa específica.
  */
-function renderLegend(html, attributeLabel = "") {
+function renderLegend() {
   const container = document.getElementById("sidebar-legend");
   if (!container) return;
 
-  // Eliminar la sección previa del chat si existía.
-  const previous = container.querySelector(".chat-legend-section");
-  if (previous) previous.remove();
+  // Eliminar todas las secciones previas del chat.
+  container
+    .querySelectorAll(".chat-legend-section")
+    .forEach((el) => el.remove());
 
-  if (!html || !html.trim()) return;
+  const layers = appState.chat.resultsLayers || [];
+  if (layers.length === 0) return;
 
-  // Crear la nueva sección.
-  const section = document.createElement("div");
-  section.className = "chat-legend-section legend-container mb-3";
-  section.innerHTML = `
-    <h6 class="fw-bold text-primary mb-2 legend-title chat-legend-title">
-      <span class="material-symbols-outlined chat-legend-title-icon">auto_awesome</span>
-      Resultados del chat${attributeLabel ? ` · ${attributeLabel}` : ""}
-    </h6>
-    <div class="chat-legend-body">${html}</div>
-  `;
+  // Crear una sección por capa, en orden inverso (última arriba).
+  for (let i = layers.length - 1; i >= 0; i--) {
+    const layer = layers[i];
+    const section = document.createElement("div");
+    section.className = "chat-legend-section legend-container mb-3";
+    section.dataset.layerId = layer.layerId || "";
 
-  // Insertar al principio del contenedor para que aparezca arriba.
-  container.insertBefore(section, container.firstChild);
+    const titleText = layer.layerLabel || layer.layerId || "Capa";
+    const attributeLabel = layer.styleHint?.attribute
+      ? ` · por ${layer.styleHint.attribute.toLowerCase()}`
+      : "";
+
+    // Contar swatches
+    const colorCache = layer.colorCache || new Map();
+    const swatchesHtml = buildLegendHtml(colorCache);
+
+    section.innerHTML = `
+      <div class="chat-legend-section-header">
+        <h6 class="fw-bold text-primary mb-2 legend-title chat-legend-title">
+          <span class="material-symbols-outlined chat-legend-title-icon">auto_awesome</span>
+          ${escapeHtml(titleText)}${attributeLabel}
+        </h6>
+        <button class="chat-legend-remove" type="button" title="Quitar esta capa" data-layer-id="${escapeHtml(layer.layerId || "")}">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="chat-legend-body">${swatchesHtml}</div>
+    `;
+
+    container.insertBefore(section, container.firstChild);
+  }
+
+  // Listener para los botones de "quitar capa".
+  container.querySelectorAll(".chat-legend-remove").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const layerId = btn.dataset.layerId;
+      if (layerId) {
+        clearResultsByLayerId(layerId);
+        renderLegend();
+      }
+    });
+  });
 }
 
 /**
@@ -219,24 +245,20 @@ function buildPopup(feature) {
   const props = feature?.properties || {};
   if (Object.keys(props).length === 0) return "";
 
-  // Campos técnicos que NO se muestran al usuario.
   const TECH_FIELDS =
     /^(id|fid|objectid|gid|geom|geometry|the_geom|shape_leng|shape_area)$/i;
 
-  // Filtrar campos técnicos y vacíos.
   const keys = Object.keys(props).filter(
     (k) => !TECH_FIELDS.test(k) && props[k] != null && props[k] !== ""
   );
 
   if (keys.length === 0) return "";
 
-  // Título: primer campo que parezca "nombre".
   const titleKey = keys.find((k) =>
     /^nombre$|^name$|^titulo$|^título$/i.test(k)
   );
   const title = titleKey ? escapeHtml(props[titleKey]) : "";
 
-  // Resto de campos como párrafos.
   const rows = keys
     .filter((k) => k !== titleKey)
     .slice(0, 10)
@@ -260,13 +282,16 @@ function buildPopup(feature) {
 }
 
 /**
- * Pinta los resultados geojson en el mapa.
+ * Pinta UN geojson. Lo agrega a resultsLayers (no reemplaza).
  *
  * @param {object} geojson - FeatureCollection
  * @param {object} [options]
- * @param {boolean} [options.fitBounds=true] - Hacer zoom a la extensión
- * @param {object} [options.styleConfig] - { attribute, palette, kind }
- * @returns {boolean} true si se pintó algo
+ * @param {boolean} [options.fitBounds=true]
+ * @param {object} [options.styleConfig]
+ * @param {string} [options.layerId] - ID de la capa (para acumulación)
+ * @param {string} [options.layerLabel] - Nombre visible de la capa
+ * @param {boolean} [options.clearExisting=false] - Si true, limpia las anteriores
+ * @returns {boolean}
  */
 export function showResults(geojson, options = {}) {
   const map = appState.map;
@@ -289,15 +314,23 @@ export function showResults(geojson, options = {}) {
     return false;
   }
 
-    // Limpiar capa anterior antes de pintar la nueva.
-  clearResults();
+  // Si clearExisting, limpia todas las capas anteriores.
+  if (options.clearExisting) {
+    clearResults();
+  }
+
+  // Si ya existe una capa con el mismo layerId, la reemplaza.
+  const layerId = options.layerId || options.styleConfig?.layer_id || null;
+  if (layerId) {
+    clearResultsByLayerId(layerId);
+  }
 
   const styleConfig = buildStyleConfig(options);
   const colorCache = new Map();
 
-  // Limpiar la sección del chat en la leyenda si no vamos a colorear.
-  if (!styleConfig) {
-    renderLegend("");
+  // Asignar familia de paleta si no hay.
+  if (styleConfig && !styleConfig.paletteFamily) {
+    styleConfig.paletteFamily = nextPaletteFamily();
   }
 
   const pane = ensurePane(map);
@@ -353,16 +386,20 @@ export function showResults(geojson, options = {}) {
           pointToLayer: (feature, latlng) => {
             let style = { ...STYLES.point, pane: PANE_NAME };
             if (styleConfig) {
-                const value = feature?.properties?.[styleConfig.attribute];
-                const color = getColorForValue(value, colorCache);
-                style = {
+              const value = feature?.properties?.[styleConfig.attribute];
+              const color = getColorForValue(
+                value,
+                colorCache,
+                styleConfig.paletteFamily
+              );
+              style = {
                 ...style,
                 fillColor: color,
-                color: color,  // vértice del mismo color que el relleno
-                };
+                color: color,
+              };
             }
             return L.circleMarker(latlng, style);
-            },
+          },
           onEachFeature: (feature, layer) => {
             const popup = buildPopup(feature);
             if (popup) layer.bindPopup(popup);
@@ -373,7 +410,16 @@ export function showResults(geojson, options = {}) {
   }
 
   const group = L.featureGroup(layers).addTo(map);
-  appState.chat.resultsLayer = group;
+
+  // Registrar en resultsLayers.
+  appState.chat.resultsLayers.push({
+    layerId,
+    layerLabel: options.layerLabel || null,
+    geojson,
+    styleHint: styleConfig,
+    leafletLayer: group,
+    colorCache,
+  });
 
   // Zoom a la extensión de los resultados.
   if (options.fitBounds !== false) {
@@ -387,43 +433,66 @@ export function showResults(geojson, options = {}) {
     }
   }
 
-    // Leyenda dinámica si hay styleConfig.
-  if (styleConfig) {
-    const attributeLabel = styleConfig.attribute
-      ? `por ${styleConfig.attribute.toLowerCase()}`
-      : "";
-    const legendHtml = buildLegendHtml(colorCache);
-    renderLegend(legendHtml, attributeLabel);
-  }
+  renderLegend();
 
-  log.debug(`Resultados pintados: ${geojson.features.length} features`);
+  log.debug(
+    `Resultados pintados: ${geojson.features.length} features (layerId=${layerId}, total capas=${appState.chat.resultsLayers.length})`
+  );
   return true;
 }
 
 /**
- * Limpia la capa de resultados del mapa.
- */
-/**
- * Limpia la capa de resultados del mapa y su sección en la leyenda.
+ * Limpia TODAS las capas de resultados del mapa.
  */
 export function clearResults() {
-  const layer = appState.chat.resultsLayer;
-  if (layer && appState.map && appState.map.hasLayer(layer)) {
-    appState.map.removeLayer(layer);
+  const layers = appState.chat.resultsLayers || [];
+  for (const entry of layers) {
+    if (
+      entry.leafletLayer &&
+      appState.map &&
+      appState.map.hasLayer(entry.leafletLayer)
+    ) {
+      appState.map.removeLayer(entry.leafletLayer);
+    }
   }
-  appState.chat.resultsLayer = null;
+  appState.chat.resultsLayers = [];
 
-  // Quitar la sección del chat de la leyenda.
+  // Quitar la leyenda del chat.
   const container = document.getElementById("sidebar-legend");
   if (container) {
-    const section = container.querySelector(".chat-legend-section");
-    if (section) section.remove();
+    container
+      .querySelectorAll(".chat-legend-section")
+      .forEach((el) => el.remove());
   }
+}
+
+/**
+ * Limpia una capa específica de resultados (por layerId).
+ */
+export function clearResultsByLayerId(layerId) {
+  const layers = appState.chat.resultsLayers || [];
+  const remaining = [];
+
+  for (const entry of layers) {
+    if (entry.layerId === layerId) {
+      if (
+        entry.leafletLayer &&
+        appState.map &&
+        appState.map.hasLayer(entry.leafletLayer)
+      ) {
+        appState.map.removeLayer(entry.leafletLayer);
+      }
+    } else {
+      remaining.push(entry);
+    }
+  }
+
+  appState.chat.resultsLayers = remaining;
 }
 
 /**
  * Indica si hay resultados pintados actualmente.
  */
 export function hasResults() {
-  return appState.chat.resultsLayer !== null;
+  return (appState.chat.resultsLayers || []).length > 0;
 }

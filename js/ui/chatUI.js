@@ -440,7 +440,7 @@ function toggleChat() {
  * resultados pintados en el mapa.
  */
 function updateClearResultsBtn() {
-  const hasResults = appState.chat.resultsLayer !== null;
+  const hasResults = (appState.chat.resultsLayers || []).length > 0;
 
   // Botón dentro del chat.
   if (clearResultsBtn) {
@@ -514,11 +514,41 @@ async function handleSend() {
     typing.remove();
     addMessage(payload, "assistant");
 
-    // Si la respuesta trae geojson, pintarlo en el mapa.
-    if (payload?.geojson && payload.geojson.type === "FeatureCollection") {
+        if (Array.isArray(payload?.geojson_layers) && payload.geojson_layers.length > 0) {
+      try {
+        for (const item of payload.geojson_layers) {
+          if (item.geojson && item.geojson.type === "FeatureCollection") {
+            showResults(item.geojson, {
+              styleConfig: item.style_hint || null,
+              layerId: item.layer_id || null,
+              layerLabel: item.layer_label || null,
+              fitBounds: false,
+            });
+          }
+        }
+        // Ajustar bounds al final.
+        const allLayers = appState.chat.resultsLayers || [];
+        if (allLayers.length > 0 && appState.map) {
+          try {
+            const group = L.featureGroup(allLayers.map((l) => l.leafletLayer));
+            const bounds = group.getBounds();
+            if (bounds.isValid()) {
+              appState.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+            }
+          } catch (err) {
+            log.warn("fitBounds global falló:", err);
+          }
+        }
+        updateClearResultsBtn();
+      } catch (err) {
+        log.warn("No se pudo pintar geojson_layers:", err);
+      }
+    } else if (payload?.geojson && payload.geojson.type === "FeatureCollection") {
       try {
         const painted = showResults(payload.geojson, {
           styleConfig: payload?.geojson_meta?.style_hint || null,
+          layerId: payload?.geojson_meta?.layer_id || null,
+          layerLabel: payload?.geojson_meta?.layer_label || null,
         });
         if (painted) updateClearResultsBtn();
       } catch (err) {
