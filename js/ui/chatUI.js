@@ -504,7 +504,6 @@ async function handleSend() {
   const examplesEl = document.getElementById("ai-chat-examples");
   if (examplesEl) examplesEl.style.display = "none";
 
-  clearResults();
   updateClearResultsBtn();
 
   const typing = addTypingIndicator();
