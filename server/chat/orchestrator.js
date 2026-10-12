@@ -77,7 +77,7 @@ GEOMETRÍAS PARA EL MAPA:
 ESTADÍSTICAS GENERALES DE UNA CAPA:
   → get_layer_stats
 
-REGLAS (19):
+REGLAS (20):
 
 1. ACTÚA DIRECTO. La primera acción SIEMPRE es llamar a la tool
    correcta. NO revises el esquema ni hagas consultas exploratorias
@@ -188,7 +188,21 @@ REGLAS (19):
                                         → color_by="ESTADO"
     El frontend coloreará cada elemento según ese campo.
 
-CATÁLOGO:
+20. LISTADOS CON PINTADO EN MAPA:
+    Cuando el usuario pregunte "¿cuáles son los X?" o "lista
+    los X" o "muéstrame los X" y la respuesta incluya elementos
+    concretos (nombres, IDs, ubicaciones), llama a DOS tools:
+      (a) query_layer para obtener la tabla/lista.
+      (b) get_layer_features con el mismo layer_id para pintar
+          los elementos en el mapa.
+    Ejemplos:
+      "¿Cuáles son los yacimientos?"         → query_layer + get_layer_features
+      "¿Cuáles son las plantas desaladoras?" → query_layer + get_layer_features
+      "¿Cuáles son los humedales?"           → query_layer + get_layer_features
+      "Lista los derechos de agua"            → query_layer + get_layer_features
+    El usuario espera VER los elementos en el mapa además de la lista.
+
+    CATÁLOGO:
 `;
 
 // ── Reglas de lenguaje según modo verbose ─────────────────────
@@ -781,25 +795,29 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       }))
     );
 
-    // Guardar metadata útil de las tools.
-    //   - lastAggregateLayerId: layer_id del último aggregate_by_admin.
-    //   - lastColorBy: campo que el LLM pasó a get_layer_features.
-    for (const { tc, out } of toolResults) {
-      if (tc.name === "aggregate_by_admin" && out.ok) {
-        const lid = tc.arguments?.layer_id;
-        if (typeof lid === "string" && lid.length > 0) {
-          ctx.lastAggregateLayerId = lid;
-          dbg(`ctx.lastAggregateLayerId = ${lid}`);
-        }
-      }
-      if (tc.name === "get_layer_features" && out.ok) {
-        const cb = tc.arguments?.color_by;
-        if (typeof cb === "string" && cb.length > 0) {
-          ctx.lastColorBy = cb;
-          dbg(`ctx.lastColorBy = ${cb}`);
-        }
-      }
+  for (const { tc, out } of toolResults) {
+  if (tc.name === "aggregate_by_admin" && out.ok) {
+    const lid = tc.arguments?.layer_id;
+    if (typeof lid === "string" && lid.length > 0) {
+      ctx.lastAggregateLayerId = lid;
+      dbg(`ctx.lastAggregateLayerId = ${lid}`);
     }
+  }
+  if (tc.name === "query_layer" && out.ok) {
+    const lid = tc.arguments?.layer_id;
+    if (typeof lid === "string" && lid.length > 0) {
+      ctx.lastQueryLayerId = lid;
+      dbg(`ctx.lastQueryLayerId = ${lid}`);
+    }
+  }
+  if (tc.name === "get_layer_features" && out.ok) {
+    const cb = tc.arguments?.color_by;
+    if (typeof cb === "string" && cb.length > 0) {
+      ctx.lastColorBy = cb;
+      dbg(`ctx.lastColorBy = ${cb}`);
+    }
+  }
+}
 
     // ── Compactar cada resultado y agregarlo al historial ─────
     for (const { tc, out } of toolResults) {
@@ -818,22 +836,27 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   }
 }
 
-// ─────────────────────────────────────────────────────────────────
-// Post-procesamiento determinístico para style_hint
-// ─────────────────────────────────────────────────────────────────
-
 /**
- * Si el usuario pidió "por comuna" + elementos pero el LLM no llamó
- * a get_layer_features, la llamamos desde acá. Esto evita depender de
- * la no-determinación del LLM.
- *
- * Guarda las features en `ctx.raw` como cualquier otra FC, así `finish()`
- * las recoge y adjunta el geojson + geojson_meta.style_hint.
+ * Detecta si la pregunta requiere forzar get_layer_features.
+ * Casos:
+ *   - "por comuna/provincia/región" + elementos → detectStyleHint.
+ *   - "¿cuáles son los X?" / "lista los X" → listado con pintado.
  */
+function shouldFetchFeatures(userText, ctx) {
+  if (!userText || typeof userText !== "string") return false;
+
+  // Caso A: "por comuna" + elementos.
+  if (detectStyleHint(userText, ctx)) return true;
+
+  // Caso B: "¿cuáles son los X?" / "lista los X" / "muéstrame los X".
+  const t = userText.toLowerCase();
+  return /\bcu[aá]les\s+son\b|\blista\s+(los|las)\b|\bmu[eé]strame\s+(los|las)\b|\bqu[eé]\s+(yacimientos|glaciares|humedales|plantas|derechos)\b/.test(t);
+}
+
 async function maybeFetchFeaturesForStyle(ctx, userText) {
-  // 1. ¿Aplica? Solo si la pregunta pide "por comuna" + elementos.
-  const hint = detectStyleHint(userText, ctx);
-  if (!hint) return;
+  // 1. ¿Aplica? Solo si la pregunta pide pintar elementos.
+  const shouldFetch = shouldFetchFeatures(userText, ctx);
+  if (!shouldFetch) return;
 
   // 2. ¿Ya hay geojson en ctx.raw? Si sí, no hacer nada.
   if (ctx.raw && ctx.raw.size > 0) {
@@ -841,10 +864,10 @@ async function maybeFetchFeaturesForStyle(ctx, userText) {
     return;
   }
 
-  // 3. Recuperar el layer_id del último aggregate_by_admin.
-  const lastLayerId = ctx.lastAggregateLayerId;
+  // 3. Recuperar el layer_id del último aggregate_by_admin o query_layer.
+  const lastLayerId = ctx.lastAggregateLayerId || ctx.lastQueryLayerId;
   if (!lastLayerId) {
-    dbg("maybeFetchFeaturesForStyle: no hay lastAggregateLayerId, skip");
+    dbg("maybeFetchFeaturesForStyle: no hay lastLayerId, skip");
     return;
   }
 
@@ -856,9 +879,7 @@ async function maybeFetchFeaturesForStyle(ctx, userText) {
       layer_id: lastLayerId,
     });
     if (!out.ok) {
-      dbg(
-        `maybeFetchFeaturesForStyle: get_layer_features falló: ${out.error}`
-      );
+      dbg(`maybeFetchFeaturesForStyle: get_layer_features falló: ${out.error}`);
       return;
     }
     const r = out.result;
@@ -868,14 +889,10 @@ async function maybeFetchFeaturesForStyle(ctx, userText) {
         ...r,
         _layer_id: r._layer_id || lastLayerId,
       });
-      dbg(
-        `maybeFetchFeaturesForStyle: OK, ${r.features.length} features guardadas`
-      );
+      dbg(`maybeFetchFeaturesForStyle: OK, ${r.features.length} features guardadas`);
     }
   } catch (err) {
-    dbg(
-      `maybeFetchFeaturesForStyle: excepción: ${err?.message || err}`
-    );
+    dbg(`maybeFetchFeaturesForStyle: excepción: ${err?.message || err}`);
   }
 }
 

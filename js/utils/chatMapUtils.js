@@ -434,22 +434,23 @@ export function showResults(geojson, options = {}) {
         {
           pane: PANE_NAME,
           pointToLayer: (feature, latlng) => {
-            let style = { ...STYLES.point, pane: PANE_NAME };
-            if (styleConfig) {
-              const value = feature?.properties?.[styleConfig.attribute];
-              const color = getColorForValue(
-                value,
-                colorCache,
-                styleConfig.paletteFamily
-              );
-              style = {
-                ...style,
-                fillColor: color,
-                color: color,
-              };
-            }
-            return L.circleMarker(latlng, style);
-          },
+        let style = {
+            ...STYLES.point,
+            pane: PANE_NAME,
+            fillColor: baseColor,  // ← color base de la paleta
+            color: baseColor,
+        };
+        if (styleConfig) {
+            const value = feature?.properties?.[styleConfig.attribute];
+            const color = getColorForValue(value, colorCache, styleConfig.paletteFamily);
+            style = {
+            ...style,
+            fillColor: color,
+            color: color,
+            };
+        }
+        return L.circleMarker(latlng, style);
+        },
           onEachFeature: (feature, layer) => {
             const popup = buildPopup(feature);
             if (popup) layer.bindPopup(popup);
