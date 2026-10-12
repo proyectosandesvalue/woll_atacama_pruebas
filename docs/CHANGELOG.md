@@ -45,6 +45,33 @@
 
 ## [Unreleased]
 
+## [Sprint 06-B.6 + 06-B.7] — 2026-10-12
+
+### Added
+- Pintado en listados: "¿Cuáles son los X?" pinta los elementos
+  en el mapa además de la tabla.
+- Regla 20 del prompt: listados fuerzan get_layer_features.
+- Fallback determinístico `shouldFetchFeatures()`.
+- Multi-capa acumulativa con `resultsLayers` (array).
+- 8 familias de paletas rotativas con **color distinto por capa**.
+- Leyenda multi-sección con botón X por capa.
+
+### Fixed
+- `api/chat.js` propaga `geojson_layers`.
+- `legendUtils.js` preserva secciones del chat al regenerar la
+  leyenda del visor.
+- `clearResults()` en `handleSend` eliminado (borraba capas
+  anteriores).
+- `pointToLayer` con `baseColor` (antes rojo fijo).
+- `try/catch` por capa en el loop de pintado.
+- Clasificador de dominio reconoce preguntas de listado
+  ("¿Cuáles son los X?" ya no se bloquea).
+- Capas huérfanas eliminadas al recibir bloqueo de dominio.
+- `maybeFetchFeaturesForStyle` verifica `layer_id` específico.
+
+### Tests
+- 130/130.
+
 ## [Sprint 06-B.7] — 2026-10-11
 
 ### Added

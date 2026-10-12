@@ -813,6 +813,15 @@ y eliminación.
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
+### 2026-10-12
+- ✅ **Sprint 06 completado** (respuesta geoespacial).
+  - 06-A a 06-D todos cerrados.
+  - 06-B.6: pintar en listados.
+  - 06-B.7: multi-capa con color por capa.
+  - Fixes: clasificador, capas huérfanas, multi-fetch.
+  - Deuda anotada: fallback LLM, historial, sidebar.
+- 📝 Próximo: **Fallback de proveedor LLM** (2-3h).
+
 ### 2026-10-08
 - ✅ **Sprint 06-B.2 completado.**
   - `geojson_meta` en el payload de `/api/chat`.
@@ -912,7 +921,26 @@ Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de 
 - [ ] **L9 — CONTRACT §5.3 vs formato real del chat.** Resuelto en Sprint 22.
 - [ ] **Timeout por tool (CA-12 spec 06).** Hoy `RPC_TIMEOUT_MS=6000` es global. Fix: parámetro `timeoutMs` en `withTimeout`. Sprint corto (1h). Urgencia: baja.
 - [ ] **Limpieza de logs de diagnóstico en `orchestrator.js`.** Dejar 1-2 días, después remover.
+- [ ] **Fallback de proveedor LLM.**
+      Gemini 3.1 Flash-Lite se satura (503) con frecuencia. Hoy
+      no hay fallback automático. Implementar: en
+      `server/llm/provider.js`, intentar `LLM_FALLBACK_*` si el
+      principal falla con 503. Sprint corto (2-3h).
 
+- [ ] **Contexto del historial (mezcla de temas).**
+      El LLM mezcla la pregunta actual con turnos previos.
+      Fix: reducir `history.slice(-3)` a `slice(-2)`.
+
+- [ ] **Bug visual del sidebar izquierdo.**
+      Al desactivar dimensiones cargadas por defecto, se contrae.
+      Al reactivar "Territorio", queda en blanco.
+
+- [ ] **Evitar duplicación del contrato en `api/chat.js`.**
+      Ya nos mordió 3 veces (geojson_meta, geojson_layers, notice).
+
+- [ ] **Vercel cache de estáticos.**
+
+- [ ] **Sprint 39: capas del chat en el sidebar izquierdo.**
 ---
 
 ## Deuda técnica activa
