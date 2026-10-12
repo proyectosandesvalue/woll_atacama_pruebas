@@ -45,6 +45,35 @@
 
 ## [Unreleased]
 
+## [Sprint 06-B.7] — 2026-10-11
+
+### Added
+- Multi-capa acumulativa: las capas del chat se acumulan entre
+  consultas. El usuario puede ver glaciares + humedales + derechos
+  simultáneamente.
+- `appState.chat.resultsLayers` (array) reemplaza a `resultsLayer`.
+- 8 familias de paletas (blue, green, orange, magenta, purple,
+  teal, red, yellow) con rotación automática entre capas.
+- Leyenda multi-sección: una por capa con su nombre y botón X para
+  quitarla individualmente.
+- Backend: `finish()` devuelve `geojson_layers` (array) además del
+  `geojson` único por compatibilidad.
+- `layer_label` con `display_name` del catálogo + fallback
+  `capitalize(layerId)`.
+
+### Fixed
+- `clearResults()` en `handleSend` eliminado (borraba las capas
+  anteriores en cada consulta).
+- `api/chat.js` ahora propaga `geojson_layers`.
+- `legendUtils.js` preserva las secciones del chat al regenerar
+  la leyenda del visor.
+- `finish()` ahora es async (consulta el catálogo).
+- `chatUI.js` bloque single-geojson lee `layer_label` de
+  `geojson_layers[0]` como fallback.
+
+### Tests
+- 130/130.
+
 ## [Sprint 06-B.3] — 2026-10-10
 
 ### Added

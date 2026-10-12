@@ -194,13 +194,13 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - La leyenda muestra qué color corresponde a cada capa.
 
 **Sub-sprints**:
-- [ ] **A (1h)** — `appState.chat.resultsLayers` (array) en lugar de
+- [X] **A (1h)** — `appState.chat.resultsLayers` (array) en lugar de
   `resultsLayer` (objeto único).
-- [ ] **B (1h)** — `showResults()` agrega al array en lugar de reemplazar;
+- [X] **B (1h)** — `showResults()` agrega al array en lugar de reemplazar;
   paleta de colores rotativa.
-- [ ] **C (1h)** — `clearResults()` limpia todas; `clearResultsByLayerId()`
+- [X ] **C (1h)** — `clearResults()` limpia todas; `clearResultsByLayerId()`
   limpia una específica.
-- [ ] **D (1h)** — UI: leyenda que muestra el nombre de cada capa + botón
+- [X] **D (1h)** — UI: leyenda que muestra el nombre de cada capa + botón
   para quitar una capa específica.
 
 **CA**:
@@ -722,6 +722,38 @@ por fases, empezando por las que el chat y la Pieza 2 usan.
 
 **Reversión**: cada migración es aditiva. Las tablas originales no se tocan.
 ---
+
+## Sprint 39 — Capas del chat en el sidebar izquierdo
+
+**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 4-6h
+**Dependencias**: 06-B.7 (multi-capa del chat)
+
+**Objetivo:** que las capas pintadas por el chat aparezcan en el
+sidebar izquierdo (panel de capas del visor) como "capas
+provisorias" o "resultados del chat", con controles de visibilidad
+y eliminación.
+
+**Diseño:**
+- Nueva sección en el sidebar izquierdo: "Resultados del chat".
+- Aparece solo cuando hay capas del chat activas.
+- Cada item muestra: visibilidad (ojo), nombre, eliminar (papelera).
+- Se sincroniza bidireccionalmente con la leyenda derecha.
+
+**Beneficios:**
+- Un solo punto de control para el usuario.
+- Consistencia visual con las capas del visor.
+- Extensible (futuro: ajustar opacidad, ordenar, ver propiedades).
+
+**Reutiliza:**
+- `appState.chat.resultsLayers` como fuente de verdad.
+- Patrón visual de `layerItem.js`.
+- Función `clearResultsByLayerId()` de `chatMapUtils.js`.
+
+**Desafíos:**
+- Persistencia vs sesión (son temporales).
+- Interacción con el ciclo de vida de las capas del visor.
+- Comportamiento mobile.
+- Agregar/quitar dinámicamente sin romper la estructura del sidebar.
 
 ## Ajustes a sprints existentes
 

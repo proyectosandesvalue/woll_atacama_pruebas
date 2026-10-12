@@ -214,17 +214,31 @@ function renderLegend() {
     section.dataset.layerId = layer.layerId || "";
 
     const titleText =
-        (layer.layerLabel && String(layer.layerLabel).trim()) ||
-        capitalize(layer.layerId) ||
-        "Capa";
-        
+      (layer.layerLabel && String(layer.layerLabel).trim()) ||
+      capitalize(layer.layerId) ||
+      "Capa";
+
     const attributeLabel = layer.styleHint?.attribute
       ? ` · por ${layer.styleHint.attribute.toLowerCase()}`
       : "";
 
-    // Contar swatches
+    // Construir el cuerpo de la leyenda:
+    //   - Si hay colorCache (style_hint), mostrar swatches por valor.
+    //   - Si no, mostrar un item genérico con el color base.
     const colorCache = layer.colorCache || new Map();
-    const swatchesHtml = buildLegendHtml(colorCache);
+    let swatchesHtml = buildLegendHtml(colorCache);
+
+    if (!swatchesHtml || !swatchesHtml.trim()) {
+      // Fallback: item genérico.
+      const fallbackLabel = layer.layerLabel || capitalize(layer.layerId) || "Elementos";
+      const fallbackColor = STYLES.point.fillColor || "#FF3B30";
+      swatchesHtml = `
+        <div class="legend-item">
+          <span class="legend-swatch" style="background:${fallbackColor}"></span>
+          <span class="legend-label">${escapeHtml(fallbackLabel)}</span>
+        </div>
+      `;
+    }
 
     section.innerHTML = `
       <div class="chat-legend-section-header">
