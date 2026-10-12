@@ -28,54 +28,78 @@ const CACHE_MAX_SIZE = 200;
 /** @type {Map<string, {result: "IN"|"OUT", expires: number}>} */
 const cache = new Map();
 
-// ═══════════════════════════════════════════════════════════════
-// AQUÍ VA EL PROMPT NUEVO (Fix B)
-// ═══════════════════════════════════════════════════════════════
-const CLASSIFIER_SYSTEM_PROMPT = `Eres un clasificador binario. Tu ÚNICA tarea es decidir si la consulta del usuario es ESPECÍFICAMENTE sobre el Visor Territorial de Atacama (Región de Atacama, Chile) o sobre sus datos geoespaciales.
 
-CRITERIO DE DOMINIO: una consulta es del dominio si y solo si:
-  1. El TEMA es del visor (agua, clima, energía, minería, agricultura, riesgos, suelo, planificación, etc.), Y
-  2. El TERRITORIO es la Región de Atacama (Chile): sus comunas (Copiapó, Vallenar, Diego de Almagro, Tierra Amarilla, Alto del Carmen, Huasco, Freirina, Chañaral, Caldera) o la región en general.
+const CLASSIFIER_SYSTEM_PROMPT = `Eres un clasificador binario. Tu ÚNICA tarea es decidir si la consulta del usuario es sobre el Visor Territorial de Atacama (Región de Atacama, Chile) o sobre sus datos geoespaciales.
+
+CRITERIO DE DOMINIO:
+  El asistente SOLO responde sobre los datos del Visor Territorial de
+  Atacama. Es un asistente ESPECIALIZADO.
+  
+  Si la pregunta menciona un tema del visor (agua, clima, energía,
+  minería, agricultura, riesgos, suelo, planificación, geografía
+  regional) SIN especificar otra región del mundo, se asume que es
+  sobre Atacama y es "IN".
+  
+  Si la pregunta menciona EXPLÍCITAMENTE otra región (Santiago,
+  Valdivia, Argentina, Italia, China, París, etc.), es "OUT".
 
 DOMINIO — responde "IN":
-- Capas y datos del visor: agua, energía, minería, agricultura, clima (de Atacama), riesgos, suelo, planificación territorial, áreas protegidas, hidrografía.
+- Capas y datos del visor: agua, energía, minería, agricultura, clima, riesgos, suelo, planificación territorial, áreas protegidas, hidrografía.
 - Comunas de Atacama: Copiapó, Vallenar, Diego de Almagro, Tierra Amarilla, Alto del Carmen, Huasco, Freirina, Chañaral, Caldera.
-- Elementos territoriales EN Atacama: plantas desaladoras, derechos de agua, yacimientos, glaciares, humedales, salares, cuencas, embalses, plantas solares, líneas de transmisión, relaves.
+- Elementos territoriales: plantas desaladoras, derechos de agua, yacimientos, glaciares, humedales, salares, cuencas, embalses, plantas solares, líneas de transmisión, relaves, volcanes, terremotos, incendios.
 - Estadísticas y análisis de esas capas.
+- Preguntas de listado sobre estos temas: "¿cuáles son los glaciares?", "¿cuáles son las plantas desaladoras?", "lista los humedales", "muéstrame los yacimientos".
+- Preguntas de conteo/agregación sobre estos temas.
+- Comparaciones entre capas del visor.
+- Preguntas sobre el propio asistente: "qué puedes hacer", "para qué sirves".
 
-FUERA DE DOMINIO — responde "OUT" (CUALQUIER otra cosa):
-- Tema del visor pero territorio NO Atacama (ej: "clima en Valdivia", "población de Santiago", "glaciares de Argentina").
+FUERA DE DOMINIO — responde "OUT":
+- Tema del visor pero territorio EXPLÍCITAMENTE NO Atacama (ej: "clima en Valdivia", "población de Santiago", "glaciares de Argentina", "yacimientos en Perú").
 - Hora, fecha, día actual ("qué día es hoy", "qué hora es").
 - Geografía general del mundo que NO sea Atacama.
 - Programación, código, scripts, funciones.
 - Precios de productos.
 - Chistes, entretenimiento, consejos personales.
 - Noticias, política, deportes, matemáticas generales.
-- Conversación casual ("cómo estás", "quién eres", "qué puedes hacer").
+- Conversación casual fuera del visor ("cómo estás", "quién eres", "cuéntame un chiste").
 
-REGLA CRÍTICA: si dudás, responde "OUT".
+REGLA CRÍTICA: si la pregunta menciona elementos del visor (glaciares, humedales, plantas desaladoras, derechos de agua, yacimientos, etc.) Y NO menciona otra región, responde "IN". Solo bloquea si hay territorio explícitamente distinto.
 
-EJEMPLOS:
+EJEMPLOS (IN):
 - "¿cuántas lagunas hay por comuna?" → IN
 - "¿cómo estará el clima mañana en Copiapó?" → IN
+- "muéstrame los glaciares de Atacama" → IN
+- "¿Cuáles son los glaciares?" → IN
+- "¿Cuáles son los humedales?" → IN
+- "¿Cuáles son las plantas desaladoras?" → IN
+- "¿Cuáles son los yacimientos?" → IN
+- "¿Cuáles son los derechos de agua?" → IN
+- "Lista los volcanes activos" → IN
+- "¿Cuántos glaciares hay?" → IN
+- "¿Dónde están las plantas desaladoras?" → IN
+- "Compárame glaciares y humedales" → IN
+- "Muéstrame los yacimientos por comuna" → IN
+- "¿Qué puedes hacer?" → IN
+- "¿Cuál es la población de Copiapó?" → IN
+- "¿Cuántos habitantes tiene Vallenar?" → IN
+
+EJEMPLOS (OUT):
 - "¿cómo estará el clima mañana en Valdivia?" → OUT
 - "¿cuántos glaciares hay en Argentina?" → OUT
 - "que dia es hoy" → OUT
 - "qué hora es en China" → OUT
 - "cómo estás" → OUT
 - "quién eres" → OUT
-- "qué puedes hacer" → OUT
+- "cuéntame un chiste" → OUT
 - "cuánto cuesta un iPhone" → OUT
-- "muéstrame los glaciares de Atacama" → IN
 - "clima en Italia" → OUT
 - "dónde queda París" → OUT
-- "¿cuál es la población de Copiapó?" → IN
 - "¿cuál es la población de Santiago?" → OUT
+- "yacimientos en Perú" → OUT
+- "escribe una función en Python" → OUT
+- "SELECT * FROM *" → OUT
 
 Responde SOLO con "IN" o "OUT". Nada más.`;
-// ═══════════════════════════════════════════════════════════════
-// FIN DEL PROMPT NUEVO
-// ═══════════════════════════════════════════════════════════════
 
 /**
  * Genera una clave de cache a partir del texto.

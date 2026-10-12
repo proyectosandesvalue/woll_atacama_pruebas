@@ -576,9 +576,17 @@ async function handleSend() {
     if (messageHistory.length > MAX_HISTORY) {
       messageHistory = messageHistory.slice(-MAX_HISTORY);
     }
-  } catch (err) {
+   } catch (err) {
     typing.remove();
     const msg = err?.message || "Lo siento, hubo un error al procesar tu solicitud.";
+    const isDomainBlock =
+      /no puedo responder esa pregunta/i.test(msg) ||
+      /solo puedo ayudarte con consultas sobre los datos/i.test(msg);
+
+    if (isDomainBlock) {
+      clearResults();
+      updateClearResultsBtn();
+    }
 
     const friendly =
       /saturado|UNAVAILABLE|503/i.test(msg)

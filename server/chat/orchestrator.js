@@ -858,17 +858,22 @@ async function maybeFetchFeaturesForStyle(ctx, userText) {
   const shouldFetch = shouldFetchFeatures(userText, ctx);
   if (!shouldFetch) return;
 
-  // 2. ¿Ya hay geojson en ctx.raw? Si sí, no hacer nada.
-  if (ctx.raw && ctx.raw.size > 0) {
-    dbg("maybeFetchFeaturesForStyle: ctx.raw ya tiene datos, skip");
-    return;
-  }
-
-  // 3. Recuperar el layer_id del último aggregate_by_admin o query_layer.
+  // 2. Recuperar el layer_id del último aggregate_by_admin o query_layer.
   const lastLayerId = ctx.lastAggregateLayerId || ctx.lastQueryLayerId;
   if (!lastLayerId) {
     dbg("maybeFetchFeaturesForStyle: no hay lastLayerId, skip");
     return;
+  }
+
+  // 3. ¿Este layer_id ya está en ctx.raw? Si sí, no hacer nada.
+  //    (Evita re-fetchear la misma capa, pero permite agregar capas nuevas.)
+  if (ctx.raw && ctx.raw.size > 0) {
+    for (const fc of ctx.raw.values()) {
+      if (fc._layer_id === lastLayerId) {
+        dbg(`maybeFetchFeaturesForStyle: ${lastLayerId} ya está en ctx.raw, skip`);
+        return;
+      }
+    }
   }
 
   // 4. Ejecutar get_layer_features.
