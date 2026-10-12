@@ -228,10 +228,14 @@ function renderLegend() {
     const colorCache = layer.colorCache || new Map();
     let swatchesHtml = buildLegendHtml(colorCache);
 
-    if (!swatchesHtml || !swatchesHtml.trim()) {
-      // Fallback: item genérico.
+        if (!swatchesHtml || !swatchesHtml.trim()) {
+      // Fallback: item genérico con el color base de la capa.
       const fallbackLabel = layer.layerLabel || capitalize(layer.layerId) || "Elementos";
-      const fallbackColor = STYLES.point.fillColor || "#FF3B30";
+      const fallbackColor =
+        (layer.styleHint?.paletteFamily &&
+          PALETTES[layer.styleHint.paletteFamily]?.[0]) ||
+        (layer.baseColor) ||
+        STYLES.point.fillColor;
       swatchesHtml = `
         <div class="legend-item">
           <span class="legend-swatch" style="background:${fallbackColor}"></span>
@@ -355,12 +359,12 @@ export function showResults(geojson, options = {}) {
     clearResultsByLayerId(layerId);
   }
 
-  const styleConfig = buildStyleConfig(options);
+    const styleConfig = buildStyleConfig(options);
   const colorCache = new Map();
 
-  // Asignar familia de paleta si no hay.
-  if (styleConfig && !styleConfig.paletteFamily) {
-    styleConfig.paletteFamily = nextPaletteFamily();
+  const paletteFamily = styleConfig?.paletteFamily || nextPaletteFamily();
+  if (styleConfig) {
+    styleConfig.paletteFamily = paletteFamily;
   }
 
   const pane = ensurePane(map);
@@ -368,12 +372,28 @@ export function showResults(geojson, options = {}) {
 
   const layers = [];
 
+    // Color base de la paleta para esta capa (aunque no haya styleConfig).
+  const baseColor = PALETTES[paletteFamily][0];
+
+  // Estilos base con el color de la capa.
+  const basePointStyle = { ...STYLES.point, fillColor: baseColor, color: baseColor };
+  const baseLineStyle = { ...STYLES.line, color: baseColor };
+  const basePolygonStyle = {
+    ...STYLES.polygon,
+    color: baseColor,
+    fillColor: baseColor,
+  };
+
   const polygonStyleFn = makeFeatureStyler(
-    STYLES.polygon,
+    basePolygonStyle,
     styleConfig,
     colorCache
   );
-  const lineStyleFn = makeFeatureStyler(STYLES.line, styleConfig, colorCache);
+  const lineStyleFn = makeFeatureStyler(
+    baseLineStyle,
+    styleConfig,
+    colorCache
+  );
 
   if (polygons.length > 0) {
     layers.push(
@@ -442,13 +462,15 @@ export function showResults(geojson, options = {}) {
   const group = L.featureGroup(layers).addTo(map);
 
   // Registrar en resultsLayers.
-  appState.chat.resultsLayers.push({
+    appState.chat.resultsLayers.push({
     layerId,
     layerLabel: options.layerLabel || null,
     geojson,
     styleHint: styleConfig,
     leafletLayer: group,
     colorCache,
+    paletteFamily,
+    baseColor,
   });
 
   // Zoom a la extensión de los resultados.
