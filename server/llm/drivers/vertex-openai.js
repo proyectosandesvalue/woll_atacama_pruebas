@@ -12,32 +12,45 @@
  * el orquestador no necesita cambios.
  */
 
-import { GoogleAuth } from "google-auth-library";
-import { randomUUID } from "node:crypto";
+import { GoogleAuth, ExternalAccountClient } from "google-auth-library";
+import { getVercelOidcToken } from "@vercel/functions/oidc";
 
-// ── Singleton de auth (reutiliza conexión y caché de tokens) ──
 let _auth = null;
 
-function getAuth() {
+async function getAuth() {
   if (_auth) return _auth;
 
-  // Producción (Vercel): credenciales desde variable de entorno JSON.
+  // 1. JSON de Service Account (desarrollo local, si existe).
   const credsJson = process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON;
   if (credsJson) {
-    try {
-      _auth = new GoogleAuth({
-        credentials: JSON.parse(credsJson),
-        scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-      });
-      return _auth;
-    } catch (err) {
-      throw new Error(
-        `GOOGLE_APPLICATION_CREDENTIALS_JSON inválido: ${err.message}`
-      );
-    }
+    _auth = new GoogleAuth({
+      credentials: JSON.parse(credsJson),
+      scopes: ["https://www.googleapis.com/auth/cloud-platform"],
+    });
+    return _auth;
   }
 
-  // Local (dev): ADC desde `gcloud auth application-default login`.
+  // 2. Workload Identity Federation (producción en Vercel).
+  const projectNumber = process.env.GCP_PROJECT_NUMBER;
+  const poolId = process.env.GCP_WORKLOAD_IDENTITY_POOL_ID;
+  const providerId = process.env.GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID;
+  const saEmail = process.env.GCP_SERVICE_ACCOUNT_EMAIL;
+
+  if (projectNumber && poolId && providerId && saEmail) {
+    _auth = ExternalAccountClient.fromJSON({
+      type: "external_account",
+      audience: `//iam.googleapis.com/projects/${projectNumber}/locations/global/workloadIdentityPools/${poolId}/providers/${providerId}`,
+      subject_token_type: "urn:ietf:params:oauth:token-type:jwt",
+      token_url: "https://sts.googleapis.com/v1/token",
+      service_account_impersonation_url: `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`,
+      subject_token_supplier: {
+        getSubjectToken: async () => await getVercelOidcToken(),
+      },
+    });
+    return _auth;
+  }
+
+  // 3. ADC local (fallback para desarrollo sin JSON).
   _auth = new GoogleAuth({
     scopes: ["https://www.googleapis.com/auth/cloud-platform"],
   });
