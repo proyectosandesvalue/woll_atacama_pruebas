@@ -254,7 +254,7 @@ async function buildSystemPrompt() {
     return `- ${c.layer_id} — ${c.display_name} [${c.dimension}]${attrStr}`;
   });
 
-  const catalogBlock = lines.join("\n").slice(0, 12000);
+  const catalogBlock = lines.join("\n")
   const full = SYSTEM_PROMPT + "\nCATÁLOGO DE CAPAS:\n" + catalogBlock;
   _cachedSystem = full;
   _cachedAt = Date.now();
