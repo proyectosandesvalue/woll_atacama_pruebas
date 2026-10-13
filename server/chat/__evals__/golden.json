@@ -1,0 +1,402 @@
+{
+  "version": "1.0",
+  "created": "2026-10-12",
+  "model_expected": "gemini-3.1-flash-lite",
+  "description": "Golden set del chat del Visor Territorial de Atacama. Tres niveles: 1 = smoke, 2 = core, 3 = extendido.",
+  "cases": [
+    {
+      "id": "smoke-count-lagunas-por-comuna",
+      "level": 1,
+      "category": "conteo",
+      "question": "¿Cuántas lagunas hay por comuna?",
+      "expected": {
+        "tools_any": ["aggregate_by_admin", "aggregate_layer"],
+        "charts_count_min": 0,
+        "charts_count_max": 2,
+        "geojson_required": false,
+        "reply_must_contain": ["laguna"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar", "error"]
+      },
+      "notes": "Conteo simple por comuna. Puede devolver chart o tabla."
+    },
+    {
+      "id": "smoke-list-glaciares",
+      "level": 1,
+      "category": "listado-pintado",
+      "question": "¿Cuáles son los glaciares?",
+      "expected": {
+        "tools_any": ["query_layer", "get_layer_features"],
+        "geojson_required": true,
+        "reply_must_contain": ["glaciar"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar", "no puedo responder esa pregunta"]
+      },
+      "notes": "Debe pintar en el mapa (regla 20)."
+    },
+    {
+      "id": "smoke-ubicacion-desaladoras",
+      "level": 1,
+      "category": "ubicacion",
+      "question": "¿Dónde están las plantas desaladoras?",
+      "expected": {
+        "tools_any": ["get_layer_features"],
+        "geojson_required": true,
+        "reply_must_contain": ["planta", "desaladora"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Pintado puro con get_layer_features."
+    },
+    {
+      "id": "smoke-bloqueo-fecha",
+      "level": 1,
+      "category": "bloqueo",
+      "question": "¿Qué día es hoy?",
+      "expected": {
+        "blocked": true,
+        "reply_must_contain": ["no puedo responder"],
+        "geojson_required": false,
+        "charts_count_max": 0
+      },
+      "notes": "El clasificador de dominio debe bloquear."
+    },
+    {
+      "id": "smoke-count-total-glaciares",
+      "level": 1,
+      "category": "conteo",
+      "question": "¿Cuántos glaciares hay en total?",
+      "expected": {
+        "tools_any": ["get_layer_stats", "aggregate_layer"],
+        "geojson_required": false,
+        "reply_must_contain": ["glaciar"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Conteo total, sin agrupación."
+    },
+    {
+      "id": "smoke-count-humedales-por-comuna",
+      "level": 1,
+      "category": "conteo",
+      "question": "¿Cuántos humedales hay por comuna?",
+      "expected": {
+        "tools_any": ["aggregate_by_admin"],
+        "charts_count_min": 1,
+        "charts_count_max": 2,
+        "geojson_required": false,
+        "reply_must_contain": ["humedal"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Conteo con chart."
+    },
+    {
+      "id": "smoke-count-derechos-por-provincia",
+      "level": 1,
+      "category": "conteo",
+      "question": "¿Cuántos derechos de agua hay por provincia?",
+      "expected": {
+        "tools_any": ["aggregate_by_admin"],
+        "charts_count_min": 1,
+        "geojson_required": false,
+        "reply_must_contain": ["derecho"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Conteo por provincia."
+    },
+    {
+      "id": "smoke-list-yacimientos",
+      "level": 1,
+      "category": "listado-pintado",
+      "question": "¿Cuáles son los yacimientos?",
+      "expected": {
+        "tools_any": ["query_layer", "get_layer_features"],
+        "geojson_required": true,
+        "reply_must_contain": ["yacimiento"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Bug histórico: el LLM no llamaba a get_layer_features. Regla 20 lo fuerza."
+    },
+    {
+      "id": "smoke-list-humedales",
+      "level": 1,
+      "category": "listado-pintado",
+      "question": "Lista los humedales",
+      "expected": {
+        "tools_any": ["query_layer", "get_layer_features"],
+        "geojson_required": true,
+        "reply_must_contain": ["humedal"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Listado con pintado."
+    },
+    {
+      "id": "smoke-muestra-volcanes",
+      "level": 1,
+      "category": "ubicacion",
+      "question": "Muéstrame los volcanes activos en el mapa",
+      "expected": {
+        "tools_any": ["get_layer_features"],
+        "geojson_required": true,
+        "reply_must_contain": ["volc"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Pintado en el mapa."
+    },
+    {
+      "id": "core-color-glaciares-tipo",
+      "level": 2,
+      "category": "coloreo-por-atributo",
+      "question": "¿Cuántos glaciares por tipo?",
+      "expected": {
+        "tools_any": ["aggregate_layer", "get_layer_features"],
+        "geojson_required": true,
+        "geojson_meta_style_hint_required": true,
+        "style_hint_attribute_any": ["TIPO", "CLASIFICA", "tipo", "clasifica"],
+        "charts_count_min": 0,
+        "reply_must_contain": ["glaciar"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Debe pintar con color por TIPO/CLASIFICA."
+    },
+    {
+      "id": "core-color-derechos-tipo",
+      "level": 2,
+      "category": "coloreo-por-atributo",
+      "question": "¿Cuántos derechos de agua por tipo?",
+      "expected": {
+        "tools_any": ["aggregate_layer", "get_layer_features"],
+        "geojson_required": true,
+        "geojson_meta_style_hint_required": true,
+        "style_hint_attribute_any": ["Tipo Derecho", "TIPO DERECHO", "tipo derecho"],
+        "reply_must_contain": ["derecho"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Debe pintar con color por Tipo Derecho."
+    },
+    {
+      "id": "core-color-humedales-clasificacion",
+      "level": 2,
+      "category": "coloreo-por-atributo",
+      "question": "Distribución de humedales por clasificación",
+      "expected": {
+        "tools_any": ["aggregate_layer", "get_layer_features"],
+        "geojson_required": true,
+        "geojson_meta_style_hint_required": true,
+        "reply_must_contain": ["humedal"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Coloreo por clasificación."
+    },
+    {
+      "id": "core-compare-glaciares-humedales",
+      "level": 2,
+      "category": "comparacion",
+      "question": "Compárame glaciares y humedales por comuna",
+      "expected": {
+        "tools_any": ["aggregate_by_admin"],
+        "tools_count_min": 2,
+        "charts_count_min": 0,
+        "charts_count_max": 3,
+        "geojson_required": false,
+        "reply_must_contain": ["glaciar", "humedal"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Comparación multi-capa. Debe llamar 2+ tools."
+    },
+    {
+      "id": "core-compare-glaciares-derechos",
+      "level": 2,
+      "category": "comparacion",
+      "question": "Comparame la cantidad de glaciares y de derechos de agua",
+      "expected": {
+        "tools_any": ["aggregate_layer", "aggregate_by_admin", "get_layer_stats"],
+        "tools_count_min": 2,
+        "geojson_required": false,
+        "reply_must_contain": ["glaciar", "derecho"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Comparación de totales."
+    },
+    {
+      "id": "core-filter-derechos-consuntivos-copiapo",
+      "level": 2,
+      "category": "filtro-combinado",
+      "question": "Dame los derechos de agua de la cuenca Copiapó pero solo los consuntivos",
+      "expected": {
+        "tools_any": ["query_layer", "get_layer_features"],
+        "geojson_required": true,
+        "geojson_filter_required": {
+          "Tipo Derecho": "Consuntivo"
+        },
+        "geojson_cuenca_contains": "copiapo",
+        "reply_must_contain": ["consuntivo"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Bug actual: el filtro por Cuenca se descarta si no matchea exacto. Requiere ILIKE y resolución de valores."
+    },
+    {
+      "id": "core-proximidad-derechos-rio",
+      "level": 2,
+      "category": "proximidad",
+      "question": "¿Cuántos derechos de agua hay a menos de 1 km de un río?",
+      "expected": {
+        "tools_any": ["count_near_layer", "aggregate_near_layer"],
+        "geojson_required": false,
+        "reply_must_contain": ["derecho"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Proximidad. Usa ST_DWithin."
+    },
+    {
+      "id": "core-ambiguedad-dame-glaciares",
+      "level": 2,
+      "category": "ambiguedad",
+      "question": "Dame los glaciares",
+      "expected": {
+        "tools_any": ["query_layer", "get_layer_features"],
+        "geojson_required": true,
+        "reply_must_contain": ["glaciar"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Pregunta vaga. Debe inferir query + pintado."
+    },
+    {
+      "id": "core-error-columna-inexistente",
+      "level": 2,
+      "category": "error",
+      "question": "¿Cuántos glaciares hay por comuna según color?",
+      "expected": {
+        "graceful_error": true,
+        "reply_must_not_contain": ["no puedo responder esa pregunta"],
+        "notes": "La columna 'color' no existe. Debe fallar graceful, no con 'no puedo responder'."
+      },
+      "notes": "Manejo de error."
+    },
+    {
+      "id": "core-truncamiento-todos-derechos",
+      "level": 2,
+      "category": "truncamiento",
+      "question": "Dame TODOS los derechos de agua",
+      "expected": {
+        "tools_any": ["get_layer_features"],
+        "geojson_required": true,
+        "geojson_meta_truncated_expected": true,
+        "notice_required": true,
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Debe devolver >500 features y truncar con notice."
+    },
+    {
+      "id": "ext-seguimiento-filtro",
+      "level": 3,
+      "category": "seguimiento",
+      "question": "Dame los glaciares",
+      "history": [
+        { "role": "user", "content": "¿Cuáles son los humedales?" },
+        { "role": "assistant", "content": "Hay 500 humedales..." }
+      ],
+      "expected": {
+        "tools_any": ["query_layer", "get_layer_features"],
+        "geojson_required": true,
+        "reply_must_contain": ["glaciar"],
+        "reply_must_not_contain": ["humedal", "no puedo responder", "no pude generar"]
+      },
+      "notes": "El historial no debe contaminar. Fix pendiente: reducir slice(-3) a slice(-2)."
+    },
+    {
+      "id": "ext-correccion-consuntivos",
+      "level": 3,
+      "category": "correccion",
+      "question": "No, esos no. Solo los consuntivos.",
+      "history": [
+        { "role": "user", "content": "Dame los derechos de agua de la cuenca Copiapó" },
+        { "role": "assistant", "content": "Encontré 150 derechos..." }
+      ],
+      "expected": {
+        "tools_any": ["query_layer"],
+        "geojson_required": false,
+        "reply_must_contain": ["consuntivo"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Corrección conversacional. El LLM debe entender el contexto previo."
+    },
+    {
+      "id": "ext-analisis-concentracion",
+      "level": 3,
+      "category": "analisis",
+      "question": "¿Dónde hay más concentración de derechos de agua?",
+      "expected": {
+        "tools_any": ["aggregate_by_admin", "aggregate_layer"],
+        "geojson_required": false,
+        "reply_must_contain": ["derecho"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Análisis simple de concentración."
+    },
+    {
+      "id": "ext-cruce-capas",
+      "level": 3,
+      "category": "cruce",
+      "question": "¿Qué relación hay entre los glaciares y los derechos de agua por comuna?",
+      "expected": {
+        "tools_any": ["aggregate_by_admin"],
+        "tools_count_min": 2,
+        "geojson_required": false,
+        "reply_must_contain": ["glaciar", "derecho"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Cruce de 2 capas. No debe afirmar causalidad."
+    },
+    {
+      "id": "ext-color-comuna-acumulado",
+      "level": 3,
+      "category": "multi-capa",
+      "question": "¿Cuántos glaciares por comuna?",
+      "history": [
+        { "role": "user", "content": "¿Cuáles son los humedales?" },
+        { "role": "assistant", "content": "..." }
+      ],
+      "expected": {
+        "tools_any": ["aggregate_by_admin", "get_layer_features"],
+        "geojson_required": true,
+        "reply_must_contain": ["glaciar"],
+        "reply_must_not_contain": ["humedal", "no puedo responder", "no pude generar"]
+      },
+      "notes": "Acumulación de capas + coloreo por comuna."
+    },
+    {
+      "id": "ext-bloqueo-territorio-otro",
+      "level": 3,
+      "category": "bloqueo",
+      "question": "¿Cuántos glaciares hay en Argentina?",
+      "expected": {
+        "blocked": true,
+        "reply_must_contain": ["no puedo responder"],
+        "geojson_required": false
+      },
+      "notes": "Bloqueo por territorio distinto."
+    },
+    {
+      "id": "ext-bloqueo-tema-otro",
+      "level": 3,
+      "category": "bloqueo",
+      "question": "¿Cuánto cuesta un iPhone?",
+      "expected": {
+        "blocked": true,
+        "reply_must_contain": ["no puedo responder"],
+        "geojson_required": false
+      },
+      "notes": "Bloqueo por tema distinto."
+    },
+    {
+      "id": "ext-idioma-ingles",
+      "level": 3,
+      "category": "idioma",
+      "question": "How many glaciers are in Atacama?",
+      "expected": {
+        "tools_any": ["get_layer_stats", "aggregate_layer", "aggregate_by_admin"],
+        "geojson_required": false,
+        "reply_must_contain": ["glaciar"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Pregunta en inglés. El sistema debe responder en español."
+    }
+  ]
+}
