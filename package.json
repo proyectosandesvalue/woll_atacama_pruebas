@@ -5,12 +5,15 @@
   "main": "js/app.js",
   "type": "module",
   "scripts": {
-  "lint": "eslint js/ server/",
-  "test": "bash -c 'shopt -s globstar && node --test server/**/*.test.js'",
-  "audit": "node --env-file=.env.staging scripts/audit-data.mjs",
-  "audit:layer": "node --env-file=.env.staging scripts/audit-data.mjs --layer"
-},
+    "lint": "eslint js/ server/",
+    "test": "bash -c 'shopt -s globstar && node --test server/**/*.test.js'",
+    "audit": "node --env-file=.env.staging scripts/audit-data.mjs",
+    "audit:layer": "node --env-file=.env.staging scripts/audit-data.mjs --layer"
+  },
   "devDependencies": {
     "eslint": "^8.57.0"
+  },
+  "dependencies": {
+    "google-auth-library": "^11.3.0"
   }
 }

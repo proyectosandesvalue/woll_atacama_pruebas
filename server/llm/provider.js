@@ -12,9 +12,11 @@
 
 import { getLLMConfig, getFallbackConfig } from "./config.js";
 import { createProvider as createOpenAICompatible } from "./drivers/openai-compatible.js";
+import { createProvider as createVertexOpenAI } from "./drivers/vertex-openai.js";
 
 const DRIVERS = {
   "openai-compatible": createOpenAICompatible,
+  "vertex-ai": createVertexOpenAI,
 };
 
 let _llm = null;
@@ -33,7 +35,8 @@ function isFallbackable(err) {
     msg.includes("unavailable") ||
     msg.includes("high demand") ||
     msg.includes("timeout") ||
-    msg.includes("overloaded")
+    msg.includes("overloaded") ||
+    msg.includes("alcanzó su límite") 
   );
 }
 
