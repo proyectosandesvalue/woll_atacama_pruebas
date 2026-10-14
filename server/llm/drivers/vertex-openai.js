@@ -62,20 +62,22 @@ let _tokenCache = { token: null, expiresAt: 0 };
 
 async function getAccessToken() {
   const now = Date.now();
-  // Margen de 5 min para evitar expiración en vuelo.
   if (_tokenCache.token && _tokenCache.expiresAt > now + 5 * 60_000) {
     return _tokenCache.token;
   }
 
-  const client = await getAuth().getClient();
-  const res = await client.getAccessToken();
-  const token = res?.token;
+  const auth = await getAuth();
+  const client = await auth.getClient(); // GoogleAuth lo tiene, ExternalAccountClient no.
+  // Si ExternalAccountClient no tiene getClient, usamos el propio auth.
+  const tokenClient = typeof client?.getAccessToken === "function" ? client : auth;
+  const res = await tokenClient.getAccessToken();
+  const token = typeof res === "string" ? res : res?.token;
+  const expiresAt = res?.expiry_date || now + 55 * 60_000;
+
   if (!token) {
     throw new Error("No se pudo obtener access token de Vertex AI");
   }
 
-  // GoogleAuth.getAccessToken() devuelve expiry_date en ms (a veces).
-  const expiresAt = res?.res?.data?.expiry_date || now + 55 * 60_000;
   _tokenCache = { token, expiresAt };
   return token;
 }
