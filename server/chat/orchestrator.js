@@ -340,14 +340,6 @@ function detectStyleHint(userText, ctx) {
   return null;
 }
 
-/**
- * Genera el `notice` determinístico cuando el geojson fue truncado.
- */
-function buildNoticeFromGeojson(geojsonMeta) {
-  if (!geojsonMeta || !geojsonMeta.truncated) return null;
-  return `Mostrando ${geojsonMeta.shown} de ${geojsonMeta.total} resultados en el mapa.`;
-}
-
 // ─────────────────────────────────────────────────────────────────
 // Detección de charts (agnóstica de la tool)
 // ─────────────────────────────────────────────────────────────────
@@ -800,8 +792,27 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       }))
     );
 
-  for (const { tc, out } of toolResults) {
+for (const { tc, out } of toolResults) {
   if (tc.name === "aggregate_by_admin" && out.ok) {
+    const lid = tc.arguments?.layer_id;
+    if (typeof lid === "string" && lid.length > 0) {
+      ctx.lastAggregateLayerId = lid;
+      dbg(`ctx.lastAggregateLayerId = ${lid}`);
+    }
+  }
+  if (tc.name === "aggregate_layer" && out.ok) {
+  const lid = tc.arguments?.layer_id;
+  const gb = tc.arguments?.group_by;
+  if (typeof lid === "string" && lid.length > 0) {
+    ctx.lastAggregateLayerId = lid;
+    dbg(`ctx.lastAggregateLayerId = ${lid}`);
+  }
+  if (typeof gb === "string" && gb.length > 0) {
+    ctx.lastAggregateGroupBy = gb;
+    dbg(`ctx.lastAggregateGroupBy = ${gb}`);
+  }
+}
+  if (tc.name === "aggregate_by_admin_and_column" && out.ok) {  // ← AGREGAR
     const lid = tc.arguments?.layer_id;
     if (typeof lid === "string" && lid.length > 0) {
       ctx.lastAggregateLayerId = lid;
@@ -849,29 +860,34 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
  */
 function shouldFetchFeatures(userText, ctx) {
   if (!userText || typeof userText !== "string") return false;
+  if (ctx && ctx.lastColorBy) return true;
 
-  // Caso A: "por comuna" + elementos.
-  if (detectStyleHint(userText, ctx)) return true;
-
-  // Caso B: "¿cuáles son los X?" / "lista los X" / "muéstrame los X".
   const t = userText.toLowerCase();
-  return /\bcu[aá]les\s+son\b|\blista\s+(los|las)\b|\bmu[eé]strame\s+(los|las)\b|\bqu[eé]\s+(yacimientos|glaciares|humedales|plantas|derechos)\b/.test(t);
+
+  // Verbos explícitos de visualización.
+  if (/\bmu[eé]strame\b|\bd[oó]nde\s+est[aá]n\b|\bubicaci[oó]n\s+de\b|\ben\s+el\s+mapa\b/.test(t)) {
+    return true;
+  }
+
+  // "por <campo>" con campo categórico (no administrativo).
+  // Los campos administrativos (comuna/provincia/región) son para conteo, no para pintar.
+  if (/\bpor\s+(tipo|clasificaci[oó]n|uso|estado|categor[ií]a|naturaleza|fuente)\b/.test(t)) {
+    return true;
+  }
+
+  return false;
 }
 
 async function maybeFetchFeaturesForStyle(ctx, userText) {
-  // 1. ¿Aplica? Solo si la pregunta pide pintar elementos.
   const shouldFetch = shouldFetchFeatures(userText, ctx);
   if (!shouldFetch) return;
 
-  // 2. Recuperar el layer_id del último aggregate_by_admin o query_layer.
   const lastLayerId = ctx.lastAggregateLayerId || ctx.lastQueryLayerId;
   if (!lastLayerId) {
     dbg("maybeFetchFeaturesForStyle: no hay lastLayerId, skip");
     return;
   }
 
-  // 3. ¿Este layer_id ya está en ctx.raw? Si sí, no hacer nada.
-  //    (Evita re-fetchear la misma capa, pero permite agregar capas nuevas.)
   if (ctx.raw && ctx.raw.size > 0) {
     for (const fc of ctx.raw.values()) {
       if (fc._layer_id === lastLayerId) {
@@ -881,13 +897,15 @@ async function maybeFetchFeaturesForStyle(ctx, userText) {
     }
   }
 
-  // 4. Ejecutar get_layer_features.
-  dbg(`maybeFetchFeaturesForStyle: forzando get_layer_features(${lastLayerId})`);
+  const colorBy = ctx.lastColorBy || ctx.lastAggregateGroupBy || null;
+
+  dbg(`maybeFetchFeaturesForStyle: forzando get_layer_features(${lastLayerId}, color_by=${colorBy})`);
 
   try {
-    const out = await runTool("get_layer_features", {
-      layer_id: lastLayerId,
-    });
+    const args = { layer_id: lastLayerId };
+    if (colorBy) args.color_by = colorBy;
+
+    const out = await runTool("get_layer_features", args);
     if (!out.ok) {
       dbg(`maybeFetchFeaturesForStyle: get_layer_features falló: ${out.error}`);
       return;
@@ -900,6 +918,12 @@ async function maybeFetchFeaturesForStyle(ctx, userText) {
         _layer_id: r._layer_id || lastLayerId,
       });
       dbg(`maybeFetchFeaturesForStyle: OK, ${r.features.length} features guardadas`);
+      
+      // ← AGREGAR: setear ctx.lastColorBy para que detectStyleHint lo use.
+      if (colorBy) {
+        ctx.lastColorBy = colorBy;
+        dbg(`maybeFetchFeaturesForStyle: ctx.lastColorBy = ${colorBy}`);
+      }
     }
   } catch (err) {
     dbg(`maybeFetchFeaturesForStyle: excepción: ${err?.message || err}`);
@@ -991,7 +1015,7 @@ function compact(name, out, ctx) {
 // ─────────────────────────────────────────────────────────────────
 
 async function finish(reply, ctx, messages, userText = "") {
-  const geojsonLayers = await buildGeojsonLayersFromCtx(ctx, userText);
+  const { layers: geojsonLayers, truncated } = await buildGeojsonLayersFromCtx(ctx, userText);
   return {
     reply: String(reply || "").trim() || "Sin respuesta.",
     charts: buildChartsFromHistory(messages),
@@ -1008,23 +1032,19 @@ async function finish(reply, ctx, messages, userText = "") {
         }
       : null,
     geojson_layers: geojsonLayers,
-    notice: null,
+    notice: truncated ? `Mostrando ${truncated.shown} de ${truncated.total} resultados en el mapa.` : null,
   };
 }
 
-/**
- * Construye un array de capas separadas desde ctx.raw.
- * Usa el `display_name` del catálogo como `layer_label`.
- */
 async function buildGeojsonLayersFromCtx(ctx, userText) {
-  if (!CHAT_GEOJSON_ENABLED) return [];
-  if (!ctx.raw || ctx.raw.size === 0) return [];
+  if (!CHAT_GEOJSON_ENABLED) return { layers: [], truncated: null };
+  if (!ctx.raw || ctx.raw.size === 0) return { layers: [], truncated: null };
 
   const layers = [];
   const seen = new Set();
   const styleHint = detectStyleHint(userText, ctx);
+  let truncatedInfo = null;
 
-  // Obtener el catálogo para lookup de display_name.
   let catalogMap = new Map();
   try {
     const db = await getDB();
@@ -1044,6 +1064,14 @@ async function buildGeojsonLayersFromCtx(ctx, userText) {
     if (!layerId || seen.has(layerId)) continue;
     seen.add(layerId);
 
+    // ← USAR total_count si está disponible.
+    const totalCount = fc.total_count || fc.features.length;
+    const shown = fc.features.length;
+
+    if (totalCount > shown && !truncatedInfo) {
+      truncatedInfo = { total: totalCount, shown, layerId };
+    }
+
     const features = fc.features.slice(0, MAX_GEOJSON_FEATURES);
     layers.push({
       layer_id: layerId,
@@ -1053,50 +1081,5 @@ async function buildGeojsonLayersFromCtx(ctx, userText) {
     });
   }
 
-  return layers;
-}
-
-// ─────────────────────────────────────────────────────────────────
-// Fusión de geojson desde ctx.raw
-// ─────────────────────────────────────────────────────────────────
-
-/**
- * Fusiona todos los FeatureCollections de ctx.raw, respetando el tope de 500.
- * Devuelve { geojson, total, shown, truncated, layerId, layerIds } o null.
- */
-function buildGeojsonFromCtx(ctx) {
-  if (!CHAT_GEOJSON_ENABLED) return null;
-  if (!ctx.raw || ctx.raw.size === 0) return null;
-
-  const allFeatures = [];
-  const layerIds = new Set();
-  let firstLayerId = null;
-
-  for (const fc of ctx.raw.values()) {
-    if (fc?.type === "FeatureCollection" && Array.isArray(fc.features)) {
-      if (fc._layer_id) {
-        layerIds.add(fc._layer_id);
-        if (!firstLayerId) firstLayerId = fc._layer_id;
-      }
-      for (const f of fc.features) {
-        allFeatures.push(f);
-        if (allFeatures.length >= MAX_GEOJSON_FEATURES * 2) break;
-      }
-    }
-  }
-
-  if (allFeatures.length === 0) return null;
-
-  const total = allFeatures.length;
-  const shown = Math.min(total, MAX_GEOJSON_FEATURES);
-  const features = allFeatures.slice(0, shown);
-
-  return {
-    geojson: { type: "FeatureCollection", features },
-    total,
-    shown,
-    truncated: total > shown,
-    layerId: firstLayerId,
-    layerIds: Array.from(layerIds),
-  };
+  return { layers, truncated: truncatedInfo };
 }

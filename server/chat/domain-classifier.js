@@ -148,23 +148,32 @@ export async function classifyDomain(text, sessionId = null) {
   }
 
   try {
-    const llm = await getLLM();  
+    const llm = await getLLM();
     const response = await llm.chat({
       system: CLASSIFIER_SYSTEM_PROMPT,
       messages: [{ role: "user", content: text }],
-      maxTokens: 64, 
+      maxTokens: 500,        // ← era 64
       temperature: 0,
-      reasoningEffort: "low",
+      // reasoningEffort: "low",  ← quitar
       sessionId,
     });
 
     const raw = (response.content || "").trim().toUpperCase();
-    const result = raw.startsWith("OUT") ? "OUT" : "IN";
-    if (!raw) {
-      log.warn(`Clasificador devolvió vacío. Fail-open → IN.`);
+
+    // Buscar OUT en cualquier parte de la respuesta.
+    // El LLM puede devolver "La respuesta es OUT" o "OUT" o "OUT.".
+    let result;
+    if (/\bOUT\b/.test(raw)) {
+      result = "OUT";
+    } else if (/\bIN\b/.test(raw)) {
+      result = "IN";
+    } else {
+      // No se reconoce ni IN ni OUT → fail-open.
+      log.warn(`Clasificador devolvió "${raw.slice(0, 50)}". Fail-open → IN.`);
+      result = "IN";
     }
 
-    log.debug(`Clasificación: ${raw} → ${result}`);
+    log.debug(`Clasificación: "${raw.slice(0, 50)}" → ${result}`);
     setInCache(key, result);
     return result;
   } catch (err) {
