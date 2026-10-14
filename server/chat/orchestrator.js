@@ -129,18 +129,16 @@ REGLAS (20):
     - Acepta filtros: {"comuna": "Copiapó"}.
     - Máximo 500 features (por defecto).
     - La herramienta devuelve las geometrías; el SISTEMA las pintará
-      automáticamente en el mapa. Tu respuesta NO debe decir "he
-      pintado en el mapa" ni "he cargado en el mapa".
-    - En su lugar, describí cuántos elementos se recuperaron y su
-      extensión geográfica.
-    - ADEMÁS, si la capa tiene más de 3 elementos, llamá TAMBIÉN a
-      aggregate_by_admin con group_by="comuna" para generar una tabla
-      resumen de distribución por comuna. El frontend la mostrará
-      junto al mapa.
+      automáticamente en el mapa.
+    - SÍ debes mencionar que los elementos están disponibles en el mapa,
+      pero SIN decir "he pintado" ni "he cargado" (eso lo hace el sistema).
     - Ejemplo de respuesta:
-      ✅ "Recuperé las 7 plantas desaladoras de la región, ubicadas
-         principalmente en Caldera (4), Copiapó (2) y Chañaral (1)."
+      ✅ "Recuperé las 7 plantas desaladoras de la región. Podés ver
+         su ubicación exacta en el mapa."
+      ✅ "Las 7 plantas están disponibles en el mapa para su
+         visualización."
       ❌ "He cargado las 7 plantas en el mapa."
+      ❌ "He pintado los puntos en el mapa."
 
 14. DIFERENCIA query_layer vs get_layer_features:
     - query_layer: LISTADO para análisis tabular. No pinta mapa.
