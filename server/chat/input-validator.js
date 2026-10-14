@@ -98,14 +98,14 @@ function validateHistory(history) {
       };
     }
 
-    if (content.length > MAX_HISTORY_ITEM_LENGTH) {
-      return {
-        ok: false,
-        error: `El item ${i} de 'history' supera los ${MAX_HISTORY_ITEM_LENGTH} caracteres.`,
-      };
-    }
+    // Truncar defensivamente en lugar de rechazar.
+    // El LLM no necesita el historial completo; los últimos 2000 chars son suficientes.
+    const truncatedContent =
+      content.length > MAX_HISTORY_ITEM_LENGTH
+        ? content.slice(0, MAX_HISTORY_ITEM_LENGTH) + "… [truncado]"
+        : content;
 
-    cleaned.push({ role, content });
+    cleaned.push({ role, content: truncatedContent });
   }
 
   return { ok: true, history: cleaned };

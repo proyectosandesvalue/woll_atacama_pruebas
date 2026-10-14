@@ -509,7 +509,19 @@ async function handleSend() {
   const typing = addTypingIndicator();
 
   try {
-    const payload = await sendMessage(text, messageHistory.slice(0, -1));
+    // Truncar el historial: últimos 6 items, cada uno máx 1800 chars.
+    const truncatedHistory = messageHistory
+      .slice(0, -1)
+      .slice(-6)
+      .map((item) => ({
+        role: item.role,
+        content:
+          typeof item.content === "string" && item.content.length > 1800
+            ? item.content.slice(0, 1800) + "… [truncado]"
+            : item.content,
+      }));
+
+    const payload = await sendMessage(text, truncatedHistory);
     typing.remove();
     addMessage(payload, "assistant");
 
