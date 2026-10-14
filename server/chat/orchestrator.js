@@ -126,6 +126,9 @@ REGLAS (20):
 13. GEOMETRÍAS PARA EL MAPA — get_layer_features:
     - Úsala cuando la pregunta pida VER elementos ubicados:
       "¿dónde están X?", "muéstrame X en el mapa", "ubicación de X".
+    - SIEMPRE que uses get_layer_features, llamá TAMBIÉN a
+      aggregate_by_admin con group_by="comuna" para generar el
+      gráfico de distribución.
     - Acepta filtros: {"comuna": "Copiapó"}.
     - Máximo 500 features (por defecto).
     - La herramienta devuelve las geometrías; el SISTEMA las pintará
