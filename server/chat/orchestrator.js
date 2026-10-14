@@ -133,9 +133,13 @@ REGLAS (20):
       pintado en el mapa" ni "he cargado en el mapa".
     - En su lugar, describí cuántos elementos se recuperaron y su
       extensión geográfica.
+    - ADEMÁS, si la capa tiene más de 3 elementos, llamá TAMBIÉN a
+      aggregate_by_admin con group_by="comuna" para generar una tabla
+      resumen de distribución por comuna. El frontend la mostrará
+      junto al mapa.
     - Ejemplo de respuesta:
       ✅ "Recuperé las 7 plantas desaladoras de la región, ubicadas
-         principalmente en Caldera."
+         principalmente en Caldera (4), Copiapó (2) y Chañaral (1)."
       ❌ "He cargado las 7 plantas en el mapa."
 
 14. DIFERENCIA query_layer vs get_layer_features:
