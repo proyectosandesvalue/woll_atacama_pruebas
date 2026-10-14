@@ -67,9 +67,18 @@ async function getAccessToken() {
   }
 
   const auth = await getAuth();
-  const client = await auth.getClient(); // GoogleAuth lo tiene, ExternalAccountClient no.
-  // Si ExternalAccountClient no tiene getClient, usamos el propio auth.
-  const tokenClient = typeof client?.getAccessToken === "function" ? client : auth;
+
+  // GoogleAuth (ADC local) expone getClient().getAccessToken().
+  // ExternalAccountClient (WIF) expone getAccessToken() directamente.
+  let tokenClient = auth;
+  if (typeof auth.getClient === "function") {
+    try {
+      tokenClient = await auth.getClient();
+    } catch {
+      tokenClient = auth;
+    }
+  }
+
   const res = await tokenClient.getAccessToken();
   const token = typeof res === "string" ? res : res?.token;
   const expiresAt = res?.expiry_date || now + 55 * 60_000;
