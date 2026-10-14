@@ -38,14 +38,14 @@ async function getAuth() {
 
   if (projectNumber && poolId && providerId && saEmail) {
     _auth = ExternalAccountClient.fromJSON({
-      type: "external_account",
-      audience: "https://vercel.com/andes-values-projects",
-      subject_token_type: "urn:ietf:params:oauth:token-type:jwt",
-      token_url: "https://sts.googleapis.com/v1/token",
-      service_account_impersonation_url: `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`,
-      subject_token_supplier: {
+    type: "external_account",
+    audience: `//iam.googleapis.com/projects/${projectNumber}/locations/global/workloadIdentityPools/${poolId}/providers/${providerId}`,
+    subject_token_type: "urn:ietf:params:oauth:token-type:jwt",
+    token_url: "https://sts.googleapis.com/v1/token",
+    service_account_impersonation_url: `https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/${saEmail}:generateAccessToken`,
+    subject_token_supplier: {
         getSubjectToken: async () => await getVercelOidcToken(),
-      },
+    },
     });
     return _auth;
   }
