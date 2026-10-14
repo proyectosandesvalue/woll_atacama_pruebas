@@ -77,7 +77,7 @@ GEOMETRÍAS PARA EL MAPA:
 ESTADÍSTICAS GENERALES DE UNA CAPA:
   → get_layer_stats
 
-REGLAS (20):
+REGLAS (21):
 
 1. ACTÚA DIRECTO. La primera acción SIEMPRE es llamar a la tool
    correcta. NO revises el esquema ni hagas consultas exploratorias
@@ -206,6 +206,19 @@ REGLAS (20):
       "¿Cuáles son los humedales?"           → query_layer + get_layer_features
       "Lista los derechos de agua"            → query_layer + get_layer_features
     El usuario espera VER los elementos en el mapa además de la lista.
+    - Si la pregunta incluye FILTROS explícitos ("solo los consuntivos",
+      "de la cuenca Copiapó", "en la comuna de Caldera"), pasá esos
+      filtros a get_layer_features en el parámetro 'filters'.
+    - Ejemplo: "Dame los derechos de agua de la cuenca Copiapó pero
+      solo los consuntivos" → get_layer_features con
+      filters={"Cuenca": "Copiapó", "Tipo Derecho": "Consuntivo"}.
+
+  21. VOCABULARIO:
+    - Usa "desaladora" (no "desalinizadora") cuando hables de plantas
+      desaladoras.
+    - Usa "derechos de agua" (no "derechos de aprovechamiento" en el
+      cuerpo principal; podés mencionarlo una vez).
+    - Usa "glaciares" (no "cuerpos de hielo").
 
     CATÁLOGO:
 `;
@@ -860,30 +873,72 @@ for (const { tc, out } of toolResults) {
  */
 function shouldFetchFeatures(userText, ctx) {
   if (!userText || typeof userText !== "string") return false;
+
+  // Caso A: color_by explícito en una tool previa.
   if (ctx && ctx.lastColorBy) return true;
 
   const t = userText.toLowerCase();
 
-  // Verbos explícitos de visualización.
+  // Caso B: verbos explícitos de visualización.
   if (/\bmu[eé]strame\b|\bd[oó]nde\s+est[aá]n\b|\bubicaci[oó]n\s+de\b|\ben\s+el\s+mapa\b/.test(t)) {
     return true;
   }
 
-  // "por <campo>" con campo categórico (no administrativo).
-  // Los campos administrativos (comuna/provincia/región) son para conteo, no para pintar.
+  // Caso C: "por <campo>" categórico (tipo, clasificación, uso, estado, etc.).
   if (/\bpor\s+(tipo|clasificaci[oó]n|uso|estado|categor[ií]a|naturaleza|fuente)\b/.test(t)) {
     return true;
   }
 
+  // Caso D: "por comuna/provincia/región" PERO con historial previo
+  // (acumulación de capas, no pregunta aislada).
+  if (/\bpor\s+(comuna|provincia|regi[oó]n)\b/.test(t)) {
+    if (ctx && (ctx.lastAggregateLayerId || ctx.lastQueryLayerId)) {
+      return true;
+    }
+  }
+
   return false;
+}
+
+function inferLayerIdFromText(userText) {
+  if (!userText || typeof userText !== "string") return null;
+  const t = userText.toLowerCase();
+
+  // Mapeo de palabras clave a layer_id.
+  const mappings = [
+    { keywords: ["humedal", "humedales"], layerId: "humedales" },
+    { keywords: ["glaciar", "glaciares"], layerId: "glaciares" },
+    { keywords: ["derecho", "derechos de agua"], layerId: "derechos_agua_2025" },
+    { keywords: ["yacimiento", "yacimientos"], layerId: "yacimientos" },
+    { keywords: ["volcán", "volcanes"], layerId: "volcanes_activos" },
+    { keywords: ["planta desaladora", "plantas desaladoras", "desaladora", "desaladoras"], layerId: "plantas_desaladoras_puntos" },
+    { keywords: ["laguna", "lagunas"], layerId: "lagunas_embalses" },
+    { keywords: ["salar", "salares"], layerId: "salares" },
+    { keywords: ["relave", "relaves"], layerId: "relaves_mineros_sernageomin" },
+  ];
+
+  for (const { keywords, layerId } of mappings) {
+    if (keywords.some((kw) => t.includes(kw))) {
+      return layerId;
+    }
+  }
+  return null;
 }
 
 async function maybeFetchFeaturesForStyle(ctx, userText) {
   const shouldFetch = shouldFetchFeatures(userText, ctx);
   if (!shouldFetch) return;
 
-  const lastLayerId = ctx.lastAggregateLayerId || ctx.lastQueryLayerId;
+  // Fallback: si no hay lastLayerId, inferirlo del texto.
+  let lastLayerId = ctx.lastAggregateLayerId || ctx.lastQueryLayerId;
   if (!lastLayerId) {
+    lastLayerId = inferLayerIdFromText(userText);
+    if (lastLayerId) {
+      dbg(`maybeFetchFeaturesForStyle: lastLayerId inferido del texto = ${lastLayerId}`);
+    }
+  }
+
+    if (!lastLayerId) {
     dbg("maybeFetchFeaturesForStyle: no hay lastLayerId, skip");
     return;
   }
