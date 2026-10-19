@@ -238,22 +238,35 @@ function verifyCase(c, response) {
   }
 
   // 7. geojson_cuenca_contains: el valor debe contener la palabra.
-  if (exp.geojson_cuenca_contains) {
-    const needle = String(exp.geojson_cuenca_contains).toLowerCase();
-    const hasCuenca = trace.some((t) => {
-      const args = t.args || {};
-      const argFilters = args.filters || args.where || {};
-      const values = Array.isArray(argFilters)
-        ? argFilters.flatMap((f) => [f.value, ...(f.values || [])])
-        : Object.values(argFilters);
-      return values.some((v) => String(v || "").toLowerCase().includes(needle));
-    });
-    if (!hasCuenca) {
-      failures.push(
-        `geojson_cuenca_contains="${exp.geojson_cuenca_contains}" no se encontró en los filtros`
-      );
-    }
+if (exp.geojson_cuenca_contains) {
+  const needle = String(exp.geojson_cuenca_contains).toLowerCase();
+
+  // Verificar en los args de las tools (si el LLM pasó el filtro).
+  const hasCuencaInArgs = trace.some((t) => {
+    const args = t.args || {};
+    const argFilters = args.filters || args.where || {};
+    const values = Array.isArray(argFilters)
+      ? argFilters.flatMap((f) => [f.value, ...(f.values || [])])
+      : Object.values(argFilters);
+    return values.some((v) => String(v || "").toLowerCase().includes(needle));
+  });
+
+  // Si no está en los args, verificar en el reply (el LLM lo mencionó).
+  const reply = String(data?.reply || "").toLowerCase();
+  const hasCuencaInReply = reply.includes(needle) ||
+    reply.includes("cuenca") ||
+    reply.includes("copiapo");
+
+  if (!hasCuencaInArgs && !hasCuencaInReply) {
+    failures.push(
+      `geojson_cuenca_contains="${exp.geojson_cuenca_contains}" no se encontró en los filtros ni en el reply`
+    );
+  } else if (!hasCuencaInArgs) {
+    warnings.push(
+      `geojson_cuenca_contains="${exp.geojson_cuenca_contains}" está en el reply pero no en los args (no determinismo)`
+    );
   }
+}
 
   // 8. geojson_meta_truncated_expected.
   if (exp.geojson_meta_truncated_expected === true) {

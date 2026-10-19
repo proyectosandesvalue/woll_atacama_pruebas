@@ -269,11 +269,9 @@ let _cachedSystem = null;
 let _cachedAt = 0;
 const SYSTEM_TTL_MS = 5 * 60 * 1000;
 
-async function buildSystemPrompt() {
-  if (_cachedSystem && Date.now() - _cachedAt < SYSTEM_TTL_MS) {
-    dbg("system prompt servido desde caché");
-    return _cachedSystem;
-  }
+import { retrieveLayers, splitCatalog } from "./layer-retrieval.js";
+
+async function buildSystemPrompt(userText = "") {
   const db = await getDB();
   let catalog = [];
   try {
@@ -282,22 +280,52 @@ async function buildSystemPrompt() {
     catalog = [];
   }
 
-  const lines = catalog.slice(0, 80).map((c) => {
-    const attrs = Array.isArray(c.attributes)
-      ? c.attributes
-          .map((a) => (typeof a === "string" ? a : a?.name))
-          .filter(Boolean)
-          .slice(0, 15)
-      : [];
-    const attrStr = attrs.length ? ` {${attrs.join(", ")}}` : "";
-    return `- ${c.layer_id} — ${c.display_name} [${c.dimension}]${attrStr}`;
-  });
+  // Retrieval: elegir las capas relevantes.
+  const { layers: retrieved, confident } = retrieveLayers(userText, catalog, 6);
 
-  const catalogBlock = lines.join("\n")
+  let catalogBlock;
+  if (confident && retrieved.length > 0) {
+    const { retrieved: relevant, others } = splitCatalog(
+      catalog,
+      retrieved.map((r) => r.layer_id)
+    );
+
+    const relevantLines = relevant.map((c) => {
+      const attrs = Array.isArray(c.attributes)
+        ? c.attributes
+            .map((a) => (typeof a === "string" ? a : a?.name))
+            .filter(Boolean)
+            .slice(0, 15)
+        : [];
+      const attrStr = attrs.length ? ` {${attrs.join(", ")}}` : "";
+      return `- ${c.layer_id} — ${c.display_name} [${c.dimension}]${attrStr}`;
+    });
+
+    const otherNames = others
+      .map((c) => c.layer_id)
+      .join(", ");
+
+    catalogBlock =
+      "CAPAS RELEVANTES:\n" +
+      relevantLines.join("\n") +
+      "\n\nOTRAS CAPAS DISPONIBLES (solo nombres):\n" +
+      otherNames;
+  } else {
+    // Fallback: catálogo completo (comportamiento actual).
+    const lines = catalog.slice(0, 80).map((c) => {
+      const attrs = Array.isArray(c.attributes)
+        ? c.attributes
+            .map((a) => (typeof a === "string" ? a : a?.name))
+            .filter(Boolean)
+            .slice(0, 15)
+        : [];
+      const attrStr = attrs.length ? ` {${attrs.join(", ")}}` : "";
+      return `- ${c.layer_id} — ${c.display_name} [${c.dimension}]${attrStr}`;
+    });
+    catalogBlock = lines.join("\n");
+  }
+
   const full = SYSTEM_PROMPT + "\nCATÁLOGO DE CAPAS:\n" + catalogBlock;
-  _cachedSystem = full;
-  _cachedAt = Date.now();
-
 
   const baseChars = SYSTEM_PROMPT.length;
   const catalogChars = catalogBlock.length;
@@ -307,11 +335,9 @@ async function buildSystemPrompt() {
     `base=${baseChars} chars (~${Math.round(baseChars / 4)} tokens) | ` +
     `catalogo=${catalogChars} chars (~${Math.round(catalogChars / 4)} tokens) | ` +
     `total=${totalChars} chars (~${Math.round(totalChars / 4)} tokens) | ` +
-    `capas=${catalog.length}`
+    `capas=${catalog.length} | relevantes=${retrieved.length} | confident=${confident}`
   );
-  
 
-  dbg(`system prompt regenerado (${catalog.length} capas)`);
   return full;
 }
 
@@ -714,7 +740,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   const deadline = Date.now() + budgetMs;
 
   const llm = await getLLM();
-  const system = await buildSystemPrompt();
+  const system = await buildSystemPrompt(text);
 
   dbg(
     `budget=${budgetMs}ms maxSteps=${maxSteps} model=${process.env.LLM_MODEL}`
@@ -923,45 +949,29 @@ function shouldFetchFeatures(userText, ctx) {
   return false;
 }
 
-function inferLayerIdFromText(userText) {
-  if (!userText || typeof userText !== "string") return null;
-  const t = userText.toLowerCase();
-
-  // Mapeo de palabras clave a layer_id.
-  const mappings = [
-    { keywords: ["humedal", "humedales"], layerId: "humedales" },
-    { keywords: ["glaciar", "glaciares"], layerId: "glaciares" },
-    { keywords: ["derecho", "derechos de agua"], layerId: "derechos_agua_2025" },
-    { keywords: ["yacimiento", "yacimientos"], layerId: "yacimientos" },
-    { keywords: ["volcán", "volcanes"], layerId: "volcanes_activos" },
-    { keywords: ["planta desaladora", "plantas desaladoras", "desaladora", "desaladoras"], layerId: "plantas_desaladoras_puntos" },
-    { keywords: ["laguna", "lagunas"], layerId: "lagunas_embalses" },
-    { keywords: ["salar", "salares"], layerId: "salares" },
-    { keywords: ["relave", "relaves"], layerId: "relaves_mineros_sernageomin" },
-  ];
-
-  for (const { keywords, layerId } of mappings) {
-    if (keywords.some((kw) => t.includes(kw))) {
-      return layerId;
-    }
-  }
-  return null;
-}
-
 async function maybeFetchFeaturesForStyle(ctx, userText) {
   const shouldFetch = shouldFetchFeatures(userText, ctx);
   if (!shouldFetch) return;
 
-  // Fallback: si no hay lastLayerId, inferirlo del texto.
+  // Fallback: si no hay lastLayerId, inferirlo con el retrieval.
   let lastLayerId = ctx.lastAggregateLayerId || ctx.lastQueryLayerId;
   if (!lastLayerId) {
-    lastLayerId = inferLayerIdFromText(userText);
-    if (lastLayerId) {
-      dbg(`maybeFetchFeaturesForStyle: lastLayerId inferido del texto = ${lastLayerId}`);
+    try {
+      const db = await getDB();
+      const catalog = (await db.rpc("chat_catalog")) ?? [];
+      const { layers: retrieved } = retrieveLayers(userText, catalog, 1);
+      if (retrieved.length > 0) {
+        lastLayerId = retrieved[0].layer_id;
+        dbg(
+          `maybeFetchFeaturesForStyle: lastLayerId inferido por retrieval = ${lastLayerId}`
+        );
+      }
+    } catch (err) {
+      dbg(`maybeFetchFeaturesForStyle: retrieval falló: ${err?.message}`);
     }
   }
 
-    if (!lastLayerId) {
+  if (!lastLayerId) {
     dbg("maybeFetchFeaturesForStyle: no hay lastLayerId, skip");
     return;
   }
@@ -977,7 +987,9 @@ async function maybeFetchFeaturesForStyle(ctx, userText) {
 
   const colorBy = ctx.lastColorBy || ctx.lastAggregateGroupBy || null;
 
-  dbg(`maybeFetchFeaturesForStyle: forzando get_layer_features(${lastLayerId}, color_by=${colorBy})`);
+  dbg(
+    `maybeFetchFeaturesForStyle: forzando get_layer_features(${lastLayerId}, color_by=${colorBy})`
+  );
 
   try {
     const args = { layer_id: lastLayerId };
@@ -995,9 +1007,11 @@ async function maybeFetchFeaturesForStyle(ctx, userText) {
         ...r,
         _layer_id: r._layer_id || lastLayerId,
       });
-      dbg(`maybeFetchFeaturesForStyle: OK, ${r.features.length} features guardadas`);
-      
-      // ← AGREGAR: setear ctx.lastColorBy para que detectStyleHint lo use.
+      dbg(
+        `maybeFetchFeaturesForStyle: OK, ${r.features.length} features guardadas`
+      );
+
+      // Setear ctx.lastColorBy para que detectStyleHint lo use.
       if (colorBy) {
         ctx.lastColorBy = colorBy;
         dbg(`maybeFetchFeaturesForStyle: ctx.lastColorBy = ${colorBy}`);
@@ -1007,6 +1021,7 @@ async function maybeFetchFeaturesForStyle(ctx, userText) {
     dbg(`maybeFetchFeaturesForStyle: excepción: ${err?.message || err}`);
   }
 }
+
 
 // ─────────────────────────────────────────────────────────────────
 // Compactador: prepara el resultado de una tool para el LLM
