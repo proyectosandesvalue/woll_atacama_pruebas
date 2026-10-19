@@ -1103,6 +1103,9 @@ async function finish(reply, ctx, messages, userText = "") {
             0
           ),
           style_hint: geojsonLayers[0].style_hint || null,
+          truncated: truncated ? true : false,          
+          total: truncated ? truncated.total : null,    
+          shown: truncated ? truncated.shown : null,
         }
       : null,
     geojson_layers: geojsonLayers,
