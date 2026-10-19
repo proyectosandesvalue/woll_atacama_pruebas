@@ -13,6 +13,7 @@ import { getLLM } from "../llm/provider.js";
 import { getDB } from "../db/pool.js";
 import { TOOL_DEFINITIONS } from "./tools.js";
 import { runTool } from "./runners.js";
+import { retrieveLayers, splitCatalog } from "./layer-retrieval.js";
 
 const DEFAULT_BUDGET_MS = 8000;
 const DEFAULT_MAX_ITERATIONS = 3;
@@ -250,7 +251,6 @@ let _cachedSystem = null;
 let _cachedAt = 0;
 const SYSTEM_TTL_MS = 5 * 60 * 1000;
 
-import { retrieveLayers, splitCatalog } from "./layer-retrieval.js";
 
 async function buildSystemPrompt(userText = "") {
   const db = await getDB();
@@ -261,7 +261,6 @@ async function buildSystemPrompt(userText = "") {
     catalog = [];
   }
 
-  // Retrieval: elegir las capas relevantes.
   const { layers: retrieved, confident } = retrieveLayers(userText, catalog, 6);
 
   let catalogBlock;
@@ -282,9 +281,7 @@ async function buildSystemPrompt(userText = "") {
       return `- ${c.layer_id} — ${c.display_name} [${c.dimension}]${attrStr}`;
     });
 
-    const otherNames = others
-      .map((c) => c.layer_id)
-      .join(", ");
+    const otherNames = others.map((c) => c.layer_id).join(", ");
 
     catalogBlock =
       "CAPAS RELEVANTES:\n" +
@@ -292,7 +289,7 @@ async function buildSystemPrompt(userText = "") {
       "\n\nOTRAS CAPAS DISPONIBLES (solo nombres):\n" +
       otherNames;
   } else {
-    // Fallback: catálogo completo (comportamiento actual).
+    // Fallback: catálogo completo.
     const lines = catalog.slice(0, 80).map((c) => {
       const attrs = Array.isArray(c.attributes)
         ? c.attributes
