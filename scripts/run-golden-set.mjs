@@ -92,6 +92,23 @@ log("");
 async function callChat(question, history = []) {
   const sessionId = `golden-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+  // Resetear caché del clasificador, del LLM y del system prompt
+  // para evitar contaminación entre tests.
+  try {
+    const { _resetDomainClassifier } = await import("../server/chat/domain-classifier.js");
+    _resetDomainClassifier();
+  } catch {}
+
+  try {
+    const { _resetLLM } = await import("../server/llm/provider.js");
+    _resetLLM();
+  } catch {}
+
+  try {
+    const { _resetSystemPrompt } = await import("../server/chat/orchestrator.js");
+    _resetSystemPrompt();
+  } catch {}
+
   if (opts.remote) {
     const res = await fetch(opts.url, {
       method: "POST",
@@ -140,6 +157,7 @@ function verifyCase(c, response) {
 
   const { status, data } = response;
   const exp = c.expected || {};
+  const trace = Array.isArray(data?.trace) ? data.trace : [];
 
   // 1. Bloqueo esperado.
   if (exp.blocked === true) {
@@ -163,7 +181,25 @@ function verifyCase(c, response) {
     return { ok: false, failures, warnings };
   }
 
-  // 3. geojson required.
+  // 3. tools_any: al menos una de las tools esperadas debe haberse llamado.
+  if (exp.tools_any) {
+    const called = new Set(trace.map((t) => t.tool));
+    const anyMatch = exp.tools_any.some((t) => called.has(t));
+    if (!anyMatch) {
+      failures.push(
+        `tools_any esperaba alguna de [${exp.tools_any.join(", ")}], se llamó [${Array.from(called).join(", ")}]`
+      );
+    }
+  }
+
+  // 4. tools_count_min: mínimo de tools llamadas.
+  if (exp.tools_count_min != null && trace.length < exp.tools_count_min) {
+    failures.push(
+      `tools_count_min=${exp.tools_count_min}, se llamó ${trace.length} tool(s)`
+    );
+  }
+
+  // 5. geojson required.
   const hasGeojson = Boolean(data?.geojson) || Boolean(data?.geojson_layers?.length);
   if (exp.geojson_required === true && !hasGeojson) {
     failures.push(`geojson_required=true pero no hay geojson`);
@@ -172,7 +208,76 @@ function verifyCase(c, response) {
     warnings.push(`geojson presente pero expected=false (no crítico)`);
   }
 
-  // 4. charts_count.
+  // 6. geojson_filter_required: los filtros deben estar en los args de alguna tool.
+  if (exp.geojson_filter_required) {
+    const filters = exp.geojson_filter_required;
+    const hasFilter = trace.some((t) => {
+      if (!t.ok) return false;
+      const args = t.args || {};
+      const argFilters = args.filters || args.where || {};
+      if (Array.isArray(argFilters)) {
+        return Object.entries(filters).every(([k, v]) =>
+          argFilters.some(
+            (f) =>
+              String(f.field || "").toLowerCase() === k.toLowerCase() &&
+              String(f.value || f.values?.[0] || "").toLowerCase() ===
+                String(v).toLowerCase()
+          )
+        );
+      }
+      return Object.entries(filters).every(
+        ([k, v]) =>
+          String(argFilters[k] || "").toLowerCase() === String(v).toLowerCase()
+      );
+    });
+    if (!hasFilter) {
+      failures.push(
+        `geojson_filter_required=${JSON.stringify(filters)} no se encontró en los args de las tools`
+      );
+    }
+  }
+
+  // 7. geojson_cuenca_contains: el valor debe contener la palabra.
+  if (exp.geojson_cuenca_contains) {
+    const needle = String(exp.geojson_cuenca_contains).toLowerCase();
+    const hasCuenca = trace.some((t) => {
+      const args = t.args || {};
+      const argFilters = args.filters || args.where || {};
+      const values = Array.isArray(argFilters)
+        ? argFilters.flatMap((f) => [f.value, ...(f.values || [])])
+        : Object.values(argFilters);
+      return values.some((v) => String(v || "").toLowerCase().includes(needle));
+    });
+    if (!hasCuenca) {
+      failures.push(
+        `geojson_cuenca_contains="${exp.geojson_cuenca_contains}" no se encontró en los filtros`
+      );
+    }
+  }
+
+  // 8. geojson_meta_truncated_expected.
+  if (exp.geojson_meta_truncated_expected === true) {
+    const truncated = data?.geojson_meta?.truncated === true;
+    if (!truncated) {
+      failures.push(`geojson_meta_truncated_expected=true pero truncated no es true`);
+    }
+  }
+
+  // 9. graceful_error: la respuesta no debe bloquear pero debe mencionar el error.
+  if (exp.graceful_error === true) {
+    const reply = String(data?.reply || "").toLowerCase();
+    const mentionsError =
+      reply.includes("no existe") ||
+      reply.includes("no encontrada") ||
+      reply.includes("no disponible") ||
+      reply.includes("no pude") ||
+      reply.includes("columna");
+    if (!mentionsError) {
+      failures.push(`graceful_error=true pero el reply no menciona el error`);
+    }
+  }
+
+  // 10. charts_count.
   const chartsCount = Array.isArray(data?.charts)
     ? data.charts.length
     : data?.chart
@@ -185,7 +290,7 @@ function verifyCase(c, response) {
     failures.push(`charts_count=${chartsCount} > max=${exp.charts_count_max}`);
   }
 
-  // 5. reply_must_contain.
+  // 11. reply_must_contain.
   if (exp.reply_must_contain) {
     const text = String(data?.reply || "").toLowerCase();
     for (const t of exp.reply_must_contain) {
@@ -195,7 +300,7 @@ function verifyCase(c, response) {
     }
   }
 
-  // 6. reply_must_not_contain.
+  // 12. reply_must_not_contain.
   if (exp.reply_must_not_contain) {
     const text = String(data?.reply || "").toLowerCase();
     for (const t of exp.reply_must_not_contain) {
@@ -205,7 +310,22 @@ function verifyCase(c, response) {
     }
   }
 
-  // 7. geojson_meta_style_hint_required.
+  // 13. reply_must_not_match (regex).
+  if (exp.reply_must_not_match) {
+    const text = String(data?.reply || "");
+    for (const pattern of exp.reply_must_not_match) {
+      try {
+        const regex = new RegExp(pattern, "i");
+        if (regex.test(text)) {
+          failures.push(`reply NO debe matchear /${pattern}/`);
+        }
+      } catch (err) {
+        warnings.push(`regex inválido: ${pattern}`);
+      }
+    }
+  }
+
+  // 14. geojson_meta_style_hint_required.
   if (exp.geojson_meta_style_hint_required === true) {
     const hint = data?.geojson_meta?.style_hint;
     const layersWithHint = (data?.geojson_layers || []).some(
@@ -216,7 +336,7 @@ function verifyCase(c, response) {
     }
   }
 
-  // 8. style_hint_attribute_any.
+  // 15. style_hint_attribute_any.
   if (exp.style_hint_attribute_any) {
     const hints = [];
     if (data?.geojson_meta?.style_hint) hints.push(data.geojson_meta.style_hint);
@@ -234,13 +354,10 @@ function verifyCase(c, response) {
     }
   }
 
-  // 9. notice_required.
+  // 16. notice_required.
   if (exp.notice_required === true && !data?.notice) {
     failures.push(`notice requerido pero ausente`);
   }
-
-  // 10. tools_count_min (no podemos ver tools desde el payload, pero podemos contar tool calls via debug).
-  // Skipped por ahora.
 
   return { ok: failures.length === 0, failures, warnings };
 }
@@ -291,6 +408,30 @@ if (failed > 0) {
   log(`${C.red}✗ ${failed} fallaron${C.reset}`);
 }
 log("");
+
+// Reporte por categoría
+const byCategory = {};
+for (const c of cases) {
+  byCategory[c.category] = (byCategory[c.category] || 0) + 1;
+}
+log(`${C.bold}Por categoría:${C.reset}`);
+for (const [cat, count] of Object.entries(byCategory).sort()) {
+  log(`  ${cat}: ${count}`);
+}
+log("");
+
+// Reporte por tier (si existe)
+const byTier = {};
+for (const c of cases) {
+  if (c.tier) byTier[c.tier] = (byTier[c.tier] || 0) + 1;
+}
+if (Object.keys(byTier).length > 0) {
+  log(`${C.bold}Por tier:${C.reset}`);
+  for (const [tier, count] of Object.entries(byTier).sort()) {
+    log(`  Tier ${tier}: ${count}`);
+  }
+  log("");
+}
 
 if (failed > 0) {
   log(`${C.bold}Fallos:${C.reset}`);

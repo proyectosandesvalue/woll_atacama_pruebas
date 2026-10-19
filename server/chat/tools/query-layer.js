@@ -37,11 +37,34 @@ export default {
   },
 
   run: async ({ layer_id, filters, limit }) => {
-    const db = await getDB();
-    return db.rpc("chat_query", {
-      p_layer: layer_id,
-      p_filters: filters ?? {},
-      p_limit: limit ?? 20,
-    });
-  },
+  const db = await getDB();
+  return db.rpc("chat_query", {
+    p_layer: layer_id,
+    p_filters: normalizeFilters(filters),
+    p_limit: limit ?? 20,
+  });
+},
 };
+
+/**
+ * Normaliza un valor de filtro: quita tildes y espacios extra.
+ * El ILIKE de la RPC hará el match case-insensitive.
+ */
+function normalizeFilterValue(value) {
+  if (value === null || value === undefined) return value;
+  if (typeof value !== "string") return value;
+  return value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");  // quitar tildes
+}
+
+function normalizeFilters(filters) {
+  if (!filters || typeof filters !== "object") return {};
+  const out = {};
+  for (const [key, value] of Object.entries(filters)) {
+    if (value === null || value === undefined) continue;
+    out[key] = normalizeFilterValue(value);
+  }
+  return out;
+}

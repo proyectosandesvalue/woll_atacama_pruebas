@@ -77,7 +77,7 @@ GEOMETRÍAS PARA EL MAPA:
 ESTADÍSTICAS GENERALES DE UNA CAPA:
   → get_layer_stats
 
-REGLAS (21):
+REGLAS (22):
 
 1. ACTÚA DIRECTO. La primera acción SIEMPRE es llamar a la tool
    correcta. NO revises el esquema ni hagas consultas exploratorias
@@ -219,6 +219,23 @@ REGLAS (21):
     - Usa "derechos de agua" (no "derechos de aprovechamiento" en el
       cuerpo principal; podés mencionarlo una vez).
     - Usa "glaciares" (no "cuerpos de hielo").
+  
+  22. FILTROS FLEXIBLES Y VALORES REALES:
+    Los valores en la base de datos NO están normalizados. Pueden tener:
+    - Mayúsculas: "GLACIAR ROCOSO" (no "glaciar rocoso")
+    - Espacios extra: "Consuntivo          " (con espacios al final)
+    - Abreviaturas: "R. Copiapo" (no "Río Copiapó")
+    - Sin tildes: "Copiapo" (no "Copiapó")
+
+    REGLAS:
+    (a) NO uses tildes en los filtros. Usa "Copiapo" no "Copiapó".
+    (b) Usa SOLO la primera palabra clave: "Rocoso" no "glaciar rocoso".
+    (c) Si el filtro exacto no devuelve resultados, intentá con:
+        - La palabra en MAYÚSCULAS: "CONSUNTIVO"
+        - La palabra sin espacios: "Consuntivo"
+        - La palabra con el prefijo mínimo: "R. Copiapo"
+    (d) Si después de 2 intentos no hay resultados, dilo explícitamente
+        y sugiere al usuario que reformule la pregunta.
 
     CATÁLOGO:
 `;
@@ -701,7 +718,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
 
   // ── Almacén por invocación (geojson, filas completas) ──────
   // El LLM NUNCA ve esto. Va directo al frontend en `finish`.
-  const ctx = { raw: new Map() };
+  const ctx = { raw: new Map(), trace: [] };
 
   // ── Mensajes iniciales ─────────────────────────────────────
   const messages = [];
@@ -806,6 +823,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
     );
 
 for (const { tc, out } of toolResults) {
+  ctx.trace.push({ tool: tc.name, args: tc.arguments, ok: out.ok });
   if (tc.name === "aggregate_by_admin" && out.ok) {
     const lid = tc.arguments?.layer_id;
     if (typeof lid === "string" && lid.length > 0) {
@@ -850,6 +868,7 @@ for (const { tc, out } of toolResults) {
 
     // ── Compactar cada resultado y agregarlo al historial ─────
     for (const { tc, out } of toolResults) {
+      ctx.trace.push({ tool: tc.name, args: tc.arguments, ok: out.ok });
       const compacted = compact(tc.name, out, ctx);
       dbg(
         `tool ${tc.name} → ${out.ok ? "ok" : "ERROR: " + out.error} | ` +
@@ -1088,6 +1107,7 @@ async function finish(reply, ctx, messages, userText = "") {
       : null,
     geojson_layers: geojsonLayers,
     notice: truncated ? `Mostrando ${truncated.shown} de ${truncated.total} resultados en el mapa.` : null,
+    trace: ctx.trace || [],
   };
 }
 
@@ -1137,4 +1157,12 @@ async function buildGeojsonLayersFromCtx(ctx, userText) {
   }
 
   return { layers, truncated: truncatedInfo };
+}
+
+/**
+ * Reset del caché del system prompt. Solo para tests.
+ */
+export function _resetSystemPrompt() {
+  _cachedSystem = null;
+  _cachedAt = 0;
 }
