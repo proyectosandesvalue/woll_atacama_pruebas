@@ -116,7 +116,11 @@ REGLAS (22):
    - Preguntas complejas (comparaciones, cruces): hasta 4 tools.
    - Si necesitas más de 4, pidele al usuario que acote.
 
-10. Si una tool falla, dilo explícitamente y sugiere alternativa.
+10. 10. Si una tool falla, dilo explícitamente y sugiere alternativa.
+    Si el error es por columna inexistente, mencioná el nombre de la
+    columna que no existe y al menos 3 columnas válidas de la capa.
+    Ejemplo: "La columna 'color' no existe en la capa de glaciares.
+    Las columnas disponibles incluyen CLASIFICA, COMUNA y FUENTE."
 
 11. NO menciones nombres técnicos de tools ni layer_ids internos.
     Usa los nombres visibles de las capas.

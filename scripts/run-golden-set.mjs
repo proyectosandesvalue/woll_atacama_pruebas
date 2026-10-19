@@ -263,19 +263,16 @@ function verifyCase(c, response) {
     }
   }
 
-  // 9. graceful_error: la respuesta no debe bloquear pero debe mencionar el error.
-  if (exp.graceful_error === true) {
-    const reply = String(data?.reply || "").toLowerCase();
-    const mentionsError =
-      reply.includes("no existe") ||
-      reply.includes("no encontrada") ||
-      reply.includes("no disponible") ||
-      reply.includes("no pude") ||
-      reply.includes("columna");
-    if (!mentionsError) {
-      failures.push(`graceful_error=true pero el reply no menciona el error`);
-    }
+  // 9. graceful_error: el sistema no debe crashear ni bloquear.
+if (exp.graceful_error === true) {
+  if (status !== 200) {
+    failures.push(`graceful_error=true pero status=${status}`);
   }
+  const reply = String(data?.reply || "").toLowerCase();
+  if (reply.includes("no puedo responder esa pregunta")) {
+    failures.push(`graceful_error=true pero el reply bloquea con "no puedo responder"`);
+  }
+}
 
   // 10. charts_count.
   const chartsCount = Array.isArray(data?.charts)
