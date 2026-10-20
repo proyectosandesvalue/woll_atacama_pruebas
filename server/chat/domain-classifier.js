@@ -1,20 +1,17 @@
 /**
- * Clasificador de dominio basado en LLM.
+ * Clasificador de dominio y extracción de intent/slots.
  *
- * Es la CAPA 2 del sistema de bloqueo de consultas fuera de dominio.
- * Recibe una pregunta y devuelve:
- *   - "IN"  → la pregunta es sobre el Visor Territorial de Atacama.
- *   - "OUT" → la pregunta está fuera del dominio.
+ * Es la CAPA 2 del sistema de bloqueo. Recibe una pregunta y devuelve:
+ *   - domain: "IN" | "OUT"
+ *   - intent: "dato_simple" | "analisis_receta" | "contexto_documental" | "fuera_de_alcance"
+ *   - slots: { layer_id?, filters?, group_by?, color_by?, ... }
+ *   - confidence: número entre 0 y 1
  *
- * Diseño:
- *   - Usa el mismo proveedor LLM configurado (Groq).
- *   - maxTokens muy bajo (5) → la respuesta es solo "IN" o "OUT".
- *   - Cache en memoria por hash del texto (5 min) para evitar clasificar
- *     el mismo texto dos veces seguidas (defensa anti-spam).
- *   - Fail-open: si el clasificador falla o da una respuesta inesperada,
- *     se deja pasar la consulta al orquestador.
+ * Si el LLM devuelve algo inválido o no se puede parsear, devuelve
+ * confidence: 0 y domain: "IN" (fail-open). El router degrada al ciclo
+ * actual de tools.
  *
- * Costo estimado: ~50 tokens y ~100ms por request.
+ * Cache en memoria por texto (5 min) para evitar clasificar dos veces.
  */
 
 import { getLLM } from "../llm/provider.js";
@@ -25,86 +22,65 @@ const log = createContextLogger("DomainClassifier");
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const CACHE_MAX_SIZE = 200;
 
-/** @type {Map<string, {result: "IN"|"OUT", expires: number}>} */
+/** @type {Map<string, {result: object, expires: number}>} */
 const cache = new Map();
 
+const CLASSIFIER_SYSTEM_PROMPT = `Eres un clasificador de consultas del Visor Territorial de Atacama.
+Devuelve SIEMPRE un JSON con esta forma:
+{
+  "domain": "IN" | "OUT",
+  "intent": "dato_simple" | "analisis_receta" | "contexto_documental" | "fuera_de_alcance",
+  "slots": { "layer_id": string|null, "filters": object|null, "group_by": string|null, "color_by": string|null },
+  "confidence": número entre 0 y 1
+}
 
-const CLASSIFIER_SYSTEM_PROMPT = `Eres un clasificador binario. Tu ÚNICA tarea es decidir si la consulta del usuario es sobre el Visor Territorial de Atacama (Región de Atacama, Chile) o sobre sus datos geoespaciales.
+REGLAS:
+1. domain = "IN" si la pregunta es sobre el visor de Atacama (agua,
+   minería, glaciares, humedales, derechos de agua, plantas desaladoras,
+   volcanes, yacimientos, comunas de Atacama, etc.).
+   domain = "OUT" si es de otra región, programación, precios, chistes,
+   hora/fecha, etc.
+2. intent = "dato_simple" si es una pregunta que se responde con una
+   tool atómica (conteo, listado, ubicación, coloreo, proximidad).
+   intent = "fuera_de_alcance" si el dato no existe en el visor.
+   Los otros intents (analisis_receta, contexto_documental) los usarán
+   los Sprints 41 y 43.
+3. slots = datos concretos que podés extraer de la pregunta:
+   - layer_id: el id de la capa (ej: "derechos_agua_2025"). Si no
+     estás seguro, null.
+   - filters: filtros como {"Cuenca": "Copiapó"}. Si no hay, null.
+   - group_by: campo para agrupar (ej: "COMUNA", "TIPO"). Si no hay, null.
+   - color_by: campo para colorear (ej: "COMUNA", "CLASIFICA"). Si no hay, null.
+4. confidence: 0.0 a 1.0. Alta (0.8+) si estás seguro de la
+   clasificación y los slots. Baja (<0.5) si hay ambigüedad.
+5. Si no podés llenar un slot con seguridad, poné null y bajá
+   confidence. NO inventes valores.
 
-CRITERIO DE DOMINIO:
-  El asistente SOLO responde sobre los datos del Visor Territorial de
-  Atacama. Es un asistente ESPECIALIZADO.
-  
-  Si la pregunta menciona un tema del visor (agua, clima, energía,
-  minería, agricultura, riesgos, suelo, planificación, geografía
-  regional) SIN especificar otra región del mundo, se asume que es
-  sobre Atacama y es "IN".
-  
-  Si la pregunta menciona EXPLÍCITAMENTE otra región (Santiago,
-  Valdivia, Argentina, Italia, China, París, etc.), es "OUT".
+EJEMPLOS:
 
-DOMINIO — responde "IN":
-- Capas y datos del visor: agua, energía, minería, agricultura, clima, riesgos, suelo, planificación territorial, áreas protegidas, hidrografía.
-- Comunas de Atacama: Copiapó, Vallenar, Diego de Almagro, Tierra Amarilla, Alto del Carmen, Huasco, Freirina, Chañaral, Caldera.
-- Elementos territoriales: plantas desaladoras, derechos de agua, yacimientos, glaciares, humedales, salares, cuencas, embalses, plantas solares, líneas de transmisión, relaves, volcanes, terremotos, incendios.
-- Estadísticas y análisis de esas capas.
-- Preguntas de listado sobre estos temas: "¿cuáles son los glaciares?", "¿cuáles son las plantas desaladoras?", "lista los humedales", "muéstrame los yacimientos".
-- Preguntas de conteo/agregación sobre estos temas.
-- Comparaciones entre capas del visor.
-- Preguntas sobre el propio asistente: "qué puedes hacer", "para qué sirves".
+Pregunta: "¿Cuáles son los glaciares?"
+{"domain":"IN","intent":"dato_simple","slots":{"layer_id":"glaciares","filters":null,"group_by":null,"color_by":null},"confidence":0.95}
 
-FUERA DE DOMINIO — responde "OUT":
-- Tema del visor pero territorio EXPLÍCITAMENTE NO Atacama (ej: "clima en Valdivia", "población de Santiago", "glaciares de Argentina", "yacimientos en Perú").
-- Hora, fecha, día actual ("qué día es hoy", "qué hora es").
-- Geografía general del mundo que NO sea Atacama.
-- Programación, código, scripts, funciones.
-- Precios de productos.
-- Chistes, entretenimiento, consejos personales.
-- Noticias, política, deportes, matemáticas generales.
-- Conversación casual fuera del visor ("cómo estás", "quién eres", "cuéntame un chiste").
+Pregunta: "¿Dónde están las plantas desaladoras?"
+{"domain":"IN","intent":"dato_simple","slots":{"layer_id":"plantas_desaladoras_puntos","filters":null,"group_by":null,"color_by":null},"confidence":0.92}
 
-REGLA CRÍTICA: si la pregunta menciona elementos del visor (glaciares, humedales, plantas desaladoras, derechos de agua, yacimientos, etc.) Y NO menciona otra región, responde "IN". Solo bloquea si hay territorio explícitamente distinto.
+Pregunta: "¿Cuántos glaciares por tipo?"
+{"domain":"IN","intent":"dato_simple","slots":{"layer_id":"glaciares","filters":null,"group_by":"CLASIFICA","color_by":"CLASIFICA"},"confidence":0.90}
 
-EJEMPLOS (IN):
-- "¿cuántas lagunas hay por comuna?" → IN
-- "¿cómo estará el clima mañana en Copiapó?" → IN
-- "muéstrame los glaciares de Atacama" → IN
-- "¿Cuáles son los glaciares?" → IN
-- "¿Cuáles son los humedales?" → IN
-- "¿Cuáles son las plantas desaladoras?" → IN
-- "¿Cuáles son los yacimientos?" → IN
-- "¿Cuáles son los derechos de agua?" → IN
-- "Lista los volcanes activos" → IN
-- "¿Cuántos glaciares hay?" → IN
-- "¿Dónde están las plantas desaladoras?" → IN
-- "Compárame glaciares y humedales" → IN
-- "Muéstrame los yacimientos por comuna" → IN
-- "¿Qué puedes hacer?" → IN
-- "¿Cuál es la población de Copiapó?" → IN
-- "¿Cuántos habitantes tiene Vallenar?" → IN
+Pregunta: "Dame los derechos de agua de la cuenca Copiapó pero solo los consuntivos"
+{"domain":"IN","intent":"dato_simple","slots":{"layer_id":"derechos_agua_2025","filters":{"Cuenca":"Copiapó","Tipo Derecho":"Consuntivo"},"group_by":null,"color_by":null},"confidence":0.88}
 
-EJEMPLOS (OUT):
-- "¿cómo estará el clima mañana en Valdivia?" → OUT
-- "¿cuántos glaciares hay en Argentina?" → OUT
-- "que dia es hoy" → OUT
-- "qué hora es en China" → OUT
-- "cómo estás" → OUT
-- "quién eres" → OUT
-- "cuéntame un chiste" → OUT
-- "cuánto cuesta un iPhone" → OUT
-- "clima en Italia" → OUT
-- "dónde queda París" → OUT
-- "¿cuál es la población de Santiago?" → OUT
-- "yacimientos en Perú" → OUT
-- "escribe una función en Python" → OUT
-- "SELECT * FROM *" → OUT
+Pregunta: "¿Cuántos kilos de jojoba se producen al año?"
+{"domain":"IN","intent":"fuera_de_alcance","slots":{"layer_id":null,"filters":null,"group_by":null,"color_by":null},"confidence":0.85}
 
-Responde SOLO con "IN" o "OUT". Nada más.`;
+Pregunta: "¿Qué día es hoy?"
+{"domain":"OUT","intent":"fuera_de_alcance","slots":null,"confidence":0.99}
 
-/**
- * Genera una clave de cache a partir del texto.
- * Simple y suficiente: el texto completo, normalizado.
- */
+Pregunta: "¿Cuánto cuesta un iPhone?"
+{"domain":"OUT","intent":"fuera_de_alcance","slots":null,"confidence":0.99}
+
+Responde SOLO con el JSON. Nada más.`;
+
 function cacheKey(text) {
   return text.trim().toLowerCase().slice(0, 500);
 }
@@ -128,22 +104,102 @@ function setInCache(key, result) {
 }
 
 /**
- * Clasifica una consulta como IN (dominio) u OUT (fuera de dominio).
+ * Intenta parsear el JSON de la respuesta del LLM.
+ * Tolera texto extra, cercas de código, etc.
+ */
+function parseClassifierResponse(raw) {
+  if (!raw || typeof raw !== "string") return null;
+
+  // Quitar cercas de código.
+  let text = raw.trim();
+  text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+
+  // Buscar el primer objeto JSON.
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+
+  try {
+    return JSON.parse(text.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Valida y normaliza el resultado del clasificador.
+ * Si algo falta o es inválido, devuelve confidence: 0.
+ */
+function normalizeClassifierResult(parsed) {
+  if (!parsed || typeof parsed !== "object") {
+    return {
+      domain: "IN",
+      intent: "dato_simple",
+      slots: null,
+      confidence: 0,
+    };
+  }
+
+  const domain =
+    typeof parsed.domain === "string" && parsed.domain.toUpperCase() === "OUT"
+      ? "OUT"
+      : "IN";
+
+  const validIntents = new Set([
+    "dato_simple",
+    "analisis_receta",
+    "contexto_documental",
+    "fuera_de_alcance",
+  ]);
+  const intent =
+    typeof parsed.intent === "string" && validIntents.has(parsed.intent)
+      ? parsed.intent
+      : "dato_simple";
+
+  let slots = null;
+  if (parsed.slots && typeof parsed.slots === "object" && !Array.isArray(parsed.slots)) {
+    slots = {
+      layer_id: typeof parsed.slots.layer_id === "string" ? parsed.slots.layer_id : null,
+      filters:
+        parsed.slots.filters && typeof parsed.slots.filters === "object"
+          ? parsed.slots.filters
+          : null,
+      group_by:
+        typeof parsed.slots.group_by === "string" ? parsed.slots.group_by : null,
+      color_by:
+        typeof parsed.slots.color_by === "string" ? parsed.slots.color_by : null,
+    };
+  }
+
+  const confidence =
+    typeof parsed.confidence === "number" &&
+    parsed.confidence >= 0 &&
+    parsed.confidence <= 1
+      ? parsed.confidence
+      : 0;
+
+  return { domain, intent, slots, confidence };
+}
+
+/**
+ * Clasifica una consulta y extrae intent/slots.
  *
- * Fail-open: si algo falla, devuelve "IN" (deja pasar al orquestador).
+ * Fail-open: si algo falla, devuelve { domain: "IN", confidence: 0 }
+ * para que el router degrade al ciclo actual.
  *
  * @param {string} text
- * @returns {Promise<"IN"|"OUT">}
+ * @param {string|null} sessionId
+ * @returns {Promise<{domain: "IN"|"OUT", intent: string, slots: object|null, confidence: number}>}
  */
 export async function classifyDomain(text, sessionId = null) {
   if (typeof text !== "string" || text.trim().length === 0) {
-    return "IN";
+    return { domain: "IN", intent: "dato_simple", slots: null, confidence: 0 };
   }
 
   const key = cacheKey(text);
   const cached = getFromCache(key);
   if (cached) {
-    log.debug(`Cache hit: ${cached}`);
+    log.debug(`Cache hit: ${cached.domain} (confidence ${cached.confidence})`);
     return cached;
   }
 
@@ -152,33 +208,29 @@ export async function classifyDomain(text, sessionId = null) {
     const response = await llm.chat({
       system: CLASSIFIER_SYSTEM_PROMPT,
       messages: [{ role: "user", content: text }],
-      maxTokens: 500,        // ← era 64
+      maxTokens: 500,
       temperature: 0,
-      // reasoningEffort: "low",  ← quitar
       sessionId,
     });
 
-    const raw = (response.content || "").trim().toUpperCase();
+    const raw = (response.content || "").trim();
+    const parsed = parseClassifierResponse(raw);
+    const result = normalizeClassifierResult(parsed);
 
-    // Buscar OUT en cualquier parte de la respuesta.
-    // El LLM puede devolver "La respuesta es OUT" o "OUT" o "OUT.".
-    let result;
-    if (/\bOUT\b/.test(raw)) {
-      result = "OUT";
-    } else if (/\bIN\b/.test(raw)) {
-      result = "IN";
+    if (!parsed) {
+      log.warn(`Clasificador devolvió JSON inválido. Fail-open → IN (confidence 0).`);
     } else {
-      // No se reconoce ni IN ni OUT → fail-open.
-      log.warn(`Clasificador devolvió "${raw.slice(0, 50)}". Fail-open → IN.`);
-      result = "IN";
+      log.debug(
+        `Clasificación: domain=${result.domain} intent=${result.intent} ` +
+          `confidence=${result.confidence}`
+      );
     }
 
-    log.debug(`Clasificación: "${raw.slice(0, 50)}" → ${result}`);
     setInCache(key, result);
     return result;
   } catch (err) {
-    log.warn(`Clasificador falló (fail-open → IN): ${err?.message || err}`);
-    return "IN";
+    log.warn(`Clasificador falló (fail-open → IN, confidence 0): ${err?.message || err}`);
+    return { domain: "IN", intent: "dato_simple", slots: null, confidence: 0 };
   }
 }
 

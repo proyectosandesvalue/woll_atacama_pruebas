@@ -24,6 +24,7 @@ import { checkRateLimit } from "../chat/rate-limiter.js";
 import { isLatam } from "../chat/geo-filter.js";
 import { scopeFilter } from "../chat/scope-filter.js";
 import { classifyDomain } from "../chat/domain-classifier.js";
+import { route } from "../chat/router.js";
 
 // ── Límites ──────────────────────────────────────────────────────
 const LATAM_LIMIT = { perMinute: 20, perBurst: 5 };
@@ -89,13 +90,27 @@ export async function handleChat(body, ctx = {}) {
       return { status: 403, body: { error: MSG_OUT_OF_SCOPE } };
     }
 
-    // ── Paso 5: domain classifier (capa 2, LLM) ───────────────
-    const domain = await classifyDomain(text, sessionId);
-    if (domain === "OUT") {
+    // ── Paso 5: domain classifier + intent/slots (capa 2, LLM) ─
+    const classification = await classifyDomain(text, sessionId);
+    if (classification.domain === "OUT") {
       return { status: 403, body: { error: MSG_OUT_OF_SCOPE } };
     }
 
-    // ── Paso 6: orquestador ───────────────────────────────────
+    // ── Paso 6: intentar router determinístico ────────────────
+    const routed = await route(classification, text);
+    if (routed) {
+      // El router ejecutó un pipeline: armar respuesta desde los resultados.
+      const payload = buildPayloadFromPipeline(routed, text);
+      if (ctx.includeTrace) {
+        payload.trace = routed.results.map((r) => ({
+          tool: r.tool,
+          args: r.args,
+          ok: r.ok,
+        }));
+      }
+      return { status: 200, body: payload };
+    }
+    // ── Paso 7: orquestador ───────────────────────────────────
     const payload = await runOrchestrator({ text, history, sessionId });
     const charts = Array.isArray(payload?.charts) ? payload.charts : [];
     const normalized = {
@@ -133,4 +148,107 @@ export async function handleChat(body, ctx = {}) {
     const status = isConfigError ? 503 : 500;
     return { status, body: { error: errInfo.message } };
   }
+}
+
+/**
+ * Arma el payload del frontend a partir de los resultados de un pipeline.
+ *
+ * - query_layer → reply (tabla markdown) + charts.
+ * - get_layer_features → geojson_layers + geojson_meta.
+ * - aggregate_by_admin / aggregate_layer → charts.
+ */
+function buildPayloadFromPipeline(routed, userText = "") {
+  const { results } = routed;
+  const charts = [];
+  const geojsonLayers = [];
+  let truncated = null;
+  let reply = "";
+
+  for (const r of results) {
+    if (!r.ok || !r.result) continue;
+
+    // ── query_layer: filas → tabla markdown ─────────────────
+    if (r.tool === "query_layer") {
+      const rows = Array.isArray(r.result) ? r.result : [];
+      if (rows.length > 0) {
+        const sample = rows.slice(0, 5);
+        const props = Object.keys(sample[0]?.row || sample[0] || {});
+        const cols = props.slice(0, 5);
+        reply += `Se recuperaron ${rows.length} registros.\n\n`;
+        reply += "| " + cols.join(" | ") + " |\n";
+        reply += "| " + cols.map(() => "---").join(" | ") + " |\n";
+        for (const row of sample) {
+          const data = row?.row || row;
+          reply += "| " + cols.map((c) => String(data[c] ?? "")).join(" | ") + " |\n";
+        }
+      }
+    }
+
+    // ── get_layer_features: geojson_layers ────────────────────
+    if (r.tool === "get_layer_features") {
+      const fc = r.result;
+      if (fc && fc.type === "FeatureCollection" && Array.isArray(fc.features)) {
+        const layerId = fc._layer_id || r.args?.layer_id || null;
+        const totalCount = fc.total_count || fc.features.length;
+        const shown = fc.features.length;
+        if (totalCount > shown && !truncated) {
+          truncated = { total: totalCount, shown, layerId };
+        }
+        geojsonLayers.push({
+          layer_id: layerId,
+          layer_label: layerId,
+          geojson: { type: "FeatureCollection", features: fc.features.slice(0, 500) },
+          style_hint: null,
+        });
+      }
+    }
+
+    // ── aggregate_by_admin / aggregate_layer: charts ──────────
+    if (
+      (r.tool === "aggregate_by_admin" || r.tool === "aggregate_layer") &&
+      Array.isArray(r.result)
+    ) {
+      const data = r.result;
+      if (data.length > 0 && data[0]?.group !== undefined) {
+        const totalGroups = data.length;
+        const sliced = data.slice(0, 10);
+        charts.push({
+          type: totalGroups <= 6 ? "pie" : "bar",
+          title: `Distribución (top ${sliced.length} de ${totalGroups})`,
+          labels: sliced.map((d) => String(d.group)),
+          values: sliced.map((d) => Number(d.value)),
+          totalGroups,
+        });
+      }
+    }
+  }
+
+  if (!reply) {
+    reply = "Recuperé la información solicitada. Podés ver los resultados en el mapa y los gráficos.";
+  }
+
+  return {
+    reply: reply.trim(),
+    charts,
+    geojson: geojsonLayers.length > 0 ? geojsonLayers[0].geojson : null,
+    geojson_meta: geojsonLayers.length > 0
+      ? {
+          layer_id: geojsonLayers[0].layer_id,
+          layer_ids: geojsonLayers.map((l) => l.layer_id).filter(Boolean),
+          feature_count: geojsonLayers.reduce(
+            (acc, l) => acc + (l.geojson?.features?.length || 0),
+            0
+          ),
+          style_hint: null,
+          truncated: truncated ? true : false,
+          total: truncated ? truncated.total : null,
+          shown: truncated ? truncated.shown : null,
+        }
+      : null,
+    geojson_layers: geojsonLayers,
+    notice: truncated
+      ? `Mostrando ${truncated.shown} de ${truncated.total} resultados en el mapa.`
+      : null,
+    chart: charts.length === 1 ? charts[0] : null,
+  };
 }
