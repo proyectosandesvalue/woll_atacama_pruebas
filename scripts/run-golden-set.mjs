@@ -93,7 +93,6 @@ async function callChat(question, history = []) {
   const sessionId = `golden-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   // Resetear caché del clasificador, del LLM y del system prompt
-  // para evitar contaminación entre tests.
   try {
     const { _resetDomainClassifier } = await import("../server/chat/domain-classifier.js");
     _resetDomainClassifier();
@@ -119,34 +118,16 @@ async function callChat(question, history = []) {
     return { status: res.status, data };
   }
 
-  // Local: simula el pipeline completo de /api/chat.
-  // 1. Clasificador de dominio.
+  // Local: usar el mismo handler que /api/chat.
   try {
-    const { classifyDomain } = await import("../server/chat/domain-classifier.js");
-    const domain = await classifyDomain(question, sessionId);
-    if (domain === "OUT") {
-      return {
-        status: 403,
-        data: {
-          error:
-            "No puedo responder esa pregunta. Soy un asistente especializado " +
-            "en el Visor Territorial de Atacama y solo puedo ayudarte con " +
-            "consultas sobre los datos geoespaciales del portal.",
-        },
-      };
-    }
+    const { handleChat } = await import("../server/handlers/chat.js");
+    const result = await handleChat(
+      { text: question, history, sessionId },
+      { ip: "127.0.0.1", country: "CL" , skipRateLimit: true, includeTrace: true} 
+    );
+    return { status: result.status, data: result.body };
   } catch (err) {
-    // Fail-open: si el clasificador falla, seguimos.
-    console.warn(`[golden] Clasificador falló, continúo: ${err?.message || err}`);
-  }
-
-  // 2. Orquestador.
-  const { runOrchestrator } = await import("../server/chat/orchestrator.js");
-  try {
-    const data = await runOrchestrator({ text: question, history, sessionId });
-    return { status: 200, data };
-  } catch (err) {
-    return { status: 500, data: { error: err?.message || String(err) } };
+    return { status: 0, data: { error: err?.message || String(err) } };
   }
 }
 
