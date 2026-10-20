@@ -1,9 +1,10 @@
 /**
- * Compactador de resultados y armado de geojson_layers.
+ * Compactador de resultados, armado de geojson_layers y paquete de evidencia.
  *
  * Responsabilidades:
  *   - compact(): prepara el resultado de una tool para el LLM.
  *   - buildGeojsonLayersFromCtx(): arma las capas de geojson desde ctx.raw.
+ *   - buildEvidence(): calcula advertencias de cobertura y citations.
  */
 
 import { getDB } from "../db/pool.js";
@@ -14,6 +15,16 @@ const CHAT_GEOJSON_ENABLED = /^(1|true|yes)$/i.test(
 );
 
 const MAX_GEOJSON_FEATURES = 500;
+const COVERAGE_THRESHOLD = 0.95;
+
+const DEBUG = /^(1|true|yes)$/i.test(process.env.ORCHESTRATOR_DEBUG || "");
+function dbg(...args) {
+  if (DEBUG) console.log("[evidence]", ...args);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Compactador
+// ─────────────────────────────────────────────────────────────────
 
 export function compact(name, out, ctx) {
   if (!out.ok) return { error: out.error };
@@ -84,6 +95,10 @@ export function compact(name, out, ctx) {
   return r;
 }
 
+// ─────────────────────────────────────────────────────────────────
+// Geojson layers
+// ─────────────────────────────────────────────────────────────────
+
 export async function buildGeojsonLayersFromCtx(ctx, userText) {
   if (!CHAT_GEOJSON_ENABLED) return { layers: [], truncated: null };
   if (!ctx.raw || ctx.raw.size === 0) return { layers: [], truncated: null };
@@ -129,4 +144,114 @@ export async function buildGeojsonLayersFromCtx(ctx, userText) {
   }
 
   return { layers, truncated: truncatedInfo };
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Paquete de evidencia
+// ─────────────────────────────────────────────────────────────────
+
+async function getColumnCoverage(layerId) {
+  try {
+    const db = await getDB();
+    const rows = (await db.rpc("chat_column_coverage", { p_layer: layerId })) ?? [];
+    const map = new Map();
+    for (const r of rows) {
+      if (r && typeof r.column === "string") {
+        map.set(r.column, {
+          coverage: Number(r.coverage) || 0,
+          rowCount: Number(r.row_count) || 0,
+          nullCount: Number(r.null_count) || 0,
+          emptyCount: Number(r.empty_count) || 0,
+          suspiciousCount: Number(r.suspicious_count) || 0,
+        });
+      }
+    }
+    return map;
+  } catch (err) {
+    dbg(`getColumnCoverage falló: ${err?.message || err}`);
+    return new Map();
+  }
+}
+
+function detectUsedColumns(userText, catalogAttrs) {
+  if (!userText || !Array.isArray(catalogAttrs)) return [];
+  const t = String(userText).toLowerCase();
+  const used = [];
+  for (const attr of catalogAttrs) {
+    const name = typeof attr === "string" ? attr : attr?.name;
+    if (!name) continue;
+    const normalized = String(name).toLowerCase();
+    if (t.includes(normalized)) {
+      used.push(name);
+    }
+  }
+  return used;
+}
+
+export async function buildEvidence(ctx, userText, catalog) {
+  const citations = [];
+  const coverageWarnings = [];
+
+  if (!ctx || !Array.isArray(ctx.trace)) {
+    return { citations, coverageWarnings };
+  }
+
+  const layerIds = new Set();
+  for (const t of ctx.trace) {
+    if (!t.ok) continue;
+    const lid = t.args?.layer_id;
+    if (typeof lid === "string" && lid.length > 0) {
+      layerIds.add(lid);
+      citations.push({
+        layer_id: lid,
+        tool: t.tool,
+        label: lid,
+      });
+    }
+  }
+
+  const seenCitations = new Set();
+  const uniqueCitations = [];
+  for (const c of citations) {
+    const key = `${c.layer_id}:${c.tool}`;
+    if (seenCitations.has(key)) continue;
+    seenCitations.add(key);
+    uniqueCitations.push(c);
+  }
+
+  const catalogMap = new Map();
+  if (Array.isArray(catalog)) {
+    for (const c of catalog) {
+      catalogMap.set(c.layer_id, c.display_name || c.layer_id);
+    }
+  }
+  for (const c of uniqueCitations) {
+    c.label = catalogMap.get(c.layer_id) || c.layer_id;
+  }
+
+  for (const lid of layerIds) {
+    const coverage = await getColumnCoverage(lid);
+    if (coverage.size === 0) continue;
+
+    const layerCatalog = catalog.find((c) => c.layer_id === lid);
+    const attrs = Array.isArray(layerCatalog?.attributes)
+      ? layerCatalog.attributes
+      : [];
+
+    const usedColumns = detectUsedColumns(userText, attrs);
+
+    for (const col of usedColumns) {
+      const cov = coverage.get(col);
+      if (!cov) continue;
+      if (cov.coverage < COVERAGE_THRESHOLD && cov.rowCount > 0) {
+        const missing = cov.rowCount - Math.round(cov.coverage * cov.rowCount);
+        coverageWarnings.push(
+          `De los ${cov.rowCount} registros de "${layerCatalog?.display_name || lid}", ` +
+            `${missing} no tienen valor en "${col}".`
+        );
+      }
+    }
+  }
+
+  return { citations: uniqueCitations, coverageWarnings };
 }

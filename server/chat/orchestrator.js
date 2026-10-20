@@ -16,6 +16,7 @@ import { buildSystemPrompt } from "./prompts.js";
 import { buildChartsFromHistory } from "./charts.js";
 import { compact, buildGeojsonLayersFromCtx } from "./evidence.js";
 import { maybeFetchFeaturesForStyle } from "./post-process.js";
+import { buildEvidence } from "./evidence.js";
 
 const DEFAULT_BUDGET_MS = 8000;
 const DEFAULT_MAX_ITERATIONS = 3;
@@ -201,31 +202,51 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
 }
 
 async function finish(reply, ctx, messages, userText = "") {
-  const { layers: geojsonLayers, truncated } =
-    await buildGeojsonLayersFromCtx(ctx, userText);
+  const { layers: geojsonLayers, truncated } = await buildGeojsonLayersFromCtx(ctx, userText);
+
+  // Paquete de evidencia.
+  let citations = [];
+  let coverageWarnings = [];
+  try {
+    const db = await getDB();
+    const catalog = (await db.rpc("chat_catalog")) ?? [];
+    const evidence = await buildEvidence(ctx, userText, catalog);
+    citations = evidence.citations;
+    coverageWarnings = evidence.coverageWarnings;
+  } catch (err) {
+    // Fail-open: sin evidencia, seguimos.
+  }
+
+  // Unir avisos en notice.
+  const notices = [];
+  if (truncated) {
+    notices.push(`Mostrando ${truncated.shown} de ${truncated.total} resultados en el mapa.`);
+  }
+  for (const w of coverageWarnings) {
+    notices.push(w);
+  }
+
   return {
     reply: String(reply || "").trim() || "Sin respuesta.",
     charts: buildChartsFromHistory(messages),
     geojson: geojsonLayers.length > 0 ? geojsonLayers[0].geojson : null,
-    geojson_meta:
-      geojsonLayers.length > 0
-        ? {
-            layer_id: geojsonLayers[0].layer_id || null,
-            layer_ids: geojsonLayers.map((l) => l.layer_id).filter(Boolean),
-            feature_count: geojsonLayers.reduce(
-              (acc, l) => acc + (l.geojson?.features?.length || 0),
-              0
-            ),
-            style_hint: geojsonLayers[0].style_hint || null,
-            truncated: truncated ? true : false,
-            total: truncated ? truncated.total : null,
-            shown: truncated ? truncated.shown : null,
-          }
-        : null,
-    geojson_layers: geojsonLayers,
-    notice: truncated
-      ? `Mostrando ${truncated.shown} de ${truncated.total} resultados en el mapa.`
+    geojson_meta: geojsonLayers.length > 0
+      ? {
+          layer_id: geojsonLayers[0].layer_id || null,
+          layer_ids: geojsonLayers.map((l) => l.layer_id).filter(Boolean),
+          feature_count: geojsonLayers.reduce(
+            (acc, l) => acc + (l.geojson?.features?.length || 0),
+            0
+          ),
+          style_hint: geojsonLayers[0].style_hint || null,
+          truncated: truncated ? true : false,
+          total: truncated ? truncated.total : null,
+          shown: truncated ? truncated.shown : null,
+        }
       : null,
+    geojson_layers: geojsonLayers,
+    notice: notices.length > 0 ? notices.join("\n") : null,
+    citations: citations.length > 0 ? citations : null,
     trace: ctx.trace || [],
   };
 }

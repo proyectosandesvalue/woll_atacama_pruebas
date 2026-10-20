@@ -1,21 +1,13 @@
 /**
  * Handler puro del chat IA.
  *
- * Contiene el pipeline completo (excepto CORS y método HTTP, que son
- * responsabilidad del adapter de Vercel):
- *   1. Validar input (text + history) → 400 si falla.
- *   2. Detectar IP y país → 403 si no hay IP.
- *   3. Aplicar rate limit (LATAM o estricto) → 429 si excede.
- *   4. Filtro de scope determinístico → 403 si bloquea.
- *   5. Clasificador de dominio LLM → 403 si bloquea.
- *   6. Delegar al orquestador → 200.
- *
- * `handleChat(body, ctx)` devuelve `{ status, body }` para que el
- * adapter (Vercel, runner del golden set, servidor Node) lo use.
- *
- * `ctx` debe tener `{ ip, country }` (calculados por el adapter).
- * Opcionalmente `ctx.skipRateLimit` (para tests internos) y
- * `ctx.includeTrace` (para que el golden set verifique tools).
+ * Pipeline completo (excepto CORS y método HTTP, que son del adapter):
+ *   1. Validar input.
+ *   2. Detectar IP y país.
+ *   3. Rate limit.
+ *   4. Scope filter.
+ *   5. Clasificador (dominio + intent + slots).
+ *   6. Router determinístico (pipeline) o degradación al orquestador.
  */
 
 import { runOrchestrator } from "../chat/orchestrator.js";
@@ -26,23 +18,14 @@ import { scopeFilter } from "../chat/scope-filter.js";
 import { classifyDomain } from "../chat/domain-classifier.js";
 import { route } from "../chat/router.js";
 
-// ── Límites ──────────────────────────────────────────────────────
 const LATAM_LIMIT = { perMinute: 20, perBurst: 5 };
 const NON_LATAM_LIMIT = { perMinute: 3, perBurst: 1 };
 
-// ── Mensajes estándar ────────────────────────────────────────────
 const MSG_OUT_OF_SCOPE =
   "No puedo responder esa pregunta. Soy un asistente especializado " +
   "en el Visor Territorial de Atacama y solo puedo ayudarte con " +
   "consultas sobre los datos geoespaciales del portal.";
 
-/**
- * Ejecuta el pipeline completo del chat.
- *
- * @param {object} body - Body de la petición `{ text, history, sessionId }`.
- * @param {object} ctx - Contexto `{ ip, country, skipRateLimit?, includeTrace? }`.
- * @returns {Promise<{status: number, body: object, headers?: object}>}
- */
 export async function handleChat(body, ctx = {}) {
   try {
     // ── Paso 1: validar input ─────────────────────────────────
@@ -68,7 +51,7 @@ export async function handleChat(body, ctx = {}) {
       };
     }
 
-    // ── Paso 3: rate limiting (saltable para tests internos) ──
+    // ── Paso 3: rate limiting (saltable para tests) ───────────
     if (!ctx.skipRateLimit) {
       const limits = isLatam(country) ? LATAM_LIMIT : NON_LATAM_LIMIT;
       const rate = checkRateLimit(ip, limits.perMinute, limits.perBurst);
@@ -84,22 +67,21 @@ export async function handleChat(body, ctx = {}) {
       }
     }
 
-    // ── Paso 4: scope filter (capa 1, rápida) ─────────────────
+    // ── Paso 4: scope filter ──────────────────────────────────
     const scope = scopeFilter(text);
     if (scope.blocked) {
       return { status: 403, body: { error: MSG_OUT_OF_SCOPE } };
     }
 
-    // ── Paso 5: domain classifier + intent/slots (capa 2, LLM) ─
+    // ── Paso 5: clasificador (dominio + intent + slots) ───────
     const classification = await classifyDomain(text, sessionId);
     if (classification.domain === "OUT") {
       return { status: 403, body: { error: MSG_OUT_OF_SCOPE } };
     }
 
-    // ── Paso 6: intentar router determinístico ────────────────
+    // ── Paso 6: router determinístico ─────────────────────────
     const routed = await route(classification, text);
     if (routed) {
-      // El router ejecutó un pipeline: armar respuesta desde los resultados.
       const payload = buildPayloadFromPipeline(routed, text);
       if (ctx.includeTrace) {
         payload.trace = routed.results.map((r) => ({
@@ -110,7 +92,8 @@ export async function handleChat(body, ctx = {}) {
       }
       return { status: 200, body: payload };
     }
-    // ── Paso 7: orquestador ───────────────────────────────────
+
+    // ── Paso 7: orquestador (fallback) ────────────────────────
     const payload = await runOrchestrator({ text, history, sessionId });
     const charts = Array.isArray(payload?.charts) ? payload.charts : [];
     const normalized = {
@@ -125,7 +108,6 @@ export async function handleChat(body, ctx = {}) {
       charts,
     };
 
-    // Solo en modo local (golden set), incluir trace para verificar tools.
     if (ctx.includeTrace) {
       normalized.trace = payload?.trace || [];
     }
@@ -153,9 +135,10 @@ export async function handleChat(body, ctx = {}) {
 /**
  * Arma el payload del frontend a partir de los resultados de un pipeline.
  *
- * - query_layer → reply (tabla markdown) + charts.
+ * - query_layer → reply (tabla markdown).
  * - get_layer_features → geojson_layers + geojson_meta.
  * - aggregate_by_admin / aggregate_layer → charts.
+ * - citations: fuentes de cada tool.
  */
 function buildPayloadFromPipeline(routed, userText = "") {
   const { results } = routed;
@@ -224,31 +207,49 @@ function buildPayloadFromPipeline(routed, userText = "") {
   }
 
   if (!reply) {
-    reply = "Recuperé la información solicitada. Podés ver los resultados en el mapa y los gráficos.";
+    reply =
+      "Recuperé la información solicitada. Podés ver los resultados en el mapa y los gráficos.";
+  }
+
+  // ── citations: fuentes de cada tool ─────────────────────────
+  const citations = [];
+  const seen = new Set();
+  for (const r of results) {
+    if (!r.ok || !r.args?.layer_id) continue;
+    const key = `${r.args.layer_id}:${r.tool}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    citations.push({
+      layer_id: r.args.layer_id,
+      tool: r.tool,
+      label: r.args.layer_id,
+    });
   }
 
   return {
     reply: reply.trim(),
     charts,
     geojson: geojsonLayers.length > 0 ? geojsonLayers[0].geojson : null,
-    geojson_meta: geojsonLayers.length > 0
-      ? {
-          layer_id: geojsonLayers[0].layer_id,
-          layer_ids: geojsonLayers.map((l) => l.layer_id).filter(Boolean),
-          feature_count: geojsonLayers.reduce(
-            (acc, l) => acc + (l.geojson?.features?.length || 0),
-            0
-          ),
-          style_hint: null,
-          truncated: truncated ? true : false,
-          total: truncated ? truncated.total : null,
-          shown: truncated ? truncated.shown : null,
-        }
-      : null,
+    geojson_meta:
+      geojsonLayers.length > 0
+        ? {
+            layer_id: geojsonLayers[0].layer_id,
+            layer_ids: geojsonLayers.map((l) => l.layer_id).filter(Boolean),
+            feature_count: geojsonLayers.reduce(
+              (acc, l) => acc + (l.geojson?.features?.length || 0),
+              0
+            ),
+            style_hint: null,
+            truncated: truncated ? true : false,
+            total: truncated ? truncated.total : null,
+            shown: truncated ? truncated.shown : null,
+          }
+        : null,
     geojson_layers: geojsonLayers,
     notice: truncated
       ? `Mostrando ${truncated.shown} de ${truncated.total} resultados en el mapa.`
       : null,
+    citations: citations.length > 0 ? citations : null,
     chart: charts.length === 1 ? charts[0] : null,
   };
 }
