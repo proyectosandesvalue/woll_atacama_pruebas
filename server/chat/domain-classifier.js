@@ -136,6 +136,12 @@ Pregunta: "¿Qué día es hoy?"
 Pregunta: "¿Cuánto cuesta un iPhone?"
 {"domain":"OUT","intent":"fuera_de_alcance","pipeline":null,"slots":null,"confidence":0.99}
 
+Pregunta: "Lista los humedales"
+{"domain":"IN","intent":"dato_simple","pipeline":"listado_con_mapa","slots":{"layer_id":"humedales","filters":null,"group_by":null,"color_by":null},"confidence":0.92}
+
+Pregunta: "Distribución de humedales por clasificación"
+{"domain":"IN","intent":"dato_simple","pipeline":"distribucion_con_elementos","slots":{"layer_id":"humedales","filters":null,"group_by":"SubClase","color_by":"SubClase"},"confidence":0.88}
+
 Responde SOLO con el JSON. Nada más.`;
 
 function cacheKey(text) {
