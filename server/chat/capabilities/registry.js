@@ -121,6 +121,23 @@ export const PIPELINES = {
       },
     ],
   },
+
+    proximidad_conteo: {
+    type: "pipeline",
+    intents: ["dato_simple"],
+    requires: ["layer_id_source", "layer_id_targets", "distance_m"],
+    timeoutMs: 8000,
+    steps: [
+      {
+        tool: "count_near_layer",
+        args: {
+          layer_id_source: "$layer_id_source",
+          layer_id_targets: "$layer_id_targets",
+          distance_m: "$distance_m",
+        },
+      },
+    ],
+  },
 };
 
 /**

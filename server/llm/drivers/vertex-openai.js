@@ -122,7 +122,7 @@ export function createProvider(config) {
 
   async function chat(args) {
     // ── Mismo formato OpenAI que openai-compatible.js ──
-    const openaiMessages = [{ role: "system", content: args.system }];
+        const openaiMessages = [{ role: "system", content: args.system }];
     for (const m of args.messages) {
       if (m.role === "tool") {
         openaiMessages.push({
@@ -132,6 +132,23 @@ export function createProvider(config) {
             typeof m.content === "string"
               ? m.content
               : JSON.stringify(m.content),
+        });
+      } else if (m.role === "assistant" && Array.isArray(m.tool_calls)) {
+        // Propagar extra_content (thought_signature) en cada tool call.
+        openaiMessages.push({
+          role: "assistant",
+          content: m.content || "",
+          tool_calls: m.tool_calls.map((tc) => {
+            const mapped = {
+              id: tc.id,
+              type: "function",
+              function: tc.function,
+            };
+            if (tc.extra_content) {
+              mapped.extra_content = tc.extra_content;
+            }
+            return mapped;
+          }),
         });
       } else {
         openaiMessages.push(m);
