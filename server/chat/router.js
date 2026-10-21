@@ -2,8 +2,8 @@
  * Router determinístico.
  *
  * Recibe la salida del clasificador unificado
- * (`{ domain, intent, slots, confidence }`) y decide qué hacer:
- *   - Si hay un pipeline para el intent Y la confianza supera el umbral,
+ * (`{ domain, intent, pipeline, slots, confidence }`) y decide qué hacer:
+ *   - Si hay un pipeline explícito Y la confianza supera el umbral,
  *     ejecuta el pipeline.
  *   - Si no, devuelve null para que handleChat() degrade al orquestador.
  *
@@ -12,8 +12,8 @@
  *   CHAT_ROUTER_MIN_CONFIDENCE (default 0.7): umbral mínimo.
  */
 
-import { getPipelineForIntent } from "./capabilities/registry.js";
 import { executePipeline } from "./capabilities/pipelines.js";
+import { PIPELINES } from "./capabilities/registry.js";
 
 const DEBUG = /^(1|true|yes)$/i.test(process.env.ORCHESTRATOR_DEBUG || "");
 function dbg(...args) {
@@ -59,15 +59,16 @@ export async function route(classification, text = "") {
     return null;
   }
 
-  const intent = classification.intent;
-  if (!intent || intent === "fuera_de_alcance") {
-    dbg(`router: intent=${intent}, skip`);
+  // Validar pipeline explícito (defensa contra undefined, null, "").
+  const pipelineId = classification.pipeline;
+  if (typeof pipelineId !== "string" || pipelineId.length === 0) {
+    dbg(`router: pipeline inválido (${JSON.stringify(pipelineId)}), skip`);
     return null;
   }
 
-  const pipeline = getPipelineForIntent(intent);
+  const pipeline = PIPELINES[pipelineId];
   if (!pipeline) {
-    dbg(`router: no hay pipeline para intent=${intent}, skip`);
+    dbg(`router: pipeline "${pipelineId}" no existe en el registro, skip`);
     return null;
   }
 
@@ -79,23 +80,27 @@ export async function route(classification, text = "") {
   );
   if (missing.length > 0) {
     dbg(
-      `router: pipeline ${pipeline.id} requiere slots [${missing.join(", ")}], skip`
+      `router: pipeline ${pipelineId} requiere slots [${missing.join(", ")}], skip`
     );
     return null;
   }
 
-  dbg(`router: ejecutando pipeline ${pipeline.id} con slots ${JSON.stringify(slots)}`);
+  dbg(
+    `router: ejecutando pipeline ${pipelineId} con slots ${JSON.stringify(slots)}`
+  );
 
   try {
-    const results = await executePipeline(pipeline, slots);
+    // FIX F1: pasar el id al pipeline para que los logs lo muestren.
+    const pipelineWithId = { ...pipeline, id: pipelineId };
+    const results = await executePipeline(pipelineWithId, slots);
     const allFailed = results.every((r) => !r.ok);
     if (allFailed) {
-      dbg(`router: pipeline ${pipeline.id} falló en todos los pasos, skip`);
+      dbg(`router: pipeline ${pipelineId} falló en todos los pasos, skip`);
       return null;
     }
-    return { pipeline, results, slots };
+    return { pipeline: pipelineWithId, results, slots };
   } catch (err) {
-    dbg(`router: excepción en pipeline ${pipeline.id}: ${err?.message || err}`);
+    dbg(`router: excepción en pipeline ${pipelineId}: ${err?.message || err}`);
     return null;
   }
 }

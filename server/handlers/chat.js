@@ -17,6 +17,8 @@ import { isLatam } from "../chat/geo-filter.js";
 import { scopeFilter } from "../chat/scope-filter.js";
 import { classifyDomain } from "../chat/domain-classifier.js";
 import { route } from "../chat/router.js";
+import { getDB } from "../db/pool.js";
+import { retrieveLayers } from "../chat/layer-retrieval.js";
 
 const LATAM_LIMIT = { perMinute: 20, perBurst: 5 };
 const NON_LATAM_LIMIT = { perMinute: 3, perBurst: 1 };
@@ -73,8 +75,47 @@ export async function handleChat(body, ctx = {}) {
       return { status: 403, body: { error: MSG_OUT_OF_SCOPE } };
     }
 
-    // ── Paso 5: clasificador (dominio + intent + slots) ───────
-    const classification = await classifyDomain(text, sessionId);
+    // ── Paso 5a: construir contexto de columnas para el clasificador ─
+    let catalogContext = null;
+    try {
+      const db = await getDB();
+      const catalog = (await db.rpc("chat_catalog")) ?? [];
+      const { layers: retrieved } = retrieveLayers(text, catalog, 6);
+      if (retrieved.length > 0) {
+        const relevantIds = retrieved.map((r) => r.layer_id);
+        const lines = [];
+        for (const c of catalog) {
+          if (!relevantIds.includes(c.layer_id)) continue;
+          const attrs = Array.isArray(c.attributes)
+            ? c.attributes
+                .map((a) => (typeof a === "string" ? a : a?.name))
+                .filter(Boolean)
+            : [];
+          if (attrs.length > 0) {
+            lines.push(`- ${c.layer_id}: ${attrs.join(", ")}`);
+          }
+        }
+        catalogContext = lines.join("\n");
+      }
+    } catch (err) {
+      // Fail-open: sin contexto, el clasificador usa solo el texto.
+    }
+
+    // ── Paso 5b: clasificador (dominio + intent + pipeline + slots) ─
+    // Si hay historial, concatenar el último turno del usuario para
+    // que el clasificador resuelva correcciones ("No, esos no. Solo los consuntivos.").
+    const lastUserTurn = Array.isArray(history)
+      ? [...history].reverse().find((h) => h.role === "user")?.content || ""
+      : "";
+    const classifierText = lastUserTurn
+      ? `${lastUserTurn}\n\n[Turno actual] ${text}`
+      : text;
+
+    const classification = await classifyDomain(
+      classifierText,
+      sessionId,
+      catalogContext
+    );
     if (classification.domain === "OUT") {
       return { status: 403, body: { error: MSG_OUT_OF_SCOPE } };
     }
@@ -139,79 +180,114 @@ export async function handleChat(body, ctx = {}) {
  * - get_layer_features → geojson_layers + geojson_meta.
  * - aggregate_by_admin / aggregate_layer → charts.
  * - citations: fuentes de cada tool.
+ *
+ * El reply SIEMPRE menciona las capas involucradas y los filtros aplicados,
+ * haya o no tabla. Eso es lo que verifica el golden set con reply_must_contain.
  */
 function buildPayloadFromPipeline(routed, userText = "") {
-  const { results } = routed;
+  const { results, slots = {} } = routed;
   const charts = [];
   const geojsonLayers = [];
+  const layersInvolved = new Set();
   let truncated = null;
-  let reply = "";
+  let replyTable = "";
 
   for (const r of results) {
     if (!r.ok || !r.result) continue;
+    const layerId = r.args?.layer_id || null;
+    if (layerId) layersInvolved.add(layerId);
 
-    // ── query_layer: filas → tabla markdown ─────────────────
+    // query_layer: tolerar array Y {rows: [...]}
     if (r.tool === "query_layer") {
-      const rows = Array.isArray(r.result) ? r.result : [];
+      let rows = [];
+      if (Array.isArray(r.result)) rows = r.result;
+      else if (r.result && Array.isArray(r.result.rows)) rows = r.result.rows;
+
       if (rows.length > 0) {
         const sample = rows.slice(0, 5);
         const props = Object.keys(sample[0]?.row || sample[0] || {});
         const cols = props.slice(0, 5);
-        reply += `Se recuperaron ${rows.length} registros.\n\n`;
-        reply += "| " + cols.join(" | ") + " |\n";
-        reply += "| " + cols.map(() => "---").join(" | ") + " |\n";
+        replyTable += `Se recuperaron ${rows.length} registros de **${layerId || "la capa"}**.\n\n`;
+        replyTable += "| " + cols.join(" | ") + " |\n";
+        replyTable += "| " + cols.map(() => "---").join(" | ") + " |\n";
         for (const row of sample) {
           const data = row?.row || row;
-          reply += "| " + cols.map((c) => String(data[c] ?? "")).join(" | ") + " |\n";
+          replyTable +=
+            "| " + cols.map((c) => String(data[c] ?? "")).join(" | ") + " |\n";
         }
+        replyTable += "\n";
       }
     }
 
-    // ── get_layer_features: geojson_layers ────────────────────
+    // get_layer_features: geojson_layers
     if (r.tool === "get_layer_features") {
       const fc = r.result;
       if (fc && fc.type === "FeatureCollection" && Array.isArray(fc.features)) {
-        const layerId = fc._layer_id || r.args?.layer_id || null;
+        const lid = fc._layer_id || r.args?.layer_id || null;
         const totalCount = fc.total_count || fc.features.length;
         const shown = fc.features.length;
         if (totalCount > shown && !truncated) {
-          truncated = { total: totalCount, shown, layerId };
+          truncated = { total: totalCount, shown, layerId: lid };
         }
+        const colorBy = r.args?.color_by || null;
+        const styleHint = colorBy
+          ? { attribute: colorBy, kind: "choropleth-points", palette: null }
+          : null;
         geojsonLayers.push({
-          layer_id: layerId,
-          layer_label: layerId,
+          layer_id: lid,
+          layer_label: lid,
           geojson: { type: "FeatureCollection", features: fc.features.slice(0, 500) },
-          style_hint: null,
+          style_hint: styleHint,
         });
       }
     }
 
-    // ── aggregate_by_admin / aggregate_layer: charts ──────────
+    // aggregate_*: charts
     if (
       (r.tool === "aggregate_by_admin" || r.tool === "aggregate_layer") &&
-      Array.isArray(r.result)
+      Array.isArray(r.result) &&
+      r.result.length > 0 &&
+      r.result[0]?.group !== undefined
     ) {
       const data = r.result;
-      if (data.length > 0 && data[0]?.group !== undefined) {
-        const totalGroups = data.length;
-        const sliced = data.slice(0, 10);
-        charts.push({
-          type: totalGroups <= 6 ? "pie" : "bar",
-          title: `Distribución (top ${sliced.length} de ${totalGroups})`,
-          labels: sliced.map((d) => String(d.group)),
-          values: sliced.map((d) => Number(d.value)),
-          totalGroups,
-        });
-      }
+      const totalGroups = data.length;
+      const sliced = data.slice(0, 10);
+      charts.push({
+        type: totalGroups <= 6 ? "pie" : "bar",
+        title: `Distribución (top ${sliced.length} de ${totalGroups})`,
+        labels: sliced.map((d) => String(d.group)),
+        values: sliced.map((d) => Number(d.value)),
+        totalGroups,
+      });
     }
   }
 
-  if (!reply) {
-    reply =
-      "Recuperé la información solicitada. Podés ver los resultados en el mapa y los gráficos.";
+  // FIX F2: el reply SIEMPRE menciona capas y filtros, con o sin tabla.
+  const summaryParts = [];
+  if (layersInvolved.size > 0) {
+    summaryParts.push(
+      `Recuperé información de **${Array.from(layersInvolved).join(", ")}**.`
+    );
   }
+  if (slots.filters && Object.keys(slots.filters).length > 0) {
+    const f = Object.entries(slots.filters)
+      .map(([k, v]) => `${k}=${v}`)
+      .join(", ");
+    summaryParts.push(`Filtros aplicados: ${f}.`);
+  }
+  if (geojsonLayers.length > 0) {
+    summaryParts.push("Los resultados están en el mapa.");
+  }
+  if (charts.length > 0) {
+    summaryParts.push("También generé gráficos de distribución.");
+  }
+  const summary = summaryParts.join(" ");
 
-  // ── citations: fuentes de cada tool ─────────────────────────
+  // Si hay tabla, va el resumen arriba y la tabla abajo.
+  // Si no hay tabla, va solo el resumen.
+  const reply = replyTable ? `${summary}\n\n${replyTable}`.trim() : summary;
+
+  // citations
   const citations = [];
   const seen = new Set();
   for (const r of results) {
@@ -227,7 +303,7 @@ function buildPayloadFromPipeline(routed, userText = "") {
   }
 
   return {
-    reply: reply.trim(),
+    reply: reply || "Recuperé la información solicitada.",
     charts,
     geojson: geojsonLayers.length > 0 ? geojsonLayers[0].geojson : null,
     geojson_meta:
@@ -239,7 +315,7 @@ function buildPayloadFromPipeline(routed, userText = "") {
               (acc, l) => acc + (l.geojson?.features?.length || 0),
               0
             ),
-            style_hint: null,
+            style_hint: geojsonLayers[0].style_hint || null,
             truncated: truncated ? true : false,
             total: truncated ? truncated.total : null,
             shown: truncated ? truncated.shown : null,

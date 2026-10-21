@@ -7,6 +7,12 @@
  *
  * Sustituye slots: "$layer_id" → slots.layer_id, "$filters" → slots.filters,
  * etc. Si un slot no existe, el paso se saltea con un error.
+ *
+ * Caso especial: el pipeline `distribucion_con_elementos` usa
+ * `aggregate_by_admin` cuando group_by es COMUNA/PROVINCIA/REGION,
+ * y `aggregate_layer` en el resto de los casos. Eso se resuelve acá,
+ * no en el clasificador, para que el pipeline sea robusto a errores
+ * de clasificación.
  */
 
 import { runTool } from "../runners.js";
@@ -40,20 +46,64 @@ function substituteSlots(args, slots) {
 }
 
 /**
+ * FIX F4: resuelve los pasos del pipeline según los slots.
+ *
+ * Solo el pipeline `distribucion_con_elementos` tiene lógica dinámica:
+ * - Si group_by es COMUNA/PROVINCIA/REGION → aggregate_by_admin.
+ * - Si no → aggregate_layer.
+ *
+ * @param {object} pipeline - Pipeline del registro (con id).
+ * @param {object} slots - Slots del router.
+ * @returns {Array} Pasos del pipeline con la tool correcta.
+ */
+function resolveSteps(pipeline, slots) {
+  if (pipeline.id !== "distribucion_con_elementos") {
+    return pipeline.steps;
+  }
+
+  const gb = String(slots.group_by || "").toUpperCase();
+  const adminLevels = { COMUNA: "comuna", PROVINCIA: "provincia", REGION: "region" };
+  const isAdmin = Object.prototype.hasOwnProperty.call(adminLevels, gb);
+
+  if (!isAdmin) {
+    return pipeline.steps;
+  }
+
+  const adminLevel = adminLevels[gb];
+  dbg(
+    `pipeline distribucion_con_elementos: group_by=${gb} es admin → usando aggregate_by_admin(${adminLevel})`
+  );
+
+  // Reemplazar el primer paso (aggregate_layer) por aggregate_by_admin.
+  return [
+    {
+      tool: "aggregate_by_admin",
+      args: { layer_id: "$layer_id", admin_level: adminLevel },
+    },
+    ...pipeline.steps.slice(1),
+  ];
+}
+
+/**
  * Ejecuta un pipeline.
  *
- * @param {object} pipeline - Pipeline del registro.
+ * @param {object} pipeline - Pipeline del registro (con id).
  * @param {object} slots - Slots del router (layer_id, filters, group_by, etc.).
- * @returns {Promise<Array>} Resultados de cada paso: { tool, ok, result, error }.
+ * @returns {Promise<Array>} Resultados de cada paso: { tool, args, ok, result, error }.
  */
 export async function executePipeline(pipeline, slots) {
   if (!pipeline || !Array.isArray(pipeline.steps)) {
     return [];
   }
 
-  const stepPromises = pipeline.steps.map(async (step) => {
+  const steps = resolveSteps(pipeline, slots);
+  const pipelineId = pipeline.id || "(sin id)";
+
+  const stepPromises = steps.map(async (step) => {
     const args = substituteSlots(step.args, slots);
-    dbg(`pipeline ${pipeline.id}: ejecutando ${step.tool} con ${JSON.stringify(args)}`);
+    dbg(
+      `pipeline ${pipelineId}: ejecutando ${step.tool} con ${JSON.stringify(args)}`
+    );
 
     try {
       const out = await runTool(step.tool, args);

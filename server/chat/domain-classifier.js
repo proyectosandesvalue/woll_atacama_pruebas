@@ -4,6 +4,7 @@
  * Es la CAPA 2 del sistema de bloqueo. Recibe una pregunta y devuelve:
  *   - domain: "IN" | "OUT"
  *   - intent: "dato_simple" | "analisis_receta" | "contexto_documental" | "fuera_de_alcance"
+ *   - pipeline: id del pipeline o null
  *   - slots: { layer_id?, filters?, group_by?, color_by?, ... }
  *   - confidence: número entre 0 y 1
  *
@@ -30,7 +31,8 @@ Devuelve SIEMPRE un JSON con esta forma:
 {
   "domain": "IN" | "OUT",
   "intent": "dato_simple" | "analisis_receta" | "contexto_documental" | "fuera_de_alcance",
-  "slots": { "layer_id": string|null, "filters": object|null, "group_by": string|null, "color_by": string|null },
+  "pipeline": "listado_con_mapa" | "ubicacion_con_distribucion" | "distribucion_con_elementos" | "proximidad_conteo" | null,
+  "slots": { "layer_id": string|null, "filters": object|null, "group_by": string|null, "color_by": string|null, "layer_id_source": string|null, "layer_id_targets": string|null, "distance_m": number|null },
   "confidence": número entre 0 y 1
 }
 
@@ -45,39 +47,94 @@ REGLAS:
    intent = "fuera_de_alcance" si el dato no existe en el visor.
    Los otros intents (analisis_receta, contexto_documental) los usarán
    los Sprints 41 y 43.
-3. slots = datos concretos que podés extraer de la pregunta:
+3. pipeline = el pipeline específico que mejor resuelve la pregunta:
+   - "listado_con_mapa": para "¿cuáles son los X?" o "lista los X"
+     (listado de elementos concretos, no conteo).
+   - "ubicacion_con_distribucion": para "¿dónde están los X?"
+     (ubicación visual en el mapa).
+   - "distribucion_con_elementos": para "¿cuántos X por <campo>?"
+     (conteo con agrupación por una columna o por admin).
+   - "proximidad_conteo": para "¿cuántos X a menos de N metros de Y?"
+     (conteo por proximidad espacial).
+   - null: si la pregunta no encaja en ninguno (análisis de
+     concentración, comparación entre capas, conteo total simple,
+     preguntas en inglés que no son listados, etc.).
+
+IMPORTANTE — DIFERENCIA ENTRE group_by:
+- "por comuna" → group_by = "COMUNA" (el pipeline usará aggregate_by_admin).
+- "por provincia" → group_by = "PROVINCIA".
+- "por región" → group_by = "REGION".
+- "por tipo" / "por clasificación" / "por uso" / "por estado" → group_by
+  = la columna correspondiente (TIPO, CLASIFICACION, USO, ESTADO, etc.).
+En todos estos casos, el pipeline es "distribucion_con_elementos".
+
+CONTRAEJEMPLOS (pipeline = null porque el orquestador lo resuelve mejor):
+- "¿Dónde hay más concentración de derechos?" → null (agregación, no listado).
+- "How many glaciers are in Atacama?" → null (conteo en inglés).
+- "Compara glaciares y humedales" → null (comparación entre capas).
+- "¿Cuál es el río más largo?" → null (ordenamiento, no listado).
+
+REGLA CRÍTICA: si la pregunta contiene "cerca de", "a menos de",
+"concentración", "más grande", "compara", o está en inglés,
+pipeline = null (excepto proximidad_conteo, que sí matchea "a menos de N metros de Y").
+
+4. slots = datos concretos que podés extraer de la pregunta:
    - layer_id: el id de la capa (ej: "derechos_agua_2025"). Si no
      estás seguro, null.
    - filters: filtros como {"Cuenca": "Copiapó"}. Si no hay, null.
-   - group_by: campo para agrupar (ej: "COMUNA", "TIPO"). Si no hay, null.
-   - color_by: campo para colorear (ej: "COMUNA", "CLASIFICA"). Si no hay, null.
-4. confidence: 0.0 a 1.0. Alta (0.8+) si estás seguro de la
-   clasificación y los slots. Baja (<0.5) si hay ambigüedad.
-5. Si no podés llenar un slot con seguridad, poné null y bajá
+   - group_by: campo para agrupar (ej: "COMUNA", "TIPO", "CLASIFICACION"). Si no hay, null.
+   - color_by: campo para colorear (ej: "COMUNA", "CLASIFICACION"). Si no hay, null.
+   - layer_id_source: capa origen (para proximidad). Si no hay, null.
+   - layer_id_targets: capa destino (para proximidad). Si no hay, null.
+   - distance_m: distancia en metros (para proximidad). Si no hay, null.
+5. confidence: 0.0 a 1.0. Alta (0.8+) si estás seguro de la
+   clasificación, pipeline y slots. Baja (<0.5) si hay ambigüedad.
+6. Si no podés llenar un slot con seguridad, poné null y bajá
    confidence. NO inventes valores.
 
 EJEMPLOS:
 
 Pregunta: "¿Cuáles son los glaciares?"
-{"domain":"IN","intent":"dato_simple","slots":{"layer_id":"glaciares","filters":null,"group_by":null,"color_by":null},"confidence":0.95}
+{"domain":"IN","intent":"dato_simple","pipeline":"listado_con_mapa","slots":{"layer_id":"glaciares","filters":null,"group_by":null,"color_by":null},"confidence":0.95}
 
 Pregunta: "¿Dónde están las plantas desaladoras?"
-{"domain":"IN","intent":"dato_simple","slots":{"layer_id":"plantas_desaladoras_puntos","filters":null,"group_by":null,"color_by":null},"confidence":0.92}
+{"domain":"IN","intent":"dato_simple","pipeline":"ubicacion_con_distribucion","slots":{"layer_id":"plantas_desaladoras_puntos","filters":null,"group_by":null,"color_by":null},"confidence":0.92}
 
 Pregunta: "¿Cuántos glaciares por tipo?"
-{"domain":"IN","intent":"dato_simple","slots":{"layer_id":"glaciares","filters":null,"group_by":"CLASIFICA","color_by":"CLASIFICA"},"confidence":0.90}
+{"domain":"IN","intent":"dato_simple","pipeline":"distribucion_con_elementos","slots":{"layer_id":"glaciares","filters":null,"group_by":"CLASIFICA","color_by":"CLASIFICA"},"confidence":0.90}
+
+Pregunta: "¿Cuántos humedales hay por comuna?"
+{"domain":"IN","intent":"dato_simple","pipeline":"distribucion_con_elementos","slots":{"layer_id":"humedales","filters":null,"group_by":"COMUNA","color_by":"COMUNA"},"confidence":0.92}
+
+Pregunta: "¿Cuántos derechos de agua hay por provincia?"
+{"domain":"IN","intent":"dato_simple","pipeline":"distribucion_con_elementos","slots":{"layer_id":"derechos_agua_2025","filters":null,"group_by":"PROVINCIA","color_by":"PROVINCIA"},"confidence":0.92}
+
+Pregunta: "¿Cuántos humedales hay por clasificación?"
+{"domain":"IN","intent":"dato_simple","pipeline":"distribucion_con_elementos","slots":{"layer_id":"humedales","filters":null,"group_by":"CLASIFICACION","color_by":"CLASIFICACION"},"confidence":0.92}
+
+Pregunta: "Derechos consuntivos en la cuenca Copiapó"
+{"domain":"IN","intent":"dato_simple","pipeline":"listado_con_mapa","slots":{"layer_id":"derechos_agua_2025","filters":{"Cuenca":"Copiapó","Tipo Derecho":"Consuntivo"},"group_by":null,"color_by":null},"confidence":0.88}
 
 Pregunta: "Dame los derechos de agua de la cuenca Copiapó pero solo los consuntivos"
-{"domain":"IN","intent":"dato_simple","slots":{"layer_id":"derechos_agua_2025","filters":{"Cuenca":"Copiapó","Tipo Derecho":"Consuntivo"},"group_by":null,"color_by":null},"confidence":0.88}
+{"domain":"IN","intent":"dato_simple","pipeline":"listado_con_mapa","slots":{"layer_id":"derechos_agua_2025","filters":{"Cuenca":"Copiapó","Tipo Derecho":"Consuntivo"},"group_by":null,"color_by":null},"confidence":0.88}
+
+Pregunta: "¿Cuántos derechos de agua hay a menos de 1 km de un río?"
+{"domain":"IN","intent":"dato_simple","pipeline":"proximidad_conteo","slots":{"layer_id_source":"derechos_agua_2025","layer_id_targets":"red_hidrografica","distance_m":1000},"confidence":0.85}
+
+Pregunta: "¿Dónde hay más concentración de derechos de agua?"
+{"domain":"IN","intent":"dato_simple","pipeline":null,"slots":{"layer_id":"derechos_agua_2025","filters":null,"group_by":null,"color_by":null},"confidence":0.85}
+
+Pregunta: "How many glaciers are in Atacama?"
+{"domain":"IN","intent":"dato_simple","pipeline":null,"slots":{"layer_id":"glaciares","filters":null,"group_by":null,"color_by":null},"confidence":0.85}
 
 Pregunta: "¿Cuántos kilos de jojoba se producen al año?"
-{"domain":"IN","intent":"fuera_de_alcance","slots":{"layer_id":null,"filters":null,"group_by":null,"color_by":null},"confidence":0.85}
+{"domain":"IN","intent":"fuera_de_alcance","pipeline":null,"slots":{"layer_id":null,"filters":null,"group_by":null,"color_by":null},"confidence":0.85}
 
 Pregunta: "¿Qué día es hoy?"
-{"domain":"OUT","intent":"fuera_de_alcance","slots":null,"confidence":0.99}
+{"domain":"OUT","intent":"fuera_de_alcance","pipeline":null,"slots":null,"confidence":0.99}
 
 Pregunta: "¿Cuánto cuesta un iPhone?"
-{"domain":"OUT","intent":"fuera_de_alcance","slots":null,"confidence":0.99}
+{"domain":"OUT","intent":"fuera_de_alcance","pipeline":null,"slots":null,"confidence":0.99}
 
 Responde SOLO con el JSON. Nada más.`;
 
@@ -110,11 +167,9 @@ function setInCache(key, result) {
 function parseClassifierResponse(raw) {
   if (!raw || typeof raw !== "string") return null;
 
-  // Quitar cercas de código.
   let text = raw.trim();
   text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
 
-  // Buscar el primer objeto JSON.
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start === -1 || end === -1 || end <= start) return null;
@@ -135,6 +190,7 @@ function normalizeClassifierResult(parsed) {
     return {
       domain: "IN",
       intent: "dato_simple",
+      pipeline: null,
       slots: null,
       confidence: 0,
     };
@@ -156,10 +212,22 @@ function normalizeClassifierResult(parsed) {
       ? parsed.intent
       : "dato_simple";
 
+  const validPipelines = new Set([
+    "listado_con_mapa",
+    "ubicacion_con_distribucion",
+    "distribucion_con_elementos",
+    "proximidad_conteo",
+  ]);
+  const pipeline =
+    typeof parsed.pipeline === "string" && validPipelines.has(parsed.pipeline)
+      ? parsed.pipeline
+      : null;
+
   let slots = null;
   if (parsed.slots && typeof parsed.slots === "object" && !Array.isArray(parsed.slots)) {
     slots = {
-      layer_id: typeof parsed.slots.layer_id === "string" ? parsed.slots.layer_id : null,
+      layer_id:
+        typeof parsed.slots.layer_id === "string" ? parsed.slots.layer_id : null,
       filters:
         parsed.slots.filters && typeof parsed.slots.filters === "object"
           ? parsed.slots.filters
@@ -168,6 +236,16 @@ function normalizeClassifierResult(parsed) {
         typeof parsed.slots.group_by === "string" ? parsed.slots.group_by : null,
       color_by:
         typeof parsed.slots.color_by === "string" ? parsed.slots.color_by : null,
+      layer_id_source:
+        typeof parsed.slots.layer_id_source === "string"
+          ? parsed.slots.layer_id_source
+          : null,
+      layer_id_targets:
+        typeof parsed.slots.layer_id_targets === "string"
+          ? parsed.slots.layer_id_targets
+          : null,
+      distance_m:
+        typeof parsed.slots.distance_m === "number" ? parsed.slots.distance_m : null,
     };
   }
 
@@ -178,7 +256,7 @@ function normalizeClassifierResult(parsed) {
       ? parsed.confidence
       : 0;
 
-  return { domain, intent, slots, confidence };
+  return { domain, intent, pipeline, slots, confidence };
 }
 
 /**
@@ -189,11 +267,12 @@ function normalizeClassifierResult(parsed) {
  *
  * @param {string} text
  * @param {string|null} sessionId
- * @returns {Promise<{domain: "IN"|"OUT", intent: string, slots: object|null, confidence: number}>}
+ * @param {string|null} catalogContext
+ * @returns {Promise<{domain: "IN"|"OUT", intent: string, pipeline: string|null, slots: object|null, confidence: number}>}
  */
-export async function classifyDomain(text, sessionId = null) {
+export async function classifyDomain(text, sessionId = null, catalogContext = null) {
   if (typeof text !== "string" || text.trim().length === 0) {
-    return { domain: "IN", intent: "dato_simple", slots: null, confidence: 0 };
+    return { domain: "IN", intent: "dato_simple", pipeline: null, slots: null, confidence: 0 };
   }
 
   const key = cacheKey(text);
@@ -205,10 +284,14 @@ export async function classifyDomain(text, sessionId = null) {
 
   try {
     const llm = await getLLM();
+    const userMessage = catalogContext
+      ? `Pregunta: ${text}\n\nColumnas disponibles en las capas relevantes:\n${catalogContext}`
+      : text;
+
     const response = await llm.chat({
       system: CLASSIFIER_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: text }],
-      maxTokens: 500,
+      messages: [{ role: "user", content: userMessage }],
+      maxTokens: 700,
       temperature: 0,
       sessionId,
     });
@@ -222,7 +305,7 @@ export async function classifyDomain(text, sessionId = null) {
     } else {
       log.debug(
         `Clasificación: domain=${result.domain} intent=${result.intent} ` +
-          `confidence=${result.confidence}`
+          `pipeline=${result.pipeline} confidence=${result.confidence}`
       );
     }
 
@@ -230,7 +313,7 @@ export async function classifyDomain(text, sessionId = null) {
     return result;
   } catch (err) {
     log.warn(`Clasificador falló (fail-open → IN, confidence 0): ${err?.message || err}`);
-    return { domain: "IN", intent: "dato_simple", slots: null, confidence: 0 };
+    return { domain: "IN", intent: "dato_simple", pipeline: null, slots: null, confidence: 0 };
   }
 }
 
