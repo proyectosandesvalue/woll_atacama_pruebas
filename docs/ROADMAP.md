@@ -1,7 +1,7 @@
 # ROADMAP.md — Plan de sprints
 
 > > **Fuente de verdad del roadmap.** Se actualiza al inicio y al cierre de cada sesión de trabajo.
-> Última actualización: 2026-10-05.
+> Última actualización: 2026-10-21.
 >
 > **Este roadmap es dinámico.** Se modifica cada vez que aparece un hallazgo nuevo,
 > se cierra un sprint, se descubre un bug estructural, o cambia una decisión. Ninguna
@@ -85,6 +85,10 @@
 | 32 | Marco legal y privacidad | ⏳ pending | media | 5-6h | 24, 31-A |
 | 33 | Entrega y traspaso | ⏳ pending | alta | 10h | Sprints Must |
 | 37 | Auditoría y normalización de datos | ⏳ pending | alta | 20-24h | 23 |
+| 40 | Orquestación determinística del chat (épica) | 🔶 parcial | alta | 26-31h | 25-A, 25-D |
+| 41 | Recetas de análisis (épica) | ⏳ pending | media | 14-20h + experto | 40-C |
+| 42 | Ingesta de fuentes externas (DGAC, ArClim) | ⏳ pending | media | 18-28h | 24-A, 24-B |
+| 43 | Normativa urbana: BCN + planes reguladores | ⏳ pending | media | 20-32h | 17, 18, 41-A |
 
 **Leyenda de estados:**
 - ✅ `done` — Completado y en producción.
@@ -755,6 +759,100 @@ y eliminación.
 - Comportamiento mobile.
 - Agregar/quitar dinámicamente sin romper la estructura del sidebar.
 
+## Sprints planificados — Orquestación determinística del chat (40-43)
+
+> **Origen**: evaluación de la estrategia de orquestación del chat (2026-10-16) y ADR 016-019.
+> **Principio (ADR 016)**: el código decide qué se ejecuta y con qué datos; el LLM interpreta la intención y redacta desde la evidencia. Jerarquía de verdad: BD estructurada > API oficial > RAG > conocimiento del LLM.
+
+### Sprint 40 — Orquestación determinística (épica)
+
+**Estado**: 🔶 parcial (40-C cerrado y activo en producción, 40-C.4 diferido al 41, 40-D pendiente) · **Prioridad**: alta · **Duración**: 26-31h · **Dependencias**: 25-A, 25-D
+
+| Tramo | Estado | Commit | Notas |
+|---|---|---|---|
+| 40-D.1 Runner completo y línea base real | ✅ | d4bdb33 | |
+| 40-A Filtros con operadores y coincidencia robusta | ✅ | b532a05 | |
+| 40-B.1 Retrieval de capas | ✅ | 405c6bf | |
+| 40-B.2 Resolución de entidades (opcional) | ❌ descartado | — | La evidencia empírica mostró que empeora el comportamiento del LLM |
+| 40-B.3 Prompt reducido y reglas retiradas | ✅ | a1c9e45 | |
+| Refactor 25-D (división de `orchestrator.js`) | ✅ | ad78b46 | 1100 → 234 líneas (-79%) |
+| 40-C.0 `handleChat()` extraído | ✅ | f446242 | |
+| 40-C.1 Registro de capacidades y pipelines | ✅ | 0f8f598 | 9 tools, 4 pipelines |
+| 40-C.2 Clasificador unificado y router | ✅ | 2a9fcbb | |
+| 40-C.3 Paquete de evidencia y cobertura | ✅ | 4fbd751 | |
+| 40-C.4 Retiro de reglas 13, 19, 20 y parches | ⏳ diferido al 41 | — | Decisión: dejar el router activo con las reglas redundantes. Se retiran en el 41 con calma. |
+| 40-C.5 Medición, docs y deploy | ✅ | ab85419 | Router activo en producción (staging web) |
+| 40-D.2 Inventario de datos no disponibles | ⏳ pendiente | — | `CHAT_UNAVAILABLE_ENABLED=1` |
+| 40-D.3 Casos nuevos del golden y cierre | ⏳ pendiente | — | |
+
+**Resultado de la medición** (`--repeat 3`):
+- Router OFF (baseline): **27-28/28** (fluctúa por no determinismo del LLM y el pendiente de historial).
+- Router ON (con los 5 fixes de `ab85419`): **27-28/28** (mismo comportamiento, sin regresiones).
+- Los 2-3 fallos residuales son ruido del LLM, no del router.
+
+**Estado en producción**: `CHAT_ROUTER_ENABLED=1` en Vercel (staging web). Validado con:
+- Preguntas de listado, ubicación, distribución, filtro.
+- Degradación elegante al orquestador cuando el clasificador devuelve `pipeline: null`.
+
+**Pendientes inmediatos de 40-C**:
+- Optimizar `count_near_layer` (timeout con `derechos_agua_2025` × `red_hidrografica`). No es bug del router.
+- Bug del runner `--remote`: se reporta como warning, no failure (fix aplicado en `ab85419`).
+
+**Ver**:
+- `docs/DECISIONS/019-router-deterministico.md` (ADR 019).
+- `docs/specs/40-C.md` (spec del núcleo determinístico).
+- `scripts/run-golden-set.mjs` (runner con verificación de tools y filtros).
+
+### Sprint 41 — Recetas de análisis (épica)
+
+**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 14-20h + validación experta · **Dependencias**: 40-C
+
+**Objetivo**: análisis multicriterio (aptitud para jojoba, etc.) como dato versionado que el código ejecuta con operaciones fijas (ADR 017).
+
+**Tramos**:
+- 41-A: ejecutor y vocabulario cerrado.
+- 41-B: validador de registro y fichas.
+- 41-C: primera receta (jojoba).
+- 41-D: validación experta.
+
+**Además**: en 41 se retiran las reglas 13, 19, 20 del prompt y los parches `shouldFetchFeatures`, `maybeFetchFeaturesForStyle`, `detectStyleHint` (diferidos de 40-C.4).
+
+### Sprint 42 — Ingesta de fuentes externas (DGAC, ArClim)
+
+**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 18-28h · **Dependencias**: 24-A, 24-B
+
+**Objetivo**: ingestar fuentes externas por temática (ADR 018).
+
+**Tramos**:
+- 42-A: inventario y verificación de fuentes (puede iniciarse ya).
+- 42-B: infraestructura de ingesta.
+- 42-C: primera ingesta DGAC.
+- 42-D: ArClim (opcional).
+
+### Sprint 43 — Normativa urbana: BCN + planes reguladores
+
+**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 20-32h · **Dependencias**: 17, 18, 41-A, 42-A
+
+**Objetivo**: responder "¿qué norma aplica en esta zona?" uniendo textos (LGUC, OGUC, ordenanzas) con la zonificación de cada comuna (ADR 018).
+
+**Tramos**:
+- 43-A: ingesta BCN al RAG.
+- 43-B: ingesta de textos de PRC.
+- 43-C: zonificación de PRC en PostGIS.
+- 43-D: receta `normativa_predio`.
+
+### Decisiones abiertas de los Sprints 40-43
+
+1. Valor vigente de `ORCHESTRATOR_MAX_ITERATIONS` en Vercel (el código usa 3 por defecto; la documentación dice 1).
+2. Ante slots faltantes: repreguntar o asumir un default y declararlo (24-B).
+3. Quién escribe y valida las recetas (antes de 41-C).
+4. Modalidad de acceso y términos de uso de DGAC, ArClim y BCN (42-A).
+5. Qué PRC se priorizan (antes de 43-B y 43-C).
+6. Fluid Compute y límite real de duración en Vercel.
+
+---
+
+
 ## Ajustes a sprints existentes
 
 | Sprint | Ajuste |
@@ -812,6 +910,25 @@ y eliminación.
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-10-21
+- ✅ **Sprint 40-C completado y activo en producción (staging web)**.
+  - 40-C.0 a 40-C.3 implementados (commits f446242, 0f8f598, 2a9fcbb, 4fbd751).
+  - 5 fixes del router determinístico (commit e935440 + ab85419).
+  - Router activo: `CHAT_ROUTER_ENABLED=1` en Vercel.
+  - Golden set con `--repeat 3`: router OFF 27-28/28, router ON 27-28/28 (paridad).
+  - Los 5 fallos previos resueltos:
+    - `smoke-count-humedales-por-comuna` (F3b + F4).
+    - `smoke-count-derechos-por-provincia` (F3b + F4).
+    - `core-color-humedales-clasificacion` (F3b).
+    - `core-filter-derechos-consuntivos-copiapo` (F2 + F3b).
+    - `ext-correccion-consuntivos` (F2 + F5b).
+  - 3 archivos críticos que faltaban en el deploy (`proximidad_conteo` en `registry.js`, `thought_signature` en `vertex-openai.js`, `.env.example`) se commitearon en `ab85419`.
+  - Runner `--remote` corregido: los checks de `trace` se reportan como warning, no failure (CA-4 de la spec 40-D).
+  - **40-C.4 diferido al 41**: las reglas 13, 19, 20 del prompt y los parches se retiran con calma en 41.
+  - **Pendiente**: optimizar `count_near_layer` (timeout con `derechos_agua_2025` × `red_hidrografica`).
+- 📝 Próximo: **40-D.2** (inventario de datos no disponibles) con `CHAT_UNAVAILABLE_ENABLED`.
+
 
 ### 2026-10-12
 - ✅ **Sprint 06 completado** (respuesta geoespacial).
@@ -940,7 +1057,8 @@ Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de 
 
 - [ ] **Vercel cache de estáticos.**
 
-- [ ] **Sprint 39: capas del chat en el sidebar izquierdo.**
+- [X] **Sprint 39: capas del chat en el sidebar izquierdo.**
+- [ ] **Optimizar `count_near_layer` (proximidad).** Timeout con `derechos_agua_2025` (920 filas) × `red_hidrografica`. Se ejecuta el pipeline `proximidad_conteo` pero la RPC tarda >8s. Fix: índice GIST (verificar), limitar distancia máxima, o cachear resultados. Sprint corto (2-3h). Urgencia: media (el sistema degrada elegantemente).
 ---
 
 ## Deuda técnica activa

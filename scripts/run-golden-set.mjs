@@ -8,12 +8,17 @@
  *   node --env-file=.env.staging scripts/run-golden-set.mjs --level 2
  *   node --env-file=.env.staging scripts/run-golden-set.mjs --all
  *   node --env-file=.env.staging scripts/run-golden-set.mjs --id smoke-bloqueo-fecha
+ *   node --env-file=.env.staging scripts/run-golden-set.mjs --all --remote
  *
  * Flags:
  *   --level <n>   Solo casos con level <= n (1, 2, 3).
  *   --all         Todos los casos.
  *   --id <id>     Un caso específico.
  *   --remote      Usa la URL de Vercel en lugar del orquestador local.
+ *                 En modo remoto, los checks que dependen de `trace`
+ *                 (tools_any, tools_count_min, geojson_filter_required,
+ *                 geojson_cuenca_contains) se reportan como warning,
+ *                 no como failure, porque el trace no viaja por HTTP.
  *   --url <url>   URL custom para --remote.
  *   --quiet       Solo muestra el resumen.
  *
@@ -86,27 +91,39 @@ if (cases.length === 0) {
 
 log(`${C.bold}Golden set: ${cases.length} caso(s)${C.reset}`);
 log(`${C.gray}Modo: ${opts.remote ? "remoto" : "local"}${C.reset}`);
+if (opts.remote) {
+  log(
+    `${C.gray}Nota: en modo remoto, los checks de trace se reportan como warning.${C.reset}`
+  );
+}
 log("");
 
 // ── Llamar al chat ──────────────────────────────────────────
 async function callChat(question, history = []) {
   const sessionId = `golden-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-  // Resetear caché del clasificador, del LLM y del system prompt
-  try {
-    const { _resetDomainClassifier } = await import("../server/chat/domain-classifier.js");
-    _resetDomainClassifier();
-  } catch {}
+  // Resetear caché del clasificador, del LLM y del system prompt.
+  // En modo remoto no aplica (el server es otro proceso), pero no molesta.
+  if (!opts.remote) {
+    try {
+      const { _resetDomainClassifier } = await import(
+        "../server/chat/domain-classifier.js"
+      );
+      _resetDomainClassifier();
+    } catch {}
 
-  try {
-    const { _resetLLM } = await import("../server/llm/provider.js");
-    _resetLLM();
-  } catch {}
+    try {
+      const { _resetLLM } = await import("../server/llm/provider.js");
+      _resetLLM();
+    } catch {}
 
-  try {
-    const { _resetSystemPrompt } = await import("../server/chat/orchestrator.js");
-    _resetSystemPrompt();
-  } catch {}
+    try {
+      const { _resetSystemPrompt } = await import(
+        "../server/chat/orchestrator.js"
+      );
+      _resetSystemPrompt();
+    } catch {}
+  }
 
   if (opts.remote) {
     const res = await fetch(opts.url, {
@@ -123,7 +140,7 @@ async function callChat(question, history = []) {
     const { handleChat } = await import("../server/handlers/chat.js");
     const result = await handleChat(
       { text: question, history, sessionId },
-      { ip: "127.0.0.1", country: "CL" , skipRateLimit: true, includeTrace: true} 
+      { ip: "127.0.0.1", country: "CL", skipRateLimit: true, includeTrace: true }
     );
     return { status: result.status, data: result.body };
   } catch (err) {
@@ -139,10 +156,14 @@ function verifyCase(c, response) {
   const { status, data } = response;
   const exp = c.expected || {};
   const trace = Array.isArray(data?.trace) ? data.trace : [];
+  const isRemote = opts.remote; // ← fix: en remoto no hay trace
 
   // 1. Bloqueo esperado.
   if (exp.blocked === true) {
-    if (status !== 403 && !/no puedo responder/i.test(data?.error || data?.reply || "")) {
+    if (
+      status !== 403 &&
+      !/no puedo responder/i.test(data?.error || data?.reply || "")
+    ) {
       failures.push(`Esperaba bloqueo (403), recibió status=${status}`);
     }
     if (exp.reply_must_contain) {
@@ -164,24 +185,35 @@ function verifyCase(c, response) {
 
   // 3. tools_any: al menos una de las tools esperadas debe haberse llamado.
   if (exp.tools_any) {
-    const called = new Set(trace.map((t) => t.tool));
-    const anyMatch = exp.tools_any.some((t) => called.has(t));
-    if (!anyMatch) {
-      failures.push(
-        `tools_any esperaba alguna de [${exp.tools_any.join(", ")}], se llamó [${Array.from(called).join(", ")}]`
+    if (isRemote) {
+      warnings.push(
+        `tools_any: no verificable en modo remoto (falta trace en el payload HTTP)`
       );
+    } else {
+      const called = new Set(trace.map((t) => t.tool));
+      const anyMatch = exp.tools_any.some((t) => called.has(t));
+      if (!anyMatch) {
+        failures.push(
+          `tools_any esperaba alguna de [${exp.tools_any.join(", ")}], se llamó [${Array.from(called).join(", ")}]`
+        );
+      }
     }
   }
 
   // 4. tools_count_min: mínimo de tools llamadas.
-  if (exp.tools_count_min != null && trace.length < exp.tools_count_min) {
-    failures.push(
-      `tools_count_min=${exp.tools_count_min}, se llamó ${trace.length} tool(s)`
-    );
+  if (exp.tools_count_min != null) {
+    if (isRemote) {
+      warnings.push(`tools_count_min: no verificable en modo remoto`);
+    } else if (trace.length < exp.tools_count_min) {
+      failures.push(
+        `tools_count_min=${exp.tools_count_min}, se llamó ${trace.length} tool(s)`
+      );
+    }
   }
 
-  // 5. geojson required.
-  const hasGeojson = Boolean(data?.geojson) || Boolean(data?.geojson_layers?.length);
+  // 5. geojson required (no depende de trace, se verifica en ambos modos).
+  const hasGeojson =
+    Boolean(data?.geojson) || Boolean(data?.geojson_layers?.length);
   if (exp.geojson_required === true && !hasGeojson) {
     failures.push(`geojson_required=true pero no hay geojson`);
   }
@@ -189,84 +221,97 @@ function verifyCase(c, response) {
     warnings.push(`geojson presente pero expected=false (no crítico)`);
   }
 
-  // 6. geojson_filter_required: los filtros deben estar en los args de alguna tool.
+  // 6. geojson_filter_required: depende de trace.
   if (exp.geojson_filter_required) {
-    const filters = exp.geojson_filter_required;
-    const hasFilter = trace.some((t) => {
-      if (!t.ok) return false;
-      const args = t.args || {};
-      const argFilters = args.filters || args.where || {};
-      if (Array.isArray(argFilters)) {
-        return Object.entries(filters).every(([k, v]) =>
-          argFilters.some(
-            (f) =>
-              String(f.field || "").toLowerCase() === k.toLowerCase() &&
-              String(f.value || f.values?.[0] || "").toLowerCase() ===
-                String(v).toLowerCase()
-          )
+    if (isRemote) {
+      warnings.push(`geojson_filter_required: no verificable en modo remoto`);
+    } else {
+      const filters = exp.geojson_filter_required;
+      const hasFilter = trace.some((t) => {
+        if (!t.ok) return false;
+        const args = t.args || {};
+        const argFilters = args.filters || args.where || {};
+        if (Array.isArray(argFilters)) {
+          return Object.entries(filters).every(([k, v]) =>
+            argFilters.some(
+              (f) =>
+                String(f.field || "").toLowerCase() === k.toLowerCase() &&
+                String(f.value || f.values?.[0] || "").toLowerCase() ===
+                  String(v).toLowerCase()
+            )
+          );
+        }
+        return Object.entries(filters).every(
+          ([k, v]) =>
+            String(argFilters[k] || "").toLowerCase() === String(v).toLowerCase()
+        );
+      });
+      if (!hasFilter) {
+        failures.push(
+          `geojson_filter_required=${JSON.stringify(filters)} no se encontró en los args de las tools`
         );
       }
-      return Object.entries(filters).every(
-        ([k, v]) =>
-          String(argFilters[k] || "").toLowerCase() === String(v).toLowerCase()
-      );
-    });
-    if (!hasFilter) {
-      failures.push(
-        `geojson_filter_required=${JSON.stringify(filters)} no se encontró en los args de las tools`
-      );
     }
   }
 
-  // 7. geojson_cuenca_contains: el valor debe contener la palabra.
-if (exp.geojson_cuenca_contains) {
-  const needle = String(exp.geojson_cuenca_contains).toLowerCase();
+  // 7. geojson_cuenca_contains: depende de trace + reply.
+  if (exp.geojson_cuenca_contains) {
+    if (isRemote) {
+      warnings.push(`geojson_cuenca_contains: no verificable en modo remoto`);
+    } else {
+      const needle = String(exp.geojson_cuenca_contains).toLowerCase();
 
-  // Verificar en los args de las tools (si el LLM pasó el filtro).
-  const hasCuencaInArgs = trace.some((t) => {
-    const args = t.args || {};
-    const argFilters = args.filters || args.where || {};
-    const values = Array.isArray(argFilters)
-      ? argFilters.flatMap((f) => [f.value, ...(f.values || [])])
-      : Object.values(argFilters);
-    return values.some((v) => String(v || "").toLowerCase().includes(needle));
-  });
+      const hasCuencaInArgs = trace.some((t) => {
+        const args = t.args || {};
+        const argFilters = args.filters || args.where || {};
+        const values = Array.isArray(argFilters)
+          ? argFilters.flatMap((f) => [f.value, ...(f.values || [])])
+          : Object.values(argFilters);
+        return values.some((v) =>
+          String(v || "").toLowerCase().includes(needle)
+        );
+      });
 
-  // Si no está en los args, verificar en el reply (el LLM lo mencionó).
-  const reply = String(data?.reply || "").toLowerCase();
-  const hasCuencaInReply = reply.includes(needle) ||
-    reply.includes("cuenca") ||
-    reply.includes("copiapo");
+      const reply = String(data?.reply || "").toLowerCase();
+      const hasCuencaInReply =
+        reply.includes(needle) ||
+        reply.includes("cuenca") ||
+        reply.includes("copiapo");
 
-  if (!hasCuencaInArgs && !hasCuencaInReply) {
-    failures.push(
-      `geojson_cuenca_contains="${exp.geojson_cuenca_contains}" no se encontró en los filtros ni en el reply`
-    );
-  } else if (!hasCuencaInArgs) {
-    warnings.push(
-      `geojson_cuenca_contains="${exp.geojson_cuenca_contains}" está en el reply pero no en los args (no determinismo)`
-    );
+      if (!hasCuencaInArgs && !hasCuencaInReply) {
+        failures.push(
+          `geojson_cuenca_contains="${exp.geojson_cuenca_contains}" no se encontró en los filtros ni en el reply`
+        );
+      } else if (!hasCuencaInArgs) {
+        warnings.push(
+          `geojson_cuenca_contains="${exp.geojson_cuenca_contains}" está en el reply pero no en los args (no determinismo)`
+        );
+      }
+    }
   }
-}
 
-  // 8. geojson_meta_truncated_expected.
+  // 8. geojson_meta_truncated_expected (no depende de trace).
   if (exp.geojson_meta_truncated_expected === true) {
     const truncated = data?.geojson_meta?.truncated === true;
     if (!truncated) {
-      failures.push(`geojson_meta_truncated_expected=true pero truncated no es true`);
+      failures.push(
+        `geojson_meta_truncated_expected=true pero truncated no es true`
+      );
     }
   }
 
   // 9. graceful_error: el sistema no debe crashear ni bloquear.
-if (exp.graceful_error === true) {
-  if (status !== 200) {
-    failures.push(`graceful_error=true pero status=${status}`);
+  if (exp.graceful_error === true) {
+    if (status !== 200) {
+      failures.push(`graceful_error=true pero status=${status}`);
+    }
+    const reply = String(data?.reply || "").toLowerCase();
+    if (reply.includes("no puedo responder esa pregunta")) {
+      failures.push(
+        `graceful_error=true pero el reply bloquea con "no puedo responder"`
+      );
+    }
   }
-  const reply = String(data?.reply || "").toLowerCase();
-  if (reply.includes("no puedo responder esa pregunta")) {
-    failures.push(`graceful_error=true pero el reply bloquea con "no puedo responder"`);
-  }
-}
 
   // 10. charts_count.
   const chartsCount = Array.isArray(data?.charts)
@@ -316,7 +361,7 @@ if (exp.graceful_error === true) {
     }
   }
 
-  // 14. geojson_meta_style_hint_required.
+  // 14. geojson_meta_style_hint_required (no depende de trace).
   if (exp.geojson_meta_style_hint_required === true) {
     const hint = data?.geojson_meta?.style_hint;
     const layersWithHint = (data?.geojson_layers || []).some(
@@ -327,7 +372,7 @@ if (exp.graceful_error === true) {
     }
   }
 
-  // 15. style_hint_attribute_any.
+  // 15. style_hint_attribute_any (no depende de trace).
   if (exp.style_hint_attribute_any) {
     const hints = [];
     if (data?.geojson_meta?.style_hint) hints.push(data.geojson_meta.style_hint);
@@ -345,7 +390,7 @@ if (exp.graceful_error === true) {
     }
   }
 
-  // 16. notice_required.
+  // 16. notice_required (no depende de trace).
   if (exp.notice_required === true && !data?.notice) {
     failures.push(`notice requerido pero ausente`);
   }

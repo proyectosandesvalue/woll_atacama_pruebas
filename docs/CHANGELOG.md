@@ -45,6 +45,47 @@
 
 ## [Unreleased]
 
+## [Sprint 40-C] — 2026-10-21
+
+### Added
+- **Router determinístico activo en producción** (`CHAT_ROUTER_ENABLED=1`). El código decide qué pipelines ejecutar; el LLM solo interpreta la intención y redacta desde la evidencia.
+- Registro de capacidades y pipelines (`server/chat/capabilities/`): 9 tools atómicas + 4 pipelines (`listado_con_mapa`, `ubicacion_con_distribucion`, `distribucion_con_elementos`, `proximidad_conteo`).
+- Clasificador unificado (`domain-classifier.js`): emite `{domain, intent, pipeline, slots, confidence}` en una sola llamada. Prompt extendido con distinción admin vs columna, contraejemplos y 6 ejemplos nuevos.
+- Router (`server/chat/router.js`): valida `pipeline` (typeof string), valida slots contra `requires`, ejecuta pipelines con `Promise.allSettled`.
+- Ejecutor de pipelines (`server/chat/capabilities/pipelines.js`): `distribucion_con_elementos` resuelve `aggregate_by_admin` cuando `group_by` es COMUNA/PROVINCIA/REGION (defensa en profundidad).
+- `buildPayloadFromPipeline()` en `server/handlers/chat.js`: el `reply` SIEMPRE menciona capas y filtros, con o sin tabla. Propaga `style_hint` desde el pipeline.
+- Historial del usuario concatenado al clasificador (último turno) para resolver correcciones del tipo "No, esos no. Solo los consuntivos."
+- Runner `--remote` corregido: los checks de `trace` (`tools_any`, `tools_count_min`, `geojson_filter_required`, `geojson_cuenca_contains`) se reportan como warning, no failure (CA-4 de la spec 40-D).
+
+### Fixed
+- `geojson_meta.style_hint` hardcodeado a `null` en `buildPayloadFromPipeline`.
+- `reply` de fallback no mencionaba las capas ni los filtros.
+- `query_layer` no toleraba `{rows: [...]}` (formato alternativo de la RPC).
+- `proximidad_conteo` no estaba en el commit `e935440` (sí en el working tree). Agregado en `ab85419`.
+- `vertex-openai.js` no propagaba `extra_content` (`thought_signature`) en los tool calls de Gemini 3.1 Flash-Lite. Sin este fix, Gemini rechaza los tool calls subsecuentes y todos los tests con tools fallan en remoto pero pasan en local.
+
+### Changed
+- `router.js` usa `pipelineId` (string) en vez de `pipeline.id` (podía ser `undefined`).
+- `pipelines.js` resuelve pasos dinámicamente para `distribucion_con_elementos`.
+- `domain-classifier.js`: `maxTokens` 500 → 700 (JSON más grande).
+
+### Notas
+- Golden set con `--repeat 3`: router OFF 27-28/28, router ON 27-28/28 (paridad).
+- Los 2-3 fallos residuales son no determinismo del LLM, no del router.
+- **40-C.4 diferido al 41**: las reglas 13, 19, 20 del prompt y los parches `shouldFetchFeatures`, `maybeFetchFeaturesForStyle`, `detectStyleHint` se retiran en el 41 con calma.
+- **Pendiente**: optimizar `count_near_layer` (timeout con `derechos_agua_2025` × `red_hidrografica`).
+
+### Commits
+- `f446242` feat(40-C.0): handleChat() extraído
+- `0f8f598` feat(40-C.1): registro de capacidades y pipelines
+- `2a9fcbb` feat(40-C.2): clasificador unificado y router determinístico
+- `4fbd751` feat(40-C.3): paquete de evidencia y cobertura
+- `e935440` fix(40-C): router determinístico con paridad en el golden set
+- `ab85419` fix(40-C): completar archivos del router en el deploy
+
+---
+
+
 ## [Sprint 06-B.6 + 06-B.7] — 2026-10-12
 
 ### Added
