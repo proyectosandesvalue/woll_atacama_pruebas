@@ -1,7 +1,7 @@
 # ROADMAP.md — Plan de sprints
 
 > > **Fuente de verdad del roadmap.** Se actualiza al inicio y al cierre de cada sesión de trabajo.
-> Última actualización: 2026-10-21.
+> Última actualización: 2026-10-22.
 >
 > **Este roadmap es dinámico.** Se modifica cada vez que aparece un hallazgo nuevo,
 > se cierra un sprint, se descubre un bug estructural, o cambia una decisión. Ninguna
@@ -85,7 +85,7 @@
 | 32 | Marco legal y privacidad | ⏳ pending | media | 5-6h | 24, 31-A |
 | 33 | Entrega y traspaso | ⏳ pending | alta | 10h | Sprints Must |
 | 37 | Auditoría y normalización de datos | ⏳ pending | alta | 20-24h | 23 |
-| 40 | Orquestación determinística del chat (épica) | 🔶 parcial | alta | 26-31h | 25-A, 25-D |
+| 40 | Orquestación determinística del chat (épica) | 🔶 parcial (40-C y 40-D.2 cerrados) | alta | 26-31h | 25-A, 25-D |
 | 41 | Recetas de análisis (épica) | ⏳ pending | media | 14-20h + experto | 40-C |
 | 42 | Ingesta de fuentes externas (DGAC, ArClim) | ⏳ pending | media | 18-28h | 24-A, 24-B |
 | 43 | Normativa urbana: BCN + planes reguladores | ⏳ pending | media | 20-32h | 17, 18, 41-A |
@@ -782,7 +782,7 @@ y eliminación.
 | 40-C.3 Paquete de evidencia y cobertura | ✅ | 4fbd751 | |
 | 40-C.4 Retiro de reglas 13, 19, 20 y parches | ⏳ diferido al 41 | — | Decisión: dejar el router activo con las reglas redundantes. Se retiran en el 41 con calma. |
 | 40-C.5 Medición, docs y deploy | ✅ | ab85419 | Router activo en producción (staging web) |
-| 40-D.2 Inventario de datos no disponibles | ⏳ pendiente | — | `CHAT_UNAVAILABLE_ENABLED=1` |
+| **40-D.2 Inventario de datos no disponibles** | ✅ | **a2db540** | Con refactor de config a BD (`admin.*`) |
 | 40-D.3 Casos nuevos del golden y cierre | ⏳ pendiente | — | |
 
 **Resultado de la medición** (`--repeat 3`):
@@ -910,6 +910,28 @@ y eliminación.
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-10-22
+- ✅ **40-D.2 completado: configuración del chat en BD (`admin.*`)**.
+  - Migración 021 aplicada en staging: 4 tablas (`admin.unavailable_data`,
+    `admin.prompt_templates`, `admin.settings`, `admin.messages`) + 6 RPCs
+    (`chat_unavailable_data`, `chat_get_prompt`, `chat_get_setting`,
+    `chat_get_message`, `admin_set_setting`, `admin_set_prompt`).
+  - Refactor de `prompts.js`, `domain-classifier.js`, `unavailable.js` y
+    `router.js` para leer de la BD. Fallback al hardcodeado si la BD falla.
+  - `scripts/migrate_prompts.mjs`: carga `chat.system` y `chat.classifier`
+    en `admin.prompt_templates` (versionado, idempotente). Corrido en staging:
+    `chat.system` v1 (7.475 chars), `chat.classifier` v1 (7.356 chars).
+  - `server/chat/data/no-disponible.json` eliminado (migrado a BD).
+  - Golden set: 25-26/28 (los fallos son flaky conocidos, no regresiones).
+  - **Migración 021 en producción**: pendiente hasta que se migre todo al
+    entorno real (SiteGround + Neon, o el que se decida). El código tiene
+    fallback en todas partes, así que producción no se rompe.
+- 📝 Próximo: **40-D.3** (casos nuevos del golden) o **Sprint 22** (alineación
+  de documentación). Decidir según prioridad.
+
+### 2026-10-21
+- ✅ **Sprint 40-C completado y activo en producción (staging web)**.
 
 ### 2026-10-21
 - ✅ **Sprint 40-C completado y activo en producción (staging web)**.
@@ -1059,7 +1081,12 @@ Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de 
 
 - [X] **Sprint 39: capas del chat en el sidebar izquierdo.**
 - [ ] **Optimizar `count_near_layer` (proximidad).** Timeout con `derechos_agua_2025` (920 filas) × `red_hidrografica`. Se ejecuta el pipeline `proximidad_conteo` pero la RPC tarda >8s. Fix: índice GIST (verificar), limitar distancia máxima, o cachear resultados. Sprint corto (2-3h). Urgencia: media (el sistema degrada elegantemente).
----
+
+- [ ] **Panel admin para config del chat (Sprint 15).** La migración 021
+      agregó 4 tablas (`admin.unavailable_data`, `admin.prompt_templates`,
+      `admin.settings`, `admin.messages`) y 6 RPCs. Falta la UI en el panel
+      admin (Sprint 15) para que el admin pueda editar prompts, settings,
+      mensajes y datos no disponibles sin tocar SQL.
 
 ## Deuda técnica activa
 

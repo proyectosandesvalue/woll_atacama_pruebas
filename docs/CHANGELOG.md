@@ -45,6 +45,54 @@
 
 ## [Unreleased]
 
+## [Sprint 40-D.2] — 2026-10-22
+
+### Added
+- **Configuración del chat en BD (`admin.*`)**. El admin puede editar
+  prompts, settings, mensajes y datos no disponibles desde el panel admin
+  (Sprint 15).
+- Migración 021: 4 tablas (`admin.unavailable_data`, `admin.prompt_templates`,
+  `admin.settings`, `admin.messages`) y 6 RPCs (`chat_unavailable_data`,
+  `chat_get_prompt`, `chat_get_setting`, `chat_get_message`,
+  `admin_set_setting`, `admin_set_prompt`).
+- `scripts/migrate_prompts.mjs`: carga `chat.system` y `chat.classifier`
+  en `admin.prompt_templates` (versionado, idempotente).
+- `server/chat/unavailable.js`: detector de datos no disponibles. Lee de
+  la RPC `chat_unavailable_data()`. Caché de 5 min.
+- `server/chat/__tests__/unavailable.test.js`: 4 tests unitarios.
+- `docs/DECISIONS/020-inventario-dinamico.md`: diseño del inventario
+  dinámico para el Sprint 41.
+
+### Changed
+- `prompts.js`: `buildSystemPrompt` lee `chat.system` de la BD. Fallback
+  al hardcodeado. Eliminado `SYSTEM_PROMPT` (código muerto) y el `CATÁLOGO:`
+  duplicado. Log con `dbg()` en vez de `console.log()`.
+- `domain-classifier.js`: `classifyDomain` lee `chat.classifier` de la BD.
+  Fallback al hardcodeado.
+- `unavailable.js`: lee de la RPC `chat_unavailable_data()` (antes era un
+  JSON estático).
+- `router.js`: `isRouterEnabled` y `getMinConfidence` leen de la BD
+  (`chat.router.enabled` y `chat.router.min_confidence`). Env vars tienen
+  prioridad.
+- `handlers/chat.js`: detecta datos no disponibles antes del router, une
+  `notice` con truncamiento, agrega `no_disponible` al payload.
+- `evidence.js`: importa `detectUnavailable` y lo expone en `buildEvidence`.
+
+### Removed
+- `server/chat/data/no-disponible.json`: migrado a `admin.unavailable_data`.
+
+### Notas
+- La migración 021 está aplicada en **staging**. En **producción** se
+  aplicará cuando se migre todo al entorno real (SiteGround + Neon, o el
+  que se decida). El código tiene fallback en todas partes, así que
+  producción no se rompe.
+- Golden set con prompts de BD: 25-26/28 (los fallos son flaky conocidos
+  de no determinismo del LLM, no regresiones del refactor).
+- Deuda pendiente: UI del panel admin (Sprint 15) para editar las 4 tablas.
+
+---
+
+
 ## [Sprint 40-C] — 2026-10-21
 
 ### Added

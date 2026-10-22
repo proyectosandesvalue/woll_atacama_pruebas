@@ -164,3 +164,76 @@ El router se podía activar cuando, con el mismo golden set y `--repeat 3` en am
 - Fecha de cierre: 2026-10-21.
 - Horas reales vs. estimadas: 40-C estimado 13-16h, real ~18-20h (5 fixes + deploy + validación).
 - Desvíos: 40-C.4 diferido al 41 (decisión de producto: dejar el router activo con reglas redundantes).
+
+## 11. Refactor de configuración a BD (2026-10-22)
+
+### Contexto
+
+El 40-C dejó el router funcionando, pero la configuración seguía en código
+hardcodeado y env vars:
+- `SYSTEM_PROMPT_BASE` y `CLASSIFIER_SYSTEM_PROMPT` en `prompts.js` y
+  `domain-classifier.js`.
+- `CHAT_ROUTER_ENABLED` y `CHAT_ROUTER_MIN_CONFIDENCE` en env vars.
+- `MSG_OUT_OF_SCOPE` y "Sin respuesta." en `handlers/chat.js`.
+- `no-disponible.json` en `server/chat/data/`.
+
+Eso viola el principio del proyecto: **todo lo configurable debe estar en la BD**
+para que el admin lo pueda editar desde el panel (Sprint 15), sin tocar código.
+
+### Decisión
+
+Migrar toda la configuración del chat a `admin.*`:
+
+| Tabla | Qué contiene |
+|---|---|
+| `admin.unavailable_data` | Datos que el visor no tiene (inventario). |
+| `admin.prompt_templates` | Prompts versionados (`chat.system`, `chat.classifier`). |
+| `admin.settings` | Key-value con tipos (`chat.router.min_confidence`, killswitches). |
+| `admin.messages` | Mensajes estándar (`chat.out_of_scope`, `chat.no_response`, `chat.llm_error`). |
+
+RPCs de lectura (service_role): `chat_unavailable_data`, `chat_get_prompt`,
+`chat_get_setting`, `chat_get_message`.
+
+RPCs de escritura (panel admin): `admin_set_setting`, `admin_set_prompt`.
+
+### Consecuencias
+
+**Positivas**:
+- El admin puede editar prompts, settings, mensajes y datos no disponibles
+  sin tocar código (Sprint 15).
+- Los prompts están versionados: cada cambio crea una versión nueva
+  (`admin_set_prompt` incrementa `version` y desactiva la anterior).
+- Auditoría: cada fila tiene `updated_at` y `updated_by`.
+- Fallback en todas partes: si la BD falla, el código usa el hardcodeado y
+  el chat sigue funcionando.
+
+**Costos**:
+- 4 tablas + 6 RPCs + 1 script de migración (`migrate_prompts.mjs`).
+- El panel admin (Sprint 15) tiene que agregar UI para editar las 4 tablas.
+- La configuración de la BD tiene prioridad sobre las env vars (excepto
+  en `router.js`, donde las env vars tienen prioridad para tests).
+
+**Riesgos**:
+- Si un admin borra `chat.system` o `chat.classifier`, el chat usa el
+  hardcodeado. No es grave, pero conviene un `NOT NULL` implícito en el
+  panel admin (no permitir borrar, solo versionar).
+- La RPC `chat_unavailable_data()` tiene caché de 5 min en `unavailable.js`.
+  Si el admin edita la tabla, el cambio tarda hasta 5 min en reflejarse.
+
+### Migración en producción
+
+La migración 021 está aplicada en **staging**. En **producción** se aplicará
+cuando se migre todo al entorno real (SiteGround + Neon, o el que se decida).
+El código tiene fallback en todas las RPCs, así que producción no se rompe
+mientras tanto.
+
+### Próximos pasos
+
+1. **Sprint 15**: UI del panel admin para editar las 4 tablas.
+2. **Sprint 41**: cuando se implementen las recetas, agregar
+   `admin.analysis_recipes` y `admin.crop_requirements` (ya previsto en
+   el ADR 017).
+3. **Sprint 42**: cuando se ingieran fuentes externas, agregar
+   `ingest.sources` y el registro de fuentes (ya previsto en el ADR 018).
+4. **Sprint 43**: cuando se ingiera normativa, agregar `rag.documents` y
+   metadatos (ya previsto en el ADR 018).
