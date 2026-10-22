@@ -7,7 +7,8 @@
  *   3. Rate limit.
  *   4. Scope filter.
  *   5. Clasificador (dominio + intent + slots).
- *   6. Router determinístico (pipeline) o degradación al orquestador.
+ *   6. Detección de datos no disponibles (40-D.2).
+ *   7. Router determinístico (pipeline) o degradación al orquestador.
  */
 
 import { runOrchestrator } from "../chat/orchestrator.js";
@@ -19,6 +20,7 @@ import { classifyDomain } from "../chat/domain-classifier.js";
 import { route } from "../chat/router.js";
 import { getDB } from "../db/pool.js";
 import { retrieveLayers } from "../chat/layer-retrieval.js";
+import { detectUnavailable, buildUnavailableNotice,} from "../chat/unavailable.js";
 
 const LATAM_LIMIT = { perMinute: 20, perBurst: 5 };
 const NON_LATAM_LIMIT = { perMinute: 3, perBurst: 1 };
@@ -120,10 +122,28 @@ export async function handleChat(body, ctx = {}) {
       return { status: 403, body: { error: MSG_OUT_OF_SCOPE } };
     }
 
-    // ── Paso 6: router determinístico ─────────────────────────
+    // ── Paso 6: detección de datos no disponibles (40-D.2) ────
+    // Flag CHAT_UNAVAILABLE_ENABLED (default 0 = apagado).
+    let unavailableMatches = [];
+    let unavailableNotice = null;
+    try {
+      unavailableMatches = await detectUnavailable(text);
+      unavailableNotice = buildUnavailableNotice(unavailableMatches);
+    } catch (err) {
+      // Fail-open: sin detección, seguimos con el pipeline normal.
+    }
+
+    // ── Paso 7: router determinístico ─────────────────────────
     const routed = await route(classification, text);
     if (routed) {
-      const payload = buildPayloadFromPipeline(routed, text);
+      const payload = buildPayloadFromPipeline(
+        routed,
+        text,
+        unavailableNotice
+      );
+      if (unavailableMatches.length > 0) {
+        payload.no_disponible = unavailableMatches;
+      }
       if (ctx.includeTrace) {
         payload.trace = routed.results.map((r) => ({
           tool: r.tool,
@@ -134,12 +154,18 @@ export async function handleChat(body, ctx = {}) {
       return { status: 200, body: payload };
     }
 
-    // ── Paso 7: orquestador (fallback) ────────────────────────
+    // ── Paso 8: orquestador (fallback) ────────────────────────
     const payload = await runOrchestrator({ text, history, sessionId });
     const charts = Array.isArray(payload?.charts) ? payload.charts : [];
+
+    // Unir notice del orquestador con el de datos no disponibles.
+    const notices = [];
+    if (payload?.notice) notices.push(payload.notice);
+    if (unavailableNotice) notices.push(unavailableNotice);
+
     const normalized = {
       reply: payload?.reply || "Sin respuesta.",
-      notice: payload?.notice ?? null,
+      notice: notices.length > 0 ? notices.join("\n") : null,
       geojson: payload?.geojson ?? null,
       geojson_meta: payload?.geojson_meta ?? null,
       geojson_layers: Array.isArray(payload?.geojson_layers)
@@ -149,12 +175,15 @@ export async function handleChat(body, ctx = {}) {
       charts,
     };
 
+    if (unavailableMatches.length > 0) {
+      normalized.no_disponible = unavailableMatches;
+    }
+
     if (ctx.includeTrace) {
       normalized.trace = payload?.trace || [];
     }
 
     return { status: 200, body: normalized };
-
   } catch (err) {
     const errInfo = {
       message: err?.message || String(err),
@@ -180,11 +209,16 @@ export async function handleChat(body, ctx = {}) {
  * - get_layer_features → geojson_layers + geojson_meta.
  * - aggregate_by_admin / aggregate_layer → charts.
  * - citations: fuentes de cada tool.
+ * - notice: truncamiento + datos no disponibles (40-D.2).
  *
  * El reply SIEMPRE menciona las capas involucradas y los filtros aplicados,
- * haya o no tabla. Eso es lo que verifica el golden set con reply_must_contain.
+ * haya o no tabla (fix F2 del 40-C).
  */
-function buildPayloadFromPipeline(routed, userText = "") {
+function buildPayloadFromPipeline(
+  routed,
+  userText = "",
+  unavailableNotice = null
+) {
   const { results, slots = {} } = routed;
   const charts = [];
   const geojsonLayers = [];
@@ -236,7 +270,10 @@ function buildPayloadFromPipeline(routed, userText = "") {
         geojsonLayers.push({
           layer_id: lid,
           layer_label: lid,
-          geojson: { type: "FeatureCollection", features: fc.features.slice(0, 500) },
+          geojson: {
+            type: "FeatureCollection",
+            features: fc.features.slice(0, 500),
+          },
           style_hint: styleHint,
         });
       }
@@ -262,7 +299,7 @@ function buildPayloadFromPipeline(routed, userText = "") {
     }
   }
 
-  // FIX F2: el reply SIEMPRE menciona capas y filtros, con o sin tabla.
+  // reply enriquecido (siempre menciona capas y filtros) — fix F2
   const summaryParts = [];
   if (layersInvolved.size > 0) {
     summaryParts.push(
@@ -283,8 +320,6 @@ function buildPayloadFromPipeline(routed, userText = "") {
   }
   const summary = summaryParts.join(" ");
 
-  // Si hay tabla, va el resumen arriba y la tabla abajo.
-  // Si no hay tabla, va solo el resumen.
   const reply = replyTable ? `${summary}\n\n${replyTable}`.trim() : summary;
 
   // citations
@@ -300,6 +335,17 @@ function buildPayloadFromPipeline(routed, userText = "") {
       tool: r.tool,
       label: r.args.layer_id,
     });
+  }
+
+  // notice: truncamiento + datos no disponibles (40-D.2)
+  const notices = [];
+  if (truncated) {
+    notices.push(
+      `Mostrando ${truncated.shown} de ${truncated.total} resultados en el mapa.`
+    );
+  }
+  if (unavailableNotice) {
+    notices.push(unavailableNotice);
   }
 
   return {
@@ -322,9 +368,7 @@ function buildPayloadFromPipeline(routed, userText = "") {
           }
         : null,
     geojson_layers: geojsonLayers,
-    notice: truncated
-      ? `Mostrando ${truncated.shown} de ${truncated.total} resultados en el mapa.`
-      : null,
+    notice: notices.length > 0 ? notices.join("\n") : null,
     citations: citations.length > 0 ? citations : null,
     chart: charts.length === 1 ? charts[0] : null,
   };

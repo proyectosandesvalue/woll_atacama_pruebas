@@ -23,7 +23,7 @@ function dbg(...args) {
  */
 const CHAT_VERBOSE = /^(1|true|yes)$/i.test(process.env.CHAT_VERBOSE || "");
 
-const SYSTEM_PROMPT_BASE = `Eres un analista territorial de la Región de Atacama (Chile).
+export const SYSTEM_PROMPT_BASE = `Eres un analista territorial de la Región de Atacama (Chile).
 Tu trabajo es responder preguntas sobre datos territoriales usando tools que consultan la base de datos real.
 
 TIENES 9 TOOLS. Elige la correcta según el TIPO de pregunta:
@@ -217,11 +217,10 @@ MODO PRODUCCIÓN:
 - Habla como analista territorial: directo, claro, con datos y conclusiones.
 `;
 
-const SYSTEM_PROMPT =
-  SYSTEM_PROMPT_BASE + (CHAT_VERBOSE ? VERBOSE_RULES : NON_VERBOSE_RULES);
-
 export async function buildSystemPrompt(userText = "") {
   const db = await getDB();
+
+  // ── 1. Catálogo (sin cambios) ─────────────────────────────
   let catalog = [];
   try {
     catalog = (await db.rpc("chat_catalog")) ?? [];
@@ -271,17 +270,51 @@ export async function buildSystemPrompt(userText = "") {
     catalogBlock = lines.join("\n");
   }
 
-  const full = SYSTEM_PROMPT + "\nCATÁLOGO DE CAPAS:\n" + catalogBlock;
+  // ── 2. Prompt base: BD o hardcodeado (40-D.2 / Sprint 15) ─
+  let promptBase = SYSTEM_PROMPT_BASE;
+  try {
+    const fromDb = await db.rpc("chat_get_prompt", { p_id: "chat.system" });
+    if (typeof fromDb === "string" && fromDb.length > 100) {
+      promptBase = fromDb;
+    }
+  } catch (err) {
+    // Fail-open: usar el hardcodeado.
+    console.warn("[prompts] chat.system no disponible en BD, usando hardcodeado");
+  }
 
-  const baseChars = SYSTEM_PROMPT.length;
+  // ── 3. Verbose: BD o hardcodeado ──────────────────────────
+  let verboseRules = null;
+  try {
+    const v = await db.rpc("chat_get_setting", {
+      p_key: "chat.verbose",
+      p_default: null,
+    });
+    if (v !== null && v !== undefined) {
+      verboseRules = v === true ? VERBOSE_RULES : NON_VERBOSE_RULES;
+    }
+  } catch (err) {
+    // Fail-open: usar la env var.
+    verboseRules = null;
+  }
+
+  // Fallback: si la BD no devolvió chat.verbose, usar la env var.
+  if (verboseRules === null) {
+    verboseRules = CHAT_VERBOSE ? VERBOSE_RULES : NON_VERBOSE_RULES;
+  }
+
+  // ── 4. Ensamblado final ───────────────────────────────────
+  const promptConReglas = promptBase + verboseRules;
+  const full = promptConReglas + "\nCATÁLOGO DE CAPAS:\n" + catalogBlock;
+
+  const baseChars = promptConReglas.length;
   const catalogChars = catalogBlock.length;
   const totalChars = full.length;
   console.log(
     `[orchestrator] system prompt: ` +
-    `base=${baseChars} chars (~${Math.round(baseChars / 4)} tokens) | ` +
-    `catalogo=${catalogChars} chars (~${Math.round(catalogChars / 4)} tokens) | ` +
-    `total=${totalChars} chars (~${Math.round(totalChars / 4)} tokens) | ` +
-    `capas=${catalog.length} | relevantes=${retrieved.length} | confident=${confident}`
+      `base=${baseChars} chars (~${Math.round(baseChars / 4)} tokens) | ` +
+      `catalogo=${catalogChars} chars (~${Math.round(catalogChars / 4)} tokens) | ` +
+      `total=${totalChars} chars (~${Math.round(totalChars / 4)} tokens) | ` +
+      `capas=${catalog.length} | relevantes=${retrieved.length} | confident=${confident}`
   );
 
   return full;

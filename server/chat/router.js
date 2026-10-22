@@ -10,6 +10,11 @@
  * Variables:
  *   CHAT_ROUTER_ENABLED (default 0): si 0, siempre devuelve null.
  *   CHAT_ROUTER_MIN_CONFIDENCE (default 0.7): umbral mínimo.
+ *
+ * Configuración:
+ *   - `chat.router.enabled` en admin.settings (si existe).
+ *   - `chat.router.min_confidence` en admin.settings (si existe).
+ *   - Env vars tienen prioridad sobre la BD (para tests y overrides rápidos).
  */
 
 import { executePipeline } from "./capabilities/pipelines.js";
@@ -20,13 +25,44 @@ function dbg(...args) {
   if (DEBUG) console.log("[router]", ...args);
 }
 
-function isRouterEnabled() {
-  return /^(1|true|yes)$/i.test(process.env.CHAT_ROUTER_ENABLED || "0");
+async function isRouterEnabled() {
+  // Env var tiene prioridad.
+  if (process.env.CHAT_ROUTER_ENABLED !== undefined) {
+    return /^(1|true|yes)$/i.test(process.env.CHAT_ROUTER_ENABLED);
+  }
+
+  // Si no, leer de la BD.
+  try {
+    const { getDB } = await import("../db/pool.js");
+    const db = await getDB();
+    const v = await db.rpc("chat_get_setting", {
+      p_key: "chat.router.enabled",
+      p_default: false,
+    });
+    return v === true;
+  } catch {
+    return false;
+  }
 }
 
-function getMinConfidence() {
-  const n = Number(process.env.CHAT_ROUTER_MIN_CONFIDENCE);
-  return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 0.7;
+async function getMinConfidence() {
+  // Env var tiene prioridad (para tests y overrides rápidos).
+  const envVal = Number(process.env.CHAT_ROUTER_MIN_CONFIDENCE);
+  if (Number.isFinite(envVal) && envVal >= 0 && envVal <= 1) return envVal;
+
+  // Si no, leer de la BD.
+  try {
+    const { getDB } = await import("../db/pool.js");
+    const db = await getDB();
+    const dbVal = await db.rpc("chat_get_setting", {
+      p_key: "chat.router.min_confidence",
+      p_default: 0.7,
+    });
+    const n = Number(dbVal);
+    return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 0.7;
+  } catch {
+    return 0.7;
+  }
 }
 
 /**
@@ -38,8 +74,8 @@ function getMinConfidence() {
  *   null si no aplica pipeline (el caller debe degradar).
  */
 export async function route(classification, text = "") {
-  if (!isRouterEnabled()) {
-    dbg("router deshabilitado (CHAT_ROUTER_ENABLED=0)");
+  if (!(await isRouterEnabled())) {
+    dbg("router deshabilitado (CHAT_ROUTER_ENABLED=0 o chat.router.enabled=false)");
     return null;
   }
 
@@ -48,7 +84,7 @@ export async function route(classification, text = "") {
     return null;
   }
 
-  const minConfidence = getMinConfidence();
+  const minConfidence = await getMinConfidence();
   if (
     typeof classification.confidence !== "number" ||
     classification.confidence < minConfidence

@@ -9,6 +9,7 @@
 
 import { getDB } from "../db/pool.js";
 import { detectStyleHint } from "./style-hint.js";
+import { detectUnavailable, buildUnavailableNotice } from "./unavailable.js";
 
 const CHAT_GEOJSON_ENABLED = /^(1|true|yes)$/i.test(
   process.env.CHAT_GEOJSON_ENABLED ?? "1"
@@ -193,7 +194,7 @@ export async function buildEvidence(ctx, userText, catalog) {
   const coverageWarnings = [];
 
   if (!ctx || !Array.isArray(ctx.trace)) {
-    return { citations, coverageWarnings };
+    return { citations, coverageWarnings, unavailable: [] };
   }
 
   const layerIds = new Set();
@@ -253,5 +254,15 @@ export async function buildEvidence(ctx, userText, catalog) {
     }
   }
 
-  return { citations: uniqueCitations, coverageWarnings };
+   // 40-D.2: datos no disponibles en el visor.
+  let unavailable = [];
+  try {
+    unavailable = await detectUnavailable(userText);
+  } catch (err) {
+    dbg(`detectUnavailable falló: ${err?.message || err}`);
+  }
+
+  return { citations: uniqueCitations, coverageWarnings, unavailable };
 }
+
+    export { buildUnavailableNotice };

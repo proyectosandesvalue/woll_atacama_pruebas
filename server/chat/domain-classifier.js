@@ -26,7 +26,7 @@ const CACHE_MAX_SIZE = 200;
 /** @type {Map<string, {result: object, expires: number}>} */
 const cache = new Map();
 
-const CLASSIFIER_SYSTEM_PROMPT = `Eres un clasificador de consultas del Visor Territorial de Atacama.
+export const CLASSIFIER_SYSTEM_PROMPT = `Eres un clasificador de consultas del Visor Territorial de Atacama.
 Devuelve SIEMPRE un JSON con esta forma:
 {
   "domain": "IN" | "OUT",
@@ -266,6 +266,26 @@ function normalizeClassifierResult(parsed) {
 }
 
 /**
+ * Lee el prompt del clasificador de la BD (admin.prompt_templates).
+ * Fallback: CLASSIFIER_SYSTEM_PROMPT hardcodeado.
+ */
+async function getClassifierPrompt() {
+  try {
+    const { getDB } = await import("../db/pool.js");
+    const db = await getDB();
+    const fromDb = await db.rpc("chat_get_prompt", { p_id: "chat.classifier" });
+    if (typeof fromDb === "string" && fromDb.length > 100) {
+      log.debug("chat.classifier leído de BD");
+      return fromDb;
+    }
+    log.debug("chat.classifier no está en BD, usando hardcodeado");
+  } catch (err) {
+    log.debug(`chat.classifier no disponible en BD: ${err?.message || err}`);
+  }
+  return CLASSIFIER_SYSTEM_PROMPT;
+}
+
+/**
  * Clasifica una consulta y extrae intent/slots.
  *
  * Fail-open: si algo falla, devuelve { domain: "IN", confidence: 0 }
@@ -294,13 +314,14 @@ export async function classifyDomain(text, sessionId = null, catalogContext = nu
       ? `Pregunta: ${text}\n\nColumnas disponibles en las capas relevantes:\n${catalogContext}`
       : text;
 
+    const classifierPrompt = await getClassifierPrompt();
     const response = await llm.chat({
-      system: CLASSIFIER_SYSTEM_PROMPT,
+      system: classifierPrompt,
       messages: [{ role: "user", content: userMessage }],
       maxTokens: 700,
       temperature: 0,
       sessionId,
-    });
+});
 
     const raw = (response.content || "").trim();
     const parsed = parseClassifierResponse(raw);
