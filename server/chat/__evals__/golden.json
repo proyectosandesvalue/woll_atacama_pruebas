@@ -1,12 +1,16 @@
 {
-  "version": "1.0",
+  "version": "1.1",
   "created": "2026-10-12",
+  "updated": "2026-10-22",
   "model_expected": "gemini-3.1-flash-lite",
-  "description": "Golden set del chat del Visor Territorial de Atacama. Tres niveles: 1 = smoke, 2 = core, 3 = extendido.",
+  "description": "Golden set del chat del Visor Territorial de Atacama. Tres niveles (1=smoke, 2=core, 3=extendido) y cuatro tiers (1=simple, 2=multi-filtro, 3=multicriterio, 4=dato inexistente). Campos nuevos v1.1: tier, intent_esperado, fuente_esperada.",
   "cases": [
     {
       "id": "smoke-count-lagunas-por-comuna",
       "level": 1,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "conteo",
       "question": "¿Cuántas lagunas hay por comuna?",
       "expected": {
@@ -22,6 +26,9 @@
     {
       "id": "smoke-list-glaciares",
       "level": 1,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "listado-pintado",
       "question": "¿Cuáles son los glaciares?",
       "expected": {
@@ -35,6 +42,9 @@
     {
       "id": "smoke-ubicacion-desaladoras",
       "level": 1,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "ubicacion",
       "question": "¿Dónde están las plantas desaladoras?",
       "expected": {
@@ -48,6 +58,9 @@
     {
       "id": "smoke-bloqueo-fecha",
       "level": 1,
+      "tier": null,
+      "intent_esperado": null,
+      "fuente_esperada": null,
       "category": "bloqueo",
       "question": "¿Qué día es hoy?",
       "expected": {
@@ -61,6 +74,9 @@
     {
       "id": "smoke-count-total-glaciares",
       "level": 1,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "conteo",
       "question": "¿Cuántos glaciares hay en total?",
       "expected": {
@@ -74,6 +90,9 @@
     {
       "id": "smoke-count-humedales-por-comuna",
       "level": 1,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "conteo",
       "question": "¿Cuántos humedales hay por comuna?",
       "expected": {
@@ -89,6 +108,9 @@
     {
       "id": "smoke-count-derechos-por-provincia",
       "level": 1,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "conteo",
       "question": "¿Cuántos derechos de agua hay por provincia?",
       "expected": {
@@ -103,6 +125,9 @@
     {
       "id": "smoke-list-yacimientos",
       "level": 1,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "listado-pintado",
       "question": "¿Cuáles son los yacimientos?",
       "expected": {
@@ -116,6 +141,9 @@
     {
       "id": "smoke-list-humedales",
       "level": 1,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "listado-pintado",
       "question": "Lista los humedales",
       "expected": {
@@ -124,11 +152,14 @@
         "reply_must_contain": ["humedal"],
         "reply_must_not_contain": ["no puedo responder", "no pude generar"]
       },
-      "notes": "Listado con pintado."
+      "notes": "Listado con pintado. Flaky conocido (1 de 3)."
     },
     {
       "id": "smoke-muestra-volcanes",
       "level": 1,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "ubicacion",
       "question": "Muéstrame los volcanes activos en el mapa",
       "expected": {
@@ -142,6 +173,9 @@
     {
       "id": "core-color-glaciares-tipo",
       "level": 2,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "coloreo-por-atributo",
       "question": "¿Cuántos glaciares por tipo?",
       "expected": {
@@ -158,6 +192,9 @@
     {
       "id": "core-color-derechos-tipo",
       "level": 2,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "coloreo-por-atributo",
       "question": "¿Cuántos derechos de agua por tipo?",
       "expected": {
@@ -173,6 +210,9 @@
     {
       "id": "core-color-humedales-clasificacion",
       "level": 2,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "coloreo-por-atributo",
       "question": "Distribución de humedales por clasificación",
       "expected": {
@@ -182,11 +222,14 @@
         "reply_must_contain": ["humedal"],
         "reply_must_not_contain": ["no puedo responder", "no pude generar"]
       },
-      "notes": "Coloreo por clasificación."
+      "notes": "Coloreo por clasificación. Flaky conocido (1 de 3)."
     },
     {
       "id": "core-compare-glaciares-humedales",
       "level": 2,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "comparacion",
       "question": "Compárame glaciares y humedales por comuna",
       "expected": {
@@ -203,6 +246,9 @@
     {
       "id": "core-compare-glaciares-derechos",
       "level": 2,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "comparacion",
       "question": "Comparame la cantidad de glaciares y de derechos de agua",
       "expected": {
@@ -217,6 +263,9 @@
     {
       "id": "core-filter-derechos-consuntivos-copiapo",
       "level": 2,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "filtro-combinado",
       "question": "Dame los derechos de agua de la cuenca Copiapó pero solo los consuntivos",
       "expected": {
@@ -234,6 +283,9 @@
     {
       "id": "core-proximidad-derechos-rio",
       "level": 2,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "proximidad",
       "question": "¿Cuántos derechos de agua hay a menos de 1 km de un río?",
       "expected": {
@@ -247,6 +299,9 @@
     {
       "id": "core-ambiguedad-dame-glaciares",
       "level": 2,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "ambiguedad",
       "question": "Dame los glaciares",
       "expected": {
@@ -260,18 +315,23 @@
     {
       "id": "core-error-columna-inexistente",
       "level": 2,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "error",
       "question": "¿Cuántos glaciares hay por comuna según color?",
       "expected": {
         "graceful_error": true,
-        "reply_must_not_contain": ["no puedo responder esa pregunta"],
-        "notes": "La columna 'color' no existe. Debe fallar graceful, no con 'no puedo responder'."
+        "reply_must_not_contain": ["no puedo responder esa pregunta"]
       },
-      "notes": "Manejo de error."
+      "notes": "La columna 'color' no existe. Debe fallar graceful, no con 'no puedo responder'."
     },
     {
       "id": "core-truncamiento-todos-derechos",
       "level": 2,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "truncamiento",
       "question": "Dame TODOS los derechos de agua",
       "expected": {
@@ -286,6 +346,9 @@
     {
       "id": "ext-seguimiento-filtro",
       "level": 3,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "seguimiento",
       "question": "Dame los glaciares",
       "history": [
@@ -303,6 +366,9 @@
     {
       "id": "ext-correccion-consuntivos",
       "level": 3,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "correccion",
       "question": "No, esos no. Solo los consuntivos.",
       "history": [
@@ -320,6 +386,9 @@
     {
       "id": "ext-analisis-concentracion",
       "level": 3,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "analisis",
       "question": "¿Dónde hay más concentración de derechos de agua?",
       "expected": {
@@ -333,6 +402,9 @@
     {
       "id": "ext-cruce-capas",
       "level": 3,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "cruce",
       "question": "¿Qué relación hay entre los glaciares y los derechos de agua por comuna?",
       "expected": {
@@ -347,6 +419,9 @@
     {
       "id": "ext-color-comuna-acumulado",
       "level": 3,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "multi-capa",
       "question": "¿Cuántos glaciares por comuna?",
       "history": [
@@ -364,6 +439,9 @@
     {
       "id": "ext-bloqueo-territorio-otro",
       "level": 3,
+      "tier": null,
+      "intent_esperado": null,
+      "fuente_esperada": null,
       "category": "bloqueo",
       "question": "¿Cuántos glaciares hay en Argentina?",
       "expected": {
@@ -376,6 +454,9 @@
     {
       "id": "ext-bloqueo-tema-otro",
       "level": 3,
+      "tier": null,
+      "intent_esperado": null,
+      "fuente_esperada": null,
       "category": "bloqueo",
       "question": "¿Cuánto cuesta un iPhone?",
       "expected": {
@@ -388,6 +469,9 @@
     {
       "id": "ext-idioma-ingles",
       "level": 3,
+      "tier": 1,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "idioma",
       "question": "How many glaciers are in Atacama?",
       "expected": {
@@ -397,6 +481,164 @@
         "reply_must_not_contain": ["no puedo responder", "no pude generar"]
       },
       "notes": "Pregunta en inglés. El sistema debe responder en español."
+    },
+    {
+      "id": "core-filter-vallenar-huasco",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
+      "category": "filtro-combinado",
+      "question": "¿Cuántos derechos hay en Vallenar o Huasco?",
+      "expected": {
+        "tools_any": ["aggregate_by_admin", "query_layer"],
+        "reply_must_contain": ["derecho"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Requiere operador 'in' (40-A)."
+    },
+    {
+      "id": "core-compare-copiapo-vallenar",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
+      "category": "comparacion",
+      "question": "Compara los derechos de agua de Copiapó y Vallenar",
+      "expected": {
+        "tools_any": ["aggregate_by_admin", "aggregate_layer"],
+        "tools_count_min": 1,
+        "reply_must_contain": ["derecho"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Comparación entre dos comunas."
+    },
+    {
+      "id": "core-filter-caudal-mayor-100",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
+      "category": "filtro-combinado",
+      "question": "Derechos con más de 100 L/s",
+      "expected": {
+        "tools_any": ["query_layer", "aggregate_layer"],
+        "graceful_error": true,
+        "reply_must_not_contain": ["no puedo responder esa pregunta"]
+      },
+      "notes": "Hasta 37-D, Caudal Anual Promedio es texto. Debe fallar graceful."
+    },
+    {
+      "id": "core-filter-consuntivos-copiapo-por-comuna",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
+      "category": "filtro-combinado",
+      "question": "Derechos consuntivos de la cuenca Copiapó por comuna",
+      "expected": {
+        "tools_any": ["aggregate_by_admin", "aggregate_layer"],
+        "charts_count_min": 1,
+        "reply_must_contain": ["derecho"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Filtro + agrupación."
+    },
+    {
+      "id": "core-multi-capa-humedales-glaciares",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
+      "category": "multi-capa",
+      "question": "Humedales y glaciares en Alto del Carmen",
+      "expected": {
+        "tools_any": ["query_layer", "get_layer_features", "aggregate_by_admin"],
+        "tools_count_min": 2,
+        "reply_must_contain": ["humedal", "glaciar"],
+        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+      },
+      "notes": "Dos capas, resolución de entidad (Alto del Carmen)."
+    },
+    {
+      "id": "tier3-aptitud-jojoba",
+      "level": 3,
+      "tier": 3,
+      "intent_esperado": "analisis_receta",
+      "fuente_esperada": "no_disponible",
+      "category": "analisis",
+      "question": "¿Cuál es la mejor zona para jojoba?",
+      "expected": {
+        "graceful_error": true,
+        "reply_must_not_contain": ["no puedo responder esa pregunta"],
+        "reply_must_not_match": ["mejor zona es", "la zona óptima es"],
+        "notice_required": true
+      },
+      "notes": "Sin receta registrada. Debe declarar que no hay análisis de aptitud."
+    },
+    {
+      "id": "tier3-aptitud-olivos",
+      "level": 3,
+      "tier": 3,
+      "intent_esperado": "analisis_receta",
+      "fuente_esperada": "no_disponible",
+      "category": "analisis",
+      "question": "¿Dónde conviene plantar olivos?",
+      "expected": {
+        "graceful_error": true,
+        "reply_must_not_contain": ["no puedo responder esa pregunta"],
+        "reply_must_not_match": ["conviene plantar en", "la mejor zona es"],
+        "notice_required": true
+      },
+      "notes": "Sin receta registrada. Debe declarar que no hay análisis."
+    },
+    {
+      "id": "tier4-kilos-jojoba",
+      "level": 3,
+      "tier": 4,
+      "intent_esperado": "fuera_de_alcance",
+      "fuente_esperada": "no_disponible",
+      "category": "dato-inexistente",
+      "question": "¿Cuántos kilos de jojoba se producen al año?",
+      "expected": {
+        "graceful_error": true,
+        "reply_must_not_contain": ["no puedo responder esa pregunta"],
+        "reply_must_not_match": ["\\d+\\s*(kg|kilos|toneladas)", "se producen \\d+"],
+        "notice_required": true
+      },
+      "notes": "El visor no tiene producción en kilos. CA-8 de la spec 40-D."
+    },
+    {
+      "id": "tier4-rendimiento-palto",
+      "level": 3,
+      "tier": 4,
+      "intent_esperado": "fuera_de_alcance",
+      "fuente_esperada": "no_disponible",
+      "category": "dato-inexistente",
+      "question": "¿Cuánto rinde una hectárea de palto?",
+      "expected": {
+        "graceful_error": true,
+        "reply_must_not_contain": ["no puedo responder esa pregunta"],
+        "reply_must_not_match": ["\\d+\\s*(kg|kilos|toneladas|t/ha)", "rinde \\d+"],
+        "notice_required": true
+      },
+      "notes": "El visor no tiene rendimiento. Tier 4."
+    },
+    {
+      "id": "tier4-heladas-vallenar",
+      "level": 3,
+      "tier": 4,
+      "intent_esperado": "fuera_de_alcance",
+      "fuente_esperada": "no_disponible",
+      "category": "dato-inexistente",
+      "question": "¿Cuántas heladas hubo el año pasado en Vallenar?",
+      "expected": {
+        "graceful_error": true,
+        "reply_must_not_contain": ["no puedo responder esa pregunta"],
+        "reply_must_not_match": ["\\d+ heladas", "hubo \\d+"],
+        "notice_required": true
+      },
+      "notes": "El visor no tiene heladas históricas. Tier 4. Sprint 42."
     }
   ]
 }
