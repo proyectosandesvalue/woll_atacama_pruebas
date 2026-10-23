@@ -38,20 +38,24 @@ test("isLatam: ES no es LATAM", () => {
   assert.strictEqual(isLatam("ES"), false);
 });
 
-test("isLatam: undefined es false", () => {
-  assert.strictEqual(isLatam(undefined), false);
+// Fix 23-C: isLatam(null/undefined/"") ahora es fail-open (true).
+// El único caso en el que aplicamos el límite estricto es si el país
+// está presente y NO es LATAM.
+
+test("isLatam: undefined es fail-open (true)", () => {
+  assert.strictEqual(isLatam(undefined), true);
 });
 
-test("isLatam: null es false", () => {
-  assert.strictEqual(isLatam(null), false);
+test("isLatam: null es fail-open (true)", () => {
+  assert.strictEqual(isLatam(null), true);
 });
 
-test("isLatam: string vacío es false", () => {
-  assert.strictEqual(isLatam(""), false);
+test("isLatam: string vacío es fail-open (true)", () => {
+  assert.strictEqual(isLatam(""), true);
 });
 
-test("isLatam: número es false", () => {
-  assert.strictEqual(isLatam(42), false);
+test("isLatam: número es fail-open (true)", () => {
+  assert.strictEqual(isLatam(42), true);
 });
 
 // ── getCountryFromRequest ─────────────────────────────────────
@@ -76,14 +80,19 @@ test("getCountryFromRequest: req sin headers → undefined", () => {
 
 // ── getIpFromRequest ──────────────────────────────────────────
 
-test("getIpFromRequest: x-forwarded-for simple", () => {
+// Fix 23-C: la IP se cuenta desde la DERECHA de x-forwarded-for,
+// según TRUST_PROXY_HOPS (default 2). Antes se tomaba el primer valor.
+
+test("getIpFromRequest: x-forwarded-for simple (hops=2)", () => {
+  // Con un solo valor, el hops no afecta.
   const req = { headers: { "x-forwarded-for": "1.2.3.4" } };
   assert.strictEqual(getIpFromRequest(req), "1.2.3.4");
 });
 
-test("getIpFromRequest: x-forwarded-for con cadena → primer valor", () => {
-  const req = { headers: { "x-forwarded-for": "1.2.3.4, 5.6.7.8" } };
-  assert.strictEqual(getIpFromRequest(req), "1.2.3.4");
+test("getIpFromRequest: x-forwarded-for con cadena (hops=2)", () => {
+  // "1.2.3.4, 5.6.7.8, 9.10.11.12" con hops=2 → penúltimo = "5.6.7.8"
+  const req = { headers: { "x-forwarded-for": "1.2.3.4, 5.6.7.8, 9.10.11.12" } };
+  assert.strictEqual(getIpFromRequest(req), "5.6.7.8");
 });
 
 test("getIpFromRequest: x-real-ip como fallback", () => {

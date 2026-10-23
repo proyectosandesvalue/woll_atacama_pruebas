@@ -1,10 +1,5 @@
 /**
  * Tests unitarios de validateChatInput.
- *
- * Cubre:
- *   - Validación de `text` (tipo, vacío, longitud, contenido mínimo).
- *   - Validación de `history` (estructura, roles, longitudes).
- *   - Combinaciones válidas e inválidas.
  */
 
 import { test } from "node:test";
@@ -158,14 +153,15 @@ test("history item con content no-string falla", () => {
   assert.match(out.error, /'content' que no es string/);
 });
 
-test("history item con content demasiado largo falla", () => {
+// Fix 23-C: el validador TRUNCA el content demasiado largo, no lo rechaza.
+test("history item con content demasiado largo se trunca", () => {
   const content = "a".repeat(LIMITS.MAX_HISTORY_ITEM_LENGTH + 1);
   const out = validateChatInput({
     text: "hola",
     history: [{ role: "user", content }],
   });
-  assert.strictEqual(out.ok, false);
-  assert.match(out.error, /supera los/);
+  assert.strictEqual(out.ok, true);
+  assert.match(out.history[0].content, /\[truncado\]$/);
 });
 
 // ── body: casos inválidos ──────────────────────────────────────
@@ -185,8 +181,9 @@ test("body string falla", () => {
   assert.strictEqual(out.ok, false);
 });
 
+// Fix 23-C: MAX_HISTORY_ITEMS pasó de 20 a 6.
 test("LIMITS expone las constantes esperadas", () => {
   assert.strictEqual(LIMITS.MAX_TEXT_LENGTH, 1000);
-  assert.strictEqual(LIMITS.MAX_HISTORY_ITEMS, 20);
+  assert.strictEqual(LIMITS.MAX_HISTORY_ITEMS, 6);
   assert.strictEqual(LIMITS.MAX_HISTORY_ITEM_LENGTH, 2000);
 });

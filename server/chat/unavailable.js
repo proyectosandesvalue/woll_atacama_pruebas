@@ -22,8 +22,23 @@ let _inventoryCache = null;
 let _inventoryCacheTime = 0;
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 min
 
+let _testInventory = null;
+
+/**
+ * Hook para tests: inyecta un inventario sin tocar la BD.
+ * Solo para tests. En producción, `_testInventory` es null.
+ */
+export function _setInventoryForTests(inventory) {
+  _testInventory = inventory;
+  _inventoryCache = inventory;
+  _inventoryCacheTime = Date.now();
+}
+
 async function loadInventory() {
-  const now = Date.now();
+  if (_testInventory !== null) {
+    return _testInventory;
+  }
+    const now = Date.now();
   if (_inventoryCache && now - _inventoryCacheTime < CACHE_TTL_MS) {
     return _inventoryCache;
   }
