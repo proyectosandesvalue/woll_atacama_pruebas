@@ -16,7 +16,7 @@
  */
 
 import { getLLM } from "../llm/provider.js";
-import { createContextLogger } from "../../js/utils/logger.js";
+import { createContextLogger } from "../utils/logger.js";
 
 const log = createContextLogger("DomainClassifier");
 

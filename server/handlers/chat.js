@@ -21,6 +21,15 @@ import { route } from "../chat/router.js";
 import { getDB } from "../db/pool.js";
 import { retrieveLayers } from "../chat/layer-retrieval.js";
 import { detectUnavailable, buildUnavailableNotice,} from "../chat/unavailable.js";
+import { randomBytes } from "node:crypto";
+
+/**
+ * Genera un ID corto y legible para correlacionar errores con logs.
+ * 8 caracteres hex (4 bytes). Ej: "a1b2c3d4".
+ */
+function generateErrorId() {
+  return randomBytes(4).toString("hex");
+}
 
 const LATAM_LIMIT = { perMinute: 20, perBurst: 5 };
 const NON_LATAM_LIMIT = { perMinute: 3, perBurst: 1 };
@@ -184,23 +193,34 @@ export async function handleChat(body, ctx = {}) {
     }
 
     return { status: 200, body: normalized };
-  } catch (err) {
+    } catch (err) {
+    // ── Error inesperado: mensaje genérico + errorId ─────────
+    // El detalle va solo a los logs, nunca al cliente.
+    const errorId = generateErrorId();
     const errInfo = {
+      errorId,
       message: err?.message || String(err),
       name: err?.name || "Error",
       stack: err?.stack
-        ? String(err.stack).split("\n").slice(0, 3).join(" | ")
+        ? String(err.stack).split("\n").slice(0, 5).join(" | ")
         : "",
     };
-    console.error("[/api/chat] ERROR:", JSON.stringify(errInfo));
 
     const isConfigError =
       typeof err?.message === "string" &&
       err.message.includes("Variable de entorno");
     const status = isConfigError ? 503 : 500;
-    return { status, body: { error: errInfo.message } };
+    return {
+      status,
+      body: {
+        error:
+          "Ocurrió un error procesando tu consulta. " +
+          "Intentá de nuevo en unos segundos. " +
+          "Si persiste, reportá el código de error al equipo.",
+        errorId,
+      },
+    };
   }
-}
 
 /**
  * Arma el payload del frontend a partir de los resultados de un pipeline.
@@ -372,4 +392,5 @@ function buildPayloadFromPipeline(
     citations: citations.length > 0 ? citations : null,
     chart: charts.length === 1 ? charts[0] : null,
   };
+}
 }

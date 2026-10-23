@@ -58,13 +58,20 @@ export default async function handler(req, res) {
   const ip = getIpFromRequest(req);
   const country = getCountryFromRequest(req);
 
-  // ── Delegar al handler puro ──────────────────────────────
+    // ── Delegar al handler puro ──────────────────────────────
   const result = await handleChat(req.body || {}, { ip, country });
 
   if (result.headers) {
     for (const [key, value] of Object.entries(result.headers)) {
       res.setHeader(key, value);
     }
+  }
+
+  // Si hay errorId, agregarlo al log del adapter (correlación).
+  if (result.body?.errorId) {
+    console.warn(
+      `[/api/chat] request falló con errorId=${result.body.errorId}`
+    );
   }
 
   return res.status(result.status).json(result.body);
