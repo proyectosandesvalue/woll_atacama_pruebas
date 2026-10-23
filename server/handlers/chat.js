@@ -21,6 +21,7 @@ import { route } from "../chat/router.js";
 import { getDB } from "../db/pool.js";
 import { retrieveLayers } from "../chat/layer-retrieval.js";
 import { detectUnavailable, buildUnavailableNotice,} from "../chat/unavailable.js";
+import { checkCostGuard, recordLLMCall } from "../chat/cost-guard.js";
 import { randomBytes } from "node:crypto";
 
 /**
@@ -41,6 +42,17 @@ const MSG_OUT_OF_SCOPE =
 
 export async function handleChat(body, ctx = {}) {
   try {
+    // ── Paso 0: cost guard (killswitch + tope diario) ─────────
+    // Se verifica ANTES de validar input, para no gastar ciclos
+    // si el chat está apagado.
+    const guard = checkCostGuard();
+    if (!guard.ok) {
+      return {
+        status: guard.status,
+        body: { error: guard.message },
+      };
+    }
+
     // ── Paso 1: validar input ─────────────────────────────────
     const validation = validateChatInput(body);
     if (!validation.ok) {
@@ -122,11 +134,12 @@ export async function handleChat(body, ctx = {}) {
       ? `${lastUserTurn}\n\n[Turno actual] ${text}`
       : text;
 
-    const classification = await classifyDomain(
+        const classification = await classifyDomain(
       classifierText,
       sessionId,
       catalogContext
     );
+    recordLLMCall(); 
     if (classification.domain === "OUT") {
       return { status: 403, body: { error: MSG_OUT_OF_SCOPE } };
     }
@@ -165,6 +178,7 @@ export async function handleChat(body, ctx = {}) {
 
     // ── Paso 8: orquestador (fallback) ────────────────────────
     const payload = await runOrchestrator({ text, history, sessionId });
+    recordLLMCall();
     const charts = Array.isArray(payload?.charts) ? payload.charts : [];
 
     // Unir notice del orquestador con el de datos no disponibles.

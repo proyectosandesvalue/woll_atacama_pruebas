@@ -506,7 +506,7 @@
       "category": "comparacion",
       "question": "Compara los derechos de agua de Copiapó y Vallenar",
       "expected": {
-        "tools_any": ["aggregate_by_admin", "aggregate_layer"],
+        "tools_any": ["aggregate_by_admin", "aggregate_layer", "aggregate_by_admin_and_column"],
         "tools_count_min": 1,
         "reply_must_contain": ["derecho"],
         "reply_must_not_contain": ["no puedo responder", "no pude generar"]
