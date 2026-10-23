@@ -89,8 +89,43 @@ if (cases.length === 0) {
   process.exit(2);
 }
 
+// ── Configuración de la corrida (para reproducir) ──────────
+const LLM_MODEL = process.env.LLM_MODEL || "(no configurado)";
+const FLAGS = {
+  CHAT_ROUTER_ENABLED:
+    process.env.CHAT_ROUTER_ENABLED || "(default 0)",
+  CHAT_ROUTER_MIN_CONFIDENCE:
+    process.env.CHAT_ROUTER_MIN_CONFIDENCE || "(default 0.7)",
+  CHAT_UNAVAILABLE_ENABLED:
+    process.env.CHAT_UNAVAILABLE_ENABLED || "(default 0)",
+  CHAT_GEOJSON_ENABLED:
+    process.env.CHAT_GEOJSON_ENABLED || "(default 1)",
+  CHAT_VERBOSE: process.env.CHAT_VERBOSE || "(default 0)",
+};
+
+let promptVersions = "(no disponible)";
+try {
+  const { getDB } = await import("../server/db/pool.js");
+  const db = await getDB();
+  const sys = await db.rpc("chat_get_prompt", { p_id: "chat.system" });
+  const cls = await db.rpc("chat_get_prompt", { p_id: "chat.classifier" });
+  promptVersions =
+    `chat.system ${sys ? sys.length + " chars" : "NO EXISTE"}, ` +
+    `chat.classifier ${cls ? cls.length + " chars" : "NO EXISTE"}`;
+} catch (err) {
+  promptVersions = `(no se pudo leer la BD: ${err?.message || err})`;
+}
+
+// ── Header de la corrida ───────────────────────────────────
 log(`${C.bold}Golden set: ${cases.length} caso(s)${C.reset}`);
 log(`${C.gray}Modo: ${opts.remote ? "remoto" : "local"}${C.reset}`);
+log(`${C.gray}Modelo: ${LLM_MODEL}${C.reset}`);
+log(
+  `${C.gray}Flags: ${Object.entries(FLAGS)
+    .map(([k, v]) => `${k}=${v}`)
+    .join(", ")}${C.reset}`
+);
+log(`${C.gray}Prompts: ${promptVersions}${C.reset}`);
 if (opts.remote) {
   log(
     `${C.gray}Nota: en modo remoto, los checks de trace se reportan como warning.${C.reset}`
@@ -122,6 +157,20 @@ async function callChat(question, history = []) {
         "../server/chat/orchestrator.js"
       );
       _resetSystemPrompt();
+    } catch {}
+
+    try {
+      const { _resetPromptCache } = await import(
+        "../server/chat/prompts.js"
+      );
+      _resetPromptCache();
+    } catch {}
+
+    try {
+      const { _resetClassifierPromptCache } = await import(
+        "../server/chat/domain-classifier.js"
+      );
+      _resetClassifierPromptCache();
     } catch {}
   }
 
@@ -156,7 +205,7 @@ function verifyCase(c, response) {
   const { status, data } = response;
   const exp = c.expected || {};
   const trace = Array.isArray(data?.trace) ? data.trace : [];
-  const isRemote = opts.remote; // ← fix: en remoto no hay trace
+  const isRemote = opts.remote;
 
   // 1. Bloqueo esperado.
   if (exp.blocked === true) {
@@ -183,7 +232,7 @@ function verifyCase(c, response) {
     return { ok: false, failures, warnings };
   }
 
-  // 3. tools_any: al menos una de las tools esperadas debe haberse llamado.
+  // 3. tools_any.
   if (exp.tools_any) {
     if (isRemote) {
       warnings.push(
@@ -200,7 +249,7 @@ function verifyCase(c, response) {
     }
   }
 
-  // 4. tools_count_min: mínimo de tools llamadas.
+  // 4. tools_count_min.
   if (exp.tools_count_min != null) {
     if (isRemote) {
       warnings.push(`tools_count_min: no verificable en modo remoto`);
@@ -211,7 +260,7 @@ function verifyCase(c, response) {
     }
   }
 
-  // 5. geojson required (no depende de trace, se verifica en ambos modos).
+  // 5. geojson required.
   const hasGeojson =
     Boolean(data?.geojson) || Boolean(data?.geojson_layers?.length);
   if (exp.geojson_required === true && !hasGeojson) {
@@ -221,7 +270,7 @@ function verifyCase(c, response) {
     warnings.push(`geojson presente pero expected=false (no crítico)`);
   }
 
-  // 6. geojson_filter_required: depende de trace.
+  // 6. geojson_filter_required.
   if (exp.geojson_filter_required) {
     if (isRemote) {
       warnings.push(`geojson_filter_required: no verificable en modo remoto`);
@@ -254,7 +303,7 @@ function verifyCase(c, response) {
     }
   }
 
-  // 7. geojson_cuenca_contains: depende de trace + reply.
+  // 7. geojson_cuenca_contains.
   if (exp.geojson_cuenca_contains) {
     if (isRemote) {
       warnings.push(`geojson_cuenca_contains: no verificable en modo remoto`);
@@ -290,7 +339,7 @@ function verifyCase(c, response) {
     }
   }
 
-  // 8. geojson_meta_truncated_expected (no depende de trace).
+  // 8. geojson_meta_truncated_expected.
   if (exp.geojson_meta_truncated_expected === true) {
     const truncated = data?.geojson_meta?.truncated === true;
     if (!truncated) {
@@ -300,7 +349,7 @@ function verifyCase(c, response) {
     }
   }
 
-  // 9. graceful_error: el sistema no debe crashear ni bloquear.
+  // 9. graceful_error.
   if (exp.graceful_error === true) {
     if (status !== 200) {
       failures.push(`graceful_error=true pero status=${status}`);
@@ -361,7 +410,7 @@ function verifyCase(c, response) {
     }
   }
 
-  // 14. geojson_meta_style_hint_required (no depende de trace).
+  // 14. geojson_meta_style_hint_required.
   if (exp.geojson_meta_style_hint_required === true) {
     const hint = data?.geojson_meta?.style_hint;
     const layersWithHint = (data?.geojson_layers || []).some(
@@ -372,7 +421,7 @@ function verifyCase(c, response) {
     }
   }
 
-  // 15. style_hint_attribute_any (no depende de trace).
+  // 15. style_hint_attribute_any.
   if (exp.style_hint_attribute_any) {
     const hints = [];
     if (data?.geojson_meta?.style_hint) hints.push(data.geojson_meta.style_hint);
@@ -390,7 +439,7 @@ function verifyCase(c, response) {
     }
   }
 
-  // 16. notice_required (no depende de trace).
+  // 16. notice_required.
   if (exp.notice_required === true && !data?.notice) {
     failures.push(`notice requerido pero ausente`);
   }
@@ -469,6 +518,7 @@ if (Object.keys(byTier).length > 0) {
   log("");
 }
 
+// ── Fallos ─────────────────────────────────────────────────
 if (failed > 0) {
   log(`${C.bold}Fallos:${C.reset}`);
   for (const f of failures) {
@@ -477,7 +527,17 @@ if (failed > 0) {
       log(`    ${msg}`);
     }
   }
-  process.exit(1);
+  log("");
 }
 
-process.exit(0);
+// ── Configuración de la corrida (para reproducir) ──────────
+// (Movido ANTES de process.exit para que se imprima siempre.)
+log(`${C.bold}Configuración de la corrida:${C.reset}`);
+log(`  Modelo: ${LLM_MODEL}`);
+for (const [k, v] of Object.entries(FLAGS)) {
+  log(`  ${k}=${v}`);
+}
+log(`  Prompts: ${promptVersions}`);
+log("");
+
+process.exit(failed > 0 ? 1 : 0);

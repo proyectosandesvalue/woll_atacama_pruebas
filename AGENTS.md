@@ -22,6 +22,8 @@ Si el código contradice el CONTRACT, no decidas por tu cuenta: señálalo y dej
 - **Chat:** el LLM nunca escribe SQL; solo invoca RPCs tipadas.
 - **Secretos:** solo en variables de entorno. `.env.staging` está en `.gitignore`.
 - **Tests:** toda feature nueva trae al menos un test (`node:test`).
+- **Configuración del chat**: los prompts y settings viven en `admin.*` (migración 024). Antes de activar un cambio, correr el golden set. Ver "Gobierno de la configuración del chat".
+- **Migraciones**: la `024_admin_config.sql` y la `025_admin_rollback.sql` son las del 40-D.2. No renumerar. La `021_fix_filters_robust.sql` y la `022_fix_match_semantics.sql` son del 40-A (pre-existentes).
 - **Nombres de archivo:** no renombrar archivos existentes (`layerUtils.js`, `appState.js`, etc.) para ajustarlos al CONTRACT hasta que se cierre la decisión de naming (Sprint 22-E).
 - **Roadmap:** actualizar `docs/ROADMAP.md` al inicio y al cierre de cada sesión.
 
@@ -79,6 +81,25 @@ No hay build step.
 - Contrato de gráficos: `charts` (array) es canónico; `chart` (singular) solo por compatibilidad. Tipos: `pie` (≤ 6 grupos), `bar` (≤ 20), `horizontalBar` (> 20); el frontend dibuja `horizontalBar` como `bar` con `indexAxis: 'y'`. `aggregate_by_admin_and_column` no genera gráfico.
 - `CHAT_VERBOSE` (el LLM puede nombrar tools y `layer_id`) y `ORCHESTRATOR_DEBUG` (logs de servidor) son independientes.
 - Header `x-opencode-session` para el proveedor OpenCode Go.
+
+### Gobierno de la configuración del chat (Sprint 40-D.2)
+
+Los prompts (`chat.system`, `chat.classifier`), las settings (`chat.router.*`, `chat.verbose`, killswitches), los mensajes (`chat.*`) y el inventario de datos no disponibles viven en tablas `admin.*` de Supabase. Se pueden editar sin deploy.
+
+**Reglas antes de activar un cambio en producción**:
+1. Correr el golden set en staging con el prompt/setting nuevo:
+   `CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1 node --env-file=.env.staging scripts/run-golden-set.mjs --all`
+2. Comparar el acierto por tier con la línea base. Si baja, **no se activa**.
+3. Si baja, rollback con `admin_rollback_prompt(id, version, "tu-email")`.
+4. Los prompts están versionados. Cada cambio crea una versión nueva (`admin_set_prompt`). Se puede ver el historial con `admin_list_prompt_versions(id)`.
+5. Fallback: si la BD no responde, el chat usa el prompt hardcodeado (`SYSTEM_PROMPT_BASE`, `CLASSIFIER_SYSTEM_PROMPT`). INV-5 del CONTRACT.
+
+**Variables de entorno del golden set** (para reproducir la corrida):
+- `CHAT_ROUTER_ENABLED=1` (router determinístico).
+- `CHAT_UNAVAILABLE_ENABLED=1` (detector de datos no disponibles).
+- `CHAT_GEOJSON_ENABLED=1` (geojson en la respuesta).
+- `CHAT_VERBOSE=0` (modo producción) o `1` (desarrollo).
+- El header del runner imprime estos flags, el modelo y las versiones de prompt.
 
 ## Vercel
 

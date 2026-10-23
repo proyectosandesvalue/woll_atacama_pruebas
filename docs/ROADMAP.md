@@ -780,7 +780,7 @@ y eliminación.
 | 40-C.1 Registro de capacidades y pipelines | ✅ | 0f8f598 | 9 tools, 4 pipelines |
 | 40-C.2 Clasificador unificado y router | ✅ | 2a9fcbb | |
 | 40-C.3 Paquete de evidencia y cobertura | ✅ | 4fbd751 | |
-| 40-C.4 Retiro de reglas 13, 19, 20 y parches | ⏳ diferido al 41 | — | Decisión: dejar el router activo con las reglas redundantes. Se retiran en el 41 con calma. |
+| 40-C.4 Retiro de reglas 13, 19, 20 y parches | ⏳ pendiente (bloqueado por ADR 019) | — | Condición: paridad en el golden con `--repeat 3` en ambos modos. Hoy el router ON da 37/38 con 1 flaky; falta la corrida formal para desbloquearlo. |
 | 40-C.5 Medición, docs y deploy | ✅ | ab85419 | Router activo en producción (staging web) |
 | **40-D.2 Inventario de datos no disponibles** | ✅ | **a2db540** | Con refactor de config a BD (`admin.*`) |
 | 40-D.3 Casos nuevos del golden y cierre | ⏳ pendiente | — | |
@@ -929,6 +929,7 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
     fallback en todas partes, así que producción no se rompe.
 - 📝 Próximo: **40-D.3** (casos nuevos del golden) o **Sprint 22** (alineación
   de documentación). Decidir según prioridad.
+  - 📝 **40-C.4 desbloqueado condicionalmente**: se puede hacer cuando, con `--repeat 3` en ambos modos, el acierto por tier con el router ON sea ≥ al del ciclo actual. No está atado al Sprint 41.
 
 ### 2026-10-21
 - ✅ **Sprint 40-C completado y activo en producción (staging web)**.

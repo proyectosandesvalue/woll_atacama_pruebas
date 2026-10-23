@@ -5,6 +5,11 @@
  *   - SYSTEM_PROMPT_BASE (las 20 reglas).
  *   - VERBOSE_RULES / NON_VERBOSE_RULES.
  *   - buildSystemPrompt() que arma el catálogo (con retrieval) + prompt.
+ *
+ * Los prompts se leen de `admin.prompt_templates` (RPC `chat_get_prompt`)
+ * con fallback al hardcodeado. Configurable desde el panel admin (Sprint 15).
+ *
+ * INV-5: si la BD no responde, se usa el hardcodeado. El chat no se rompe.
  */
 
 import { getDB } from "../db/pool.js";
@@ -17,11 +22,16 @@ function dbg(...args) {
 }
 
 /**
- * Modo verbose del chat.
+ * Modo verbose del chat (fallback si la BD no tiene `chat.verbose`).
  *   true  → el LLM puede mencionar tools, layer_ids y nombres técnicos.
  *   false → el LLM habla SOLO en lenguaje natural.
  */
 const CHAT_VERBOSE = /^(1|true|yes)$/i.test(process.env.CHAT_VERBOSE || "");
+
+// Caché de 5 min para el prompt del sistema y el verbose.
+const PROMPT_CACHE_TTL_MS = 5 * 60 * 1000;
+let _systemPromptCache = { content: null, time: 0 };
+let _verboseCache = { value: null, time: 0 };
 
 export const SYSTEM_PROMPT_BASE = `Eres un analista territorial de la Región de Atacama (Chile).
 Tu trabajo es responder preguntas sobre datos territoriales usando tools que consultan la base de datos real.
@@ -146,7 +156,7 @@ REGLAS (20):
 
     Aplica "puntos", "líneas", "polígonos" o "registros" según la
     geometría. Si el usuario pide un conteo exacto de objetos,
-    aclará: "La base registra N polígonos; el número de objetos
+    aclaró: "La base registra N polígonos; el número de objetos
     únicos puede ser menor".
 
 17. CONTEXTO DEL HISTORIAL:
@@ -198,8 +208,6 @@ REGLAS (20):
     - Usa "derechos de agua" (no "derechos de aprovechamiento" en el
       cuerpo principal; podés mencionarlo una vez).
     - Usa "glaciares" (no "cuerpos de hielo").
-
-    CATÁLOGO:
 `;
 
 const VERBOSE_RULES = `
@@ -270,52 +278,80 @@ export async function buildSystemPrompt(userText = "") {
     catalogBlock = lines.join("\n");
   }
 
-  // ── 2. Prompt base: BD o hardcodeado (40-D.2 / Sprint 15) ─
+  // ── 2. Prompt base: BD (con caché) o hardcodeado ──────────
   let promptBase = SYSTEM_PROMPT_BASE;
-  try {
-    const fromDb = await db.rpc("chat_get_prompt", { p_id: "chat.system" });
-    if (typeof fromDb === "string" && fromDb.length > 100) {
-      promptBase = fromDb;
+  const now = Date.now();
+  if (
+    _systemPromptCache.content &&
+    now - _systemPromptCache.time < PROMPT_CACHE_TTL_MS
+  ) {
+    promptBase = _systemPromptCache.content;
+    dbg("chat.system: cache hit");
+  } else {
+    try {
+      const fromDb = await db.rpc("chat_get_prompt", { p_id: "chat.system" });
+      if (typeof fromDb === "string" && fromDb.length > 100) {
+        promptBase = fromDb;
+        _systemPromptCache = { content: fromDb, time: now };
+        dbg(`chat.system leído de BD (${fromDb.length} chars)`);
+      } else {
+        dbg("chat.system no está en BD, usando hardcodeado");
+      }
+    } catch (err) {
+      dbg(
+        `chat.system no disponible en BD: ${err?.message || err}. Usando hardcodeado.`
+      );
     }
-  } catch (err) {
-    // Fail-open: usar el hardcodeado.
-    console.warn("[prompts] chat.system no disponible en BD, usando hardcodeado");
   }
 
-  // ── 3. Verbose: BD o hardcodeado ──────────────────────────
+  // ── 3. Verbose: BD (con caché) o hardcodeado ──────────────
   let verboseRules = null;
-  try {
-    const v = await db.rpc("chat_get_setting", {
-      p_key: "chat.verbose",
-      p_default: null,
-    });
-    if (v !== null && v !== undefined) {
-      verboseRules = v === true ? VERBOSE_RULES : NON_VERBOSE_RULES;
+  if (
+    _verboseCache.value !== null &&
+    now - _verboseCache.time < PROMPT_CACHE_TTL_MS
+  ) {
+    verboseRules =
+      _verboseCache.value === true ? VERBOSE_RULES : NON_VERBOSE_RULES;
+    dbg("chat.verbose: cache hit");
+  } else {
+    try {
+      const v = await db.rpc("chat_get_setting", {
+        p_key: "chat.verbose",
+        p_default: null,
+      });
+      if (v !== null && v !== undefined) {
+        _verboseCache = { value: v, time: now };
+        verboseRules = v === true ? VERBOSE_RULES : NON_VERBOSE_RULES;
+        dbg(`chat.verbose leído de BD: ${v}`);
+      }
+    } catch (err) {
+      dbg(`chat.verbose no disponible en BD: ${err?.message || err}`);
     }
-  } catch (err) {
-    // Fail-open: usar la env var.
-    verboseRules = null;
   }
 
-  // Fallback: si la BD no devolvió chat.verbose, usar la env var.
   if (verboseRules === null) {
     verboseRules = CHAT_VERBOSE ? VERBOSE_RULES : NON_VERBOSE_RULES;
+    dbg(`chat.verbose no está en BD, usando env var: ${CHAT_VERBOSE}`);
   }
 
   // ── 4. Ensamblado final ───────────────────────────────────
   const promptConReglas = promptBase + verboseRules;
   const full = promptConReglas + "\nCATÁLOGO DE CAPAS:\n" + catalogBlock;
 
-  const baseChars = promptConReglas.length;
-  const catalogChars = catalogBlock.length;
-  const totalChars = full.length;
-  console.log(
-    `[orchestrator] system prompt: ` +
-      `base=${baseChars} chars (~${Math.round(baseChars / 4)} tokens) | ` +
-      `catalogo=${catalogChars} chars (~${Math.round(catalogChars / 4)} tokens) | ` +
-      `total=${totalChars} chars (~${Math.round(totalChars / 4)} tokens) | ` +
-      `capas=${catalog.length} | relevantes=${retrieved.length} | confident=${confident}`
+  dbg(
+    `system prompt: base=${promptConReglas.length} chars | ` +
+      `catalogo=${catalogBlock.length} chars | ` +
+      `total=${full.length} chars | capas=${catalog.length} | ` +
+      `relevantes=${retrieved.length} | confident=${confident}`
   );
 
   return full;
+}
+
+/**
+ * Reset del caché de prompts. Solo para tests.
+ */
+export function _resetPromptCache() {
+  _systemPromptCache = { content: null, time: 0 };
+  _verboseCache = { value: null, time: 0 };
 }

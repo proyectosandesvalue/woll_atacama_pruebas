@@ -269,12 +269,24 @@ function normalizeClassifierResult(parsed) {
  * Lee el prompt del clasificador de la BD (admin.prompt_templates).
  * Fallback: CLASSIFIER_SYSTEM_PROMPT hardcodeado.
  */
+let _classifierPromptCache = { content: null, time: 0 };
+const CLASSIFIER_PROMPT_CACHE_TTL_MS = 5 * 60 * 1000;
+
 async function getClassifierPrompt() {
+  const now = Date.now();
+  if (
+    _classifierPromptCache.content &&
+    now - _classifierPromptCache.time < CLASSIFIER_PROMPT_CACHE_TTL_MS
+  ) {
+    return _classifierPromptCache.content;
+  }
+
   try {
     const { getDB } = await import("../db/pool.js");
     const db = await getDB();
     const fromDb = await db.rpc("chat_get_prompt", { p_id: "chat.classifier" });
     if (typeof fromDb === "string" && fromDb.length > 100) {
+      _classifierPromptCache = { content: fromDb, time: now };
       log.debug("chat.classifier leído de BD");
       return fromDb;
     }
@@ -321,7 +333,7 @@ export async function classifyDomain(text, sessionId = null, catalogContext = nu
       maxTokens: 700,
       temperature: 0,
       sessionId,
-});
+    });
 
     const raw = (response.content || "").trim();
     const parsed = parseClassifierResponse(raw);
@@ -355,3 +367,7 @@ export const CLASSIFIER_CONFIG = {
   CACHE_TTL_MS,
   CACHE_MAX_SIZE,
 };
+
+export function _resetClassifierPromptCache() {
+  _classifierPromptCache = { content: null, time: 0 };
+}

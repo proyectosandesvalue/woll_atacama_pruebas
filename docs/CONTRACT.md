@@ -20,6 +20,8 @@
 
 **1.6. Documentar la decisión, no el código.** El código dice "cómo". Los ADRs dicen "por qué".
 
+**1.7. Fallback documentado (INV-5).** Toda dependencia de configuración en BD debe tener un fallback en código. Si la BD no responde, el sistema sigue funcionando con el valor hardcodeado. El chat nunca se cae por falta de BD.
+
 ---
 
 ## 2. Los tres planos de configuración
@@ -32,7 +34,17 @@
 
 **Regla de oro**: si dudás de qué plano corresponde algo, preguntate "¿esto requiere cambiar código para que funcione?". Si sí → Plano 1. Si no → Plano 2. Si es un secreto → Plano 3.
 
-**Estado actual**: los planos 1 y 2 viven ambos en código. La migración del plano 2 a BD se hará cuando exista el panel admin. Mientras tanto, el operador no existe: todo lo cambia el dev.
+**Estado actual (2026-10-22)**:
+- **Plano 1 (estructura)**: sigue en código.
+- **Plano 2 (datos)**: parcialmente en BD. Las tablas `admin.unavailable_data`, `admin.prompt_templates`, `admin.settings` y `admin.messages` viven en Supabase (migración 021). Los prompts del chat (`chat.system`, `chat.classifier`) se leen de la BD. El resto (dimensiones, capas, alias) sigue en `js/config/*.js` hasta el Sprint 14.
+- **Plano 3 (secretos)**: sigue en env vars.
+
+**Reglas de gobierno de la configuración en BD**:
+- **Versionado**: cada cambio a un prompt crea una versión nueva (`admin_set_prompt`). Se puede volver atrás con `admin_rollback_prompt`.
+- **Golden antes de activar**: antes de promover un prompt a producción, correr el golden set en staging con `CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1`. Si el acierto por tier no baja, se promueve. Si baja, rollback.
+- **Fallback**: si la BD no responde o el prompt no existe, el código usa el hardcodeado (`SYSTEM_PROMPT_BASE`, `CLASSIFIER_SYSTEM_PROMPT`). El chat no se rompe sin BD. INV-5.
+- **Caché**: los prompts y settings se cachean 5 min en memoria del módulo. Cambios en la BD se reflejan en ≤ 5 min.
+- **Acceso**: las RPCs `chat_*` son `SECURITY DEFINER` y solo `service_role`. Hasta que exista la autenticación de admin (Sprint 15), solo el backend puede leerlas.
 
 ---
 
