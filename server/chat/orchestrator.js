@@ -41,7 +41,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   const deadline = Date.now() + budgetMs;
 
   const llm = await getLLM();
-  const system = await buildSystemPrompt(text);
+  const system = await buildSystemPrompt(text, history);
 
   dbg(
     `budget=${budgetMs}ms maxSteps=${maxSteps} model=${process.env.LLM_MODEL}`
@@ -50,7 +50,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   const ctx = { raw: new Map(), trace: [] };
 
   const messages = [];
-  for (const h of history.slice(-3)) {
+  for (const h of history) {
     if (h && (h.role === "user" || h.role === "assistant")) {
       messages.push({ role: h.role, content: String(h.content || "") });
     }
