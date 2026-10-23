@@ -9,6 +9,7 @@
  *   - Sin dependencias (Map nativo).
  *   - Síncrono.
  *   - Fail-open si algo va mal (mejor dejar pasar que bloquear a un usuario legítimo).
+ *   - Killswitch: si CHAT_ENABLED=0, no aplica rate limit.
  *
  * LIMITACIÓN CONOCIDA:
  *   En Vercel, cada invocación de Function puede vivir en un proceso distinto.
@@ -28,12 +29,17 @@ const BURST_WINDOW_MS = 10 * 1000;  // ventana de ráfaga: 10s
 const stores = new Map();
 
 /**
+ * Killswitch: si CHAT_ENABLED=0, no se aplica rate limit.
+ */
+function isChatEnabled() {
+  return !/^(0|false|no)$/i.test(process.env.CHAT_ENABLED || "1");
+}
+
+/**
  * Limpia entradas viejas para no acumular memoria indefinidamente.
- * Se llama cada vez que se consulta el limiter, pero solo hace trabajo
- * si hay entradas muy viejas.
  */
 function maybeGc(now) {
-  if (stores.size < 1000) return; // threshold bajo, no hacemos GC hasta que crezca
+  if (stores.size < 1000) return;
   for (const [key, entry] of stores) {
     if (now - entry.windowStart > WINDOW_MS * 5) {
       stores.delete(key);
@@ -50,6 +56,11 @@ function maybeGc(now) {
  * @returns {{ok: true} | {ok: false, retryAfterSeconds: number}}
  */
 export function checkRateLimit(ip, maxPerMinute, maxPerBurst) {
+  // Killswitch: si el chat está apagado, no aplicar rate limit.
+  if (!isChatEnabled()) {
+    return { ok: true };
+  }
+
   if (!ip || typeof ip !== "string") {
     // Sin IP no podemos limitar. Fail-open.
     return { ok: true };

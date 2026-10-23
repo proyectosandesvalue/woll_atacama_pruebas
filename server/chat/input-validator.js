@@ -10,7 +10,7 @@
  */
 
 const MAX_TEXT_LENGTH = 1000;
-const MAX_HISTORY_ITEMS = 20;
+const MAX_HISTORY_ITEMS = 6;
 const MAX_HISTORY_ITEM_LENGTH = 2000;
 const ALLOWED_ROLES = new Set(["user", "assistant"]);
 
