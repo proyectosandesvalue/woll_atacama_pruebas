@@ -65,7 +65,9 @@ function parseNumeric(value) {
 export async function runJsonColumnarEndpoint(db, source, endpoint) {
   const url = buildUrl(source, endpoint);
   const headers = buildHeaders(endpoint);
-  dbg(`GET ${url}`);
+    // Loguear la URL sin los query params sensibles (token, secret, etc.)
+  const urlForLog = url.replace(/([?&](token|secret|api_key|apikey)=)[^&]+/gi, "$1***");
+  dbg(`GET ${urlForLog}`);
 
   const res = await fetch(url, { method: endpoint.method, headers });
   if (!res.ok) {

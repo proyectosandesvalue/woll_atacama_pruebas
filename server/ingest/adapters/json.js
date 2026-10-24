@@ -178,7 +178,9 @@ export async function runJsonEndpoint(db, source, endpoint) {
   const url = buildUrl(source, endpoint);
   const headers = buildHeaders(endpoint);
 
-  dbg(`GET ${url}`);
+    // Loguear la URL sin los query params sensibles (token, secret, etc.)
+  const urlForLog = url.replace(/([?&](token|secret|api_key|apikey)=)[^&]+/gi, "$1***");
+  dbg(`GET ${urlForLog}`);
 
   const res = await fetch(url, { method: endpoint.method, headers });
   if (!res.ok) {
@@ -188,9 +190,25 @@ export async function runJsonEndpoint(db, source, endpoint) {
   const data = await res.json();
 
   // Extraer el array de registros
-  const records = resolvePath(data, endpoint.json_path);
+    // Extraer el array de registros
+  let records = resolvePath(data, endpoint.json_path);
+
+  // Si el json_path devuelve un objeto (no un array), iterar como
+  // {key: value} y enriquecer cada registro con `_key` (el key).
+  // Ej: MeteoChile `getEmaResumenDiario` devuelve
+  // `{estaciones: {"180005": {...}, "180017": {...}}}`.
+  if (records && typeof records === "object" && !Array.isArray(records)) {
+    records = Object.entries(records).map(([key, value]) => {
+      if (value && typeof value === "object") {
+        return { ...value, _key: key };
+      }
+      return { _key: key, _value: value };
+    });
+    dbg(`json_path "${endpoint.json_path}" era un objeto, convertido a ${records.length} registros`);
+  }
+
   if (!Array.isArray(records)) {
-    throw new Error(`json_path "${endpoint.json_path}" no devolvió un array`);
+    throw new Error(`json_path "${endpoint.json_path}" no devolvió un array ni un objeto iterable`);
   }
 
   dbg(`Registros: ${records.length}`);

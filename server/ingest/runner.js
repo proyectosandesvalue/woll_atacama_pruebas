@@ -66,14 +66,12 @@ export async function runEndpoint(endpointId) {
   // 4. Ejecutar el adapter
   let result;
   try {
-    if (endpoint.format === "json") {
-      // Detectar formato columnar vs array de objetos.
-      // - Array de objetos: json_path termina en [*] (MeteoChile).
-      // - Columnar: json_path es '$.data' o '$' (ARClim).
-      const isColumnar =
-        endpoint.json_path === "$.data" ||
-        endpoint.json_path === "$" ||
-        !endpoint.json_path?.includes("[*]");
+      if (endpoint.format === "json") {
+      // Columnar solo cuando json_path === '$.data' (el caso de ARClim).
+      // Todos los demás json_paths usan el adapter JSON genérico, que
+      // ahora maneja tanto arrays (`$.array[*]`) como objetos keyed
+      // (`$.estaciones` → convertido a registros con `_key`).
+      const isColumnar = endpoint.json_path === "$.data";
 
       if (isColumnar) {
         result = await runJsonColumnarEndpoint(db, source, endpoint);
