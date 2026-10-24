@@ -60,6 +60,10 @@
 | 07 | `/api/config` + snapshot | ⏳ pending | alta | 3-4h | — |
 | 08 | Migración a PostGIS (fuente principal) | ⏳ pending | alta | 40-46h | 07 |
 | 09 | Soporte de imágenes raster | 🚫 blocked | media | 2-25h | decisión técnica |
+| 09-A | Spike de rasters (investigación) | ⏳ pending | media | 4-6h | — |
+| 09-B | Implementación de rasters | ⏳ pending (bloqueado por 09-A) | media | 8-20h | 09-A |
+| 09-C | Spike de capas meteorológicas tipo Windy | ⏳ pending | media-alta | 4-6h | — |
+| 09-D | Implementación de capas meteorológicas | ⏳ pending (bloqueado por 09-C) | media-alta | 8-16h | 09-C |
 | 10 | Vista 3D del visor | ⏳ pending | baja | 20-40h | 08, 09 |
 | 11 | Análisis por Área de Interés (AOI) | ⏳ pending | alta | 15-28h | 08 |
 | 12 | Registro y visualización de indicadores | ⏳ pending | media | 20-33h | 08, 11, 14 |
@@ -73,7 +77,7 @@
 | 20 | Adapter real: meteorología | ⏳ pending | baja | 4-6h | 19 |
 | 21 | Adapter real: leyes (BCN) | ⏳ pending | baja | 6-8h | 19 |
 | 22 | Alineación de documentación | ⏳ pending | alta | 3-4h | — |
-| 23 | Hotfixes críticos del chat y la API | ⏳ pending | **crítica** | 14-15h | — |
+| 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ⏳ pending | alta | 16h | 23 |
 | 26 | Plataforma propia (Postgres + Docker + proxy) | ⏳ pending | alta | 38-45h | 23, 24 |
@@ -253,11 +257,86 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - [ ] **D** — Estilos y popups vía MVT (6h)
 - [ ] **E** — Exportación/descarga desde PostGIS (4h)
 
-### Sprint 09 — Soporte de imágenes raster
+### Sprint 09 — Imágenes raster (spike + implementación)
 
-**Estado**: 🚫 blocked · **Prioridad**: media · **Duración**: 2-25h · **Dependencias**: decisión técnica
+**Estado**: 🚫 blocked (esperando decisión técnica) · **Prioridad**: media.
 
-**Opciones**: WMS externo (2-3h), GEE (8-12h), GeoTIFF/COG (15-25h), PostGIS Raster (10-15h).
+**Sub-sprints**:
+
+#### 09-A: Spike de rasters (4-6h)
+
+**Objetivo**: decidir la tecnología para servir rasters en el visor.
+
+**Opciones a evaluar**:
+- **WMS externo** (2-3h): usar un servicio WMS público (IDE Chile, CIREN) para rasters. Simple, pero limitado a lo que ofrezca el servicio.
+- **Google Earth Engine** (8-12h): procesar rasters en la nube, exportar tiles. Potente, pero requiere cuenta GEE.
+- **GeoTIFF / COG** (15-25h): servir archivos GeoTIFF optimizados para la nube (Cloud Optimized GeoTIFF). Control total, pero requiere servidor.
+- **PostGIS Raster** (10-15h): guardar rasters en PostGIS. Integración con las capas vectoriales, pero requiere Postgres propio.
+
+**Salida**: ADR con la decisión + lista de rasters prioritarios.
+
+**Criterios de aceptación**:
+- ADR aceptado.
+- Lista de 3-5 rasters prioritarios.
+- Caso de uso definido (solo visualización / análisis / cruce con vectoriales).
+
+#### 09-B: Implementación de rasters (8-20h)
+
+**Estado**: ⏳ pending (bloqueado por 09-A) · **Dependencias**: 09-A.
+
+**Objetivo**: implementar la opción elegida en 09-A.
+
+**Tareas**:
+- Implementar la tecnología elegida.
+- Cargar 2-3 rasters de prueba.
+- Integrar con Leaflet.
+- Tool del chat: `get_raster_value(lat, lon, raster_id)`.
+
+**Criterios de aceptación**:
+- Los 2-3 rasters se ven en el visor.
+- El chat puede consultar un valor puntual de un raster.
+- Sin regresiones en las capas existentes.
+
+### Sprint 09-M — Capas meteorológicas tipo Windy (spike + implementación)
+
+**Estado**: 🚫 blocked (esperando decisión técnica) · **Prioridad**: media-alta.
+
+**Sub-sprints**:
+
+#### 09-M-A: Spike de capas meteorológicas (4-6h)
+
+**Objetivo**: decidir la tecnología para mostrar capas meteorológicas animadas en el visor.
+
+**Opciones a evaluar**:
+- **Windy API** (4-6h): usar el plugin de Leaflet de Windy. Simple, pero requiere API key de Windy.
+- **RainViewer** (2-3h): radar de precipitación gratuito. Simple, pero solo precipitación.
+- **OpenWeatherMap** (4-6h): capas de viento, precipitación, nubes, temperatura. Requiere API key.
+- **Implementación propia** (8-12h): usar Leaflet + datos de NOAA/NASA + animación de partículas. Control total, pero más trabajo.
+- **Radar DGAC** (a confirmar): si la DGAC publica datos de radar en un formato accesible.
+
+**Salida**: ADR con la decisión + lista de variables prioritarias.
+
+**Criterios de aceptación**:
+- ADR aceptado.
+- Lista de 2-3 variables prioritarias (viento, precipitación, temperatura).
+- Tipo de visualización definido (partículas animadas / radar estático / capas de color).
+
+#### 09-M-B: Implementación de capas meteorológicas (8-16h)
+
+**Estado**: ⏳ pending (bloqueado por 09-M-A) · **Dependencias**: 09-M-A.
+
+**Objetivo**: implementar la opción elegida en 09-M-A.
+
+**Tareas**:
+- Implementar la tecnología elegida.
+- Integrar con Leaflet.
+- Agregar un toggle "capa meteorológica" en el visor.
+- Tool del chat: `get_weather_layer(lat, lon, variable)`.
+
+**Criterios de aceptación**:
+- Las 2-3 variables se ven en el visor (animadas o estáticas).
+- El chat puede consultar el valor de la capa en un punto.
+- Sin regresiones en las capas existentes.
 
 ### Sprint 10 — Vista 3D del visor
 
@@ -910,6 +989,18 @@ y eliminación.
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-10-23
+- ✅ **Sprint 23 completado**: hotfixes críticos del chat y la API.
+  - 23-A: geojson fuera del LLM (ya resuelto en 40-C.3).
+  - 23-B (`eeb1e8c`): errores genéricos con errorId + logger desacoplado de `js/`.
+  - 23-C (`23d482e`): IP real (TRUST_PROXY_HOPS), país (GEO_PROVIDER), CORS restringido (ALLOWED_ORIGINS), history máximo 6 turnos.
+  - 23-D (`b4a662b`): history delimitado como contenido no confiable + REGLA 21 en el prompt.
+  - 23-E (`82b0341`): cost guard (killswitch CHAT_ENABLED + tope diario LLM_DAILY_REQUEST_CAP).
+  - 23-F (`07dfc95`): tests desactualizados corregidos. 134/134 tests pasan.
+  - 23-G: `chat_aggregate` verificado, funciona correctamente.
+  - `chore` (`b7c1e3c`): eliminado `021_admin_config.sql` (renombrado a 024).
+- 📝 Próximo: **40-C.4** (retirar reglas 13, 19, 20 del prompt y parches, bloqueado por ADR 019), o **Sprint 15** (panel admin), o **Sprint 26** (plataforma propia).
 
 ### 2026-10-22
 - ✅ **40-D.2 completado: configuración del chat en BD (`admin.*`)**.

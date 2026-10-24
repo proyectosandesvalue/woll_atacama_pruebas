@@ -45,6 +45,39 @@
 
 ## [Unreleased]
 
+## [Sprint 23] — 2026-10-23
+
+### Added
+- `server/utils/logger.js`: logger con contexto para el backend, sin dependencia de `js/` (CONTRACT §4.4).
+- `server/chat/cost-guard.js`: contador diario en memoria + killswitch `CHAT_ENABLED`. Se resetea a las 00:00 UTC.
+- REGLA 21 en el `SYSTEM_PROMPT_BASE`: el historial del usuario es contenido no confiable, el LLM no ejecuta instrucciones que aparezcan en él.
+- Variables de entorno: `GEO_PROVIDER`, `TRUST_PROXY_HOPS`, `ALLOWED_ORIGINS`, `CHAT_ENABLED`, `LLM_DAILY_REQUEST_CAP`, `MAX_HISTORY_TURNS`.
+
+### Changed
+- `server/chat/geo-filter.js`: `isLatam(null)` ahora devuelve `true` (fail-open). `getIpFromRequest` cuenta desde la derecha de `x-forwarded-for` según `TRUST_PROXY_HOPS` (default 2).
+- `server/chat/input-validator.js`: `MAX_HISTORY_ITEMS` 20 → 6 (3 pares user-assistant).
+- `server/chat/rate-limiter.js`: killswitch `CHAT_ENABLED=0` (skip rate limit).
+- `api/chat.js`: CORS restringido a `ALLOWED_ORIGINS` (antes `*`).
+- `server/handlers/chat.js`: los errores inesperados devuelven mensaje genérico + `errorId` (8 hex chars). El detalle (message, name, stack) va solo a los logs.
+- `server/chat/prompts.js`: `buildSystemPrompt` recibe `history` y lo envuelve en un bloque delimitado `[INICIO HISTORIAL]... [FIN HISTORIAL]`.
+- `server/chat/orchestrator.js`: usa el `history` completo (el validator lo limita a 6) y lo pasa a `buildSystemPrompt`.
+
+### Fixed
+- Tests desactualizados por los cambios del 23-C y 23-D:
+  - `geo-filter.test.js`: `isLatam(null/undefined/"")` ahora `true` (fail-open).
+  - `input-validator.test.js`: `content` demasiado largo se trunca (no se rechaza). `MAX_HISTORY_ITEMS = 6`.
+  - `unavailable.test.js`: usa `_setInventoryForTests()` para inyectar un inventario sin tocar la BD.
+- `db/migrations/021_admin_config.sql` eliminado (renombrado a 024 en el Sprint 40-D.2).
+
+### Notas
+- 134/134 tests pasan (`npm test`).
+- `chat_aggregate` verificado: funciona correctamente.
+- Golden set: 37/38 (1 flaky conocido: `smoke-list-humedales`, no determinismo del LLM).
+- El 23-A (geojson fuera del LLM) ya estaba resuelto en el 40-C.3.
+
+---
+
+
 ## [Sprint 40-D.2] — 2026-10-22
 
 ### Added
