@@ -178,9 +178,30 @@ export async function runJsonEndpoint(db, source, endpoint) {
   const url = buildUrl(source, endpoint);
   const headers = buildHeaders(endpoint);
 
-    // Loguear la URL sin los query params sensibles (token, secret, etc.)
-  const urlForLog = url.replace(/([?&](token|secret|api_key|apikey)=)[^&]+/gi, "$1***");
-  dbg(`GET ${urlForLog}`);
+  // Pre-cargar el set de estaciones permitidas si el filtro está activo.
+  let allowedEntities = null;
+  if (endpoint.entity_filter === "stations_only") {
+    try {
+      const stations = await db.rpc("admin_list_stations", { p_comuna: null });
+      allowedEntities = new Set(
+        (stations || []).map((s) => `estacion:${s.codigo_nacional}`)
+      );
+      dbg(`Filtro activo: ${allowedEntities.size} estaciones permitidas`);
+    } catch (err) {
+      dbg(`Error al cargar estaciones permitidas: ${err?.message}. Se omite el filtro.`);
+    }
+  }
+
+
+  const SENSITIVE_PARAMS =
+    "token|secret|api_key|apikey|api-key|access_token|refresh_token|" +
+    "usuario|user|username|login|email|correo|mail|" +
+    "password|passwd|pass|pwd|" +
+    "auth|authorization|bearer|key|clave";
+  const urlForLog = url.replace(
+    new RegExp(`([?&](?:${SENSITIVE_PARAMS})=)[^&]+`, "gi"),
+    "$1***"
+  );
 
   const res = await fetch(url, { method: endpoint.method, headers });
   if (!res.ok) {
@@ -230,7 +251,13 @@ export async function runJsonEndpoint(db, source, endpoint) {
         return val != null ? String(val) : "";
       });
 
-      if (!entityId || entityId.endsWith(":")) {
+        if (!entityId || entityId.endsWith(":")) {
+        skipped++;
+        continue;
+      }
+
+      // Filtro por estación (si está activo).
+      if (allowedEntities && !allowedEntities.has(entityId)) {
         skipped++;
         continue;
       }
