@@ -134,12 +134,8 @@ export async function handleChat(body, ctx = {}) {
       ? `${lastUserTurn}\n\n[Turno actual] ${text}`
       : text;
 
-        const classification = await classifyDomain(
-      classifierText,
-      sessionId,
-      catalogContext
-    );
-    recordLLMCall(); 
+      const classification = await classifyDomain(classifierText, sessionId, catalogContext);
+    recordLLMCall();  // ← 1ra llamada al LLM (NO TOCAR)
     if (classification.domain === "OUT") {
       return { status: 403, body: { error: MSG_OUT_OF_SCOPE } };
     }
@@ -180,6 +176,11 @@ export async function handleChat(body, ctx = {}) {
     const payload = await runOrchestrator({ text, history, sessionId });
     recordLLMCall();
     const charts = Array.isArray(payload?.charts) ? payload.charts : [];
+
+    await maybeLogUnanswered({
+      text, history, sessionId, ctx, classification, routed,
+      reply: payload?.reply, unavailableMatches,
+    });
 
     // Unir notice del orquestador con el de datos no disponibles.
     const notices = [];
@@ -407,4 +408,111 @@ function buildPayloadFromPipeline(
     chart: charts.length === 1 ? charts[0] : null,
   };
 }
+}
+
+/**
+ * Registra una pregunta que el chat no pudo responder.
+ *
+ * Solo registra si:
+ *   - La pregunta es del dominio (classification.domain === "IN").
+ *   - El chat no pudo responder (intent "fuera_de_alcance" o reply de límite).
+ *
+ * NO registra:
+ *   - Consultas fuera de dominio (OUT), porque son basura.
+ *   - Errores técnicos (rate limit, cost guard, etc.).
+ *
+ * Fire-and-forget: si falla, no afecta la respuesta al usuario.
+ */
+async function maybeLogUnanswered({
+  text,
+  history,
+  sessionId,
+  ctx,
+  classification,
+  routed,
+  reply,
+  unavailableMatches,
+}) {
+  try {
+    // No registrar si es OUT (fuera de dominio).
+    if (classification?.domain === "OUT") return null;
+
+    // Determinar si hay que registrar.
+    const isFueraDeAlcance =
+      classification?.intent === "fuera_de_alcance";
+
+    const replyStr = String(reply || "").toLowerCase();
+    const replyIndicaLimite =
+      replyStr.includes("no puedo responder") ||
+      replyStr.includes("no tengo informaci") ||
+      replyStr.includes("no cuento con") ||
+      replyStr.includes("no dispongo de") ||
+      replyStr.includes("no hay datos") ||
+      replyStr === "sin respuesta." ||
+      replyStr === "";
+
+    if (!isFueraDeAlcance && !replyIndicaLimite) return null;
+
+    // Determinar el motivo.
+    let reason = "unknown";
+    let reasonDetail = null;
+
+    if (Array.isArray(unavailableMatches) && unavailableMatches.length > 0) {
+      const first = unavailableMatches[0];
+      reason = first.motivo === "sin_receta" ? "no_recipe" : "no_data";
+      reasonDetail = first.descripcion || first.existe || null;
+    } else if (isFueraDeAlcance) {
+      reason = "no_data";
+      reasonDetail = "El clasificador devolvió fuera_de_alcance sin match en unavailable_data.";
+    } else if (replyIndicaLimite) {
+      reason = "no_tool";
+      reasonDetail = "El orquestador no encontró una tool para responder.";
+    }
+
+    // Armar contexto (últimos 2 turnos del historial).
+    const context =
+      Array.isArray(history) && history.length > 0
+        ? history.slice(-2)
+        : null;
+
+    // Armar la clasificación (sin los slots crudos, por privacidad).
+    const classificationSafe = classification
+      ? {
+          domain: classification.domain,
+          intent: classification.intent,
+          pipeline: classification.pipeline,
+          confidence: classification.confidence,
+        }
+      : null;
+
+    const routeSafe = routed?.pipeline
+      ? { pipeline: routed.pipeline.id, slots: routed.slots }
+      : null;
+
+    const db = await getDB();
+    const id = await db.rpc("chat_log_unanswered", {
+      p_question: text.slice(0, 1000),
+      p_context: context ? JSON.stringify(context) : null,
+      p_classification: classificationSafe
+        ? JSON.stringify(classificationSafe)
+        : null,
+      p_route: routeSafe ? JSON.stringify(routeSafe) : null,
+      p_user_role: ctx?.userRole || "publico",
+      p_user_email: ctx?.userEmail || null,
+      p_session_id: sessionId || null,
+      p_reason: reason,
+      p_reason_detail: reasonDetail,
+    });
+
+    if (id) {
+      console.log(`[unanswered] Registrada ${id} (reason=${reason})`);
+    }
+    return id;
+  } catch (err) {
+    // Fail-open: si falla, no afecta la respuesta.
+    console.warn(
+      `[unanswered] Error al registrar: ${err?.message || err}`
+    );
+    return null;
+  }
 }
