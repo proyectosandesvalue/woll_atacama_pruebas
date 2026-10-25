@@ -1,18 +1,23 @@
 const climaConfig = {
-  capas: ["zonas_climaticas", "limite_comunal_linea", "toponimia"],
+  capas: [
+    "zonas_climaticas", 
+    "limite_comunal_linea", 
+    "toponimia", 
+    "estaciones_metereologicas_atacama" // <-- NUEVA CAPA
+  ],
   cargaInicial: {
     grupos: ["clima"],
     capas: ["limite_comunal_linea"],
-    // Grupos que se cargan al activar la dimensión
-    // O también puedes especificar capas individuales si no usas grupos:
-    // capas: ["energia_linea_transmision", "subestaciones"]
-    // Escenario 3: Sin cargaInicial = carga todo (backward compatible)
-    // No defines la propiedad cargaInicial
   },
   grupos: {
     clima: {
       nombre: "Clima",
       capas: ["zonas_climaticas"],
+    },
+    // <-- NUEVA SUBDIMENSIÓN -->
+    estaciones_observaciones: {
+      nombre: "Estaciones y Observaciones",
+      capas: ["estaciones_metereologicas_atacama"],
     },
     contexto: {
       nombre: "Territorio",
@@ -61,14 +66,72 @@ const climaConfig = {
         Descripcion: "Descripcion",
         "Origen Data": "Origen Data",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#2d3436", // Color del borde
-        weight: 2, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0.4, // Transparencia del relleno
+        color: "#2d3436",
+        weight: 2,
+        fillOpacity: 0.4,
       },
     },
+
+    // <-- NUEVA CAPA: ESTACIONES METEOROLÓGICAS -->
+    estaciones_metereologicas_atacama: {
+      url: "estaciones_metereologicas_atacama.geojson",
+      type: "point",
+      nombrePersonalizado: "Estaciones Meteorológicas de Atacama",
+      // Atributo para colorear por tipo de estación
+      atributo: "tipoEstacion",
+      colores: {
+        "Automática": "#10b981",   // Verde
+        "Convencional": "#6b7280", // Gris
+        "Mixta": "#3b82f6",        // Azul
+      },
+      popupCampos: [
+        "nombreEstacion",
+        "comuna",
+        "provincia",
+        "altitud",
+        "tipoEstacion",
+        "tipoClasificacion",
+        "zonaGeografica",
+        "fechaInstalacion",
+      ],
+      alias: {
+        nombreEstacion: "Estación",
+        comuna: "Comuna",
+        provincia: "Provincia",
+        altitud: "Altitud (m)",
+        tipoEstacion: "Tipo",
+        tipoClasificacion: "Clasificación",
+        zonaGeografica: "Zona Geográfica",
+        fechaInstalacion: "Fecha de instalación",
+      },
+      // Íconos (puedes descomentar y usar íconos específicos si los tienes)
+      // iconos: {
+      //   "Automática": "estacion_auto.png",
+      //   "Convencional": "estacion_conv.png",
+      // },
+      estiloAlternativo: {
+        // Fallback si no hay íconos o si quieres que sean círculos de colores
+        color: "#333333",       // Color del borde
+        fillColor: "#3388ff",   // Color de relleno por defecto (se sobreescribe con 'colores')
+        radius: 6,              // Radio del punto
+        weight: 1.5,            // Grosor del borde
+        fillOpacity: 0.9,       // Transparencia del relleno
+      },
+      // Opcional: etiquetas con el nombre de la estación
+      // etiquetas: {
+      //   campo: "nombreEstacion",
+      //   estilo: {
+      //     color: "#000000",
+      //     fontSize: "10px",
+      //     fontFamily: "Arial, sans-serif",
+      //     bufferColor: "#ffffff",
+      //     bufferWidth: 1,
+      //     offsetY: -10,
+      //   },
+      // },
+    },
+
     limite_comunal_linea: {
       url: "limite_comunal_linea.geojson",
       type: "line",
@@ -83,30 +146,26 @@ const climaConfig = {
         NOM_PROVIN: "Provincia",
         NOM_REGION: "Region",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#2d3436", // Color del borde
-        weight: 2, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0, // Transparencia del relleno
+        color: "#2d3436",
+        weight: 2,
+        fillOpacity: 0,
       },
     },
     toponimia: {
       url: "toponimia.geojson",
-      type: "point", // Tipo de capa: point, line, polygon
-      atributo: "Tipo", // Asegúrate de que este atributo exista en tu GeoJSON
-      nombrePersonalizado: "Toponimia", // Nombre personalizado de la Capa
+      type: "point",
+      atributo: "Tipo",
+      nombrePersonalizado: "Toponimia",
       iconos: {
-        // Edicion de Iconos
         Asentamiento: "localidad.png",
       },
       estiloAlternativo: {
-        // Icono alternativo en caso que no encuentre el icono
-        color: "#FF6B6B", // Color del borde del punto
-        fillColor: "#FF6B6B", // Color de relleno del punto
-        radius: 4, // Radio del punto
-        weight: 1, // Grosor del borde del punto
-        fillOpacity: 0.8, // Transparencia del relleno del punto
+        color: "#FF6B6B",
+        fillColor: "#FF6B6B",
+        radius: 4,
+        weight: 1,
+        fillOpacity: 0.8,
       },
       popupCampos: ["Nombre"],
       alias: {
@@ -115,12 +174,12 @@ const climaConfig = {
       etiquetas: {
         campo: "Nombre",
         estilo: {
-          color: "#000000", // Color del texto
-          fontSize: "9px", // Tamaño de la fuente
-          fontFamily: "Arial, sans-serif", // Familia de la fuente
-          bufferColor: "#88304E", // Color del contorno
-          bufferWidth: 0.3, // Ancho del contorno
-          offsetY: -20, // Añadida propiedad para el offset vertical
+          color: "#000000",
+          fontSize: "9px",
+          fontFamily: "Arial, sans-serif",
+          bufferColor: "#88304E",
+          bufferWidth: 0.3,
+          offsetY: -20,
         },
       },
     },
