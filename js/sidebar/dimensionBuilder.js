@@ -11,6 +11,7 @@ import {
 } from "../utils/layerUtils.js";
 import { ConcurrentQueue } from "../utils/concurrentQueue.js";
 import { crearElementoCapa, syncIndividualCheckboxes } from "./layerItem.js";
+import { loadStations, clearStations } from "../utils/stationsMapUtils.js";
 
 const log = createContextLogger("DimensionBuilder");
 
@@ -165,21 +166,26 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
         }
 
         grupoConfig.capas.forEach((capaNombre) => {
-          const capaLi = crearElementoCapa(
-            capaNombre,
-            temaKey,
-            temaConfig,
-            temasConfig,
-            contenedor.id,
-            seCargaInicialmente
-          );
-          grupoCapasUl.appendChild(capaLi);
-        });
+        const capaLi = crearElementoCapa(
+          capaNombre,
+          temaKey,
+          temaConfig,
+          temasConfig,
+          contenedor.id,
+          seCargaInicialmente
+        );
+        // NUEVO: si la capa tiene selector de variables, lo adjuntamos
+        const capaConfig = temaConfig.estilo?.[capaNombre];
+        if (capaConfig?.selectorVariables) {
+          attachVariableSelector(capaLi, capaConfig);
+        }
+        grupoCapasUl.appendChild(capaLi);
+      });
 
         grupoLi.appendChild(grupoCapasUl);
         childrenContainer.appendChild(grupoLi);
 
-        grupoSwitch.addEventListener("change", async (e) => {
+                grupoSwitch.addEventListener("change", async (e) => {
           const grupoActivo = e.target.checked;
 
           const capasCheckboxes = grupoCapasUl.querySelectorAll(
@@ -191,13 +197,16 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
 
             for (const checkbox of capasCheckboxes) {
               const capaNombre = checkbox.value;
+              const capaConfig = temaConfig.estilo?.[capaNombre];
 
-              if (!appState.layers.loaded.has(capaNombre)) {
+              // NUEVO: ignorar la carga estática si es dinámica
+              if (!capaConfig?.selectorVariables && !appState.layers.loaded.has(capaNombre)) {
                 await cargarCapaIndividual(capaNombre, temaKey, temasConfig);
-                // cargarCapaIndividual ya marca la capa como cargada
               }
 
-              mostrarCapa(capaNombre);
+              if (!capaConfig?.selectorVariables) {
+                mostrarCapa(capaNombre);
+              }
 
               if (!checkbox.checked) {
                 checkbox.checked = true;
@@ -253,6 +262,10 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
           contenedor.id,
           seCargaInicialmente
         );
+        const capaConfig = temaConfig.estilo?.[capaNombre];
+        if (capaConfig?.selectorVariables) {
+          attachVariableSelector(capaLi, capaConfig);
+        }
         childrenContainer.appendChild(capaLi);
       });
     }
@@ -396,12 +409,16 @@ export async function activarCapasDeDimension(temaKey, listaCapas, temasConfig) 
     return estimateLayerSize(a, configA) - estimateLayerSize(b, configB);
   });
 
-  const promises = capasOrdenadas.map((capaNombre) => {
+    const promises = capasOrdenadas.map((capaNombre) => {
     return queue.add(async () => {
+
+      const capaConfig = temasConfig[temaKey]?.estilo?.[capaNombre];
+      if (capaConfig?.selectorVariables) return;
+
       try {
         if (!appState.layers.loaded.has(capaNombre)) {
           await cargarCapaIndividual(capaNombre, temaKey, temasConfig);
-          // cargarCapaIndividual ya marca la capa como cargada.
+          
         } else {
           mostrarCapa(capaNombre);
         }
@@ -486,5 +503,70 @@ export function activarDimension(temaKey) {
     if (!switchMobile.checked) {
       switchMobile.click();
     }
+  }
+}
+
+/**
+ * Adjunta el selector de variable a una capa que tenga `selectorVariables` en su config.
+ * Reemplaza el checkbox original (para quitar el handler estándar de carga de GeoJSON)
+ * por uno propio que carga/limpia la capa dinámica de estaciones.
+ */
+function attachVariableSelector(capaLi, capaConfig) {
+  const { selectorVariables } = capaConfig;
+  if (!selectorVariables || !Array.isArray(selectorVariables.opciones)) return;
+
+  const originalCheckbox = capaLi.querySelector('input.layer-checkbox[type="checkbox"]');
+  if (!originalCheckbox) return;
+
+  // Clonar para eliminar listeners del cargador estándar
+  const newCheckbox = originalCheckbox.cloneNode(true);
+  originalCheckbox.parentNode.replaceChild(newCheckbox, originalCheckbox);
+
+  // Contenedor del selector
+  const wrapper = document.createElement("div");
+  wrapper.className = "layer-variable-selector";
+
+  const label = document.createElement("label");
+  label.textContent = "Variable: ";
+
+  const select = document.createElement("select");
+  select.className = "layer-variable-select";
+
+  selectorVariables.opciones.forEach((op) => {
+    const option = document.createElement("option");
+    option.value = op.valor;
+    option.textContent = op.label;
+    select.appendChild(option);
+  });
+  select.value = selectorVariables.default || selectorVariables.opciones[0].valor;
+
+  label.appendChild(select);
+  wrapper.appendChild(label);
+  capaLi.appendChild(wrapper);
+
+  // Visibilidad del selector según el checkbox
+  wrapper.style.display = newCheckbox.checked ? "" : "none";
+
+  // Checkbox → cargar/limpiar capa dinámica
+  newCheckbox.addEventListener("change", () => {
+    if (newCheckbox.checked) {
+      wrapper.style.display = "";
+      loadStations(select.value, appState.map);
+    } else {
+      wrapper.style.display = "none";
+      clearStations(appState.map);
+    }
+  });
+
+  // Select → recargar capa con la nueva variable
+  select.addEventListener("change", () => {
+    if (newCheckbox.checked) {
+      loadStations(select.value, appState.map);
+    }
+  });
+
+  // Si arranca chequeado, cargar
+  if (newCheckbox.checked) {
+    loadStations(select.value, appState.map);
   }
 }

@@ -1,0 +1,33 @@
+name: Ingesta MeteoChile - Diaria
+
+on:
+  schedule:
+    # Corre todos los días a las 03:00 UTC (00:00 en Chile)
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar Ingesta Diaria
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          METEOCHILE_USER: ${{ secrets.METEOCHILE_USER }}
+          METEOCHILE_TOKEN: ${{ secrets.METEOCHILE_TOKEN }}
+        run: |
+          echo "Ejecutando rutina diaria..."
+          # Aquí a futuro agregaremos getAguaCaidaMensualAnual y getTemperaturaHistorica
+          node scripts/ingest-run.mjs --endpoint meteochile:getEmaResumenDiario

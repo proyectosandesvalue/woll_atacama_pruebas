@@ -75,7 +75,7 @@ const climaConfig = {
 
     // <-- NUEVA CAPA: ESTACIONES METEOROLÓGICAS -->
     estaciones_metereologicas_atacama: {
-      url: "estaciones_metereologicas_atacama.geojson",
+      url: "data:application/json,%7B%22type%22:%22FeatureCollection%22,%22features%22:%5B%5D%7D",
       type: "point",
       nombrePersonalizado: "Estaciones Meteorológicas de Atacama",
       // Atributo para colorear por tipo de estación
@@ -105,6 +105,19 @@ const climaConfig = {
         zonaGeografica: "Zona Geográfica",
         fechaInstalacion: "Fecha de instalación",
       },
+      selectorVariables: {
+      default: "temp_avg",
+      opciones: [
+        { valor: "temp_avg",   label: "Temperatura actual" },
+        { valor: "temp_max",   label: "Temperatura máxima" },
+        { valor: "temp_min",   label: "Temperatura mínima" },
+        { valor: "humedad",    label: "Humedad" },
+        { valor: "radiacion",  label: "Radiación solar" },
+        { valor: "precip",     label: "Precipitación" },
+        { valor: "viento_vel", label: "Velocidad del viento" },
+        { valor: "uvb_max",    label: "Índice UVB" },
+      ],
+    },
       // Íconos (puedes descomentar y usar íconos específicos si los tienes)
       // iconos: {
       //   "Automática": "estacion_auto.png",

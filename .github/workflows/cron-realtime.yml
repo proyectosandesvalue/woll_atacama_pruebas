@@ -1,0 +1,35 @@
+name: Ingesta MeteoChile - Tiempo Real
+
+on:
+  schedule:
+    # Corre cada 30 minutos. (Nota: GitHub puede demorar unos minutos en horas pico)
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Permite ejecutarlo manualmente desde la pestaña Actions
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar Ingesta Tiempo Real
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          METEOCHILE_USER: ${{ secrets.METEOCHILE_USER }}
+          METEOCHILE_TOKEN: ${{ secrets.METEOCHILE_TOKEN }}
+        run: |
+          echo "Iniciando getEmaResumenDiario..."
+          node scripts/ingest-run.mjs --endpoint meteochile:getEmaResumenDiario
+          
+          echo "Iniciando getDatosRecientesRedEma..."
+          node scripts/ingest-run.mjs --endpoint meteochile:getDatosRecientesRedEma

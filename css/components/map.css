@@ -122,3 +122,29 @@
 .leaflet-container a.leaflet-popup-close-button {
   color: var(--text-secondary);
 }
+
+/* Etiqueta flotante para estaciones */
+/* Etiqueta flotante para estaciones */
+.leaflet-tooltip.station-label {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #000 !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  font-family: Arial, sans-serif !important;
+  text-shadow: 
+    -1px -1px 0 #fff,  
+     1px -1px 0 #fff,
+    -1px  1px 0 #fff,
+     1px  1px 0 #fff,
+     0px  2px 4px rgba(255,255,255,0.8) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+}
+
+.leaflet-tooltip.station-label::before {
+  display: none !important;
+  border: none !important;
+}

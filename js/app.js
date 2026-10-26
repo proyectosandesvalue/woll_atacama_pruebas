@@ -21,10 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
   logger.log("Inicializando aplicación...");
 
   try {
-    // Validar configuración estática antes de montar todo
     validarConfiguracionGlobal(allTemasConfig);
 
-    // Inicialización del mapa, coordenadas centro del mapa, zoom inicial
     const map = initMap("map", [-27.69812, -70.35645], 7);
     const baseLayer = setBaseLayer(
       map,
@@ -33,15 +31,15 @@ document.addEventListener("DOMContentLoaded", () => {
       })
     );
 
-    // Inicializar estado global
     initializeMap(map);
     setCurrentBaseLayer(baseLayer);
     setActiveTema("agua");
     logger.log("Control de búsqueda agregado al mapa");
+
     actualizarCapasBase("sidebar-base-layers", capasBaseConfig);
     actualizarCapasSidebar(appState.activeTemaName, allTemasConfig);
     actualizarLeyenda(appState.activeTemaName, allTemasConfig);
-    // Event listeners
+
     setupBaseLayerListeners();
     setupInitialTheme();
     setupThemeListeners();
@@ -122,10 +120,6 @@ function setupInitialTheme() {
 
     buildSearchIndex();
     logger.log("Índice de búsqueda construido");
-
-    // Fase 1 del Chat IA: el contexto vive en Supabase (chat.chat_catalog).
-    // El navegador ya no descarga 270 MB de GeoJSON en cada visita:
-    // /api/chat consulta la BD real y devuelve datos en milisegundos.
   })();
 }
 
@@ -156,7 +150,7 @@ function setupThemeListeners() {
               allTemasConfig
             );
           }
-          
+
           actualizarCapasSidebar(appState.activeTemaName, allTemasConfig);
           sincronizarEstadoCapas(appState.activeTemaName, allTemasConfig);
           actualizarLeyenda(appState.activeTemaName, allTemasConfig);
