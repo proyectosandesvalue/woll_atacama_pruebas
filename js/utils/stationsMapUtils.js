@@ -55,13 +55,18 @@ export async function loadStations(variable, map) {
           fillOpacity: 0.9,
         });
 
-        if (hasValue) {
+                if (hasValue) {
           let displayValue = s.value;
           let displayUnit = s.unit;
-          if (variable === "viento_vel") {
-            displayValue = (s.value * 1.852).toFixed(1);
-          } else if (variable === "viento_dir") {
+          
+          if (variable === "viento_dir") {
             displayValue = Math.round(s.value);
+          } else if (variable === "viento_vel") {
+            // Convertir nudos a km/h con 1 decimal
+            displayValue = (s.value * 1.852).toFixed(1);
+          } else {
+            // Para el resto (temp, humedad, radiación, etc.), 1 decimal
+            displayValue = Number(s.value).toFixed(1);
           }
 
           marker.bindTooltip(`${displayValue} ${displayUnit}`, {
@@ -205,9 +210,17 @@ async function openStationSidebar(station) {
     if (ultimaFecha) {
       const d = new Date(ultimaFecha);
       if (!isNaN(d)) {
-        fechaFormateada = d.toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' });
+        // toLocaleString convierte automáticamente a la zona horaria del navegador (Chile)
+        // y nos da un formato legible como "26-10-2026, 21:40"
+        fechaFormateada = d.toLocaleString('es-CL', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit', 
+          minute: '2-digit'
+        });
       } else {
-        fechaFormateada = ultimaFecha.replace("T", " ").substring(0, 16);
+        fechaFormateada = ultimaFecha;
       }
     }
     

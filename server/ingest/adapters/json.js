@@ -147,22 +147,23 @@ function parseNumeric(value) {
  */
 function parseDate(value, format) {
   if (!value) return null;
-  if (value instanceof Date) return value.toISOString().slice(0, 10);
-
-  const s = String(value).trim();
-
-  // Intentar parsear directo
+  let s = String(value).trim();
+  
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s)) {
+    s = s.replace(" ", "T") + "Z";
+  }
+  
   const direct = new Date(s);
   if (!isNaN(direct.getTime())) {
-    return direct.toISOString().slice(0, 10);
+    return direct.toISOString();
   }
-
-  // Intentar formatos alternativos
+  
   if (format === "DD-MM-YYYY") {
     const m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})/);
-    if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+    if (m) {
+      return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}T00:00:00.000Z`;
+    }
   }
-
   return null;
 }
 
@@ -269,12 +270,14 @@ export async function runJsonEndpoint(db, source, endpoint) {
       // Construir período
       let periodStart, periodEnd;
       if (periodMapping.format === "static") {
-        // El período viene del value_mapping (por indicador)
         periodStart = null;
         periodEnd = null;
       } else {
-        periodStart = parseDate(resolvePath(record, periodMapping.start_field), periodMapping.format);
-        periodEnd = parseDate(resolvePath(record, periodMapping.end_field), periodMapping.format);
+        const rawStart = resolvePath(record, periodMapping.start_field);
+        const rawEnd = resolvePath(record, periodMapping.end_field);
+
+        periodStart = parseDate(rawStart, periodMapping.format);
+        periodEnd = parseDate(rawEnd, periodMapping.format);
       }
 
       // Procesar cada valor mapeado
