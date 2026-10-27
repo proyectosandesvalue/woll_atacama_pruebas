@@ -3,7 +3,7 @@
  */
 
 export const VARIABLES = {
-  temp_avg:   { label: "Temperatura actual", unit: "°C",     scale: [[0, "#1e40af"], [20, "#fbbf24"], [40, "#dc2626"]] },
+  temp_avg:   { label: "Temperatura actual",   unit: "°C",     scale: [[0, "#1e40af"], [20, "#fbbf24"], [40, "#dc2626"]] },
   temp_max:   { label: "Temperatura máxima",  unit: "°C",     scale: [[0, "#1e40af"], [20, "#fbbf24"], [40, "#dc2626"]] },
   temp_min:   { label: "Temperatura mínima",  unit: "°C",     scale: [[-10, "#1e40af"], [10, "#fbbf24"], [30, "#dc2626"]] },
   humedad:    { label: "Humedad",             unit: "%",      scale: [[0, "#f59e0b"], [100, "#3b82f6"]] },
@@ -18,6 +18,8 @@ let _stationsLayer = null;
 let currentVariable = null;
 let isStationLayerActive = false;
 let legendObserver = null;
+let _refreshInterval = null; // Temporizador para auto-actualización
+let _selectedStation = null; // Guarda la estación abierta en el panel
 
 export async function loadStations(variable, map) {
   if (!map) return;
@@ -55,17 +57,16 @@ export async function loadStations(variable, map) {
           fillOpacity: 0.9,
         });
 
-                if (hasValue) {
+        if (hasValue) {
           let displayValue = s.value;
           let displayUnit = s.unit;
           
           if (variable === "viento_dir") {
             displayValue = Math.round(s.value);
+            displayUnit = "°";
           } else if (variable === "viento_vel") {
-            // Convertir nudos a km/h con 1 decimal
             displayValue = (s.value * 1.852).toFixed(1);
           } else {
-            // Para el resto (temp, humedad, radiación, etc.), 1 decimal
             displayValue = Number(s.value).toFixed(1);
           }
 
@@ -91,6 +92,22 @@ export async function loadStations(variable, map) {
     setupLegendObserver();
     updateLegend();
 
+    // NUEVO: Configurar auto-actualización cada 5 minutos
+    if (_refreshInterval) {
+      clearInterval(_refreshInterval);
+    }
+    _refreshInterval = setInterval(() => {
+      if (isStationLayerActive) {
+        console.log("[stations] Auto-actualizando datos del mapa...");
+        loadStations(variable, map); 
+        
+        // Si hay un panel abierto, actualizarlo también
+        if (_selectedStation) {
+          openStationSidebar(_selectedStation, true); // true = es background
+        }
+      }
+    }, 5 * 60 * 1000); // 5 minutos
+
     return stations;
   } catch (err) {
     console.error(`[stations] Error al cargar ${variable}:`, err);
@@ -98,6 +115,12 @@ export async function loadStations(variable, map) {
 }
 
 export function clearStations(map) {
+  if (_refreshInterval) {
+    clearInterval(_refreshInterval);
+    _refreshInterval = null;
+  }
+  _selectedStation = null;
+
   if (_stationsLayer && map) {
     map.removeLayer(_stationsLayer);
     _stationsLayer = null;
@@ -162,7 +185,9 @@ function updateLegend() {
 
 // --- LÓGICA DEL PANEL DE INFO NATIVO ---
 
-async function openStationSidebar(station) {
+async function openStationSidebar(station, isBackground = false) {
+  _selectedStation = station; // Guardar la estación actual
+  
   const sidebar = document.getElementById("sidebarInfo");
   const title = document.getElementById("sidebarInfoTitle");
   const content = document.getElementById("sidebarInfoContent");
@@ -170,8 +195,15 @@ async function openStationSidebar(station) {
   if (!sidebar || !title || !content) return;
   
   title.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">info</span> ${station.nombre_estacion}`;
-  content.innerHTML = `<div class="custom-popup"><em>Cargando datos...</em></div>`;
-  sidebar.classList.add("active");
+  
+  // Si es background y el panel ya tiene contenido, no mostramos "Cargando..."
+  if (!isBackground || !content.innerHTML.trim()) {
+    content.innerHTML = `<div class="custom-popup"><em>Cargando datos...</em></div>`;
+  }
+  
+  if (!isBackground) {
+    sidebar.classList.add("active");
+  }
   
   const TIPOS_ESTACION = {
     "Automática": "Automática (EMA) · Reporta en tiempo real",
@@ -191,9 +223,6 @@ async function openStationSidebar(station) {
           <p style="margin-top: 15px; padding: 10px; background: var(--bg-surface-2); border-left: 3px solid var(--color-warning); border-radius: 4px;">
             <em>No hay datos en tiempo real disponibles para esta estación.</em>
           </p>
-          <p style="font-size: 0.85em; color: var(--text-tertiary); margin-top: 10px;">
-            Las estaciones convencionales solo registran datos históricos que se procesan de forma diaria o mensual.
-          </p>
         </div>
       `;
       return;
@@ -210,14 +239,9 @@ async function openStationSidebar(station) {
     if (ultimaFecha) {
       const d = new Date(ultimaFecha);
       if (!isNaN(d)) {
-        // toLocaleString convierte automáticamente a la zona horaria del navegador (Chile)
-        // y nos da un formato legible como "26-10-2026, 21:40"
         fechaFormateada = d.toLocaleString('es-CL', { 
-          day: '2-digit', 
-          month: '2-digit', 
-          year: 'numeric',
-          hour: '2-digit', 
-          minute: '2-digit'
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
         });
       } else {
         fechaFormateada = ultimaFecha;
@@ -267,7 +291,9 @@ async function openStationSidebar(station) {
     
     content.innerHTML = html;
   } catch (err) {
-    content.innerHTML = `<div class="custom-popup"><p>Error al cargar datos.</p></div>`;
+    if (!isBackground) {
+      content.innerHTML = `<div class="custom-popup"><p>Error al cargar datos.</p></div>`;
+    }
   }
 }
 
