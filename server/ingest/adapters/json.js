@@ -219,12 +219,6 @@ export async function runJsonEndpoint(db, source, endpoint) {
     // Extraer el array de registros
     let records = resolvePath(data, endpoint.json_path);
 
-  if (records === undefined) {
-    // Si no encontró el path, mostramos qué devolvió la API
-    console.error(`[DEBUG] API respondió:`, JSON.stringify(data).substring(0, 500));
-    throw new Error(`json_path "${endpoint.json_path}" no devolvió datos. La API respondió: ${data?.mensaje || data?.error || 'Formato desconocido'}`);
-  }
-
   // Si el json_path devuelve un objeto (no un array), iterar como
   // {key: value} y enriquecer cada registro con `_key` (el key).
   // Ej: MeteoChile `getEmaResumenDiario` devuelve
