@@ -12,6 +12,7 @@ export const VARIABLES = {
   viento_vel: { label: "Velocidad del viento", unit: "km/h",   scale: [[0, "#10b981"], [75, "#dc2626"]] },
   viento_dir: { label: "Dirección del viento", unit: "°",      scale: [[0, "#10b981"], [360, "#3b82f6"]] },
   uvb_max:    { label: "Índice UVB",          unit: "índice", scale: [[0, "#10b981"], [11, "#dc2626"]] },
+  presion:    { label: "Presión atmosférica", unit: "hPa",    scale: [[980, "#10b981"], [1020, "#3b82f6"]] },
 };
 
 let _stationsLayer = null;
@@ -282,10 +283,25 @@ async function openStationSidebar(station, isBackground = false) {
     });
     html += `</tbody></table></div>`;
 
+    // LÓGICA DE FUENTE DINÁMICA (RedMeteo vs MeteoChile)
+    let fuenteHtml = "";
+    if (station.codigo_nacional.startsWith('RMCL')) {
+      const fechaConsulta = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
+      fuenteHtml = `
+        <p style="margin: 0; font-size: 0.70rem; line-height: 1.4; text-align: left; color: var(--text-tertiary);">
+          <strong>Fuente:</strong> Red Meteorológica Aficionada de Chile. (2019). <em>Sitio web RedMeteo. Red Ciudadana De Estaciones Meteorológicas.</em> Consultado el ${fechaConsulta}, desde <a href="https://www.redmeteo.cl/" target="_blank" style="color: var(--color-brand-text); text-decoration: none;">www.redmeteo.cl</a>
+        </p>
+      `;
+    } else {
+      fuenteHtml = `
+        <p style="margin: 0;">Fuente: Dirección Meteorológica de Chile (<a href="https://climatologia.meteochile.gob.cl/" target="_blank" style="color: var(--color-brand-text); text-decoration: none;">meteochile.gob.cl</a>)</p>
+      `;
+    }
+
     html += `
       <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: var(--text-tertiary); text-align: center;">
-        <p style="margin: 0 0 4px 0;">Última actualización: <strong>${fechaFormateada}</strong></p>
-        <p style="margin: 0;">Fuente: Dirección Meteorológica de Chile (<a href="https://climatologia.meteochile.gob.cl/" target="_blank" style="color: var(--color-brand-text); text-decoration: none;">meteochile.gob.cl</a>)</p>
+        <p style="margin: 0 0 8px 0;">Última actualización: <strong>${fechaFormateada}</strong></p>
+        ${fuenteHtml}
       </div>
     `;
     
