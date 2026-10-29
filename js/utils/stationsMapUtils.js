@@ -283,13 +283,22 @@ async function openStationSidebar(station, isBackground = false) {
     });
     html += `</tbody></table></div>`;
 
-    // LÓGICA DE FUENTE DINÁMICA (RedMeteo vs MeteoChile)
+        // LÓGICA DE FUENTE DINÁMICA (RedMeteo vs Agromet vs MeteoChile)
     let fuenteHtml = "";
-    if (station.codigo_nacional.startsWith('RMCL')) {
+    const codigo = station.codigo_nacional || "";
+    const propietario = station.propietario || "";
+
+    if (codigo.startsWith('RMCL')) {
       const fechaConsulta = new Date().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' });
       fuenteHtml = `
         <p style="margin: 0; font-size: 0.70rem; line-height: 1.4; text-align: left; color: var(--text-tertiary);">
           <strong>Fuente:</strong> Red Meteorológica Aficionada de Chile. (2019). <em>Sitio web RedMeteo. Red Ciudadana De Estaciones Meteorológicas.</em> Consultado el ${fechaConsulta}, desde <a href="https://www.redmeteo.cl/" target="_blank" style="color: var(--color-brand-text); text-decoration: none;">www.redmeteo.cl</a>
+        </p>
+      `;
+    } else if (codigo.startsWith('AGROMET_') || propietario.includes('FDF') || propietario.includes('INIA') || propietario.includes('CAEZA')) {
+      fuenteHtml = `
+        <p style="margin: 0; font-size: 0.70rem; line-height: 1.4; text-align: left; color: var(--text-tertiary);">
+          <strong>Fuente:</strong> Red Agroclimática Nacional (AGROMET). <a href="https://www.agromet.cl" target="_blank" style="color: var(--color-brand-text); text-decoration: none;">www.agromet.cl</a>
         </p>
       `;
     } else {
@@ -297,13 +306,6 @@ async function openStationSidebar(station, isBackground = false) {
         <p style="margin: 0;">Fuente: Dirección Meteorológica de Chile (<a href="https://climatologia.meteochile.gob.cl/" target="_blank" style="color: var(--color-brand-text); text-decoration: none;">meteochile.gob.cl</a>)</p>
       `;
     }
-
-    html += `
-      <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: var(--text-tertiary); text-align: center;">
-        <p style="margin: 0 0 8px 0;">Última actualización: <strong>${fechaFormateada}</strong></p>
-        ${fuenteHtml}
-      </div>
-    `;
     
     content.innerHTML = html;
   } catch (err) {
