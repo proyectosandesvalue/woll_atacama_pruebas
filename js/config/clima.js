@@ -3,7 +3,8 @@ const climaConfig = {
     "zonas_climaticas", 
     "limite_comunal_linea", 
     "toponimia", 
-    "estaciones_metereologicas_atacama" // <-- NUEVA CAPA
+    "estaciones_metereologicas_atacama", 
+    "estaciones_historicas_atacama",
   ],
   cargaInicial: {
     grupos: ["clima"],
@@ -17,7 +18,7 @@ const climaConfig = {
     // <-- NUEVA SUBDIMENSIÓN -->
     estaciones_observaciones: {
       nombre: "Estaciones y Observaciones",
-      capas: ["estaciones_metereologicas_atacama"],
+      capas: ["estaciones_metereologicas_atacama", "estaciones_historicas_atacama",],
     },
     contexto: {
       nombre: "Territorio",
@@ -72,8 +73,6 @@ const climaConfig = {
         fillOpacity: 0.4,
       },
     },
-
-    // <-- NUEVA CAPA: ESTACIONES METEOROLÓGICAS -->
     estaciones_metereologicas_atacama: {
       url: "data:application/json,%7B%22type%22:%22FeatureCollection%22,%22features%22:%5B%5D%7D",
       type: "point",
@@ -143,6 +142,11 @@ const climaConfig = {
       //     offsetY: -10,
       //   },
       // },
+    },
+    estaciones_historicas_atacama: {
+    url: "data:application/json,%7B%22type%22:%22FeatureCollection%22,%22features%22:%5B%5D%7D",
+    type: "point",
+    nombrePersonalizado: "Estaciones Históricas (sin datos en vivo)",
     },
 
     limite_comunal_linea: {

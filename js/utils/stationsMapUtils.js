@@ -25,13 +25,25 @@ let _selectedStation = null; // Guarda la estación abierta en el panel
 export async function loadStations(variable, map) {
   if (!map) return;
   try {
+    // 1. Hacemos el fetch (esta línea es la que faltaba)
     const res = await fetch(`/api/stations-map?variable=${variable}`);
     if (!res.ok) return;
+    
+    // 2. Parseamos la respuesta
     const json = await res.json();
     const stations = json.stations || [];
     if (stations.length === 0) return;
 
-    const features = stations.map((s) => ({
+    // 3. Filtramos solo las que tienen datos para esta variable (evita puntos grises)
+    const activeStations = stations.filter(s => s.has_data && s.value !== null && s.value !== undefined);
+    
+    if (activeStations.length === 0) {
+      console.warn(`[stations] No hay estaciones con datos para ${variable}`);
+      return;
+    }
+
+    // 4. Creamos el GeoJSON
+    const features = activeStations.map((s) => ({
       type: "Feature",
       geometry: { type: "Point", coordinates: [s.longitud, s.latitud] },
       properties: s,
@@ -93,7 +105,7 @@ export async function loadStations(variable, map) {
     setupLegendObserver();
     updateLegend();
 
-    // NUEVO: Configurar auto-actualización cada 5 minutos
+    // Configurar auto-actualización
     if (_refreshInterval) {
       clearInterval(_refreshInterval);
     }
@@ -101,13 +113,11 @@ export async function loadStations(variable, map) {
       if (isStationLayerActive) {
         console.log("[stations] Auto-actualizando datos del mapa...");
         loadStations(variable, map); 
-        
-        // Si hay un panel abierto, actualizarlo también
         if (_selectedStation) {
-          openStationSidebar(_selectedStation, true); // true = es background
+          openStationSidebar(_selectedStation, true); 
         }
       }
-    }, 5 * 60 * 1000); // 5 minutos
+    }, 5 * 60 * 1000);
 
     return stations;
   } catch (err) {
@@ -283,7 +293,9 @@ async function openStationSidebar(station, isBackground = false) {
     });
     html += `</tbody></table></div>`;
 
-        // LÓGICA DE FUENTE DINÁMICA (RedMeteo vs Agromet vs MeteoChile)
+    html += `</tbody></table></div>`;
+
+    // LÓGICA DE FUENTE DINÁMICA
     let fuenteHtml = "";
     const codigo = station.codigo_nacional || "";
     const propietario = station.propietario || "";
@@ -306,7 +318,14 @@ async function openStationSidebar(station, isBackground = false) {
         <p style="margin: 0;">Fuente: Dirección Meteorológica de Chile (<a href="https://climatologia.meteochile.gob.cl/" target="_blank" style="color: var(--color-brand-text); text-decoration: none;">meteochile.gob.cl</a>)</p>
       `;
     }
-    
+
+    html += `
+      <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: var(--text-tertiary); text-align: center;">
+        <p style="margin: 0 0 8px 0;">Última actualización: <strong>${fechaFormateada}</strong></p>
+        ${fuenteHtml}
+      </div>
+    `;
+
     content.innerHTML = html;
   } catch (err) {
     if (!isBackground) {
@@ -337,4 +356,57 @@ function interpolateColor(c1, c2, ratio) {
   const g = Math.round(g1 + (g2 - g1) * ratio);
   const b = Math.round(b1 + (b2 - b1) * ratio);
   return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
+let _historicalLayer = null;
+
+export async function loadHistoricalStations(map) {
+  if (!map) return;
+  try {
+    const res = await fetch('/api/historical-stations');
+    if (!res.ok) return;
+    const json = await res.json();
+    const stations = json.stations || [];
+    if (stations.length === 0) return;
+
+    const features = stations.map((s) => ({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [s.longitud, s.latitud] },
+      properties: s,
+    }));
+
+    if (_historicalLayer) {
+      map.removeLayer(_historicalLayer);
+    }
+
+    _historicalLayer = L.geoJSON({ type: "FeatureCollection", features }, {
+      pointToLayer: (feature, latlng) => {
+        return L.circleMarker(latlng, {
+          radius: 6,
+          fillColor: "#6b7280",       // Gris
+          color: "#fff",
+          weight: 1.5,
+          fillOpacity: 0.7,
+        });
+      },
+      onEachFeature: (feature, layer) => {
+        const s = feature.properties;
+        layer.on('click', (e) => {
+          L.DomEvent.stopPropagation(e);
+          openStationSidebar(s);
+        });
+      },
+    }).addTo(map);
+
+    return stations;
+  } catch (err) {
+    console.error(`[stations] Error al cargar históricas:`, err);
+  }
+}
+
+export function clearHistoricalStations(map) {
+  if (_historicalLayer && map) {
+    map.removeLayer(_historicalLayer);
+    _historicalLayer = null;
+  }
 }
