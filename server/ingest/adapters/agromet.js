@@ -9,11 +9,20 @@ export async function runAgrometEndpoint(db, source, endpoint) {
   
   // Usamos https nativo para ignorar el certificado SSL roto de Agromet
   const html = await new Promise((resolve, reject) => {
-    https.get(url, {
-      rejectUnauthorized: false, // <-- IGNORA EL CERTIFICADO INVÁLIDO
+    const req = https.get(url, {
+      rejectUnauthorized: false,
+      timeout: 10000, // <-- TIMEOUT DE 10 SEGUNDOS
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        // Headers que imitan a un navegador real
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "es-CL,es;q=0.9,en;q=0.8",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1"
       }
     }, (res) => {
       let data = '';
@@ -25,7 +34,17 @@ export async function runAgrometEndpoint(db, source, endpoint) {
           resolve(data);
         }
       });
-    }).on('error', reject);
+    });
+
+    // Manejar el evento de timeout
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error(`Timeout de 10s al conectar con Agromet (EMA ${emaId})`));
+    });
+
+    req.on('error', (err) => {
+      reject(err);
+    });
   });
 
   if (!html.includes('span_fecha_ultima_lectura')) {
@@ -98,7 +117,5 @@ export async function runAgrometEndpoint(db, source, endpoint) {
 function parseFecha(str) {
   const [date, time] = str.trim().split(' ');
   const [d, m, y] = date.split('/');
-  // SOLO PARA AGROMET: Forzamos la zona horaria de Chile (UTC-3)
-  // Para que el navegador no le reste horas y muestre la hora local real.
   return `${y}-${m}-${d}T${time}:00-03:00`;
 }
