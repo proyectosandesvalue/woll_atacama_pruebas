@@ -1,7 +1,7 @@
 name: Ingesta Agromet (Scraping)
 on:
   schedule:
-    - cron: '15 * * * *' # Cada 1 hora, a los 15 minutos
+    - cron: '0 * * * *' # Cada 1 hora, a los 15 minutos
   workflow_dispatch:
 
 jobs:
