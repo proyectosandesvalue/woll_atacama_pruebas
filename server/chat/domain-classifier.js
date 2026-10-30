@@ -37,9 +37,14 @@ Devuelve SIEMPRE un JSON con esta forma:
 }
 
 REGLAS:
-1. domain = "IN" si la pregunta es sobre el visor de Atacama (agua,
+1. 1. domain = "IN" si la pregunta es sobre el visor de Atacama (agua,
    minería, glaciares, humedales, derechos de agua, plantas desaladoras,
    volcanes, yacimientos, comunas de Atacama, etc.).
+   TAMBIÉN domain = "IN" si la pregunta es sobre CLIMA o METEOROLOGÍA
+   en Atacama: temperatura, precipitación, humedad, viento, radiación,
+   presión, estaciones meteorológicas, caudales de ríos, calidad del
+   agua, sedimentos, niveles de pozos, datos históricos climáticos,
+   o cualquier consulta sobre las estaciones del visor.
    domain = "OUT" si es de otra región, programación, precios, chistes,
    hora/fecha, etc.
 2. intent = "dato_simple" si es una pregunta que se responde con una
@@ -141,6 +146,18 @@ Pregunta: "Lista los humedales"
 
 Pregunta: "Distribución de humedales por clasificación"
 {"domain":"IN","intent":"dato_simple","pipeline":"distribucion_con_elementos","slots":{"layer_id":"humedales","filters":null,"group_by":"SubClase","color_by":"SubClase"},"confidence":0.88}
+
+Pregunta: "¿Cuál es la temperatura actual en Copiapó?"
+{"domain":"IN","intent":"dato_simple","pipeline":null,"slots":null,"confidence":0.95}
+
+Pregunta: "¿Cuánto llovió en Vallenar en 1997?"
+{"domain":"IN","intent":"dato_simple","pipeline":null,"slots":null,"confidence":0.95}
+
+Pregunta: "¿Qué estaciones históricas hay en Atacama?"
+{"domain":"IN","intent":"dato_simple","pipeline":null,"slots":null,"confidence":0.95}
+
+Pregunta: "¿Cuál fue el promedio de caudal del Río Copiapó en 2010?"
+{"domain":"IN","intent":"dato_simple","pipeline":null,"slots":null,"confidence":0.95}
 
 Responde SOLO con el JSON. Nada más.`;
 
