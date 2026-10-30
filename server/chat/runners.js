@@ -1,15 +1,6 @@
 /**
  * runners.js — Reexport delgado.
  *
- * El contenido original (8 runners + normalizeArgs + withTimeout) se movió
- * a `server/chat/tools/` durante la Fase 3 del refactor:
- *   - normalizeArgs y withTimeout → `server/chat/tools/_helpers.js`.
- *   - Cada runner vive ahora junto a su schema en `tools/<tool>.js`.
- *
- * Este archivo se mantiene para no romper `orchestrator.js`, que importa
- * `runTool` desde acá. En una feature posterior se puede borrar y cambiar
- * el import del orquestador directamente.
- *
  * @deprecated usar `server/chat/tools/index.js` directamente en código nuevo.
  */
 
@@ -18,6 +9,16 @@ import {
   TOOL_NAMES,
 } from "./tools/index.js";
 import { normalizeArgs, withTimeout, RPC_TIMEOUT_MS } from "./tools/_helpers.js";
+
+/**
+ * Tools que NO requieren 'layer_id' en sus argumentos.
+ * Las tools de capas sí lo requieren, las climáticas no.
+ */
+const TOOLS_WITHOUT_LAYER_ID = new Set([
+  "get_station_weather",
+  "get_historical_climate",
+  "list_climate_stations",
+]);
 
 /**
  * Ejecuta una tool por nombre con sus argumentos.
@@ -34,7 +35,8 @@ export async function runTool(name, rawArgs) {
 
   const args = normalizeArgs(name, rawArgs);
 
-  if (!args.layer_id) {
+  // Solo validar layer_id para tools que lo requieren
+  if (!TOOLS_WITHOUT_LAYER_ID.has(name) && !args.layer_id) {
     return {
       ok: false,
       error: "Falta 'layer_id' en los argumentos de la tool.",
