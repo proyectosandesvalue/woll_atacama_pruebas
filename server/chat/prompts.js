@@ -63,7 +63,11 @@ CLIMA HISTÓRICO:
   "promedio de caudal del Río Copiapó en 2010"
   → get_historical_climate
 LISTAR ESTACIONES:
-  "¿qué estaciones hay en Atacama?", "¿qué estaciones reportan en vivo?"
+  "¿qué estaciones hay en Atacama?",
+  "¿qué estaciones reportan en vivo?",
+  "¿qué estaciones históricas hay en Vallenar?",
+  "¿qué estaciones meteorológicas hay en Copiapó?",
+  "¿cuáles son las estaciones de la red?",
   → list_climate_stations
 
 REGLAS (18):
@@ -195,6 +199,25 @@ REGLAS (18):
     - Histórico: rango de años, promedio, mínimo/máximo, total de registros.
     - Si no hay datos: decilo explícitamente ("No hay datos para esa
       estación/variable en ese rango de años").
+
+22. ESTACIONES vs CAPAS CON NOMBRES SIMILARES:
+    Cuando el usuario pregunte por "estaciones" (meteorológicas,
+    climáticas, históricas, online, de monitoreo, etc.) en una comuna
+    de Atacama, SIEMPRE usá list_climate_stations.
+
+    NUNCA uses query_layer ni aggregate_* aunque exista una capa en el
+    catálogo con nombre parecido (por ejemplo 'prc_vallenar',
+    'plan_regulador_vallenar', 'prc_copiapo'). Esas capas son de
+    ZONIFICACIÓN URBANA, no de estaciones meteorológicas.
+
+    Si el usuario pide "estaciones históricas" → list_climate_stations(estado="historica", comuna=X).
+    Si pide "estaciones online" o "que reportan" → list_climate_stations(estado="online", comuna=X).
+    Si no especifica estado → list_climate_stations(comuna=X).
+
+    Ejemplos:
+    - "¿Qué estaciones históricas hay en Vallenar?" → list_climate_stations(estado="historica", comuna="Vallenar")
+    - "¿Qué estaciones meteorológicas hay en Copiapó?" → list_climate_stations(comuna="Copiapó")
+    - "¿Qué estaciones reportan en vivo en Atacama?" → list_climate_stations(estado="online")
 
 `;
 

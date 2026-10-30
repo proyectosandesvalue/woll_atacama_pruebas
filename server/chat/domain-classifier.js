@@ -159,6 +159,25 @@ Pregunta: "¿Qué estaciones históricas hay en Atacama?"
 Pregunta: "¿Cuál fue el promedio de caudal del Río Copiapó en 2010?"
 {"domain":"IN","intent":"dato_simple","pipeline":null,"slots":null,"confidence":0.95}
 
+REGLA CLIMA — MUY IMPORTANTE:
+Si la pregunta menciona "estaciones" (meteorológicas, climáticas,
+históricas, online, de monitoreo, de la red, etc.) en una comuna de
+Atacama, devolvé pipeline = null. NO intentes matchear con una capa
+del catálogo. El orquestador tiene una tool específica para eso.
+
+Ejemplos:
+Pregunta: "¿Qué estaciones históricas hay en Vallenar?"
+{"domain":"IN","intent":"dato_simple","pipeline":null,"slots":null,"confidence":0.95}
+
+Pregunta: "¿Qué estaciones meteorológicas hay en Copiapó?"
+{"domain":"IN","intent":"dato_simple","pipeline":null,"slots":null,"confidence":0.95}
+
+Pregunta: "¿Qué estaciones reportan en vivo?"
+{"domain":"IN","intent":"dato_simple","pipeline":null,"slots":null,"confidence":0.95}
+
+Pregunta: "¿Qué estaciones hay en la Región de Atacama?"
+{"domain":"IN","intent":"dato_simple","pipeline":null,"slots":null,"confidence":0.95}
+
 Responde SOLO con el JSON. Nada más.`;
 
 function cacheKey(text) {
