@@ -35,3 +35,6 @@ npm-debug.log*
 *.swo.env.staging
 .vercel
 .env*
+
+# Data
+data/

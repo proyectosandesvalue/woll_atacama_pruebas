@@ -7,7 +7,7 @@ async function processCSV(filePath, indicatorId) {
   const fileStream = fs.createReadStream(filePath);
   const rl = readline.createInterface({ input: fileStream, crlfDelay: Infinity });
 
-  let isFirstLine = true;
+  let headerFound = false;
   let batch = [];
   let totalInserted = 0;
   let totalSkipped = 0;
@@ -17,32 +17,39 @@ async function processCSV(filePath, indicatorId) {
   console.log(`\n=== Iniciando carga de ${filePath} como ${indicatorId} ===`);
 
   for await (const line of rl) {
-    if (isFirstLine) {
+    // Saltar líneas vacías
+    if (!line.trim()) continue;
+
+    // Procesar encabezado
+    if (!headerFound) {
       const headers = line.split(',').map(h => h.trim());
-      const hUpper = headers.map(h => h.toUpperCase());
+      const hUpper = headers.map(h => h.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
       
       hUpper.forEach((hu, i) => {
         if (hu.includes('CODIGO ESTACION') || hu === 'CODIGO_ESTACION') colCodigo = i;
         else if (hu === 'FECHA') colFecha = i;
-        else if (hu === 'ANIO') colAnio = i;
+        else if (hu === 'ANIO' || hu === 'AÑO' || hu === 'ANO') colAnio = i;
         else if (hu === 'MES') colMes = i;
         else if (hu === 'UNIDAD') colUnidad = i;
       });
+
+      // Si no se encontró la columna de año por nombre,
+      // pero sí la de mes, asumir que el año está justo antes.
+      if (colAnio === -1 && colMes !== -1) {
+        colAnio = colMes - 1;
+      }
       
-      // Detección genérica de la columna de valor:
-      // Es la columna que está justo antes de UNIDAD
       if (colUnidad !== -1) {
         colValor = colUnidad - 1;
       } else {
         colValor = headers.length - 1;
       }
       
-      isFirstLine = false;
+      headerFound = true;
       continue;
     }
 
-    if (!line.trim()) continue;
-
+    // Procesar fila de datos
     const parts = line.split(',');
     if (parts.length <= colValor) { totalSkipped++; continue; }
 
@@ -51,25 +58,21 @@ async function processCSV(filePath, indicatorId) {
 
     let periodStart = null;
 
-    if (colFecha !== -1) {
-      // Formato Diario: DD/MM/YYYY
+    // 1. Intentar con Año y Mes (Prioridad para archivos mensuales)
+    const anioVal = colAnio !== -1 ? parts[colAnio]?.trim() : '';
+    const mesVal = colMes !== -1 ? parts[colMes]?.trim() : '';
+
+    if (anioVal && mesVal) {
+      periodStart = `${anioVal}-${mesVal.padStart(2, '0')}-01T00:00:00.000Z`;
+    } else if (anioVal) {
+      // 2. Intentar solo con Año (Archivos anuales)
+      periodStart = `${anioVal}-01-01T00:00:00.000Z`;
+    } else if (colFecha !== -1 && parts[colFecha]?.trim()) {
+      // 3. Intentar con Fecha (Archivos diarios, solo si la fecha no está vacía)
       const fechaRaw = parts[colFecha].trim();
       const [d, m, y] = fechaRaw.split('/');
       if (d && m && y) {
         periodStart = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T00:00:00.000Z`;
-      }
-    } else if (colAnio !== -1 && colMes !== -1) {
-      // Formato Mensual: YYYY + MM
-      const anio = parts[colAnio].trim();
-      const mes = parts[colMes].trim();
-      if (anio && mes) {
-        periodStart = `${anio}-${mes.padStart(2, '0')}-01T00:00:00.000Z`;
-      }
-    } else if (colAnio !== -1) {
-      // Formato Anual (solo ANIO): usar 1 de enero
-      const anio = parts[colAnio].trim();
-      if (anio) {
-        periodStart = `${anio}-01-01T00:00:00.000Z`;
       }
     }
 
