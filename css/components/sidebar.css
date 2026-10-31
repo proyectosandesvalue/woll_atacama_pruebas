@@ -964,3 +964,65 @@
   margin: 8px 0;
   border: 1px solid var(--border-subtle);
 }
+
+.layer-date-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.layer-date-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.layer-date-label .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.layer-date-input {
+  flex: 1;
+  min-width: 130px;
+  padding: 3px 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--border-radius-sm);
+  font-size: 11px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.layer-date-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.layer-date-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  transition: all 0.15s;
+}
+
+.layer-date-clear:hover {
+  background: var(--bg-surface-hover);
+  color: var(--color-brand-text);
+}
+
+.layer-date-clear .material-symbols-outlined {
+  font-size: 14px;
+}

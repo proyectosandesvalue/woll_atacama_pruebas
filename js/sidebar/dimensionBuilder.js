@@ -6,7 +6,8 @@ import { createContextLogger } from "../utils/logger.js";
 import { cargarCapaIndividual, mostrarCapa, ocultarCapa, estimateLayerSize } from "../utils/layerUtils.js";
 import { ConcurrentQueue } from "../utils/concurrentQueue.js";
 import { crearElementoCapa, syncIndividualCheckboxes } from "./layerItem.js";
-import { loadStations, clearStations, loadHistoricalStations, clearHistoricalStations } from "../utils/stationsMapUtils.js";
+import { loadLayer, clearLayer, getVariableAvailability } from "../utils/stationsMapUtils.js";
+import { attachDateSelector, getDate, updateDateSelector } from "../utils/dateSelector.js";
 
 const log = createContextLogger("DimensionBuilder");
 
@@ -157,10 +158,8 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
           );
           const capaConfig = temaConfig.estilo?.[capaNombre];
           
-          if (capaConfig?.selectorVariables) {
-            attachVariableSelector(capaLi, capaConfig);
-          } else if (capaNombre === 'estaciones_historicas_atacama') {
-            attachHistoricalLayer(capaLi);
+          if (capaConfig?.variable) {
+            attachStationLayer(capaLi, capaConfig, capaNombre);
           }
           
           grupoCapasUl.appendChild(capaLi);
@@ -180,13 +179,12 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
               const capaNombre = checkbox.value;
               const capaConfig = temaConfig.estilo?.[capaNombre];
 
-              if (!capaConfig?.selectorVariables && capaNombre !== 'estaciones_historicas_atacama' && !appState.layers.loaded.has(capaNombre)) {
-                await cargarCapaIndividual(capaNombre, temaKey, temasConfig);
-              }
-
-              if (!capaConfig?.selectorVariables && capaNombre !== 'estaciones_historicas_atacama') {
-                mostrarCapa(capaNombre);
-              }
+              if (!capaConfig?.variable && capaNombre !== 'estaciones_historicas_atacama' && !appState.layers.loaded.has(capaNombre)) {
+              await cargarCapaIndividual(capaNombre, temaKey, temasConfig);
+            }
+            if (!capaConfig?.variable && capaNombre !== 'estaciones_historicas_atacama') {
+              mostrarCapa(capaNombre);
+            }
 
               if (!checkbox.checked) checkbox.checked = true;
             }
@@ -225,11 +223,9 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
         );
         const capaConfig = temaConfig.estilo?.[capaNombre];
         
-        if (capaConfig?.selectorVariables) {
-          attachVariableSelector(capaLi, capaConfig);
-        } else if (capaNombre === 'estaciones_historicas_atacama') {
-          attachHistoricalLayer(capaLi);
-        }
+        if (capaConfig?.variable) {
+        attachStationLayer(capaLi, capaConfig, capaNombre);
+      }
         
         childrenContainer.appendChild(capaLi);
       });
@@ -341,7 +337,7 @@ export async function activarCapasDeDimension(temaKey, listaCapas, temasConfig) 
       const capaConfig = temasConfig[temaKey]?.estilo?.[capaNombre];
       
       // Ignorar carga estática si es dinámica o histórica
-      if (capaConfig?.selectorVariables || capaNombre === 'estaciones_historicas_atacama') return;
+      if (capaConfig?.variable || capaNombre === 'estaciones_historicas_atacama') return;
 
       try {
         if (!appState.layers.loaded.has(capaNombre)) {
@@ -417,76 +413,78 @@ export function activarDimension(temaKey) {
   }
 }
 
-function attachVariableSelector(capaLi, capaConfig) {
-  const { selectorVariables } = capaConfig;
-  if (!selectorVariables || !Array.isArray(selectorVariables.opciones)) return;
-
+function attachStationLayer(capaLi, capaConfig, layerId) {
   const originalCheckbox = capaLi.querySelector('input.layer-checkbox[type="checkbox"]');
   if (!originalCheckbox) return;
 
   const newCheckbox = originalCheckbox.cloneNode(true);
   originalCheckbox.parentNode.replaceChild(newCheckbox, originalCheckbox);
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "layer-variable-selector";
+  const { variable: baseVariable, estado, isHistorical, selectorVariables } = capaConfig;
+  let currentVariable = baseVariable || (selectorVariables ? selectorVariables.default : null);
 
-  const label = document.createElement("label");
-  label.textContent = "Variable: ";
+  let wrapper = null;
 
-  const select = document.createElement("select");
-  select.className = "layer-variable-select";
+  if (selectorVariables) {
+    wrapper = document.createElement("div");
+    wrapper.className = "layer-variable-selector";
 
-  selectorVariables.opciones.forEach((op) => {
-    const option = document.createElement("option");
-    option.value = op.valor;
-    option.textContent = op.label;
-    select.appendChild(option);
-  });
-  select.value = selectorVariables.default || selectorVariables.opciones[0].valor;
+    const label = document.createElement("label");
+    label.textContent = "Variable: ";
+    const select = document.createElement("select");
+    select.className = "layer-variable-select";
 
-  label.appendChild(select);
-  wrapper.appendChild(label);
-  capaLi.appendChild(wrapper);
+    selectorVariables.opciones.forEach((op) => {
+      const opt = document.createElement("option");
+      opt.value = op.valor;
+      opt.textContent = op.label;
+      select.appendChild(opt);
+    });
+    select.value = currentVariable;
 
-  wrapper.style.display = newCheckbox.checked ? "" : "none";
+    label.appendChild(select);
+    wrapper.appendChild(label);
+    capaLi.appendChild(wrapper);
 
-  newCheckbox.addEventListener("change", () => {
-    if (newCheckbox.checked) {
-      wrapper.style.display = "";
-      loadStations(select.value, appState.map);
-    } else {
-      wrapper.style.display = "none";
-      clearStations(appState.map);
-    }
-  });
-
-  select.addEventListener("change", () => {
-    if (newCheckbox.checked) {
-      loadStations(select.value, appState.map);
-    }
-  });
-
-  if (newCheckbox.checked) {
-    loadStations(select.value, appState.map);
+    select.addEventListener("change", () => {
+      currentVariable = select.value;
+      if (newCheckbox.checked) {
+        const date = isHistorical ? getDate(layerId) : null;
+        loadLayer(layerId, currentVariable, appState.map, { date, estado });
+        if (isHistorical) updateDateSelector(wrapper, currentVariable, layerId);
+      }
+    });
   }
-}
 
-function attachHistoricalLayer(capaLi) {
-  const originalCheckbox = capaLi.querySelector('input.layer-checkbox[type="checkbox"]');
-  if (!originalCheckbox) return;
-
-  const newCheckbox = originalCheckbox.cloneNode(true);
-  originalCheckbox.parentNode.replaceChild(newCheckbox, originalCheckbox);
+  // Date picker
+  if (isHistorical) {
+    if (!wrapper) {
+      wrapper = document.createElement("div");
+      wrapper.className = "layer-variable-selector";
+      capaLi.appendChild(wrapper);
+    }
+    attachDateSelector(wrapper, appState.map, layerId, (newDate) => {
+      if (newCheckbox.checked) {
+        loadLayer(layerId, currentVariable, appState.map, { date: newDate, estado });
+      }
+    });
+    updateDateSelector(wrapper, currentVariable, layerId);
+  }
 
   newCheckbox.addEventListener("change", () => {
     if (newCheckbox.checked) {
-      loadHistoricalStations(appState.map);
+      if (wrapper) wrapper.style.display = "";
+      const date = isHistorical ? getDate(layerId) : null;
+      loadLayer(layerId, currentVariable, appState.map, { date, estado });
     } else {
-      clearHistoricalStations(appState.map);
+      if (wrapper) wrapper.style.display = "none";
+      clearLayer(layerId, appState.map);
     }
   });
 
   if (newCheckbox.checked) {
-    loadHistoricalStations(appState.map);
+    if (wrapper) wrapper.style.display = "";
+    const date = isHistorical ? getDate(layerId) : null;
+    loadLayer(layerId, currentVariable, appState.map, { date, estado });
   }
 }
