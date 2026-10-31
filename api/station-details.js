@@ -9,10 +9,10 @@ export default async function handler(req, res) {
 
   try {
     const db = await getDB();
-    const values = await db.rpc("chat_station_details", { p_codigo_nacional: codigo });
-    return res.status(200).json({ codigo, values });
+    const data = await db.rpc("chat_station_details", { p_codigo_nacional: codigo });
+    return res.status(200).json({ codigo, ...(data || { values: [], ranges: {} }) });
   } catch (err) {
-    console.error("[/api/station-details] Error:", err);
-    return res.status(500).json({ error: err.message });
+    console.error(`[/api/station-details] Error con ${codigo}:`, err);
+    return res.status(200).json({ codigo, values: [], ranges: {}, error: err.message });
   }
 }

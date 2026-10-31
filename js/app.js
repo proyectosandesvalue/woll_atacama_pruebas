@@ -16,6 +16,7 @@ import { logger } from "./utils/logger.js";
 import { appState, initializeMap, setCurrentBaseLayer, setActiveTema } from "./store/appState.js";
 import { buildSearchIndex } from "./search/index.js";
 import { validarConfiguracionGlobal } from "./utils/configValidator.js";
+import { initChartModal } from "./utils/chartModal.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   logger.log("Inicializando aplicación...");
@@ -43,6 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupBaseLayerListeners();
     setupInitialTheme();
     setupThemeListeners();
+    initChartModal();
 
     logger.log("Aplicación inicializada correctamente");
   } catch (error) {
