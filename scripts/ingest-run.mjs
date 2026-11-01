@@ -10,11 +10,11 @@
  *   node --env-file=.env.staging scripts/ingest-run.mjs --agromet
  */
 
-import fs from "fs"; // <-- FALTABA ESTO
+import fs from "fs";
 import { runEndpoint, runSource } from "../server/ingest/runner.js";
 import { getDB } from "../server/db/pool.js";
 
-const args = process.argv.slice(2); // <-- DECLARADO UNA SOLA VEZ
+const args = process.argv.slice(2);
 
 const C = {
   reset: "\x1b[0m",
@@ -26,6 +26,20 @@ const C = {
   cyan: "\x1b[36m",
 };
 
+// Refresca la vista materializada variable_availability después de cada ingesta.
+// No rompe el flujo si falla (por ejemplo, si la migración 033 no está aplicada).
+async function refreshAvailability(db) {
+  try {
+    console.log(`${C.gray}Refrescando variable_availability...${C.reset}`);
+    await db.rpc("refresh_variable_availability");
+    console.log(`${C.green}✓${C.reset} Vista materializada actualizada.`);
+  } catch (err) {
+    console.warn(
+      `${C.yellow}⚠${C.reset} No se pudo refrescar variable_availability: ${err.message}`
+    );
+  }
+}
+
 async function main() {
   // ─── MODO AGROMET (SCRAPING) ───
   if (args.includes("--agromet")) {
@@ -36,22 +50,22 @@ async function main() {
 
     for (const station of stations) {
       const codigoEntidad = `AGROMET_${station.ema_id}`;
-      
+
       try {
         console.log(`\nScrapeando ${station.nombre} (EMA: ${station.ema_id}, Código: ${codigoEntidad})...`);
-        
+
         const source = { id: 'agromet', nombre: 'Agromet' };
-        const endpoint = { 
-          params: { 
-            ema_id: station.ema_id, 
+        const endpoint = {
+          params: {
+            ema_id: station.ema_id,
             codigo_entidad: codigoEntidad
           },
           source_id: 'agromet'
         };
-        
+
         const { runAgrometEndpoint } = await import('../server/ingest/adapters/agromet.js');
         const result = await runAgrometEndpoint(db, source, endpoint);
-        
+
         console.log(`  ${C.green}✓${C.reset} loaded=${result.loaded} errors=${result.errors.length}`);
         totalLoaded += result.loaded;
       } catch (err) {
@@ -61,8 +75,9 @@ async function main() {
       // Pacing: 2 segundos entre estaciones
       await new Promise(r => setTimeout(r, 2000));
     }
-    
+
     console.log(`\n${C.bold}=== Scraping finalizado. Total valores cargados: ${totalLoaded} ===${C.reset}`);
+    await refreshAvailability(db);
     process.exit(0);
   }
 
@@ -93,6 +108,8 @@ async function main() {
   }
 
   try {
+    let huboIngesta = false;
+
     if (opts.endpoint) {
       console.log(`${C.bold}Ejecutando ${opts.endpoint}...${C.reset}`);
       const r = await runEndpoint(opts.endpoint);
@@ -104,6 +121,7 @@ async function main() {
           console.log(`  ${C.red}• ${e}${C.reset}`);
         }
       }
+      huboIngesta = true;
     }
 
     if (opts.source) {
@@ -116,6 +134,12 @@ async function main() {
           `  ${color}${status}${C.reset} ${r.endpointId}: loaded=${r.loaded} skipped=${r.skipped} errors=${r.errors.length}`
         );
       }
+      huboIngesta = true;
+    }
+
+    if (huboIngesta) {
+      const db = await getDB();
+      await refreshAvailability(db);
     }
 
     process.exit(0);
