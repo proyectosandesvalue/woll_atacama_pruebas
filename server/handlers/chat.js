@@ -221,9 +221,12 @@ export async function handleChat(body, ctx = {}) {
         : "",
     };
 
+    console.error("[chat]", errInfo);
+
     const isConfigError =
       typeof err?.message === "string" &&
       err.message.includes("Variable de entorno");
+
     const status = isConfigError ? 503 : 500;
     return {
       status,
