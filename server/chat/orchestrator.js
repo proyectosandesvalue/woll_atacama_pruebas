@@ -14,9 +14,9 @@ import { TOOL_DEFINITIONS } from "./tools.js";
 import { runTool } from "./runners.js";
 import { buildSystemPrompt } from "./prompts.js";
 import { buildChartsFromHistory } from "./charts.js";
-import { compact, buildGeojsonLayersFromCtx } from "./evidence.js";
+import { compact, buildGeojsonLayersFromCtx, buildEvidence } from "./evidence.js";
 import { maybeFetchFeaturesForStyle } from "./post-process.js";
-import { buildEvidence } from "./evidence.js";
+import { getDB } from "../db/pool.js";
 
 const DEFAULT_BUDGET_MS = 8000;
 const DEFAULT_MAX_ITERATIONS = 3;
