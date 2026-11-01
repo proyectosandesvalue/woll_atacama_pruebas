@@ -4,7 +4,7 @@
  * Formato esperado:
  *   {
  *     "index": ["1401", "1403", ...],
- *     "columns": ["NOM_COMUNA", "SCLIMAShot_days$annual$present", ...],
+ *     "columns": ["NOM_COMUNA", "SCLIMA$hot_days$annual$present", ...],
  *     "values": [
  *       ["POZO_ALMONTE", 28.6255, ...],
  *       ["COLCHANE", 0.0, ...]
@@ -81,9 +81,26 @@ export async function runJsonColumnarEndpoint(db, source, endpoint) {
     throw new Error(`HTTP ${res.status}: ${await res.text().catch(() => "")}`);
   }
 
-  const data = await res.json();
+  const raw = await res.json();
+
+  // Aplicar json_path si está definido (soporta notación simple $.foo.bar).
+  // El seed de ARClim usa '$.data' porque la respuesta viene wrappeada.
+  let data = raw;
+  if (endpoint.json_path) {
+    const jp = String(endpoint.json_path).replace(/^\$\.?/, "");
+    if (jp) {
+      for (const part of jp.split(".")) {
+        data = data?.[part];
+      }
+    }
+  }
+  if (!data || typeof data !== "object") {
+    throw new Error(`json_path '${endpoint.json_path}' no resolvió a un objeto`);
+  }
+
   const columns = data.columns || [];
   const values = data.values || [];
+  const indexArr = data.index || [];
 
   if (!Array.isArray(columns) || !Array.isArray(values)) {
     throw new Error("Formato columnar inválido: faltan 'columns' o 'values'");
@@ -98,11 +115,17 @@ export async function runJsonColumnarEndpoint(db, source, endpoint) {
   let skipped = 0;
   const errors = [];
 
-  for (const row of values) {
+  for (let rowIdx = 0; rowIdx < values.length; rowIdx++) {
+    const row = values[rowIdx];
     try {
       const record = {};
       for (let i = 0; i < columns.length; i++) {
         record[columns[i]] = row[i];
+      }
+      // Exponer el array "index" como pseudo-columna para {index} en id_template.
+      // Formato columnar ARClim: index es hermano de columns/values, no una columna.
+      if (indexArr[rowIdx] != null) {
+        record["index"] = indexArr[rowIdx];
       }
 
       const idTemplate = entityMapping.id_template || "{index}";
