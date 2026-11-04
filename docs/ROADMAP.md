@@ -91,7 +91,7 @@
 | 37 | Auditoría y normalización de datos | ⏳ pending | alta | 20-24h | 23 |
 | 40 | Orquestación determinística del chat (épica) | 🔶 parcial (40-C y 40-D.2 cerrados) | alta | 26-31h | 25-A, 25-D |
 | 41 | Recetas de análisis (épica) | ⏳ pending | media | 14-20h + experto | 40-C |
-| 42 | Ingesta de fuentes externas (DGAC, ArClim) | ⏳ pending | media | 18-28h | 24-A, 24-B |
+| 42 | Ingesta de fuentes externas (DGAC, ArClim) | 🔄 parcial |(42-A y 42-C completados) | media | 18-28h | 24-A, 24-B |
 | 43 | Normativa urbana: BCN + planes reguladores | ⏳ pending | media | 20-32h | 17, 18, 41-A |
 
 **Leyenda de estados:**
@@ -898,15 +898,18 @@ y eliminación.
 
 ### Sprint 42 — Ingesta de fuentes externas (DGAC, ArClim)
 
-**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 18-28h · **Dependencias**: 24-A, 24-B
+**Estado**: 🔄 parcial · **Prioridad**: media · **Duración**: 18-28h · **Dependencias**: 24-A, 24-B
 
 **Objetivo**: ingestar fuentes externas por temática (ADR 018).
 
 **Tramos**:
-- 42-A: inventario y verificación de fuentes (puede iniciarse ya).
-- 42-B: infraestructura de ingesta.
-- 42-C: primera ingesta DGAC.
-- 42-D: ArClim (opcional).
+- [X] **42-A: Inventario y verificación de fuentes.** API de ARClim validada. Se identificaron las 5 variables climáticas clave y los 3 escenarios.
+- [ ] **42-B: Infraestructura de ingesta.** (Pendiente: refactorizar el endpoint para cachear respuestas de ARClim).
+- [X] **42-C: Primera ingesta (ArClim).** 
+  - Endpoint proxy `api/arclim-geojson.js` creado con filtro para Atacama.
+  - 21 capas ARClim integradas en `clima.js` con UI de doble selector (Escenario + Temporada).
+  - Gráficos comparativos Chart.js integrados en el panel de información.
+- [X] **42-D: Ingesta DGAC (Pozos).** Script `ingest-dga-control-nivel.mjs` creado y ejecutado para niveles estáticos.
 
 ### Sprint 43 — Normativa urbana: BCN + planes reguladores
 
@@ -989,6 +992,16 @@ y eliminación.
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-11-04
+- ✅ **Integración masiva de ARClim completada (Sprint 42)**.
+  - Creación del endpoint dinámico `/api/arclim-geojson` (filtrando Atacama).
+  - 21 capas coropléticas con selector de escenarios (Histórico, SSP2-4.5, SSP5-8.5) y temporadas (Anual, Verano, Invierno).
+  - Panel lateral de ARClim con descripciones del IPCC y gráficos de barra comparativos (Chart.js) con opciones de expandir/descargar.
+  - Refactor del sidebar (`dimensionBuilder.js`) para soportar jerarquías de 3 niveles (Grupo → Subgrupo → Capa).
+  - Fix del Web Worker para capas `/api/` y corrección del filtro de comunas de Atacama.
+- ✅ **Ingesta DGA (Pozos)** completada con `ingest-dga-control-nivel.mjs`. Se cargaron 5,491 registros históricos.
+- 📝 Próximo: **Sprint 39** (Capas del chat en sidebar) o **Sprint 40-D.3** (Casos nuevos del golden set).
 
 ### 2026-10-23
 - ✅ **Sprint 23 completado**: hotfixes críticos del chat y la API.

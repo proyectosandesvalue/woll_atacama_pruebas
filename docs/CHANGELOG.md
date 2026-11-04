@@ -45,6 +45,30 @@
 
 ## [Unreleased]
 
+## [Sprint 42] — 2026-11-04
+
+### Added
+- **Integración de Proyecciones Climáticas ARClim**: Ingesta de 5 variables (Días Calurosos, Temp. Máxima, Temp. Mínima, Heladas, Precipitación) con 3 escenarios (Histórico, SSP2-4.5, SSP5-8.5) y deltas de cambio.
+- Endpoint dinámico `api/arclim-geojson.js` que consulta la API de ARClim en tiempo real, filtra solo las comunas de Atacama (Región 03) y devuelve GeoJSON.
+- 21 capas coropléticas en `clima.js` con escalas de colores adaptadas (absolutas y de cambio/delta).
+- UI: Nueva jerarquía en el sidebar (Dimensión → Grupo → Subgrupo). Los grupos "Estaciones Meteorológicas" y "Proyecciones Climáticas" agrupan sus respectivas capas.
+- UI: Doble selector en el sidebar para las capas ARClim (Escenario climático y Temporada/Season).
+- UI: Panel de información (`sidebarInfo`) para polígonos ARClim con descripciones detalladas del IPCC, gráfico comparativo de barras (Chart.js) con opciones de expandir y descargar.
+- `scripts/ingest-dga-control-nivel.mjs`: Script de ingesta para niveles estáticos de pozos DGA.
+
+### Changed
+- `layerUtils.js`: Refactor del `onEachFeature` para manejar genéricamente cualquier capa con `indicatorId`. El bypass del Web Worker ahora aplica a cualquier URL que empiece con `/api/`.
+- `dimensionBuilder.js`: Lógica de renderizado recursivo para soportar subgrupos (árbol de capas). Los eventos de colapso ahora usan delegación desde el contenedor padre para evitar errores de `null`.
+- `stationsMapUtils.js`: El panel lateral ahora filtra y agrupa por la variable activa, mostrando solo el último registro de cada parámetro.
+
+### Fixed
+- `json-columnar.js`: Filtro para comunas de Atacama corregido. La API de ARClim no usa ceros a la izquierda para regiones de un dígito (ej. "31" en vez de "031"), por lo que el filtro `startsWith("3")` ahora captura correctamente la Región de Atacama.
+- `chartModal.js`: Calendario traducido al español, fechas resaltadas con color de la marca, y soporte para mostrar tablas de calidad de agua con 1 solo registro.
+- `dateSelector.js`: Corrección de zona horaria en las fechas del calendario (usando hora local en vez de UTC).
+- `arclim-geojson.js`: Solucionado el error 404 eliminando el uso del Web Worker para rutas `/api/` y forzando el fetch en el hilo principal.
+
+---
+
 ## [Sprint 23] — 2026-10-23
 
 ### Added
