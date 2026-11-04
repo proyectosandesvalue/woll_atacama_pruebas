@@ -1,3 +1,37 @@
+const EMPTY_GEOJSON = "data:application/json,%7B%22type%22:%22FeatureCollection%22,%22features%22:%5B%5D%7D";
+
+const CALIDAD_VARIABLES = [
+  "calidad_aluminio_total", "calidad_arsenico_total", "calidad_bicarbonato", "calidad_boro",
+  "calidad_cadmio_total", "calidad_calcio_disuelto", "calidad_calcio_total", "calidad_carbonato",
+  "calidad_cloruro", "calidad_cobalto_total", "calidad_cobre_total", "calidad_conductividad_especifica",
+  "calidad_cromo_hexavalente_disuelto", "calidad_cromo_hexavalente_total", "calidad_demanda_quimica_de_oxigeno",
+  "calidad_fierro_total", "calidad_fosfato", "calidad_fosforo_total", "calidad_litio_disuelto",
+  "calidad_magnesio_disuelto", "calidad_magnesio_total", "calidad_manganeso_total", "calidad_mercurio_disuelto",
+  "calidad_mercurio_total", "calidad_molibdeno_disuelto", "calidad_niquel_total", "calidad_nitrato",
+  "calidad_nitrito", "calidad_nitrogeno_amoniacal", "calidad_oxigeno_disuelto", "calidad_ph",
+  "calidad_plata_total", "calidad_plomo_total", "calidad_potasio_disuelto", "calidad_potasio_total",
+  "calidad_razon_de_absorcion_de_sodio_ras", "calidad_selenio_disuelto", "calidad_selenio_total",
+  "calidad_silice", "calidad_sodio_disuelto", "calidad_sodio_total", "calidad_sulfato",
+  "calidad_temperatura_del_agua", "calidad_zinc_total"
+];
+
+// ── Capas de Estaciones DGA ──
+const DGA_LAYERS = [
+  // Fluviometría
+  { id: "estacion_fluviometrica_caudal_diario",  variable: "caudal_diario",  label: "Fluviométricas (Caudal Medio Diario)" },
+  { id: "estacion_fluviometrica_caudal_mensual", variable: "caudal_mensual", label: "Fluviométricas (Caudal Medio Mensual)" },
+
+  // Sedimentos
+  { id: "estacion_sedimentos_integrado",  variable: "sedimentos_integrado",  label: "Sedimentos (Muestreo Integrado)" },
+  { id: "estacion_sedimentos_rutinario", variable: "sedimentos_rutinario", label: "Sedimentos (Muestreo Rutinario)" },
+
+  // Niveles de pozos
+  { id: "estacion_control_nivel", variable: "nivel_estatico_pozo", label: "Control de Nivel (Pozos)" },
+
+  // Calidad de agua (con selector de parámetros)
+  { id: "estacion_calidad_agua", variable: "calidad_arsenico_total", label: "Calidad de Agua", isCalidad: true },
+];
+
 const aguaConfig = {
   capas: [
     "hidrografia",
@@ -19,15 +53,11 @@ const aguaConfig = {
     "decrero_escasez_2023",
     "limite_comunal_linea",
     "toponimia",
+    ...DGA_LAYERS.map(l => l.id),
   ],
   cargaInicial: {
     grupos: ["hidrografia", "reservas", "infraestructura"],
     capas: ["limite_comunal_linea"],
-    // Grupos que se cargan al activar la dimensión
-    // O también puedes especificar capas individuales si no usas grupos:
-    // capas: ["energia_linea_transmision", "subestaciones"]
-    // Escenario 3: Sin cargaInicial = carga todo (backward compatible)
-    // No defines la propiedad cargaInicial
   },
   grupos: {
     hidrografia: {
@@ -65,6 +95,10 @@ const aguaConfig = {
         "cuencas_dga",
       ],
     },
+    estaciones_dga: {
+      nombre: "Estaciones DGA (Históricas)",
+      capas: DGA_LAYERS.map(l => l.id),
+    },
     contexto: {
       nombre: "Territorio",
       capas: ["limite_comunal_linea", "toponimia"],
@@ -75,13 +109,13 @@ const aguaConfig = {
       url: "hidrografia.geojson",
       type: "line",
       nombrePersonalizado: "Red Hidrografica",
-      atributo: "tipo_bcn", // Asegúrate de que este atributo exista en tu GeoJSON
+      atributo: "tipo_bcn",
       colores: {
         Quebrada: "#8af1ffff",
         Arroyo: "#54cfffff",
         Estero: "#2abccfff",
         Rio: "#3e6bffff",
-      }, // Configuracion del Estilo Base de la Linea (Ancho, transparencia, Segmentacion de la Linea)
+      },
       estiloBase: {
         weight: 2.5,
         opacity: 0.8,
@@ -112,18 +146,18 @@ const aguaConfig = {
     },
     apr_rural: {
       url: "apr_rural.geojson",
-      type: "point", // Tipo de capa: point, line, polygon
-      atributo: "COD_REG", // Asegúrate de que este atributo exista en tu GeoJSON
-      nombrePersonalizado: "Servicios Sanitarios Rurales (Ex APR)", // Nombre personalizado de la Capa
+      type: "point",
+      atributo: "COD_REG",
+      nombrePersonalizado: "Servicios Sanitarios Rurales (Ex APR)",
       iconos: {
         "03": "Torre Agua.png",
       },
       estiloAlternativo: {
-        color: "#FF6B6B", // Color del borde del punto
-        fillColor: "#FF6B6B", // Color de relleno del punto
-        radius: 5, // Radio del punto
-        weight: 1, // Grosor del borde del punto
-        fillOpacity: 0.8, // Transparencia del relleno del punto
+        color: "#FF6B6B",
+        fillColor: "#FF6B6B",
+        radius: 5,
+        weight: 1,
+        fillOpacity: 0.8,
       },
       popupCampos: [
         "NOMBRE",
@@ -141,7 +175,6 @@ const aguaConfig = {
         Descripcion: "Descripcion",
         "Origen Data": "Origen de la Informacion",
       },
-      // Definir colores por valor del atributo si es necesario
       colores: {
         Inactivo: "#FF6B6B",
         Activo: "#4ECDC4",
@@ -150,18 +183,18 @@ const aguaConfig = {
     },
     plantas_desaladoras_puntos: {
       url: "plantas_desaladoras_puntos.geojson",
-      type: "point", // Tipo de capa: point, line, polygon
-      atributo: "Sistema", // Asegúrate de que este atributo exista en tu GeoJSON
-      nombrePersonalizado: "Plantas Desaladoras", // Nombre personalizado de la Capa
+      type: "point",
+      atributo: "Sistema",
+      nombrePersonalizado: "Plantas Desaladoras",
       iconos: {
         "Osmosis Inversa": "desaladoras.png",
       },
       estiloAlternativo: {
-        color: "#FF6B6B", // Color del borde del punto
-        fillColor: "#FF6B6B", // Color de relleno del punto
-        radius: 5, // Radio del punto
-        weight: 1, // Grosor del borde del punto
-        fillOpacity: 0.8, // Transparencia del relleno del punto
+        color: "#FF6B6B",
+        fillColor: "#FF6B6B",
+        radius: 5,
+        weight: 1,
+        fillOpacity: 0.8,
       },
       popupCampos: [
         "Nombre",
@@ -189,7 +222,6 @@ const aguaConfig = {
         Descripcion: "Descripcion",
         "Origen Data": "Origen de la Informacion",
       },
-      // Definir colores por valor del atributo si es necesario
       colores: {
         Inactivo: "#FF6B6B",
         Activo: "#4ECDC4",
@@ -224,19 +256,17 @@ const aguaConfig = {
         Descripcion: "Descripcion",
         "Origen Data": "Origen de la Informacion",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#2d3436", // Color del borde
-        weight: 2, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0, // Transparencia del relleno
+        color: "#2d3436",
+        weight: 2,
+        fillOpacity: 0,
       },
     },
     derechos_agua_2025: {
       url: "derechos_agua_2025.geojson",
-      type: "point", // Tipo de capa: point, line, polygon
-      nombrePersonalizado: "Derechos de Aprovechamiento de Agua", // Nombre personalizado de la Capa
-      atributo: "Uso del Agua", // Asegúrate de que este atributo exista en tu GeoJSON
+      type: "point",
+      nombrePersonalizado: "Derechos de Aprovechamiento de Agua",
+      atributo: "Uso del Agua",
       iconos: {
         "Bebida/Uso Domestico/Saneamiento": "Derechos Agua.png",
         "Otros Usos": "derechos_otros_usos.png",
@@ -246,11 +276,11 @@ const aguaConfig = {
         "Uso Minero": "Derechos Mineria.png",
       },
       estiloAlternativo: {
-        color: "#FF6B6B", // Color del borde del punto
-        fillColor: "#FF6B6B", // Color de relleno del punto
-        radius: 5, // Radio del punto
-        weight: 1, // Grosor del borde del punto
-        fillOpacity: 0.8, // Transparencia del relleno del punto
+        color: "#FF6B6B",
+        fillColor: "#FF6B6B",
+        radius: 5,
+        weight: 1,
+        fillOpacity: 0.8,
       },
       popupCampos: [
         "Nombre Solicitante",
@@ -305,7 +335,6 @@ const aguaConfig = {
         "Fecha Corte Data": "Fecha Corte Data",
         "Origen Data": "Origen del Dato",
       },
-      // Definir colores por valor del atributo si es necesario
       colores: {
         Inactivo: "#FF6B6B",
         Activo: "#4ECDC4",
@@ -314,18 +343,18 @@ const aguaConfig = {
     },
     plantas_aguas_servidas: {
       url: "plantas_aguas_servidas.geojson",
-      type: "point", // Tipo de capa: point, line, polygon
-      atributo: "REGION", // Asegúrate de que este atributo exista en tu GeoJSON
-      nombrePersonalizado: "Plantas de Tratamiento de Aguas Servidas", // Nombre personalizado de la Capa
+      type: "point",
+      atributo: "REGION",
+      nombrePersonalizado: "Plantas de Tratamiento de Aguas Servidas",
       iconos: {
         "03": "planta_tratamiento.png",
       },
       estiloAlternativo: {
-        color: "#FF6B6B", // Color del borde del punto
-        fillColor: "#FF6B6B", // Color de relleno del punto
-        radius: 5, // Radio del punto
-        weight: 1, // Grosor del borde del punto
-        fillOpacity: 0.8, // Transparencia del relleno del punto
+        color: "#FF6B6B",
+        fillColor: "#FF6B6B",
+        radius: 5,
+        weight: 1,
+        fillOpacity: 0.8,
       },
       popupCampos: [
         "NOMBRE_OBR",
@@ -352,7 +381,6 @@ const aguaConfig = {
         "Ultima Actualizacion": "Ultima Actualizacion del Dato",
         "Origen Data": "Origen de la Informacion",
       },
-      // Definir colores por valor del atributo si es necesario
       colores: {
         Inactivo: "#FF6B6B",
         Activo: "#4ECDC4",
@@ -361,18 +389,18 @@ const aguaConfig = {
     },
     puntos_descargas: {
       url: "puntos_descargas.geojson",
-      type: "point", // Tipo de capa: point, line, polygon
-      atributo: "REGION", // Asegúrate de que este atributo exista en tu GeoJSON
-      nombrePersonalizado: "Ptos. Descargas Plantas Aguas Servidas", // Nombre personalizado de la Capa
+      type: "point",
+      atributo: "REGION",
+      nombrePersonalizado: "Ptos. Descargas Plantas Aguas Servidas",
       iconos: {
         "03": "agua_descarga.png",
       },
       estiloAlternativo: {
-        color: "#FF6B6B", // Color del borde del punto
-        fillColor: "#FF6B6B", // Color de relleno del punto
-        radius: 5, // Radio del punto
-        weight: 1, // Grosor del borde del punto
-        fillOpacity: 0.8, // Transparencia del relleno del punto
+        color: "#FF6B6B",
+        fillColor: "#FF6B6B",
+        radius: 5,
+        weight: 1,
+        fillOpacity: 0.8,
       },
       popupCampos: [
         "NOMBRE_OBR",
@@ -397,7 +425,6 @@ const aguaConfig = {
         "Ultima Actualizacion": "Ultima Actualizacion del Dato",
         "Origen Data": "Origen de la Informacion",
       },
-      // Definir colores por valor del atributo si es necesario
       colores: {
         Inactivo: "#FF6B6B",
         Activo: "#4ECDC4",
@@ -428,12 +455,10 @@ const aguaConfig = {
         "Ultima Actualizacion": "Ultima Actualizacion del Dato",
         "Origen Data": "Origen del Dato",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#3d0202ff", // Color del borde
-        weight: 1, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0.3, // Transparencia del relleno
+        color: "#3d0202ff",
+        weight: 1,
+        fillOpacity: 0.3,
       },
     },
     lagunas_embalses: {
@@ -462,12 +487,10 @@ const aguaConfig = {
         Descripcion: "Descripcion",
         "Origen Data": "Origen del Dato",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#116AA9", // Color del borde
-        weight: 1, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0.8, // Transparencia del relleno
+        color: "#116AA9",
+        weight: 1,
+        fillOpacity: 0.8,
       },
     },
     salares: {
@@ -496,12 +519,10 @@ const aguaConfig = {
         km2: "Area en Km2",
         "Origen Data": "Origen del Dato",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#000a9bff", // Color del borde
-        weight: 1, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0.3, // Transparencia del relleno
+        color: "#000a9bff",
+        weight: 1,
+        fillOpacity: 0.3,
       },
     },
     humedales: {
@@ -534,12 +555,10 @@ const aguaConfig = {
         Ha_humedal: "Superficie en Hectáreas",
         "Origen Dato": "Origen del Dato",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#52f76eff", // Color del borde
-        weight: 1, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0.8, // Transparencia del relleno
+        color: "#52f76eff",
+        weight: 1,
+        fillOpacity: 0.8,
       },
     },
     glaciares: {
@@ -574,12 +593,10 @@ const aguaConfig = {
         Descripcion: "Descripcion",
         "Origen Data": "Origen del Dato",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#9FD5E2", // Color del borde
-        weight: 1, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0.7, // Transparencia del relleno
+        color: "#9FD5E2",
+        weight: 1,
+        fillOpacity: 0.7,
       },
     },
     cuencas_dga: {
@@ -607,12 +624,10 @@ const aguaConfig = {
         Area_km2: "Area en Km2",
         "Origen Data": "Origen del Dato",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#000000", // Color del borde
-        weight: 1, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0.3, // Transparencia del relleno
+        color: "#000000",
+        weight: 1,
+        fillOpacity: 0.3,
       },
     },
     acuiferos: {
@@ -639,12 +654,10 @@ const aguaConfig = {
         Descripcion: "Descripcion",
         "Origen Dato": "Origen del Dato",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#99a6ac", // Color del borde
-        weight: 1, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0.7, // Transparencia del relleno
+        color: "#99a6ac",
+        weight: 1,
+        fillOpacity: 0.7,
       },
     },
     decrero_escasez_2021: {
@@ -675,12 +688,10 @@ const aguaConfig = {
         Descripcion: "Descripcion",
         "Origen Data": "Origen del Dato",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#000000", // Color del borde
-        weight: 1, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0.3, // Transparencia del relleno
+        color: "#000000",
+        weight: 1,
+        fillOpacity: 0.3,
       },
     },
     decrero_escasez_2022: {
@@ -711,12 +722,10 @@ const aguaConfig = {
         Descripcion: "Descripcion",
         "Origen Data": "Origen del Dato",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#000000", // Color del borde
-        weight: 1, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0.3, // Transparencia del relleno
+        color: "#000000",
+        weight: 1,
+        fillOpacity: 0.3,
       },
     },
     decrero_escasez_2023: {
@@ -747,12 +756,10 @@ const aguaConfig = {
         Descripcion: "Descripcion",
         "Origen Data": "Origen del Dato",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#000000", // Color del borde
-        weight: 1, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0.3, // Transparencia del relleno
+        color: "#000000",
+        weight: 1,
+        fillOpacity: 0.3,
       },
     },
     limite_comunal_linea: {
@@ -769,30 +776,26 @@ const aguaConfig = {
         NOM_PROVIN: "Provincia",
         NOM_REGION: "Region",
       },
-      // Personalizar el color del borde y la transparencia
       estiloBase: {
-        color: "#2d3436", // Color del borde
-        weight: 2, // Grosor del borde
-        // Opacity: sirve para darle transparencia a las lineas
-        fillOpacity: 0, // Transparencia del relleno
+        color: "#2d3436",
+        weight: 2,
+        fillOpacity: 0,
       },
     },
     toponimia: {
       url: "toponimia.geojson",
-      type: "point", // Tipo de capa: point, line, polygon
-      atributo: "Tipo", // Asegúrate de que este atributo exista en tu GeoJSON
-      nombrePersonalizado: "Toponimia", // Nombre personalizado de la Capa
+      type: "point",
+      atributo: "Tipo",
+      nombrePersonalizado: "Toponimia",
       iconos: {
-        // Edicion de Iconos
         Asentamiento: "localidad.png",
       },
       estiloAlternativo: {
-        // Icono alternativo en caso que no encuentre el icono
-        color: "#FF6B6B", // Color del borde del punto
-        fillColor: "#FF6B6B", // Color de relleno del punto
-        radius: 4, // Radio del punto
-        weight: 1, // Grosor del borde del punto
-        fillOpacity: 0.8, // Transparencia del relleno del punto
+        color: "#FF6B6B",
+        fillColor: "#FF6B6B",
+        radius: 4,
+        weight: 1,
+        fillOpacity: 0.8,
       },
       popupCampos: ["Nombre"],
       alias: {
@@ -801,17 +804,39 @@ const aguaConfig = {
       etiquetas: {
         campo: "Nombre",
         estilo: {
-          color: "#000000", // Color del texto
-          fontSize: "9px", // Tamaño de la fuente
-          fontFamily: "Arial, sans-serif", // Familia de la fuente
-          bufferColor: "#88304E", // Color del contorno
-          bufferWidth: 0.3, // Ancho del contorno
-          offsetY: -20, // Añadida propiedad para el offset vertical
+          color: "#000000",
+          fontSize: "9px",
+          fontFamily: "Arial, sans-serif",
+          bufferColor: "#88304E",
+          bufferWidth: 0.3,
+          offsetY: -20,
         },
       },
     },
   },
   leyenda: {},
 };
+
+// ── Generar estilos dinámicos para las capas DGA ──
+DGA_LAYERS.forEach(l => {
+  aguaConfig.estilo[l.id] = {
+    url: EMPTY_GEOJSON,
+    type: "point",
+    nombrePersonalizado: l.label,
+    variable: l.variable,
+    estado: "historica",
+    isHistorical: true,
+  };
+
+  if (l.isCalidad) {
+    aguaConfig.estilo[l.id].selectorVariables = {
+      default: "calidad_arsenico_total",
+      opciones: CALIDAD_VARIABLES.map(v => ({
+        valor: v,
+        label: v.replace(/^calidad_/, "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())
+      }))
+    };
+  }
+});
 
 export default aguaConfig;

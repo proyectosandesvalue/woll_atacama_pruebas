@@ -165,6 +165,19 @@ export function crearElementoCapa(
             <span class="material-symbols-outlined">table_chart</span>
             Ver tabla de Atributos
           </button>
+          
+          <!-- NUEVO BOTÓN: Solo aparece si la capa tiene una variable asociada -->
+          ${
+            configCapa.variable
+              ? `
+          <button class="layer-option-item" type="button" data-action="ver-historico" data-variable="${configCapa.variable}" data-estado="${configCapa.estado || ''}">
+            <span class="material-symbols-outlined">show_chart</span>
+            Ver Datos Históricos
+          </button>
+          `
+              : ""
+          }
+
           <button class="layer-option-item" type="button" data-action="filter-data" data-capa="${capaNombre}">
             <span class="material-symbols-outlined">filter_alt</span>
             Filtrar Datos
@@ -191,7 +204,7 @@ export function crearElementoCapa(
       </div>
     </div>
     ${subCategoriesHtml}
-  `;
+`;
 
   const checkbox = listItem.querySelector(`#${checkboxId}`);
   const opacitySlider = listItem.querySelector(".layer-opacity-slider");
@@ -336,12 +349,17 @@ export function crearElementoCapa(
       );
     }
 
-    const btnVerTabla = menuOptions.querySelector('[data-action="ver-tabla"]');
-    if (btnVerTabla) {
-      btnVerTabla.addEventListener("click", (e) => {
+    const btnHistorico = menuOptions.querySelector('[data-action="ver-historico"]');
+    if (btnHistorico) {
+      btnHistorico.addEventListener("click", (e) => {
         e.stopPropagation();
         closeMenu();
-        openAttributeTable(capaNombre, temasConfig);
+        const variable = btnHistorico.dataset.variable;
+        const estado = btnHistorico.dataset.estado;
+        
+        import("../utils/chartModal.js").then(({ openChartModal }) => {
+           openChartModal(null, null, { variable, estado });
+        });
       });
     }
 

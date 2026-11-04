@@ -3,10 +3,10 @@ import { appState } from "../store/appState.js";
 import { actualizarLeyenda } from "../utils/legendUtils.js";
 import { obtenerTodasLasCapasDeDimension } from "../utils/configUtils.js";
 import { createContextLogger } from "../utils/logger.js";
-import { cargarCapaIndividual, mostrarCapa, ocultarCapa, estimateLayerSize } from "../utils/layerUtils.js";
+import { cargarCapaIndividual, mostrarCapa, ocultarCapa, estimateLayerSize, updateChoropleth } from "../utils/layerUtils.js";
 import { ConcurrentQueue } from "../utils/concurrentQueue.js";
 import { crearElementoCapa, syncIndividualCheckboxes } from "./layerItem.js";
-import { loadLayer, clearLayer, getVariableAvailability } from "../utils/stationsMapUtils.js";
+import { loadLayer, clearLayer } from "../utils/stationsMapUtils.js";
 import { attachDateSelector, getDate, updateDateSelector } from "../utils/dateSelector.js";
 
 const log = createContextLogger("DimensionBuilder");
@@ -61,9 +61,7 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
     `;
 
     const switchInput = header.querySelector(".dimension-switch");
-    const collapseButton = header.querySelector(".btn-collapse-toggle");
     const switchLabel = header.querySelector(".dimension-title");
-    const titleContainer = header.querySelector(".dimension-title-container");
 
     const childrenContainer = document.createElement("ul");
     childrenContainer.id = collapseId;
@@ -84,8 +82,12 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
       const icon = header.querySelector("#btn-collapse-" + temaKey);
       if (icon) icon.classList.toggle("collapsed-icon-rotated");
     };
-    collapseButton.addEventListener("click", toggleCollapse);
-    titleContainer.addEventListener("click", toggleCollapse);
+    
+    // Escuchamos el clic en todo el header (ignorando el botón de visibilidad)
+    header.addEventListener("click", (e) => {
+      if (e.target.closest(".group-vis-btn")) return;
+      toggleCollapse();
+    });
 
     const cargaInicial = temaConfig.cargaInicial || {};
     const gruposIniciales = cargaInicial.grupos || [];
@@ -130,8 +132,6 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
 
         const grupoSwitch = grupoHeader.querySelector(".grupo-switch");
         const grupoSwitchLabel = grupoHeader.querySelector(".grupo-nombre");
-        const grupoCollapseBtn = grupoHeader.querySelector(".btn-collapse-toggle-grupo");
-        const grupoTitleContainer = grupoHeader.querySelector(".dimension-title-container");
 
         const toggleGrupoCollapse = () => {
           const grupoCapasEl = document.getElementById(grupoCollapseId);
@@ -139,8 +139,12 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
           const icon = document.getElementById("btn-collapse-grupo-" + grupoKey);
           if (icon) icon.classList.toggle("collapsed-icon-rotated");
         };
-        grupoCollapseBtn.addEventListener("click", toggleGrupoCollapse);
-        grupoTitleContainer.addEventListener("click", toggleGrupoCollapse);
+        
+        // Escuchamos el clic en todo el grupoHeader (ignorando el botón de visibilidad)
+        grupoHeader.addEventListener("click", (e) => {
+          if (e.target.closest(".group-vis-btn")) return;
+          toggleGrupoCollapse();
+        });
 
         grupoLi.appendChild(grupoHeader);
 
@@ -152,18 +156,77 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
           grupoCapasUl.classList.add("show");
         }
 
-        grupoConfig.capas.forEach((capaNombre) => {
-          const capaLi = crearElementoCapa(
-            capaNombre, temaKey, temaConfig, temasConfig, contenedor.id, seCargaInicialmente
-          );
-          const capaConfig = temaConfig.estilo?.[capaNombre];
-          
-          if (capaConfig?.variable) {
-            attachStationLayer(capaLi, capaConfig, capaNombre);
-          }
-          
-          grupoCapasUl.appendChild(capaLi);
-        });
+        // Helper: renderiza un array de capas dentro de un <ul>
+        const renderCapas = (capasArray, containerUl) => {
+          capasArray.forEach((capaNombre) => {
+            const capaLi = crearElementoCapa(
+              capaNombre, temaKey, temaConfig, temasConfig, contenedor.id, seCargaInicialmente
+            );
+            const capaConfig = temaConfig.estilo?.[capaNombre];
+            
+            if (capaConfig?.variable) {
+              attachStationLayer(capaLi, capaConfig, capaNombre);
+            } else if (capaConfig?.indicatorId) {
+              attachChoroplethSelector(capaLi, capaConfig, capaNombre, temaKey, temasConfig);
+            }
+            
+            containerUl.appendChild(capaLi);
+          });
+        };
+
+        // Si el grupo tiene subgrupos, los renderizamos anidados
+        if (grupoConfig.subgrupos) {
+          Object.entries(grupoConfig.subgrupos).forEach(([subKey, subConfig]) => {
+            const subLi = document.createElement("li");
+            subLi.classList.add("subgrupo-tematico", "mb-1");
+            subLi.setAttribute("data-subgrupo-key", subKey);
+
+            const subCollapseId = `${grupoCollapseId}-sub-${subKey}`;
+
+            const subHeader = document.createElement("div");
+            subHeader.classList.add("subgrupo-header", "mb-1");
+            // Forzamos los estilos inline para evitar saltos de línea
+            subHeader.style.display = "flex";
+            subHeader.style.alignItems = "center";
+            subHeader.style.justifyContent = "space-between";
+            subHeader.style.flexWrap = "nowrap";
+            subHeader.style.width = "100%";
+            subHeader.style.padding = "4px 0";
+            subHeader.style.cursor = "pointer";
+
+            subHeader.innerHTML = `
+              <div class="dimension-title-container" style="flex: 1; min-width: 0; padding-left: 4px; display: flex; align-items: center;">
+                <span class="subgrupo-nombre" style="font-size: 13px; font-weight: 600; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  ${subConfig.nombre}
+                </span>
+              </div>
+              <button class="btn-collapse-toggle-subgrupo" type="button" aria-expanded="false" style="flex-shrink: 0; background: transparent; border: none; padding: 0; cursor: pointer; color: var(--text-tertiary); display: flex; align-items: center;">
+                <span id="btn-collapse-sub-${grupoKey}-${subKey}" class="material-symbols-outlined collapsed-icon-rotated" style="font-size: 18px; margin: 0;">expand_more</span>
+              </button>
+            `;
+
+            const subCapasUl = document.createElement("ul");
+            subCapasUl.id = subCollapseId;
+            subCapasUl.classList.add("collapse", "subgrupo-capas-list", "list-unstyled", "ps-4");
+
+            const toggleSubCollapse = () => {
+              subCapasUl.classList.toggle("show");
+              const icon = document.getElementById(`btn-collapse-sub-${grupoKey}-${subKey}`);
+              if (icon) icon.classList.toggle("collapsed-icon-rotated");
+            };
+            
+            // Asignamos el evento a TODO el subHeader, sin buscar botones internos
+            subHeader.addEventListener("click", toggleSubCollapse);
+
+            subLi.appendChild(subHeader);
+            subLi.appendChild(subCapasUl);
+            grupoCapasUl.appendChild(subLi);
+
+            renderCapas(subConfig.capas, subCapasUl);
+          });
+        } else if (grupoConfig.capas) {
+          renderCapas(grupoConfig.capas, grupoCapasUl);
+        }
 
         grupoLi.appendChild(grupoCapasUl);
         childrenContainer.appendChild(grupoLi);
@@ -224,8 +287,10 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
         const capaConfig = temaConfig.estilo?.[capaNombre];
         
         if (capaConfig?.variable) {
-        attachStationLayer(capaLi, capaConfig, capaNombre);
-      }
+          attachStationLayer(capaLi, capaConfig, capaNombre);
+        } else if (capaConfig?.indicatorId) {
+          attachChoroplethSelector(capaLi, capaConfig, capaNombre, temaKey, temasConfig);
+        }
         
         childrenContainer.appendChild(capaLi);
       });
@@ -318,6 +383,7 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
     }
   });
 }
+
 
 export async function activarCapasDeDimension(temaKey, listaCapas, temasConfig) {
   log.debug(`Activando dimensión: ${temaKey}. Cargando ${listaCapas.length} capas.`);
@@ -487,4 +553,93 @@ function attachStationLayer(capaLi, capaConfig, layerId) {
     const date = isHistorical ? getDate(layerId) : null;
     loadLayer(layerId, currentVariable, appState.map, { date, estado });
   }
+}
+
+function attachChoroplethSelector(capaLi, capaConfig, layerId, temaKey, temasConfig) {
+  const state = {
+    season: capaConfig.defaultSeason || "annual",
+    scenarioKey: capaConfig.defaultScenario || "future$ssp245",
+  };
+
+  const applyChoropleth = () => {
+    const field = `$CLIMA$${capaConfig.indicatorId}$${state.season}$${state.scenarioKey}`;
+    const isDelta = state.scenarioKey.startsWith("delta");
+    const scale = capaConfig.scales[isDelta ? "delta" : "absolute"];
+    
+    updateChoropleth(layerId, field, scale, capaConfig);
+    
+    if (capaConfig.coloresByType) {
+      capaConfig.colores = capaConfig.coloresByType[isDelta ? "delta" : "absolute"];
+      if (temasConfig) actualizarLeyenda(temaKey, temasConfig);
+    }
+  };
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "layer-variable-selector";
+  wrapper.style.padding = "4px 8px 8px 24px";
+
+  // Dropdown 1: Escenario
+  const scenarioLabel = document.createElement("label");
+  scenarioLabel.textContent = "Escenario: ";
+  scenarioLabel.style.fontSize = "12px";
+  scenarioLabel.style.color = "var(--text-secondary)";
+  
+  const scenarioSelect = document.createElement("select");
+  scenarioSelect.className = "layer-variable-select";
+  scenarioSelect.style.marginLeft = "4px";
+  scenarioSelect.style.width = "calc(100% - 80px)";
+  scenarioSelect.style.marginBottom = "6px";
+  
+  capaConfig.scenarioOptions.forEach((op) => {
+    const opt = document.createElement("option");
+    opt.value = op.key;
+    opt.textContent = op.label;
+    scenarioSelect.appendChild(opt);
+  });
+  scenarioSelect.value = state.scenarioKey;
+  
+  scenarioLabel.appendChild(scenarioSelect);
+  wrapper.appendChild(scenarioLabel);
+
+  // Dropdown 2: Temporada (solo si hay más de 1 opción)
+  let seasonSelect = null;
+  if (capaConfig.seasonOptions && capaConfig.seasonOptions.length > 1) {
+    const seasonLabel = document.createElement("label");
+    seasonLabel.textContent = "Temporada: ";
+    seasonLabel.style.fontSize = "12px";
+    seasonLabel.style.color = "var(--text-secondary)";
+    seasonLabel.style.display = "block";
+    
+    seasonSelect = document.createElement("select");
+    seasonSelect.className = "layer-variable-select";
+    seasonSelect.style.marginLeft = "4px";
+    seasonSelect.style.width = "calc(100% - 80px)";
+    
+    capaConfig.seasonOptions.forEach((op) => {
+      const opt = document.createElement("option");
+      opt.value = op.value;
+      opt.textContent = op.label;
+      seasonSelect.appendChild(opt);
+    });
+    seasonSelect.value = state.season;
+    
+    seasonLabel.appendChild(seasonSelect);
+    wrapper.appendChild(seasonLabel);
+  }
+
+  capaLi.appendChild(wrapper);
+
+  scenarioSelect.addEventListener("change", () => {
+    state.scenarioKey = scenarioSelect.value;
+    applyChoropleth();
+  });
+
+  if (seasonSelect) {
+    seasonSelect.addEventListener("change", () => {
+      state.season = seasonSelect.value;
+      applyChoropleth();
+    });
+  }
+
+  applyChoropleth();
 }

@@ -134,6 +134,15 @@ export async function runJsonColumnarEndpoint(db, source, endpoint) {
         return val != null ? String(val) : "";
       });
 
+      if (source.id === 'arclim' && entityId.startsWith('comuna:')) {
+        const codComuna = entityId.replace('comuna:', '').trim();
+
+        if (!codComuna.startsWith('3')) {
+          skipped++;
+          continue;
+        }
+      }
+
       if (!entityId || entityId.endsWith(":")) {
         skipped++;
         continue;

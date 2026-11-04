@@ -58,14 +58,20 @@ export function obtenerCapasParaCargaInicial(temaConfig) {
  * @returns {string[]} Array con nombres de todas las capas
  */
 export function obtenerTodasLasCapasDeDimension(temaConfig) {
-  if (temaConfig.grupos && Object.keys(temaConfig.grupos).length > 0) {
-    const capas = [];
-    Object.values(temaConfig.grupos).forEach((grupo) => {
-      capas.push(...grupo.capas);
+  const capas = [];
+  if (temaConfig.grupos) {
+    Object.values(temaConfig.grupos).forEach(grupo => {
+      if (grupo.capas) capas.push(...grupo.capas);
+      if (grupo.subgrupos) {
+        Object.values(grupo.subgrupos).forEach(sub => {
+          if (sub.capas) capas.push(...sub.capas);
+        });
+      }
     });
-    return capas;
+  } else if (temaConfig.capas) {
+    capas.push(...temaConfig.capas);
   }
-  return temaConfig.capas || [];
+  return capas;
 }
 
 /**

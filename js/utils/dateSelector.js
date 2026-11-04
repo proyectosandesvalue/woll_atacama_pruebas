@@ -11,6 +11,14 @@ export function isHistoricalVariable(variable) {
   return HISTORICAL_PATTERNS.some((p) => p.test(variable));
 }
 
+// Helper para formatear fecha local sin desfase de zona horaria
+function localDateStr(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function attachDateSelector(wrapper, map, layerId, onDateChange) {
   const container = document.createElement("div");
   container.className = "layer-date-selector";
@@ -29,11 +37,17 @@ export function attachDateSelector(wrapper, map, layerId, onDateChange) {
   const input = container.querySelector(".layer-date-input");
   const clearBtn = container.querySelector(".layer-date-clear");
 
+  // Activar el idioma español si está disponible
+  if (window.flatpickr && flatpickr.l10ns && flatpickr.l10ns.es) {
+    flatpickr.localize(flatpickr.l10ns.es);
+  }
+
   const picker = flatpickr(input, {
     dateFormat: "Y-m-d",
     altInput: true,
     altFormat: "d/m/Y",
     disableMobile: true,
+    locale: "es", // Fuerza el idioma español
     onChange: (selectedDates, dateStr) => {
       if (dateStr) {
         setDate(layerId, dateStr);
@@ -42,11 +56,9 @@ export function attachDateSelector(wrapper, map, layerId, onDateChange) {
       }
     },
     onDayCreate: (dObj, dStr, fp, dayElem) => {
-      const dateStr = dayElem.dateObj.toISOString().slice(0, 10);
+      const dateStr = localDateStr(dayElem.dateObj);
       if (fp._availableDates && fp._availableDates.has(dateStr)) {
-        dayElem.style.backgroundColor = "#dbeafe"; // azul claro
-        dayElem.style.borderRadius = "50%";
-        dayElem.style.fontWeight = "600";
+        dayElem.classList.add("has-data"); // Usar clase CSS en lugar de estilos inline
       }
     },
   });
@@ -100,16 +112,27 @@ export async function updateDateSelector(wrapper, variable, layerId, codigo = nu
     picker.set("maxDate", availability.fecha_max);
   }
 
-  // Cargar los días con datos (solo si hay codigo, ej. para el modal)
-  if (codigo) {
-    try {
+  // Cargar los días con datos (por estación o por variable completa)
+  try {
+    let dates = [];
+    if (codigo) {
+      // Estación específica (usado en el modal)
       const res = await fetch(`/api/station-available-dates?codigo=${codigo}&indicator=${variable}`);
       const data = await res.json();
-      if (picker && data.dates) {
-        picker._availableDates = new Set(data.dates);
-      }
-    } catch (err) {
-      console.warn(`[dateSelector] No se pudieron cargar las fechas con datos:`, err);
+      dates = data.dates || [];
+    } else {
+      // Variable completa (usado en el sidebar de capas)
+      const res = await fetch(`/api/variable-available-dates?variable=${variable}`);
+      const data = await res.json();
+      dates = data.dates || [];
     }
+
+    if (picker) {
+      picker._availableDates = new Set(dates);
+      // Forzar redibujado para aplicar las clases si el calendario está abierto
+      picker.redraw();
+    }
+  } catch (err) {
+    console.warn(`[dateSelector] No se pudieron cargar las fechas con datos:`, err);
   }
 }

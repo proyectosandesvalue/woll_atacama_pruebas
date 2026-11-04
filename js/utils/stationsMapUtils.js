@@ -35,6 +35,19 @@ export const VARIABLES = {
   sedimentos_integrado: { label: "Sedimentos (muestreo integrado)", unit: "mg/L", scale: [[0, "#fef9c3"], [500, "#a16207"]] },
   sedimentos_rutinario: { label: "Sedimentos (muestreo rutinario)", unit: "mg/L", scale: [[0, "#fef9c3"], [500, "#a16207"]] },
   nivel_estatico_pozo:  { label: "Nivel estático del pozo",         unit: "m",    scale: [[0, "#dcfce7"], [100, "#14532d"]] },
+
+  arclim_riesgo_calor: {
+    label: "Días Calurosos (>30°C)",
+    unit: "días",
+    scale: [
+      [0, "#ffffcc"],
+      [2, "#ffeda0"],
+      [5, "#feb24c"],
+      [10, "#f03b20"],
+      [20, "#bd0026"],
+      [40, "#800026"]
+    ],
+  }
 };
 
 // ── Helpers ────────────────────────────────────────────────
@@ -306,12 +319,36 @@ async function openStationSidebar(station) {
     const res = await fetch(`/api/station-details?codigo=${station.codigo_nacional}`);
     const data = await res.json();
 
-    if (!data.values || data.values.length === 0) {
+    let displayValues = data.values || [];
+    const activeLayers = getActiveLayers();
+    
+    if (activeLayers.length > 0) {
+      const activeVars = activeLayers.map(l => l.variable);
+      const isQualityActive = activeVars.some(v => v && v.startsWith('calidad_'));
+      
+      if (isQualityActive) {
+        displayValues = displayValues.filter(v => v.indicator_id.startsWith('calidad_'));
+      } else {
+        const specificVar = activeVars[0];
+        if (specificVar) displayValues = displayValues.filter(v => v.indicator_id === specificVar);
+      }
+    }
+
+    const latestValuesMap = new Map();
+    displayValues.forEach(v => {
+      const existing = latestValuesMap.get(v.indicator_id);
+      if (!existing || new Date(v.period_start) > new Date(existing.period_start)) {
+        latestValuesMap.set(v.indicator_id, v);
+      }
+    });
+    displayValues = Array.from(latestValuesMap.values());
+
+    if (!displayValues || displayValues.length === 0) {
       content.innerHTML = `
         <div class="custom-popup">
           <p><strong>${station.comuna} · ${tipoTexto}</strong></p>
           <p style="margin-top: 15px; padding: 10px; background: var(--bg-surface-2); border-left: 3px solid var(--color-warning); border-radius: 4px;">
-            <em>No hay datos disponibles para esta estación.</em>
+            <em>No hay datos disponibles para esta capa en esta estación.</em>
           </p>
         </div>
       `;
@@ -322,7 +359,7 @@ async function openStationSidebar(station) {
     let fechaMin = null, fechaMax = null;
     let horaMax = null;
 
-    data.values.forEach((v) => {
+    displayValues.forEach((v) => {
       if (!v.period_start) return;
       if (!fechaMin || v.period_start < fechaMin) fechaMin = v.period_start;
       if (!fechaMax || v.period_start > fechaMax) {
@@ -348,7 +385,7 @@ async function openStationSidebar(station) {
       ? `${formatPeriod(fechaMax)} a las ${horaMax} hrs`
       : formatPeriod(fechaMax);
 
-    // 4. Construir tabla
+    // 4. Construir tabla (solo con los últimos valores)
     let html = `<div class="custom-popup">
       <p><strong>${station.comuna} · ${tipoTexto}</strong></p>
       <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 10px;">
@@ -361,14 +398,14 @@ async function openStationSidebar(station) {
         </thead>
         <tbody>`;
 
-    data.values.forEach((v) => {
+    displayValues.forEach((v) => {
       const conf = getVariableConfig(v.indicator_id, v.unit);
       let val = v.value;
       let displayUnit = conf.unit || v.unit;
 
       if (v.indicator_id === "viento_vel") val = (val * 1.852).toFixed(1);
       else if (v.indicator_id === "viento_dir") { val = Math.round(val); displayUnit = "°"; }
-      else val = Number(val).toFixed(1);
+      else val = Number(val).toFixed(3);
 
       const periodo = formatPeriod(v.period_start, v.indicator_id);
       const tooltip = getTooltip(v.indicator_id);
@@ -383,8 +420,8 @@ async function openStationSidebar(station) {
     });
     html += `</tbody></table></div>`;
 
-    // 5. Botón "Ver serie histórica" (solo para estaciones DGA con datos)
-    if (esDGA && data.values.length > 0) {
+    // 5. Botón "Ver serie histórica"
+    if (esDGA && displayValues.length > 0) {
       html += `
         <button id="openChartBtn" class="btn btn-primary" style="margin-top: 15px; width: 100%; padding: 8px; border-radius: 4px; border: none; background: var(--color-brand-text); color: white; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;">
           <span class="material-symbols-outlined" style="font-size: 18px;">show_chart</span>
@@ -393,7 +430,7 @@ async function openStationSidebar(station) {
       `;
     }
 
-    // 6. Fuente dinámica
+    // 6. Fuente dinámica (se mantiene igual)
     let fuenteHtml = "";
     if (codigo.startsWith("RMCL")) {
       const fechaConsulta = new Date().toLocaleDateString("es-CL", { day: "numeric", month: "long", year: "numeric" });
@@ -424,16 +461,16 @@ async function openStationSidebar(station) {
 
     // 8. Listener del botón de gráficos
     const chartBtn = document.getElementById("openChartBtn");
-if (chartBtn) {
-  chartBtn.addEventListener("click", async () => {
-    try {
-      const { openChartModal } = await import("./chartModal.js");
-      openChartModal(station, data); // ← antes era data.values
-    } catch (err) {
-      console.error("[stations] Error al abrir el modal de gráficos:", err);
+    if (chartBtn) {
+      chartBtn.addEventListener("click", async () => {
+        try {
+          const { openChartModal } = await import("./chartModal.js");
+          openChartModal(station, data, null);
+        } catch (err) {
+          console.error("[stations] Error al abrir el modal de gráficos:", err);
+        }
+      });
     }
-  });
-}
   } catch (err) {
     content.innerHTML = `<div class="custom-popup"><p>Error al cargar datos.</p></div>`;
   }
