@@ -447,6 +447,94 @@ const ARCLIM_PRECIPITACION = [
       delta:    { "-50 a -20%": "#67001f", "-20 a 0%": "#d6604d", "Sin cambio": "#f7f7f7", "+20 a +50%": "#4393c3", "+50%": "#053061" },
     },
   }),
+  ]
+// ── Grupo 5: Viento, Radiación y Humedad (5) ──
+const ARCLIM_VIENTO_RADIACION_HUMEDAD = [
+  createArclimLayer({
+    id: "arclim_vel_mean", 
+    indicatorId: "vel_mean", 
+    label: "Viento Medio",
+    description: "Valor medio de la magnitud del viento.",
+    unit: "m/s", 
+    seasons: ["annual", "summer", "winter"], 
+    deltaType: "rel",
+    scales: {
+      absolute: [ { value: 0, color: "#f7fbff" }, { value: 3, color: "#c7e9c0" }, { value: 6, color: "#41ab5d" }, { value: 10, color: "#006d2c" }, { value: 15, color: "#00441b" } ],
+      delta:    [ { value: -30, color: "#2166ac" }, { value: 0, color: "#f7f7f7" }, { value: 30, color: "#b2182b" } ],
+    },
+    colores: {
+      absolute: { "0-3 m/s": "#f7fbff", "3-6 m/s": "#c7e9c0", "6-10 m/s": "#41ab5d", "10-15 m/s": "#006d2c", "+15 m/s": "#00441b" },
+      delta:    { "-30%": "#2166ac", "Sin cambio": "#f7f7f7", "+30%": "#b2182b" },
+    },
+  }),
+  createArclimLayer({
+    id: "arclim_rsds_mean", 
+    indicatorId: "rsds_mean", 
+    label: "Radiación Solar Media",
+    description: "Radiación solar global media diaria.",
+    unit: "W/m²", 
+    seasons: ["annual", "summer", "winter"], 
+    deltaType: "rel",
+    scales: {
+      absolute: [ { value: 100, color: "#fff7bc" }, { value: 150, color: "#fec44f" }, { value: 200, color: "#d95f0e" }, { value: 250, color: "#993404" } ],
+      delta:    [ { value: -20, color: "#2166ac" }, { value: 0, color: "#f7f7f7" }, { value: 20, color: "#b2182b" } ],
+    },
+    colores: {
+      absolute: { "100-150 W/m²": "#fff7bc", "150-200 W/m²": "#fec44f", "200-250 W/m²": "#d95f0e", "+250 W/m²": "#993404" },
+      delta:    { "Disminuye": "#2166ac", "Sin cambio": "#f7f7f7", "Aumenta": "#b2182b" },
+    },
+  }),
+  createArclimLayer({
+    id: "arclim_rsds_max", 
+    indicatorId: "rsds_max", 
+    label: "Radiación Solar Máxima",
+    description: "Radiación solar global máxima diaria.",
+    unit: "W/m²", 
+    seasons: ["annual", "summer"], 
+    deltaType: "rel",
+    scales: {
+      absolute: [ { value: 200, color: "#fff7bc" }, { value: 300, color: "#fec44f" }, { value: 400, color: "#d95f0e" }, { value: 500, color: "#993404" } ],
+      delta:    [ { value: -20, color: "#2166ac" }, { value: 0, color: "#f7f7f7" }, { value: 20, color: "#b2182b" } ],
+    },
+    colores: {
+      absolute: { "200-300 W/m²": "#fff7bc", "300-400 W/m²": "#fec44f", "400-500 W/m²": "#d95f0e", "+500 W/m²": "#993404" },
+      delta:    { "Disminuye": "#2166ac", "Sin cambio": "#f7f7f7", "Aumenta": "#b2182b" },
+    },
+  }),
+  createArclimLayer({
+    id: "arclim_hurs_mean", 
+    indicatorId: "hurs_mean", 
+    label: "Humedad Relativa Media",
+    description: "Humedad relativa media diaria.",
+    unit: "%", 
+    seasons: ["annual", "summer", "winter"], 
+    deltaType: "rel",
+    scales: {
+      absolute: [ { value: 0, color: "#8c510a" }, { value: 20, color: "#d8b365" }, { value: 40, color: "#f6e8c3" }, { value: 60, color: "#c7eae5" }, { value: 80, color: "#5ab4ac" } ],
+      delta:    [ { value: -20, color: "#2166ac" }, { value: 0, color: "#f7f7f7" }, { value: 20, color: "#b2182b" } ],
+    },
+    colores: {
+      absolute: { "0-20%": "#8c510a", "20-40%": "#d8b365", "40-60%": "#f6e8c3", "60-80%": "#c7eae5", "+80%": "#5ab4ac" },
+      delta:    { "Disminuye": "#2166ac", "Sin cambio": "#f7f7f7", "Aumenta": "#b2182b" },
+    },
+  }),
+  createArclimLayer({
+    id: "arclim_huss_mean", 
+    indicatorId: "huss_mean", 
+    label: "Humedad Específica Media",
+    description: "Humedad específica media diaria (gramos de vapor de agua por kg de aire).",
+    unit: "g/kg", 
+    seasons: ["annual", "summer", "winter"], 
+    deltaType: "rel",
+    scales: {
+      absolute: [ { value: 0, color: "#8c510a" }, { value: 5, color: "#d8b365" }, { value: 10, color: "#c7eae5" }, { value: 15, color: "#5ab4ac" } ],
+      delta:    [ { value: -20, color: "#2166ac" }, { value: 0, color: "#f7f7f7" }, { value: 20, color: "#b2182b" } ],
+    },
+    colores: {
+      absolute: { "0-5 g/kg": "#8c510a", "5-10 g/kg": "#d8b365", "10-15 g/kg": "#c7eae5", "+15 g/kg": "#5ab4ac" },
+      delta:    { "Disminuye": "#2166ac", "Sin cambio": "#f7f7f7", "Aumenta": "#b2182b" },
+    },
+  }),
 ];
 
 // Lista completa de capas ARClim
@@ -464,6 +552,7 @@ const climaConfig = {
   capas: [
     "zonas_climaticas",
     ...ARCLIM_LAYERS.map(l => l.id),
+    ...ARCLIM_VIENTO_RADIACION_HUMEDAD.map(l => l.id),
     "limite_comunal_linea",
     "toponimia",
     ...LIVE_LAYERS.map(l => l.id),
@@ -510,6 +599,10 @@ const climaConfig = {
           nombre: "Precipitación y Sequía",
           capas: ARCLIM_PRECIPITACION.map(l => l.id),
         },
+        escenarios_otros: {
+          nombre: "Viento, Radiación y Humedad (ARClim)",
+          capas: ARCLIM_VIENTO_RADIACION_HUMEDAD.map(l => l.id),
+        },
       },
     },
     contexto: {
@@ -551,6 +644,7 @@ const climaConfig = {
     },
     // Capas ARClim generadas por factory
     ...Object.fromEntries(ARCLIM_LAYERS.map(l => [l.id, l])),
+    ...Object.fromEntries(ARCLIM_VIENTO_RADIACION_HUMEDAD.map(l => [l.id, l])),
   },
   leyenda: {},
 };

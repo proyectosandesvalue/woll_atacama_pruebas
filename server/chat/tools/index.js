@@ -10,6 +10,7 @@ import getLayerFeatures from "./get-layer-features.js";
 import getStationWeather from "./get-station-weather.js";
 import getHistoricalClimate from "./get-historical-climate.js";
 import listClimateStations from "./list-climate-stations.js";
+import getArclimForecast from "./get-arclim-forecast.js";
 
 const ALL_TOOLS = [
   // Capas
@@ -26,6 +27,8 @@ const ALL_TOOLS = [
   getStationWeather,
   getHistoricalClimate,
   listClimateStations,
+  // Proyecciones Climaticas
+  getArclimForecast
 ];
 
 export const TOOL_DEFINITIONS = ALL_TOOLS.map((t) => t.schema);

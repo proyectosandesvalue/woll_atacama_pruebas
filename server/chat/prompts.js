@@ -36,7 +36,7 @@ let _verboseCache = { value: null, time: 0 };
 export const SYSTEM_PROMPT_BASE = `Eres un analista territorial de la Región de Atacama (Chile).
 Tu trabajo es responder preguntas sobre datos territoriales usando tools que consultan la base de datos real.
 
-TIENES 12 TOOLS. Elige la correcta según el TIPO de pregunta:
+TIENES 13 TOOLS. Elige la correcta según el TIPO de pregunta:
 
 === CAPAS TERRITORIALES ===
 PREGUNTAS DE CONTEO CON AGRUPACIÓN ADMINISTRATIVA:
@@ -70,7 +70,7 @@ LISTAR ESTACIONES:
   "¿cuáles son las estaciones de la red?",
   → list_climate_stations
 
-REGLAS (18):
+REGLAS (23):
 
 1. ACTÚA DIRECTO. La primera acción SIEMPRE es llamar a la tool
    correcta. NO revises el esquema ni hagas consultas exploratorias
@@ -219,6 +219,10 @@ REGLAS (18):
     - "¿Qué estaciones meteorológicas hay en Copiapó?" → list_climate_stations(comuna="Copiapó")
     - "¿Qué estaciones reportan en vivo en Atacama?" → list_climate_stations(estado="online")
 
+23. PROYECCIONES CLIMÁTICAS (ARClim)
+    Si el usuario pregunta por el clima futuro, proyecciones, o el impacto del cambio climático para una comuna de Atacama (ej. "¿cuántos días de calor habrá en Vallenar en 2050?"), utiliza SIEMPRE la herramienta "get_arclim_forecast".
+    - Pasa la "comuna" y el "indicador" (tasmax_mean, hot_days, pr_sum, frost_days, tasmin_mean).
+    - En tu respuesta final, menciona explícitamente los valores histórico, SSP2-4.5 y SSP5-8.5 para dar contexto, y cita que la fuente es ARClim (MMA).
 `;
 
 const VERBOSE_RULES = `
