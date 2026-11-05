@@ -45,6 +45,15 @@
 
 ## [Unreleased]
 
+### Fixed
+- `server/chat/tools/list-climate-stations.js`: faltaba el `import { getDB }`; la tool fallaba en runtime con `ReferenceError`.
+- Lint: resueltos los 9 errores preexistentes (`flatpickr` global, `while (true)` en el orquestador, escapes innecesarios en adapters). `npm run lint` queda en 0 errores.
+
+### Changed
+- Documentación sincronizada con el código: 13 tools (9 de capas + 4 de clima), 71 GeoJSON, Node 20.6+, sprints 06/23/06-B.7 cerrados en el roadmap.
+- `package.json` v2.1.0: scripts `catalog`, `smoke:db`, `smoke:chat`, `eval:chat` y `lint:fix` (antes solo documentados en `AGENTS.md`).
+- `README.md` y `docs/ROADMAP.md`: bloques de código, encabezados y tablas reparados.
+
 ## [Sprint 42] — 2026-11-04
 
 ### Added

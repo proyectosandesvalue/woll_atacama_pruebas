@@ -1,7 +1,7 @@
 /**
  * Registro de capacidades del chat.
  *
- * Describe las 9 tools atómicas y los 3 pipelines compuestos de forma
+ * Describe las 9 tools atómicas y los 4 pipelines compuestos de forma
  * declarativa. El router (40-C.2) usa este registro para decidir qué
  * ejecutar.
  *

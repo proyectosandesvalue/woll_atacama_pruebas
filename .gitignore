@@ -1,11 +1,10 @@
 # Dependencias
 node_modules/
 
-# Seguridad — credenciales de IA (Groq) y Supabase
+# Seguridad — credenciales de IA y Supabase
 .env
-.env.local
-.env.*.local
-.env.staging
+.env.*
+!.env.example
 
 # Vercel
 .vercel/
@@ -32,9 +31,7 @@ npm-debug.log*
 .vscode/
 .idea/
 *.swp
-*.swo.env.staging
-.vercel
-.env*
+*.swo
 
 # Data
 data/

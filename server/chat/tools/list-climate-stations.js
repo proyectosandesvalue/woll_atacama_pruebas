@@ -1,3 +1,5 @@
+import { getDB } from "../../db/pool.js";
+
 export default {
   schema: {
     type: "function",

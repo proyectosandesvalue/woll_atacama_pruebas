@@ -55,7 +55,7 @@ export async function runAgrometEndpoint(db, source, endpoint) {
   const tempActualMatch = html.match(/class='ul_texto ul_temp_actual'[^>]*>([^<]+)</);
   
   const getDato = (title) => {
-    const regex = new RegExp(`title='${title}'[^>]*>(.*?)<\/td>`, 'i');
+    const regex = new RegExp(`title='${title}'[^>]*>(.*?)</td>`, 'i');
     const match = html.match(regex);
     if (!match) return null;
     return match[1].replace(/<[^>]*>/g, '').trim();

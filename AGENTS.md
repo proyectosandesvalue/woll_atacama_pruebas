@@ -10,7 +10,7 @@ Plataforma Territorial Water Oriented Living Lab Atacama: WebGIS para la Región
 2. `docs/ARCHITECTURE.md` — cómo está armado el sistema hoy.
 3. `docs/ROADMAP.md` — qué sprint está activo y qué sigue.
 4. `docs/DEV_GUIDE.md` — cómo hacer las tareas habituales.
-5. `CHANGELOG.md` — historial de cambios y bugs ya corregidos.
+5. `docs/CHANGELOG.md` — historial de cambios y bugs ya corregidos.
 
 Si el código contradice el CONTRACT, no decidas por tu cuenta: señálalo y deja que el dev elija cuál de los dos cambia.
 
@@ -39,16 +39,17 @@ npm run lint:fix    # ESLint con --fix
 npm test            # node:test
 npm run catalog     # Genera chat.chat_catalog desde allTemasConfig.js
 npm run smoke:db    # Verifica conexión a Supabase
-npm run smoke:chat  # Smoke test end-to-end del orquestador
+npm run smoke:chat  # Smoke test end-to-end del orquestador (acepta una pregunta)
+npm run eval:chat   # Golden set completo (equivale a run-golden-set.mjs --all)
 ```
 
-No hay build step.
+No hay build step. Los scripts que tocan Supabase o el LLM leen `.env.staging` vía `--env-file`, por lo que requieren **Node.js 20.6+**.
 
 ## Arquitectura clave
 
 - `js/store/appState.js` — única fuente de verdad para mapa, capas, filtros y UI.
 - `js/config/` — una dimensión por archivo (agua, agricultura, clima, energia, mineria, otros, planificacion, riesgos, suelo) + `allTemasConfig.js`, `capasBase.js`, `wms_services.js`, `leyendaAliases.js`, `constants.js`.
-- `geojson/` — ~70 GeoJSON estáticos, cargados on-demand.
+- `geojson/` — ~71 GeoJSON estáticos, cargados on-demand.
 - `js/utils/` — `layerUtils`, `glifyAdapter`, `wmsUtils`, `attributeTableUtils`, `sidebarUtils`, `searchControl`.
 - `server/chat/`, `server/llm/`, `server/db/` — backend del chat (ver ARCHITECTURE §4).
 
@@ -76,7 +77,7 @@ No hay build step.
 
 - Endpoint `api/chat.js`: handler delgado. Capas de defensa previas al orquestador: `input-validator`, `rate-limiter` (en memoria), `geo-filter`, `scope-filter` y `domain-classifier`.
 - Orquestador: L1 (tool calling) + L2 (síntesis forzada). `ORCHESTRATOR_MAX_ITERATIONS` controla las rondas de tools (default 1, mínimo 1). Presupuesto: `ORCHESTRATOR_BUDGET_MS` (default 8000).
-- 9 tools, una por archivo en `server/chat/tools/`; `normalizeArgs` y `withTimeout` en `tools/_helpers.js`. Las RPCs tienen timeout de 6 s.
+- **13 tools**, una por archivo en `server/chat/tools/`: 9 de capas (`get_layer_stats`, `get_layer_schema`, `query_layer`, `aggregate_layer`, `aggregate_by_admin`, `aggregate_by_admin_and_column`, `count_near_layer`, `aggregate_near_layer`, `get_layer_features`) y 4 de clima (`get_station_weather`, `get_historical_climate`, `list_climate_stations`, `get_arclim_forecast`). `normalizeArgs` y `withTimeout` en `tools/_helpers.js`. Las RPCs tienen timeout de 6 s. El router determinístico solo conoce las 9 de capas (`server/chat/capabilities/registry.js`); las de clima las invoca el orquestador.
 - El system prompt se cachea 5 min en memoria del módulo.
 - Contrato de gráficos: `charts` (array) es canónico; `chart` (singular) solo por compatibilidad. Tipos: `pie` (≤ 6 grupos), `bar` (≤ 20), `horizontalBar` (> 20); el frontend dibuja `horizontalBar` como `bar` con `indexAxis: 'y'`. `aggregate_by_admin_and_column` no genera gráfico.
 - `CHAT_VERBOSE` (el LLM puede nombrar tools y `layer_id`) y `ORCHESTRATOR_DEBUG` (logs de servidor) son independientes.
@@ -103,7 +104,7 @@ Los prompts (`chat.system`, `chat.classifier`), las settings (`chat.router.*`, `
 
 ## Vercel
 
-`vercel.json` aplica la config de Functions a `api/**/*.js`. `excludeFiles` excluye `geojson/`, `db/`, `scripts/`, `docs/`, `help.html`, `session_export.md`, `skills-lock.json`.
+`vercel.json` aplica la config de Functions **solo a `api/chat.js`** (`maxDuration: 300`); el resto de endpoints (`arclim-geojson`, `stations-map`, `station-series`, etc.) usa los defaults de Vercel. `excludeFiles` excluye `geojson/`, `db/`, `scripts/`, `docs/`, `help.html`, `session_export.md`, `skills-lock.json`.
 
 ## Archivos críticos
 

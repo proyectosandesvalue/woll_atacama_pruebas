@@ -170,7 +170,7 @@ orchestrator.js	Solo el bucle ReAct + imports.
 4.4. server/chat/capabilities/
 Router determinístico (40-C):
 
-registry.js: 9 tools atómicas + 4 pipelines declarativos.
+registry.js: 9 tools atómicas de capas + 4 pipelines declarativos. Las 4 tools de clima (`get_station_weather`, `get_historical_climate`, `list_climate_stations`, `get_arclim_forecast`) no están en el registro: las invoca el orquestador directamente.
 
 pipelines.js: executePipeline() con Promise.allSettled. Sustituye slots ($layer_id, $filters, $group_by, $color_by). Resuelve aggregate_by_admin vs aggregate_layer según group_by.
 
@@ -199,7 +199,7 @@ Env vars tienen prioridad sobre la BD (para tests y overrides rápidos).
 4.6. server/chat/tools/
 Una tool por archivo. Cada archivo exporta { schema, run }.
 
-Tools actuales (9):
+Tools actuales (13; las 9 primeras son las que conoce el router):
 
 Tool	Propósito
 get_layer_stats	Estadísticas generales de una capa.
@@ -211,6 +211,10 @@ aggregate_by_admin_and_column	Doble agrupación (admin + columna).
 count_near_layer	Conteo por proximidad.
 aggregate_near_layer	Agregación por proximidad, agrupada por admin.
 get_layer_features	FeatureCollection para pintar en el mapa.
+get_station_weather	Clima observado de una estación meteorológica.
+get_historical_climate	Series históricas de estaciones (DGA/DGAC).
+list_climate_stations	Listado de estaciones meteorológicas disponibles.
+get_arclim_forecast	Proyecciones climáticas ARClim por comuna y escenario.
 El registro está en tools/index.js. _helpers.js contiene normalizeArgs y withTimeout.
 
 4.7. server/chat/runners.js

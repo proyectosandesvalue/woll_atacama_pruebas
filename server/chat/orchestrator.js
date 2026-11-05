@@ -58,6 +58,8 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   messages.push({ role: "user", content: String(text || "").trim() });
 
   let step = 0;
+  // El corte del bucle depende de maxSteps y del deadline, no de una condición estática.
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     step += 1;
     const isLast = step >= maxSteps || Date.now() > deadline - RESERVE_MS;

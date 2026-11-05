@@ -42,7 +42,7 @@ Hay dos ambientes con infraestructura aislada (producción y pruebas). El desarr
 ## Requisitos
 
 - Navegador moderno con soporte de ES Modules.
-- Node.js 18 o superior.
+- Node.js 20.6 o superior (los scripts de `scripts/` usan `--env-file`).
 - Servidor HTTP (no abrir `index.html` con `file://` por CORS).
 - Cuenta de Supabase y API key de un proveedor LLM para el chat IA.
 - **Vertex AI**: `gcloud auth application-default login` en local, o Service Account en producción.
@@ -53,19 +53,23 @@ Hay dos ambientes con infraestructura aislada (producción y pruebas). El desarr
 git clone git@github.com:proyectosandesvalue/woll_atacama_pruebas.git
 cd woll_atacama_pruebas
 cp .env.example .env.staging   # completa los valores
-npm install                    # solo instala ESLint
+npm install                    # dependencias del backend + ESLint
+```
 
-Las variables de entorno están documentadas en .env.example (única lista vigente).
+Las variables de entorno están documentadas en `.env.example` (única lista vigente).
 
 Para correr en local:
 
-bash
+```bash
 npx http-server -p 8099   # visor sin chat → http://localhost:8099
 npx vercel dev            # visor + chat IA → http://localhost:3000
-El visor funciona sin API keys: mapa, sidebar y leyenda operan con los GeoJSON locales. El chat necesita el backend (vercel dev o Vercel desplegado) y Vertex AI autenticado.
+```
 
-Estructura del proyecto
-text
+El visor funciona sin API keys: mapa, sidebar y leyenda operan con los GeoJSON locales. El chat necesita el backend (`vercel dev` o Vercel desplegado) y Vertex AI autenticado.
+
+## Estructura del proyecto
+
+```text
 woll_atacama_pruebas/
 ├── index.html, help.html       # SPA y manual de ayuda
 ├── api/chat.js                 # Vercel Function (handler delgado)
@@ -84,73 +88,76 @@ woll_atacama_pruebas/
 │   ├── utils/                  # motores (layerUtils, glifyAdapter, wmsUtils, ...)
 │   └── workers/                # Web Workers
 ├── css/                        # base, components, desktop, mobile
-├── geojson/                    # capas estáticas (~70)
+├── geojson/                    # capas estáticas (~71)
 ├── assets/                     # iconos e imágenes
 ├── docs/                       # CONTRACT, ARCHITECTURE, DEV_GUIDE, ROADMAP, CHANGELOG, DECISIONS/
 └── vercel.json, package.json
-El mapa completo de carpetas y responsabilidades está en docs/ARCHITECTURE.md.
+```
 
-Tecnologías
-Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGL Heatmap, Turf.js (solo bbox), DOMPurify, Chart.js; Vanilla JS ES Modules y CSS custom properties; Vercel Functions, Supabase (PostGIS) y Vertex AI (Gemini 3.1 Flash-Lite). Versiones y detalle en docs/ARCHITECTURE.md §3.
+El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`.
 
-Configuración básica
-Agregar una capa GeoJSON o WMS: ver docs/DEV_GUIDE.md §7 y AGENTS.md.
+## Tecnologías
 
-Agregar una tool al chat: ver docs/DEV_GUIDE.md §8.
+Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGL Heatmap, Turf.js (solo `bbox`), DOMPurify, Chart.js; Vanilla JS ES Modules y CSS custom properties; Vercel Functions, Supabase (PostGIS) y Vertex AI (Gemini 3.1 Flash-Lite). Versiones y detalle en `docs/ARCHITECTURE.md` §3.
 
-Cambiar un prompt del chat: cargarlo en admin.prompt_templates con scripts/migrate_prompts.mjs. Ver AGENTS.md y docs/CONTRACT.md §2.
+## Configuración básica
 
-Correr el golden set: CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1 node --env-file=.env.staging scripts/run-golden-set.mjs --all.
+- **Agregar una capa GeoJSON o WMS:** ver `docs/DEV_GUIDE.md` §7 y `AGENTS.md`.
+- **Agregar una tool al chat:** ver `docs/DEV_GUIDE.md` §8.
+- **Cambiar un prompt del chat:** cargarlo en `admin.prompt_templates` con `scripts/migrate_prompts.mjs`. Ver `AGENTS.md` y `docs/CONTRACT.md` §2.
+- **Correr el golden set:** `CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1 npm run eval:chat`.
 
-Importante: los alias se normalizan con .toLowerCase().trim() al hacer lookup.
+**Importante:** los alias se normalizan con `.toLowerCase().trim()` al hacer lookup.
 
-Despliegue
-Push a main → Vercel despliega automáticamente (~30 s). Las variables de entorno se configuran en Vercel → Settings → Environment Variables (lista en .env.example). La promoción a producción sigue el ADR 004.
+## Despliegue
 
-Variables de entorno relevantes (ver .env.example para la lista completa):
+Push a `main` → Vercel despliega automáticamente (~30 s). Las variables de entorno se configuran en Vercel → Settings → Environment Variables (lista en `.env.example`). La promoción a producción sigue el ADR 004.
 
-SUPABASE_URL, SUPABASE_SERVICE_KEY
+Variables de entorno relevantes (ver `.env.example` para la lista completa):
 
-LLM_PROVIDER, LLM_BASE_URL, LLM_MODEL, LLM_API_KEY
+- `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`
+- `LLM_PROVIDER`, `LLM_BASE_URL`, `LLM_MODEL`, `LLM_API_KEY`
+- `GOOGLE_APPLICATION_CREDENTIALS_JSON` (o las `GCP_*` de Workload Identity Federation)
+- `ORCHESTRATOR_BUDGET_MS`, `ORCHESTRATOR_MAX_ITERATIONS`
+- `CHAT_VERBOSE`, `CHAT_GEOJSON_ENABLED`
+- `CHAT_ROUTER_ENABLED`, `CHAT_ROUTER_MIN_CONFIDENCE`
+- `CHAT_UNAVAILABLE_ENABLED`
 
-GOOGLE_APPLICATION_CREDENTIALS_JSON (o las GCP_* de Workload Identity Federation)
+## Contribuir
 
-ORCHESTRATOR_BUDGET_MS, ORCHESTRATOR_MAX_ITERATIONS
+Proyecto privado. Hoy trabaja un solo desarrollador, por lo que se commitea directo a `main`; las ramas y PRs se introducirán cuando se sume más gente (ver `docs/DEV_GUIDE.md` §4.3).
 
-CHAT_VERBOSE, CHAT_GEOJSON_ENABLED
+Convención de commits: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `test:`.
 
-CHAT_ROUTER_ENABLED, CHAT_ROUTER_MIN_CONFIDENCE
-
-CHAT_UNAVAILABLE_ENABLED
-
-Contribuir
-Proyecto privado. Hoy trabaja un solo desarrollador, por lo que se commitea directo a main; las ramas y PRs se introducirán cuando se sume más gente (ver docs/DEV_GUIDE.md §4.3).
-
-Convención de commits: feat:, fix:, refactor:, docs:, chore:, test:.
-
-bash
+```bash
 npm run lint   # objetivo: 0 errores
 npm test       # tests con node:test
-Dimensiones disponibles
-Dimensión	Archivo de config	Notas
-Agricultura	js/config/agricultura.js	Capas productivas
-Agua	js/config/agua.js	Hidrografía, APR, desaladoras
-Clima	js/config/clima.js	Zonas climáticas (Köppen)
-Energía	js/config/energia.js	Generación, transmisión
-Minería	js/config/mineria.js	Yacimientos, faenas
-Planificación	js/config/planificacion.js	PRC, IPT
-Otros	js/config/otros.js	Áreas protegidas, turismo (WMS)
-Suelo	js/config/suelo.js	Geomorfología
-Riesgos	js/config/riesgos.js	Sismos, volcanes, remociones
-Capas base	js/config/capasBase.js	Cartografía base
-Troubleshooting
-Ver docs/DEV_GUIDE.md §9 (el visor no carga, el chat no responde, Vercel bloquea el deploy, .env.staging en git status, golden set falla con "no puedo responder").
+```
 
-Licencia y equipo
+## Dimensiones disponibles
+
+| Dimensión | Archivo de config | Notas |
+|---|---|---|
+| Agricultura | `js/config/agricultura.js` | Capas productivas |
+| Agua | `js/config/agua.js` | Hidrografía, APR, desaladoras |
+| Clima | `js/config/clima.js` | Zonas climáticas (Köppen), estaciones, ARClim |
+| Energía | `js/config/energia.js` | Generación, transmisión |
+| Minería | `js/config/mineria.js` | Yacimientos, faenas |
+| Planificación | `js/config/planificacion.js` | PRC, IPT |
+| Otros | `js/config/otros.js` | Áreas protegidas, turismo (WMS) |
+| Suelo | `js/config/suelo.js` | Geomorfología |
+| Riesgos | `js/config/riesgos.js` | Sismos, volcanes, remociones |
+| Capas base | `js/config/capasBase.js` | Cartografía base |
+
+## Troubleshooting
+
+Ver `docs/DEV_GUIDE.md` §9 (el visor no carga, el chat no responde, Vercel bloquea el deploy, `.env.staging` en `git status`, golden set falla con "no puedo responder").
+
+## Licencia y equipo
+
 Propiedad de Atacama Andes Value. Todos los derechos reservados 2026.
 
-Desarrollador: Diego Velásquez
+- **Desarrollador:** Diego Velásquez
+- **Cliente:** Atacama Andes Value
 
-Cliente: Atacama Andes Value
-
-Versión 2.1 (octubre 2026). Historial completo en docs/CHANGELOG.md.
+Versión 2.1 (octubre 2026). Historial completo en `docs/CHANGELOG.md`.

@@ -1,5 +1,7 @@
 import { getVariableAvailability } from "./stationsMapUtils.js";
 
+/* global flatpickr */
+
 const _dates = new Map();
 const _pickers = new Map();
 

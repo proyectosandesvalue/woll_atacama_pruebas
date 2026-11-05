@@ -42,7 +42,7 @@ function resolvePath(obj, path) {
     if (current == null) return isArrayWildcard ? [] : undefined;
 
     // Soportar 'key[0]' o 'key[*]' o 'key'
-    const match = part.match(/^([^\[]+)(\[(\d+|\*)\])?$/);
+    const match = part.match(/^([^[]+)(\[(\d+|\*)\])?$/);
     if (!match) return isArrayWildcard ? [] : undefined;
 
     const key = match[1];

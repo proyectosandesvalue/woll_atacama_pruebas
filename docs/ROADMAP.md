@@ -1,7 +1,7 @@
 # ROADMAP.md — Plan de sprints
 
-> > **Fuente de verdad del roadmap.** Se actualiza al inicio y al cierre de cada sesión de trabajo.
-> Última actualización: 2026-10-22.
+> **Fuente de verdad del roadmap.** Se actualiza al inicio y al cierre de cada sesión de trabajo.
+> Última actualización: 2026-11-05.
 >
 > **Este roadmap es dinámico.** Se modifica cada vez que aparece un hallazgo nuevo,
 > se cierra un sprint, se descubre un bug estructural, o cambia una decisión. Ninguna
@@ -55,8 +55,8 @@
 | 03 | Refactor de tools + tests | ✅ done | alta | — | — |
 | 04 | Rate limiting + filtros de dominio | ✅ done | alta | — | — |
 | 05 | Multi-chart agnóstico | ✅ done | alta | — | — |
-| 06 | Respuesta geoespacial (GeoJSON en mapa) | 🔄 in-progress | alta | 4-6h | — |
-| 06-B.7 | Pintado multi-capa del chat | ⏳ pending | alta | 3-4h | 06-B.2 |
+| 06 | Respuesta geoespacial (GeoJSON en mapa) | ✅ done | alta | 4-6h | — |
+| 06-B.7 | Pintado multi-capa del chat | ✅ done | alta | 3-4h | 06-B.2 |
 | 07 | `/api/config` + snapshot | ⏳ pending | alta | 3-4h | — |
 | 08 | Migración a PostGIS (fuente principal) | ⏳ pending | alta | 40-46h | 07 |
 | 09 | Soporte de imágenes raster | 🚫 blocked | media | 2-25h | decisión técnica |
@@ -88,10 +88,13 @@
 | 31 | Observabilidad y operación | ⏳ pending | alta | 7-8h | 26 |
 | 32 | Marco legal y privacidad | ⏳ pending | media | 5-6h | 24, 31-A |
 | 33 | Entrega y traspaso | ⏳ pending | alta | 10h | Sprints Must |
+| 34 | Refactor de mantenibilidad (frontend) | ⏳ pending | media | 20-25h | 26-D, 28 |
+| 35 | Refactor de estilos CSS | ⏳ pending | media | 8-10h | 34 |
+| 36 | Refactor de configs de capas | ⏳ pending | media | 6-8h | 29-C |
 | 37 | Auditoría y normalización de datos | ⏳ pending | alta | 20-24h | 23 |
 | 40 | Orquestación determinística del chat (épica) | 🔶 parcial (40-C y 40-D.2 cerrados) | alta | 26-31h | 25-A, 25-D |
 | 41 | Recetas de análisis (épica) | ⏳ pending | media | 14-20h + experto | 40-C |
-| 42 | Ingesta de fuentes externas (DGAC, ArClim) | 🔄 parcial |(42-A y 42-C completados) | media | 18-28h | 24-A, 24-B |
+| 42 | Ingesta de fuentes externas (DGAC, ArClim) | 🔄 parcial (42-A y 42-C completados) | media | 18-28h | 24-A, 24-B |
 | 43 | Normativa urbana: BCN + planes reguladores | ⏳ pending | media | 20-32h | 17, 18, 41-A |
 
 **Leyenda de estados:**
@@ -157,11 +160,9 @@
 
 ---
 
-## Sprint en curso (06)
+## Sprint 06 — Respuesta geoespacial (GeoJSON en mapa) ✅
 
-### Sprint 06 — Respuesta geoespacial (GeoJSON en mapa)
-
-**Estado**: 🔄 in-progress
+**Estado**: ✅ done (cerrado 2026-10-12)
 **Prioridad**: alta
 **Duración**: 4-6h (5-7h con comportamiento móvil)
 **Dependencias**: Sprint 23-A (bloqueante para cierre correcto)
@@ -186,7 +187,7 @@ El chat responde con texto + charts + **GeoJSON pintado en el mapa**.
 
 ### Sprint 06-B.7 — Pintado multi-capa del chat
 
-**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 3-4h
+**Estado**: ✅ done (2026-10-12) · **Prioridad**: alta · **Duración**: 3-4h
 **Dependencias**: 06-B.2 (backend informa layer_id)
 
 **Objetivo**: que el chat pueda pintar varias capas simultáneas, cada una
@@ -206,7 +207,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
   `resultsLayer` (objeto único).
 - [X] **B (1h)** — `showResults()` agrega al array en lugar de reemplazar;
   paleta de colores rotativa.
-- [X ] **C (1h)** — `clearResults()` limpia todas; `clearResultsByLayerId()`
+- [X] **C (1h)** — `clearResults()` limpia todas; `clearResultsByLayerId()`
   limpia una específica.
 - [X] **D (1h)** — UI: leyenda que muestra el nombre de cada capa + botón
   para quitar una capa específica.
@@ -408,7 +409,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 **Objetivo**: Dejar todos los documentos coherentes entre sí y con el código actual.
 
 **Sub-sprints**:
-- [ ] **A** — Reemplazar `AGENTS.md`; corregir "8 tools" → "9 tools" (45 min)
+- [ ] **A** — Reemplazar `AGENTS.md`; mantener el conteo de tools sincronizado (hoy 13) (45 min)
 - [ ] **B** — Actualizar `ARCHITECTURE.md`: proveedor LLM, tools por archivo, timeout 6 s, nueva tool `get_layer_features` (45 min)
 - [ ] **C** — Actualizar `CONTRACT.md §6.2` y `§9.1` (30 min)
 - [ ] **D** — Actualizar `DEV_GUIDE.md §8` (30 min)
@@ -423,36 +424,36 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 23 — Hotfixes críticos del chat y la API
 
-**Estado**: ⏳ pending · **Prioridad**: **crítica** · **Duración**: 14-15h · **Dependencias**: ninguna
+**Estado**: ✅ done (2026-10-23) · **Prioridad**: **crítica** · **Duración**: 14-15h · **Dependencias**: ninguna
 **Recomendación**: ejecutar antes de cerrar el Sprint 06. **23-A es parte del correcto funcionamiento del Sprint 06**.
 
 **Objetivo**: eliminar los defectos que hoy afectan seguridad, costo y corrección del chat, sin cambiar de plataforma.
 
 **Sub-sprints**:
-- [ ] **A (3h) — H1.** El geojson sale del contexto del LLM.
+- [X] **A (3h) — H1.** El geojson sale del contexto del LLM.
   - En el orquestador, tras `runTool`, separar el resultado: si es una FeatureCollection, guardarla en un almacén local de la invocación y reemplazar el contenido del mensaje `tool` por un resumen (`total`, `shown`, `truncated` y hasta 20 filas de `properties` sin geometría).
   - `buildGeojsonFromHistory` pasa a leer ese almacén, no los mensajes.
   - Decidir y documentar: la tool vigente es `get_layer_features`; actualizar la spec 06 (reemplaza `include_geometry`) y documentarla en el `SYSTEM_PROMPT`.
   - Tests: CA-9 y CA-10 de la spec 06.
-- [ ] **B (2h) — H3, H7.** Errores y acoplamiento.
+- [X] **B (2h) — H3, H7.** Errores y acoplamiento.
   - `/api/chat` devuelve mensaje genérico + `errorId`; el detalle va solo a logs.
   - Crear `server/utils/logger.js`; `domain-classifier.js` deja de importar de `js/`.
   - Regla ESLint `no-restricted-imports` que impida que `server/` importe `js/`.
-- [ ] **C (3h) — H2.** Contexto de la petición configurable.
+- [X] **C (3h) — H2.** Contexto de la petición configurable.
   - Módulo `server/chat/request-context.js` con `GEO_PROVIDER` (`vercel` | `cloudflare` | `none`) y `TRUST_PROXY_HOPS`.
   - La IP se toma contando desde la derecha de `x-forwarded-for`, no el primer valor.
   - Sin header de país: aplicar el límite normal (corregir el bug de `isLatam(undefined)`).
   - Tests actualizados de `geo-filter`.
-- [ ] **D (2h) — H3, H10.** Superficie de entrada.
+- [X] **D (2h) — H3, H10.** Superficie de entrada.
   - `ALLOWED_ORIGINS` para CORS.
   - `history`: máximo 6 turnos, delimitado en el prompt como contenido no confiable, solo roles `user`/`assistant`.
-- [ ] **E (2h) — H4.** Topes de costo.
+- [X] **E (2h) — H4.** Topes de costo.
   - `LLM_DAILY_REQUEST_CAP` y `CHAT_ENABLED` (killswitch).
   - Respuesta 503 amable sin llamar al LLM. Contador en memoria detrás de una interfaz (migrable a BD).
-- [ ] **F (1.5h) — H11, H12.** Prompt y tests.
-  - Prompt: 9 tools, reglas numeradas sin duplicados.
+- [X] **F (1.5h) — H11, H12.** Prompt y tests.
+  - Prompt: reglas numeradas sin duplicados; el inventario de tools lo aportan los schemas.
   - `npm test` con el glob entre comillas; confirmar que los tests de `__tests__/` se ejecutan; `engines.node >= 20`.
-- [ ] **G (1h) — L7.** Verificar `chat_aggregate`. Si falla, `011_fix_chat_aggregate.sql` (nueva migración; no se edita la 001).
+- [X] **G (1h) — L7.** Verificar `chat_aggregate`. Si falla, `011_fix_chat_aggregate.sql` (nueva migración; no se edita la 001).
 
 **Criterios de aceptación**:
 - **CA-1** Dado un resultado con 500 features, cuando se arma el mensaje al LLM, entonces no contiene coordenadas y pesa menos de 8 KB.
@@ -993,6 +994,15 @@ y eliminación.
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
+### 2026-11-05
+- ✅ **Sincronización de documentación (adelanto del Sprint 22)**.
+  - `AGENTS.md`, `ARCHITECTURE.md` y `README.md` alineados con el código: 13 tools (9 de capas + 4 de clima), 71 GeoJSON, Node 20.6+.
+  - `package.json` v2.1.0: scripts `catalog`, `smoke:db`, `smoke:chat`, `eval:chat` y `lint:fix` ahora existen.
+  - `ROADMAP.md`: sprints 06 y 23 marcados como cerrados, 06-B.7 cerrado, índice reparado (sprints 34-36 agregados, fila del 42 corregida), anexos de instrucciones eliminados.
+  - `README.md`: bloques de código y encabezados reparados.
+  - `.gitignore`: reglas de `.env*` limpias, con excepción para `.env.example`.
+- 📝 Próximo: **Sprint 15** (panel admin), **Sprint 26** (plataforma propia) o **40-D.3** (casos nuevos del golden set).
+
 ### 2026-11-04
 - ✅ **Integración masiva de ARClim completada (Sprint 42)**.
   - Creación del endpoint dinámico `/api/arclim-geojson` (filtrando Atacama).
@@ -1034,9 +1044,6 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 - 📝 Próximo: **40-D.3** (casos nuevos del golden) o **Sprint 22** (alineación
   de documentación). Decidir según prioridad.
   - 📝 **40-C.4 desbloqueado condicionalmente**: se puede hacer cuando, con `--repeat 3` en ambos modos, el acierto por tier con el router ON sea ≥ al del ciclo actual. No está atado al Sprint 41.
-
-### 2026-10-21
-- ✅ **Sprint 40-C completado y activo en producción (staging web)**.
 
 ### 2026-10-21
 - ✅ **Sprint 40-C completado y activo en producción (staging web)**.
@@ -1153,15 +1160,15 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
 Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de cada sesión.
 
-- [ ] **H1 — `get_layer_features` envía hasta 1000 features al LLM.** Contradice la spec 06. Resuelto en Sprint 23-A.
-- [ ] **H2 — Geo-filter con `isLatam(undefined) = false`.** Aplica límite estricto sin header. Resuelto en Sprint 23-C.
-- [ ] **H3 — `err.message` crudo y CORS `*`.** Resuelto en Sprint 23-B y 23-D.
-- [ ] **H4 — Sin tope de costo ni abuso real.** Resuelto en Sprint 23-E y 26-D.
+- [X] **H1 — `get_layer_features` envía hasta 1000 features al LLM.** Contradice la spec 06. Resuelto en Sprint 23-A.
+- [X] **H2 — Geo-filter con `isLatam(undefined) = false`.** Aplica límite estricto sin header. Resuelto en Sprint 23-C.
+- [X] **H3 — `err.message` crudo y CORS `*`.** Resuelto en Sprint 23-B y 23-D.
+- [X] **H4 — Sin tope de costo ni abuso real.** Resuelto en Sprint 23-E (el límite distribuido queda para 26-D).
 - [ ] **H9 — Clasificador bloquea preguntas de seguimiento.** Resuelto en Sprint 25-C.
-- [ ] **H11 — Prompt desalineado (8 vs 9 tools) y deriva spec 06 ↔ código.** Resuelto en Sprint 23-F.
-- [ ] **H12 — `npm test` con glob sin comillas.** Verificar. Resuelto en Sprint 23-F.
+- [X] **H11 — Prompt desalineado (8 vs 9 tools) y deriva spec 06 ↔ código.** Resuelto en Sprint 23-F (conteo actual: 13).
+- [X] **H12 — `npm test` con glob sin comillas.** Verificar. Resuelto en Sprint 23-F.
 - [ ] **L6 — Migración 009 ausente; ADR 004 con texto pegado.** Resuelto en Sprint 22.
-- [ ] **L7 — `chat_aggregate` (001) con `ORDER BY` sobre alias.** Verificar. Sprint 23-G.
+- [X] **L7 — `chat_aggregate` (001) con `ORDER BY` sobre alias.** Verificar. Sprint 23-G.
 - [ ] **L9 — CONTRACT §5.3 vs formato real del chat.** Resuelto en Sprint 22.
 - [ ] **Timeout por tool (CA-12 spec 06).** Hoy `RPC_TIMEOUT_MS=6000` es global. Fix: parámetro `timeoutMs` en `withTimeout`. Sprint corto (1h). Urgencia: baja.
 - [ ] **Limpieza de logs de diagnóstico en `orchestrator.js`.** Dejar 1-2 días, después remover.
@@ -1187,7 +1194,7 @@ Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de 
 - [X] **Sprint 39: capas del chat en el sidebar izquierdo.**
 - [ ] **Optimizar `count_near_layer` (proximidad).** Timeout con `derechos_agua_2025` (920 filas) × `red_hidrografica`. Se ejecuta el pipeline `proximidad_conteo` pero la RPC tarda >8s. Fix: índice GIST (verificar), limitar distancia máxima, o cachear resultados. Sprint corto (2-3h). Urgencia: media (el sistema degrada elegantemente).
 
-- [ ] **Panel admin para config del chat (Sprint 15).** La migración 021
+- [ ] **Panel admin para config del chat (Sprint 15).** La migración 024
       agregó 4 tablas (`admin.unavailable_data`, `admin.prompt_templates`,
       `admin.settings`, `admin.messages`) y 6 RPCs. Falta la UI en el panel
       admin (Sprint 15) para que el admin pueda editar prompts, settings,
@@ -1284,26 +1291,6 @@ Detectados en el diagnóstico inicial (2026-10-05). Sprint 37 los resuelve.
 ---
 
 
-
-## Cambio 3 — Fila en el índice
-
-Agregar al índice del ROADMAP:
-
-| 34 | Refactor de mantenibilidad (frontend) | ⏳ pending | media | 20-25h | 26-D, 28 |
-| 35 | Refactor de estilos CSS | ⏳ pending | media | 8-10h | 34 |
-| 36 | Refactor de configs de capas | ⏳ pending | media | 6-8h | 29-C |
-
-
----
-
-## Cambio 4 — Actualizar la nota de "Última actualización"
-
-Cada vez que modifiques el ROADMAP, actualizá la fecha:
-
-```markdown
-> Última actualización: 2026-10-05.
-
----
 
 ## Notas generales
 
