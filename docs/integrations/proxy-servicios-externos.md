@@ -216,6 +216,26 @@ PROXY_TIMEOUT_MS=25000
 El `CLIENT_SECRET` nunca debe llegar al navegador. El `INSTANCE_ID` tampoco
 se envía al cliente: el proxy lo inyecta.
 
+### 6.1. Despliegue en Vercel
+
+- El frontend usa `/api/proxy` relativo: en producción la Function y el visor
+  comparten origen, así que no hay CORS de por medio.
+- `vercel.json` asigna `maxDuration: 60` a `api/proxy.js` y excluye del bundle
+  el frontend, `geojson/`, `db/`, `scripts/`, `docs/` y `rag/`.
+- Variables mínimas en el proyecto de Vercel (Production y Preview):
+  - `COPERNICUS_INSTANCE_ID` (o `INSTANCE_ID` por compatibilidad).
+  - `COPERNICUS_CLIENT_ID` / `COPERNICUS_CLIENT_SECRET` solo si se usa
+    Statistical API u ODP desde el backend; el proxy WMS/WFS no las necesita.
+  - `ALLOWED_ORIGINS` es opcional en producción por ser mismo origen; en local
+    ya está configurado.
+- Verificación después del deploy:
+  - `/api/proxy` sin parámetros debe responder `400 MISSING_SOURCE`, no 404.
+  - Un `GetMap` de prueba debe responder `200 image/png`.
+  - El `wms_services.js` desplegado debe contener `source=copernicus-wms`.
+- Cada tile es una invocación de Function y la caché es por instancia. Para
+  producción intensiva, el proxy persistente del VPS (Sprint 26) reemplaza este
+  esquema.
+
 ## 7. Seguridad
 
 - Solo `GET` y `OPTIONS`.

@@ -1054,7 +1054,7 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   - Tests `server/config/copernicus-layers.test.js`; verificación en navegador de enero/febrero 2019.
   - Textos de NDVI, MSAVI2, VARI, MCARI, PSRI, NDYI, NDWI, NDCI, MSI y SWIR alineados a lenguaje no especialista.
   - Docs actualizadas: CHANGELOG, ROADMAP, ARCHITECTURE §3, DEV_GUIDE §3.8, README, AGENTS, `docs/integrations/proxy-servicios-externos.md` y spec 44.
-- 📝 Próximo: commit por bloques, aplicar la migración 036 en el VPS, ingestar los 3 PDFs de 17-E y confirmar las bandas de `SWIR`.
+- 📝 Próximo: push a `main` y deploy en Vercel con `COPERNICUS_INSTANCE_ID`; aplicar la migración 036 en el VPS, ingestar los 3 PDFs de 17-E y confirmar las bandas de `SWIR`.
 
 ### 2026-11-06
 - ✅ **Sprint 17 — Ingesta RAG (código base)**.
