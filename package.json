@@ -16,15 +16,21 @@
     "smoke:chat": "node --env-file=.env.staging scripts/smoke-orchestrator.mjs",
     "eval:chat": "node --env-file=.env.staging scripts/run-golden-set.mjs --all",
     "audit": "node --env-file=.env.staging scripts/audit-data.mjs",
-    "audit:layer": "node --env-file=.env.staging scripts/audit-data.mjs --layer"
+    "audit:layer": "node --env-file=.env.staging scripts/audit-data.mjs --layer",
+    "ingest:dry": "node scripts/ingest_docs.mjs --dry-run",
+    "ingest": "node --env-file=.env.staging scripts/ingest_docs.mjs",
+    "dev:proxy": "node --env-file=.env.staging scripts/dev-proxy.mjs",
+    "dev": "bash scripts/dev.sh"
   },
   "devDependencies": {
-    "eslint": "^8.57.0"
+    "eslint": "^8.57.0",
+    "pdfjs-dist": "^4.10.38"
   },
   "dependencies": {
     "@google-cloud/vertexai": "^1.12.0",
     "@vercel/functions": "^3.10.1",
     "csv-parser": "^3.2.1",
-    "google-auth-library": "^11.3.0"
+    "google-auth-library": "^11.3.0",
+    "pg": "^8.23.1"
   }
 }

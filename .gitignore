@@ -15,6 +15,7 @@ node_modules/
 Thumbs.db
 
 # OpenCode / agente local — no es parte del proyecto
+.opencode/
 .agents/
 session_export.md
 skills-lock.json
@@ -35,3 +36,8 @@ npm-debug.log*
 
 # Data
 data/
+
+# RAG — los PDFs fuente no se versionan; sí el manifiesto
+rag/inbox/*
+!rag/inbox/.gitkeep
+rag/**/*.pdf

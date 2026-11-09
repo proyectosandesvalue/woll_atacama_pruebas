@@ -1,0 +1,26 @@
+[
+  {
+    "file": "inbox/ley-glaciares.pdf",
+    "slug": "ley-glaciares",
+    "title": "Ley de protección de glaciares",
+    "source_url": "https://www.bcn.cl/leychile/navegar?idNorma=000000",
+    "publisher": "BCN",
+    "license": "Dominio público / uso institucional",
+    "language": "es",
+    "published_at": "2024-03-01",
+    "copyright_cleared": true,
+    "tags": ["agua", "normativa"]
+  },
+  {
+    "file": "inbox/codigo-de-aguas.pdf",
+    "slug": "codigo-de-aguas",
+    "title": "Código de Aguas",
+    "source_url": "https://www.bcn.cl/leychile/navegar?idNorma=000000",
+    "publisher": "BCN",
+    "license": "Dominio público / uso institucional",
+    "language": "es",
+    "published_at": "2022-04-06",
+    "copyright_cleared": true,
+    "tags": ["agua", "normativa", "derechos"]
+  }
+]
