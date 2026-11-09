@@ -76,6 +76,21 @@ Abrí http://localhost:3000. El chat funciona porque Vercel CLI levanta las Func
 
 Recomiendo Opción B si vas a tocar el chat.
 
+La forma más simple es:
+
+```bash
+npm run dev
+```
+
+Levanta `vercel dev` y el proxy persistente de Copernicus en `http://localhost:3001/api/proxy`. Si querés levantarlos por separado:
+
+```bash
+npx vercel dev     # terminal 1
+npm run dev:proxy  # terminal 2
+```
+
+El frontend detecta que está en `localhost` y usa el proxy de 3001; en producción sigue usando `/api/proxy` relativo. Esto evita que `vercel dev` ejecute una Function por cada tile.
+
 3.2. Lint
 bash
 npm run lint
@@ -123,6 +138,44 @@ node --env-file=.env.staging scripts/smoke-db.mjs
 
 # Test end-to-end del orquestador
 node --env-file=.env.staging scripts/smoke-orchestrator.mjs "¿cuántas plantas desaladoras hay?"
+
+3.8. Agregar un indicador satelital de Copernicus
+
+1. Crea la capa en la Configuration Utility de Copernicus y copia su ID
+   (por ejemplo, `EVI`). Confirma las bandas del evalscript.
+2. Agrega el servicio en `js/config/wms_services.js`:
+
+```js
+copernicus_evi: copernicus("EVI", "EVI (Sentinel-2)"),
+```
+
+3. Agrega la capa en la dimensión que corresponda con la ficha común:
+
+```js
+copernicus_evi: copernicusLayer({
+  servicio: "copernicus_evi",
+  nombre: "EVI (Sentinel-2)",
+  title: "Índice de Vegetación Mejorado (EVI)",
+  description: "…",
+  range: { min: -1, max: 1, text: "…" },
+  legend: { type: "gradient", min: -1, max: 1, unit: "EVI", labels: ["…", "…"], stops: [...] },
+}),
+```
+
+4. Agrega la clave a `capas` y al grupo `satelite` de la dimensión.
+5. Agrega la capa a `NUEVAS` en `server/config/copernicus-layers.test.js`.
+6. Corre `npm run lint` y `npm test`.
+7. Haz hard reload y verifica:
+   - La capa aparece en “Satélite (Copernicus)”.
+   - El calendario marca fechas (WFS) y permite navegar hasta 2017.
+   - `GetMap` y `GetFeatureInfo` usan el `TIME` seleccionado.
+
+Notas:
+- Para composiciones sin valor numérico, usa `range` solo con `text`,
+  `wmsLegend.type = "note"` y una nota que explique las bandas.
+- Para leyendas clasificadas, `wmsLegend.type = "items"` con `{ color, label }`.
+- El historial se controla con `wmsHistoryStart`; el valor por defecto es `2017-01-01`.
+
 4. Flujo de trabajo
 4.1. Antes de escribir código
 Preguntate:

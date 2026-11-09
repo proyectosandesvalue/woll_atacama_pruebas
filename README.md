@@ -62,8 +62,17 @@ Para correr en local:
 
 ```bash
 npx http-server -p 8099   # visor sin chat → http://localhost:8099
-npx vercel dev            # visor + chat IA → http://localhost:3000
+npm run dev               # visor + chat + proxy Copernicus → http://localhost:3000
 ```
+
+`npm run dev` levanta `vercel dev` y el proxy persistente de Copernicus en `http://localhost:3001/api/proxy`. Si prefieres levantarlos por separado:
+
+```bash
+npx vercel dev            # terminal 1
+npm run dev:proxy         # terminal 2
+```
+
+El frontend local detecta que está en `localhost` y usa el proxy de 3001 en vez de una Function de Vercel por cada tile. En producción sigue usando `/api/proxy` relativo.
 
 El visor funciona sin API keys: mapa, sidebar y leyenda operan con los GeoJSON locales. El chat necesita el backend (`vercel dev` o Vercel desplegado) y Vertex AI autenticado.
 
@@ -95,6 +104,102 @@ woll_atacama_pruebas/
 ```
 
 El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`.
+
+## Mapa de archivos y responsabilidades
+
+| Archivo / carpeta | Para qué sirve | Cuándo tocarlo |
+|---|---|---|
+| `index.html`, `help.html` | Entry point de la SPA y manual de ayuda | Cambios de shell, carga de scripts o UI global |
+| `api/chat.js` | Vercel Function del chat (adapter delgado) | Cambios de CORS/método del endpoint, no de lógica |
+| `api/proxy.js` | Proxy cerrado de servicios externos | Agregar un servicio o ajustar CORS/timeout |
+| `api/arclim-geojson.js`, `api/stations-*.js`, `api/variable-*.js` | Endpoints de datos climáticos/estaciones | Cambios de contrato o consultas de esos datos |
+| `server/handlers/chat.js` | Pipeline completo de `handleChat()` | Cambios de flujo del chat |
+| `server/chat/` | Orquestador, router, clasificador, tools, filtros | Cambios de comportamiento del chat |
+| `server/llm/` | Driver LLM OpenAI-compatible / Vertex AI | Cambiar proveedor, modelo o fallback |
+| `server/db/` | Driver de BD (`supabase`/`postgres`) | Cambiar transporte o conexión |
+| `server/proxy/` | Allowlist, validación, caché y rate limit del proxy | Agregar servicios externos o límites |
+| `server/rag/`, `server/embeddings/` | Ingesta RAG, chunking y embeddings | Cambios del pipeline documental |
+| `js/app.js` | Bootstrap del mapa y tema inicial | Cambios de arranque del visor |
+| `js/script.js` | UI shell: sidebars, tabs, chat, GetFeatureInfo | Cambios de interacción global |
+| `js/config/` | Una dimensión por archivo + WMS, capas base y aliases | Agregar/quitar capas o servicios |
+| `js/config/copernicusLayer.js` | Ficha común de capas satelitales Copernicus | Nuevos índices o cambios de ficha |
+| `scripts/dev-proxy.mjs`, `js/config/proxy.js` | Proxy persistente para desarrollo local (3001) | Cambios del entorno local |
+| `js/store/appState.js` | Única fuente de verdad del visor | Nuevo estado global o ciclo de capas |
+| `js/sidebar/` | Render de dimensiones, grupos, capas y leyenda | Cambios de sidebar o controles por capa |
+| `js/utils/layerUtils.js`, `glifyAdapter.js`, `wmsUtils.js` | Carga y render de capas | Cambios de render, WMS o filtros |
+| `js/utils/legendUtils.js`, `externalServices.js`, `wmsFeatureInfo.js`, `copernicusDateSelector.js` | Leyenda, proxy cliente, GetFeatureInfo y fechas | Cambios de leyenda o consumo de servicios |
+| `js/utils/attributeTableUtils.js`, `popupUtils.js`, `styleUtils.js` | Tabla, popups y estilos | Cambios de atributos o presentación |
+| `js/workers/` | Procesamiento de GeoJSON fuera del hilo principal | Capas pesadas o nuevos procesamientos |
+| `db/migrations/` | Migraciones SQL numeradas e idempotentes | Todo cambio de schema |
+| `db/roles/` | Ejemplos de roles de login (no migración) | Altas de usuarios en el VPS |
+| `scripts/` | CLI, smoke tests, golden set, ingesta | Automatizaciones y tareas operativas |
+| `rag/` | Manifiesto y PDFs del corpus RAG | Agregar documentos |
+| `docs/` | CONTRACT, ARCHITECTURE, DEV_GUIDE, ROADMAP, CHANGELOG, DECISIONS, specs | Antes de cambios estructurales |
+| `css/`, `geojson/`, `assets/` | Estilos, capas estáticas e iconos | Cambios visuales o de datos locales |
+| `vercel.json` | Functions, rewrites y `excludeFiles` | Cambios de deploy o endpoints |
+| `package.json`, `.env.example` | Scripts/dependencias y variables de entorno | Nuevas tareas o configuración |
+
+Regla práctica: si el cambio es de **comportamiento del sistema**, primero se escribe/actualiza la spec o ADR; si es de **datos**, va en `db/migrations/` + config; si es de **presentación**, va en `js/`/`css/`.
+
+## Skills para agentes
+
+Las skills son instrucciones reutilizables que OpenCode carga **solo cuando la tarea coincide** con su descripción. No se cargan todas en cada prompt.
+
+- Ubicaciones: `.opencode/skills/<id>/SKILL.md` (local, en `.gitignore`), `~/.config/opencode/skills/` (global) y `.agents/skills/` (compatibilidad; este repo no la usa).
+- El modelo ve `name` y `description` del frontmatter; el cuerpo se carga con la tool `skill` o mencionando `@skill-id`.
+- El `README` no activa skills. Los triggers reales viven en el `description` de cada `SKILL.md` y, para reglas del proyecto, en `AGENTS.md`.
+
+Skills disponibles hoy:
+
+**Autoinvocables** (aparecen en la lista del modelo y se cargan cuando la tarea coincide):
+
+| Skill | Cuándo usarla |
+|---|---|
+| `spec-writer` | Crear o actualizar specs de sprint con la estructura del proyecto |
+| `manual` | Redactar manuales técnicos del visor (arquitectura, setup, despliegue) |
+| `frontend-design` | Crear o rediseñar UI, sidebar, paneles, leyendas y chat |
+| `accessibility` | Auditoría WCAG, teclado, lectores de pantalla y contraste |
+| `nodejs-backend-patterns` | Endpoints, proxy, handlers, middleware, auth y acceso a datos |
+| `nodejs-best-practices` | Decisiones de arquitectura Node, async, seguridad y performance |
+| `seo` | Metadatos, indexabilidad, sitemap y datos estructurados |
+| `javascript-pro` | JS/ESM, async, Web Workers, memoria y APIs de navegador/Node |
+| `postgres-pro` | PostGIS, pgvector, EXPLAIN, índices, extensiones, VACUUM |
+| `debugging-wizard` | Bugs, crashes, fuga de memoria, loops y stack traces |
+| `security-reviewer` | Auditoría de secretos, SSRF, RLS, dependencias y vulnerabilidades |
+| `rag-architect` | Chunking, embeddings, pgvector, búsqueda híbrida y evaluación RAG |
+| `code-reviewer` | Revisar diffs/PR: bugs, seguridad, performance y tests |
+| `architecture-designer` | ADRs, decisiones de arquitectura y trade-offs (VPS/plataforma) |
+| `test-master` | Tests unitarios/integración/E2E con `node:test`, flaky tests y cobertura |
+
+**Explícitas** (`metadata.opencode/autoinvoke: false`; se invocan con `@skill-id` o pidiéndolas por nombre):
+
+| Skill | Cuándo invocarla |
+|---|---|
+| `api-designer` | Diseño REST/OpenAPI para el Sprint 19 (APIs/CRUD) |
+| `devops-engineer` | Sprint 26: Docker Compose, Nginx, TLS, CI/CD y despliegue en VPS |
+| `monitoring-expert` | Sprint 26: logs estructurados, healthchecks y alertas del VPS |
+| `secure-code-guardian` | Auth, validación de input, OWASP y hardening (Sprints 15/16/26-H) |
+| `sql-pro` | SQL complejo, CTEs, window functions; para Postgres usar `postgres-pro` |
+| `the-fool` | Pre-mortem, red team o stress-test de una decisión grande |
+
+**Built-in**
+
+| Skill | Cuándo usarla |
+|---|---|
+| `opencode` | Configurar OpenCode, agentes, skills, plugins o MCP |
+| `report` | Reportar bugs o problemas de OpenCode |
+
+Las explícitas no aparecen en la lista automática para no competir con las de uso diario. Si el agente empieza a elegir skills de más, mover alguna autoinvocable a explícita con `metadata.opencode/autoinvoke: false`.
+
+Para agregar una skill:
+
+1. Copiarla a `.opencode/skills/<id>/SKILL.md`.
+2. Asegurar un `description` claro que empiece con “Úsala cuando…”.
+3. Si vive fuera de las rutas estándar, agregarla al array `skills` de `opencode.json`.
+4. Si es una regla del proyecto, agregar el trigger en `AGENTS.md`.
+5. Recargar con `/reload` si no aparece.
+
+No conviene instalar decenas de skills a la vez: la lista que ve el modelo crece y aumenta el riesgo de elegir la equivocada. Instalar solo las que se usan en el proyecto.
 
 ## Tecnologías
 

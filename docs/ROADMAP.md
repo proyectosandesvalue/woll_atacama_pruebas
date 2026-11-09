@@ -1,7 +1,7 @@
 # ROADMAP.md — Plan de sprints
 
 > **Fuente de verdad del roadmap.** Se actualiza al inicio y al cierre de cada sesión de trabajo.
-> Última actualización: 2026-11-05.
+> Última actualización: 2026-11-09.
 >
 > **Este roadmap es dinámico.** Se modifica cada vez que aparece un hallazgo nuevo,
 > se cierra un sprint, se descubre un bug estructural, o cambia una decisión. Ninguna
@@ -71,7 +71,7 @@
 | 14 | Migrar config a Supabase (`admin.*`) | ⏳ pending | alta | 4-6h | 07 |
 | 15 | Panel admin — solo lectura | ⏳ pending | alta | 6-8h | 14 |
 | 16 | Panel admin — CRUD de capas | ⏳ pending | alta | 8-12h | 08, 14, 15 |
-| 17 | Ingesta RAG (PDFs → chunks → embeddings) | ⏳ pending | media | 8-12h | 15 |
+| 17 | Ingesta RAG (PDFs → chunks → embeddings) | 🔶 parcial | media | 8-12h | — (CLI); 15 solo para el panel |
 | 18 | Retrieval RAG + tool en chat | ⏳ pending | media | 8-12h | 17 |
 | 19 | APIs externas + CRUD | ⏳ pending | media | 15-25h | 16 |
 | 20 | Adapter real: meteorología | ⏳ pending | baja | 4-6h | 19 |
@@ -96,6 +96,7 @@
 | 41 | Recetas de análisis (épica) | ⏳ pending | media | 14-20h + experto | 40-C |
 | 42 | Ingesta de fuentes externas (DGAC, ArClim) | 🔄 parcial (42-A y 42-C completados) | media | 18-28h | 24-A, 24-B |
 | 43 | Normativa urbana: BCN + planes reguladores | ⏳ pending | media | 20-32h | 17, 18, 41-A |
+| 44 | Catálogo de indicadores satelitales Copernicus | ✅ done | media | 8-10h | proxy (2026-11-06) |
 
 **Leyenda de estados:**
 - ✅ `done` — Completado y en producción.
@@ -375,9 +376,35 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 17 — Ingesta RAG (PDFs → chunks → embeddings)
 
-**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 8-12h · **Dependencias**: 15
+**Estado**: 🔶 parcial (código, migración y tests listos; falta aplicar la migración en el VPS y validar con PDFs reales) · **Prioridad**: media · **Duración**: 8-12h · **Dependencias**: ninguna para la CLI; 15 solo para visualizar estado en el panel
 
-**Nota de ajuste**: `pgvector` en la imagen de Postgres. Guardar versión del modelo de embeddings. Marcar documentos como fuente no confiable (inyección indirecta). Registrar procedencia de cada fragmento. Verificar derechos de autor.
+**Objetivo**: índice vectorial versionado y trazable de PDFs públicos, listo para la recuperación del Sprint 18.
+
+**Decisión de arquitectura**: con la migración a PostgreSQL propio se abandona el patrón RPC `begin/append/finalize` + wrappers `public.rag_*`. La CLI usa `pg` y escribe en una única transacción local. Los embeddings se calculan antes del `BEGIN`. Ver ADR 022 y `docs/specs/17-ingesta-rag.md`.
+
+**Entregables**:
+- `db/migrations/036_rag_schema.sql` — schema `rag`, pgvector, `tsv`, RLS, roles `rag_writer`/`chat_ro`.
+- `db/roles/rag_roles.example.sql` — usuarios de login (fuera de migración).
+- `server/rag/` — `config`, `errors`, `extract`, `normalize`, `chunker`, `pipeline`.
+- `server/embeddings/` — driver OpenAI-compatible con batching, timeout y backoff.
+- `scripts/ingest_docs.mjs` — manifiesto, `--dry-run`, `--force`, `--only`.
+- `rag/manifest.json` + `rag/inbox/` (PDFs fuera de git).
+- Tests `node:test`; integración CA-1..CA-4 con `RAG_TEST_DATABASE_URL`.
+
+**Sub-sprints**:
+
+| Tramo | Contenido | Estado |
+|---|---|---|
+| 17-0 | ADR 022, número de migración 036, `rag/**` en `.gitignore` y `excludeFiles` | ✅ |
+| 17-A | Migración 036 (DDL, RLS, roles, grants) | ✅ (pendiente aplicar) |
+| 17-B | Extracción, normalización y chunker + tests | ✅ |
+| 17-C | Driver de embeddings + tests | ✅ |
+| 17-D | CLI de ingesta, manifiesto, dry-run, ingestion_runs | ✅ |
+| 17-E | 3 PDFs reales + reporte CA-12 + validación de chunks | ⏳ |
+
+**Pendiente bloqueante de 17-E**: elegir 3-5 documentos públicos con licencia verificada (BCN/DGA) y completar `rag/manifest.json`.
+
+**Nota de ajuste**: `pgvector` en la imagen de Postgres (tramo 26-C). Guardar versión del modelo de embeddings. Marcar documentos como fuente no confiable (inyección indirecta). Registrar procedencia de cada fragmento. Verificar derechos de autor.
 
 ### Sprint 18 — Retrieval RAG + tool en chat
 
@@ -990,9 +1017,66 @@ y eliminación.
 
 ---
 
+## Sprints completados fuera de plan
+
+### Sprint 44 — Catálogo de indicadores satelitales Copernicus
+
+**Estado**: ✅ done · **Prioridad**: media · **Duración**: 8–10 h · **Dependencias**: proxy de servicios externos (2026-11-06)
+
+**Objetivo**: ampliar el catálogo satelital a 16 indicadores con ficha, leyenda y selector histórico.
+
+**Entregado**:
+- EVI, EVI2, GNDVI, SAVI, MSAVI2, VARI, MCARI, PSRI, NDYI y ARI_1 en Agricultura; MSI y MDMI en Clima; NDWI, NDCI y WIW en Agua; SWIR en Minería.
+- `js/config/copernicusLayer.js` (ficha común) y factory `copernicus()` en `js/config/wms_services.js`.
+- Selector de fecha con WFS por mes, caché, marcas azules y archivo desde 2017-01-01.
+- `server/config/copernicus-layers.test.js`; lint 0 errores.
+- Spec `docs/specs/44-indicadores-copernicus.md`.
+
+**Pendiente**:
+- Confirmar las bandas del evalscript de `SWIR` (B11 vs B08A).
+- Comparador de dos fechas lado a lado (fuera de alcance).
+
+**Ver**: `docs/specs/44-indicadores-copernicus.md`.
+
+---
+
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-11-09
+- ✅ **Catálogo satelital Copernicus (Sprint 44)**.
+  - 16 capas nuevas con ficha, leyenda y selector de fecha: 10 en Agricultura, 2 en Clima, 3 en Agua y 1 en Minería.
+  - `js/config/copernicusLayer.js` centraliza fecha, nubosidad, bandas RGB y nota; `wms_services.js` usa el factory `copernicus()`.
+  - Selector histórico: WFS por mes y meses vecinos, caché de 5 min, marcas azules, leyenda con el conteo y archivo desde 2017-01-01.
+  - `TIME` se aplica a `GetMap` y `GetFeatureInfo`; el panel del píxel coincide con la imagen histórica.
+  - Proxy local persistente (`scripts/dev-proxy.mjs`, `js/config/proxy.js`, `npm run dev`) para evitar una Function por tile.
+  - Tests `server/config/copernicus-layers.test.js`; verificación en navegador de enero/febrero 2019.
+  - Textos de NDVI, MSAVI2, VARI, MCARI, PSRI, NDYI, NDWI, NDCI, MSI y SWIR alineados a lenguaje no especialista.
+  - Docs actualizadas: CHANGELOG, ROADMAP, ARCHITECTURE §3, DEV_GUIDE §3.8, README, AGENTS, `docs/integrations/proxy-servicios-externos.md` y spec 44.
+- 📝 Próximo: commit por bloques, aplicar la migración 036 en el VPS, ingestar los 3 PDFs de 17-E y confirmar las bandas de `SWIR`.
+
+### 2026-11-06
+- ✅ **Sprint 17 — Ingesta RAG (código base)**.
+  - Migración `036_rag_schema.sql` (schema `rag`, pgvector, `tsv`, RLS, roles `rag_writer`/`chat_ro`).
+  - `server/rag/*` (extracción, normalización, chunker, pipeline atómico), `server/embeddings/*`, CLI `scripts/ingest_docs.mjs`.
+  - Spec `docs/specs/17-ingesta-rag.md`, ADR 022, tests `node:test`.
+  - Pendiente: aplicar la migración en el VPS y validar con 3 PDFs reales (17-E).
+- ✅ **Proxy de servicios externos**.
+  - `api/proxy.js` + `server/proxy/*`: Copernicus WMS/WFS/WMTS y NASA Worldview Snapshots con allowlist, inyección del `INSTANCE_ID` en servidor, validación, caché y rate limit.
+  - Helpers `js/utils/externalServices.js`; tests de proxy, CORS e IP.
+  - Capas en el sidebar: Agricultura (NDVI, AGRICULTURE, TRUE-COLOR-S2L2A) y Clima (MOISTURE-INDEX), grupo “Satélite (Copernicus)”.
+  - Selector de fecha por capa: disponibilidad vía WFS, días resaltados y `TIME` aplicado al WMS.
+  - Leyenda WMS en el panel y GetFeatureInfo al clic con valores del píxel, escena y nubosidad.
+  - Panel de píxel con nombre del indicador, descripción, valor/color y metadatos; sin coordenadas ni I/J.
+  - Fix del `TIME` de WFS (Date → YYYY-MM-DD) y de los iconos con espacios (renombrados a snake_case).
+  - Proxy: timeout 25 s y limpieza de `info_format` en `GetMap`.
+  - Sentinel WMS: `maxNativeZoom: 16`, `keepBuffer: 1`, `tileSize: 512`, `updateWhenIdle` y `updateWhenZooming: false` para reducir carga de tiles.
+  - Selector de fecha: disponibilidad WFS solo al abrir el calendario, para no competir con los tiles.
+  - Selector de fecha: destrucción de pickers y aborto de WFS al re-renderizar (posible fuga de memoria).
+  - Verificado contra la instancia real `Woll-Atacama`: WMS PNG, GetFeatureInfo JSON, WFS GeoJSON y Worldview JPEG.
+  - Doc `docs/integrations/proxy-servicios-externos.md`.
+- 📝 Próximo: integrar las capas Copernicus en el sidebar y decidir si se agrega un NDVI-L2A de 1 banda para valores puntuales. (La integración se amplió el 2026-11-09; queda pendiente el NDVI-L2A de 1 banda para valores puntuales.)
 
 ### 2026-11-05
 - ✅ **Sincronización de documentación (adelanto del Sprint 22)**.
@@ -1199,6 +1283,18 @@ Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de 
       `admin.settings`, `admin.messages`) y 6 RPCs. Falta la UI en el panel
       admin (Sprint 15) para que el admin pueda editar prompts, settings,
       mensajes y datos no disponibles sin tocar SQL.
+
+- [ ] **Confirmar las bandas del evalscript de `SWIR`.**
+      La capa de la instancia declara `bands 12,11,4`; el texto de referencia
+      del equipo menciona `B08A`. Hoy la ficha usa B11. Urgencia: baja.
+
+- [X] **Excluir capas WMS de `chat_catalog`.**
+      Resuelto: `scripts/build_catalog.mjs` salta las capas con
+      `tipo/type === "wms"`, que no tienen tabla física en PostGIS.
+
+- [ ] **Comparador de dos fechas para capas Copernicus.**
+      Permite ver lado a lado una imagen histórica y la más reciente
+      (split/swipe). Fuera del alcance del Sprint 44. Urgencia: media.
 
 ## Deuda técnica activa
 

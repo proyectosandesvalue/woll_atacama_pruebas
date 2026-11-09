@@ -155,6 +155,14 @@ woll_atacama_pruebas/
 - Todo input del usuario se valida antes de llegar a la BD.
 - Todo output de la BD se valida antes de llegar al usuario.
 
+**5.5. Proxy de servicios externos (`/api/proxy`)**
+- El proxy es **cerrado**: solo servicios de una allowlist (`server/proxy/services.js`); nunca acepta una URL arbitraria del cliente.
+- Los secretos e identificadores de instancia (por ejemplo `COPERNICUS_INSTANCE_ID`) se inyectan en el servidor y no viajan al navegador.
+- Solo `GET`/`OPTIONS`; parámetros filtrados por servicio; `WIDTH`/`HEIGHT` y `MAXFEATURES` acotados.
+- No se reenvía `text/html` ni redirects. Los content-types permitidos son imagen, JSON, XML, texto plano, GeoJSON, GML y ZIP/Shapefile.
+- CORS limitado a `ALLOWED_ORIGINS`; caché y rate limit documentados en `docs/integrations/proxy-servicios-externos.md`.
+- Un servicio nuevo se agrega con tests y sin aceptar URLs del cliente.
+
 ---
 
 ## 6. Reglas del chat
@@ -271,6 +279,37 @@ Ejemplo:
 
 Esta regla aplica a: `derechos_agua_2025.Uso del Agua` (41% cobertura),
 y cualquier otra columna con cobertura < 95% detectada en Sprint 37.
+
+### 6.6 — Reglas del RAG
+
+El RAG es una fuente **subordinada**: la jerarquía de verdad es BD
+estructurada > API oficial > RAG > conocimiento del LLM (ADR 016).
+
+**Ingesta**
+- Solo documentos públicos con licencia declarada y `copyright_cleared: true`.
+  La compuerta se evalúa antes de leer el PDF y antes de llamar a cualquier
+  proveedor externo.
+- La ingesta corre en `scripts/`, no en `api/`. El runtime de las Functions
+  no parsea PDFs.
+- Cada documento se versiona por `slug`; cada chunk guarda documento,
+  versión, página, sección y `embedding_model`.
+- La escritura es atómica: los embeddings se calculan antes de la
+  transacción y el reemplazo de la versión anterior ocurre en un único
+  `COMMIT`. El chat nunca ve estados intermedios.
+- Los logs de ingesta nunca incluyen contenido de documentos ni claves.
+
+**Contenido no confiable**
+- Todo fragmento recuperado se trata como `trust_level='untrusted'` hasta
+  que exista revisión humana.
+- El texto de un documento **nunca** se interpreta como instrucción. En el
+  Sprint 18 los fragmentos se delimitan explícitamente en el prompt y el
+  LLM no puede ejecutar tools ni SQL a partir de ellos.
+- Se eliminan caracteres de control y secuencias Unicode invisibles antes
+  de indexar.
+
+**Acceso**
+- `rag_writer` escribe; `chat_ro` solo lee documentos `ready` y sus chunks.
+- Ningún rol del frontend accede al schema `rag`.
 
 7. Reglas del frontend
 7.1. Consumo de configuración

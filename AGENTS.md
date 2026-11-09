@@ -14,12 +14,78 @@ Plataforma Territorial Water Oriented Living Lab Atacama: WebGIS para la Región
 
 Si el código contradice el CONTRACT, no decidas por tu cuenta: señálalo y deja que el dev elija cuál de los dos cambia.
 
+## Mapa de documentación
+
+| Si necesitas… | Lee… |
+|---|---|
+| Reglas que no se rompen | `docs/CONTRACT.md` |
+| Cómo está armado el sistema hoy | `docs/ARCHITECTURE.md` |
+| Qué sprint sigue o está activo | `docs/ROADMAP.md` |
+| Cómo hacer una tarea habitual | `docs/DEV_GUIDE.md` |
+| Por qué se tomó una decisión | `docs/DECISIONS/` |
+| Qué cambió y qué bugs se corrigieron | `docs/CHANGELOG.md` |
+| Spec de un sprint | `docs/specs/` |
+| Integraciones externas y proxy | `docs/integrations/` |
+| Qué archivo hace qué (mapa rápido) | `README.md` → “Mapa de archivos y responsabilidades” |
+
+Antes de crear un archivo nuevo, comprobar si ya existe uno canónico en `README.md`/`ARCHITECTURE.md`. Un recurso, un lugar.
+
+## Skills
+
+OpenCode descubre skills en `.opencode/skills/<id>/SKILL.md` (local, ignorado por git) y `~/.config/opencode/skills/` (global). El modelo solo ve `name` + `description`; el cuerpo se carga con la tool `skill`.
+
+Las skills son locales y **no se versionan**: `.opencode/` está en `.gitignore`. Si se comparte el repo, cada persona debe copiar las skills que use.
+
+Cargar la skill que aplique **antes** de implementar.
+
+**Autoinvocables:**
+
+| Skill | Cuándo |
+|---|---|
+| `spec-writer` | Nueva feature o cambio de roadmap: escribir/actualizar la spec antes de código |
+| `manual` | Manuales técnicos, arquitectura, setup, despliegue |
+| `frontend-design` | UI, sidebar, paneles, leyendas, chat |
+| `accessibility` | WCAG, teclado, lectores de pantalla, contraste |
+| `nodejs-backend-patterns` | Endpoints, proxy, handlers, middleware, auth, DB |
+| `nodejs-best-practices` | Decisiones de arquitectura Node, async, seguridad |
+| `seo` | Metadatos, indexabilidad, sitemap, datos estructurados |
+| `javascript-pro` | JS/ESM, async, Web Workers, memoria y APIs |
+| `postgres-pro` | PostGIS, pgvector, EXPLAIN, índices, VACUUM |
+| `debugging-wizard` | Bugs, memoria, loops, crashes, stack traces |
+| `security-reviewer` | Secretos, SSRF, RLS, dependencias, vulnerabilidades |
+| `rag-architect` | Chunking, embeddings, pgvector, hybrid search, evaluación |
+| `code-reviewer` | Revisión de diffs/PR: bugs, seguridad, performance, tests |
+| `architecture-designer` | ADRs, arquitectura, trade-offs (VPS/plataforma) |
+| `test-master` | Tests con `node:test`, integración, E2E, flaky tests |
+
+**Explícitas** (`opencode/autoinvoke: false`; invocar con `@skill-id` o por nombre):
+
+| Skill | Cuándo |
+|---|---|
+| `api-designer` | REST/OpenAPI para Sprint 19 |
+| `devops-engineer` | Sprint 26: Docker Compose, Nginx, TLS, CI/CD |
+| `monitoring-expert` | Sprint 26: logs, healthchecks, alertas |
+| `secure-code-guardian` | Auth, input, OWASP, hardening (15/16/26-H) |
+| `sql-pro` | SQL complejo/CTE/window; para Postgres preferir `postgres-pro` |
+| `the-fool` | Pre-mortem, red team, stress-test de decisiones |
+
+**Built-in:** `opencode` (configurar OpenCode) y `report` (reportar bugs de OpenCode).
+
+Reglas:
+- No cargar más de 1-2 skills por tarea; si no aporta, no usarla.
+- Si una skill no existe en el repo, no inventarla: proponer instalarla o escribir el trigger en `AGENTS.md`.
+- Las skills no reemplazan al CONTRACT ni a las specs: son guías de ejecución.
+- Para agregar una skill: copiarla a `.opencode/skills/<id>/SKILL.md`, asegurar un `description` con “Úsala cuando…”, y agregar el trigger acá si es una regla del proyecto.
+- **Features nuevas o cambios de roadmap:** cargar `spec-writer`, crear/actualizar la spec en `docs/specs/` y esperar aprobación antes de implementar.
+
 ## Reglas operativas
 
 - **Ramas:** un solo dev, se commitea **directo a `main`**. Sin `develop`.
 - **Commits:** `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`; un commit por sub-sprint con el ID (`feat: sprint-06-A backend geoespacial`).
 - **Migraciones:** `db/migrations/NNN_nombre.sql`, idempotentes. Nunca editar una ya aplicada; crear una nueva.
 - **Chat:** el LLM nunca escribe SQL; solo invoca RPCs tipadas.
+- **RAG:** la ingesta corre en `scripts/` (nunca en `api/`); los PDFs viven en `rag/inbox/` fuera de git y todo fragmento se marca `untrusted`. El corpus se declara en `rag/manifest.json` con licencia y `copyright_cleared: true`.
+- **Proxy externo:** `/api/proxy` es cerrado (allowlist en `server/proxy/services.js`); `INSTANCE_ID` y `CLIENT_SECRET` viven solo en el servidor. Ver `docs/integrations/proxy-servicios-externos.md`.
 - **Secretos:** solo en variables de entorno. `.env.staging` está en `.gitignore`.
 - **Tests:** toda feature nueva trae al menos un test (`node:test`).
 - **Configuración del chat**: los prompts y settings viven en `admin.*` (migración 024). Antes de activar un cambio, correr el golden set. Ver "Gobierno de la configuración del chat".
@@ -41,6 +107,10 @@ npm run catalog     # Genera chat.chat_catalog desde allTemasConfig.js
 npm run smoke:db    # Verifica conexión a Supabase
 npm run smoke:chat  # Smoke test end-to-end del orquestador (acepta una pregunta)
 npm run eval:chat   # Golden set completo (equivale a run-golden-set.mjs --all)
+npm run ingest:dry  # Ingesta RAG: estima chunks/tokens/costo sin BD ni proveedor
+npm run ingest      # Ingesta RAG real (requiere DATABASE_URL + EMBEDDINGS_*)
+npm run dev:proxy   # Proxy persistente para Copernicus en local (puerto 3001)
+npm run dev         # Vercel dev + proxy Copernicus juntos
 ```
 
 No hay build step. Los scripts que tocan Supabase o el LLM leen `.env.staging` vía `--env-file`, por lo que requieren **Node.js 20.6+**.
@@ -52,6 +122,7 @@ No hay build step. Los scripts que tocan Supabase o el LLM leen `.env.staging` v
 - `geojson/` — ~71 GeoJSON estáticos, cargados on-demand.
 - `js/utils/` — `layerUtils`, `glifyAdapter`, `wmsUtils`, `attributeTableUtils`, `sidebarUtils`, `searchControl`.
 - `server/chat/`, `server/llm/`, `server/db/` — backend del chat (ver ARCHITECTURE §4).
+- `server/proxy/` — proxy cerrado de servicios externos; `api/proxy.js` es el adapter (ver ARCHITECTURE §4.14).
 
 ## Peculiaridades del visor
 
@@ -64,6 +135,8 @@ No hay build step. Los scripts que tocan Supabase o el LLM leen `.env.staging` v
 **Glify solo para polígonos.** `GLIFY_CONFIG.USE_GLIFY_RENDERER` y `GLIFY_TYPES` en `constants.js`. Los puntos nunca van a glify; las líneas van a `L.geoJson` (SVG) porque WebGL maneja mal el z-index y el anti-aliasing en líneas.
 
 **Capas WMS.** El servicio se declara en `wms_services.js`; en la dimensión, la capa usa `tipo: 'wms'` + `servicio: '<clave>'` (sin `url`). `cargarCapaIndividual` las detecta con `isWMSLayer()` y crea `L.tileLayer.wms` con `createWMSLayer()`. Los filtros por atributo no aplican en cliente (los gestiona el servidor).
+
+**Selector de fecha Copernicus.** La disponibilidad se consulta por mes al abrir el calendario (WFS), no al activar la capa; el historial llega a 2017-01-01 y las marcas son azules (las DGA siguen rojas).
 
 **`capas` es el índice maestro del tema.** `grupos.<x>.capas` reutiliza subconjuntos por diseño; un duplicado entre `capas` y un grupo es legítimo. Solo es duplicado real dentro del mismo contenedor.
 
@@ -113,9 +186,12 @@ Los prompts (`chat.system`, `chat.classifier`), las settings (`chat.router.*`, `
 - `js/utils/glifyAdapter.js` — `buildColorCallback()` con `dataFilter`.
 - `js/utils/wmsUtils.js` — creación de capas WMS.
 - `js/utils/attributeTableUtils.js` — tabla, búsqueda, filtros, `refreshAttributeTableIfOpen`.
+- `js/config/copernicusLayer.js` — ficha común de capas satelitales (fecha, bandas, leyenda, historial).
+- `js/utils/copernicusDateSelector.js` — disponibilidad WFS por mes y fecha histórica de Copernicus.
 - `index.html` — entry point de la SPA.
 
 ## Agregar una capa
 
 - **GeoJSON:** config en `js/config/<dimension>.js` + archivo en `geojson/`. Sin build; recarga el navegador. Para que el chat la vea, ver `docs/DEV_GUIDE.md` §7.
 - **WMS:** servicio en `wms_services.js` + capa con `tipo: 'wms'` y `servicio: '<clave>'` en la dimensión. No requiere GeoJSON local.
+- **Copernicus (WMS satelital):** service con `copernicus()` en `wms_services.js` + `copernicusLayer(...)` en la dimensión + grupo `satelite`. Ver `docs/DEV_GUIDE.md` §3.8.

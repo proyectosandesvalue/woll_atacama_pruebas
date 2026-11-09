@@ -24,6 +24,8 @@
 |---|---|---|---|
 | [06-respuesta-geoespacial](06-respuesta-geoespacial.md) | 06 | Pequeño | APROBADA |
 | [08-postgis-fuente-principal](08-postgis-fuente-principal/00-spec-madre.md) | 08 | Grande | DRAFT |
+| [17-ingesta-rag](17-ingesta-rag.md) | 17 | Mediano | EN EJECUCIÓN |
+| [44-indicadores-copernicus](44-indicadores-copernicus.md) | 44 | Mediano | CERRADA |
 | 22-alineacion-documentacion | 22 | Pequeño | por escribir |
 
 ## Reglas
@@ -32,3 +34,4 @@
 - Los cambios al comportamiento se hacen **primero en la spec** y después en el código.
 - El ROADMAP dice *qué sprint sigue*; la spec dice *cómo se hace*. Cada fila del ROADMAP enlaza a su spec.
 - Las specs viven en el repo de pruebas. `docs/` ya está excluido del bundle de Vercel (`excludeFiles`), por lo que no pesa en las Functions.
+- Para redactar o actualizar una spec, cargar la skill `spec-writer` y usar `_TEMPLATE-sprint.md` (o `TEMPLATE-epic.md` si es grande).

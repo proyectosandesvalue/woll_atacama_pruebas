@@ -22,6 +22,8 @@
 
 - [Unreleased](#unreleased)
 - [Bloque 2 — ROADMAP (Sprint 01 en adelante)](#bloque-2--roadmap-sprint-01-en-adelante)
+  - [Proxy de servicios externos](#proxy-de-servicios-externos-2026-11-06)
+  - [Sprint 17 — Ingesta RAG](#sprint-17--ingesta-rag-2026-11-05)
   - [Sprint 06-A — Backend geoespacial](#sprint-06-a--backend-geoespacial-2026-10-05)
   - [Sprint 05 — Multi-chart agnóstico](#sprint-05--multi-chart-agnóstico-2026-10-03)
   - [Sprint 04 — Rate limiting + filtros de dominio](#sprint-04--rate-limiting--filtros-de-dominio-2026-10-03)
@@ -45,14 +47,24 @@
 
 ## [Unreleased]
 
+### Added
+- 16 capas satelitales de Copernicus: EVI, EVI2, GNDVI, SAVI, MSAVI2, VARI, MCARI, PSRI, NDYI y ARI_1 en Agricultura; MSI y MDMI en Clima; NDWI, NDCI y WIW en Agua; SWIR en Minería. Cada una con ficha, leyenda y selector de fecha.
+- `js/config/copernicusLayer.js`: ficha común de las capas Copernicus (fecha, nubosidad, bandas RGB y nota).
+- Selector de fecha de Copernicus: navegación histórica desde 2017-01-01, disponibilidad WFS por mes con caché, marcas azules y leyenda con el número de fechas del mes visible.
+- Proxy persistente de desarrollo: `scripts/dev-proxy.mjs` (`npm run dev:proxy`), `js/config/proxy.js`, `npm run dev` y `PROXY_PORT`/`PROXY_DEV_CONCURRENCY` en `.env.example`.
+- Test `server/config/copernicus-layers.test.js`: valida ficha, leyenda, servicio y grupo de cada capa Copernicus.
+
 ### Fixed
 - `server/chat/tools/list-climate-stations.js`: faltaba el `import { getDB }`; la tool fallaba en runtime con `ReferenceError`.
+- `scripts/build_catalog.mjs`: excluye las capas WMS (`tipo/type === "wms"`) para que no se registren como tablas PostGIS inexistentes en `chat_catalog`.
 - Lint: resueltos los 9 errores preexistentes (`flatpickr` global, `while (true)` en el orquestador, escapes innecesarios en adapters). `npm run lint` queda en 0 errores.
 
 ### Changed
 - Documentación sincronizada con el código: 13 tools (9 de capas + 4 de clima), 71 GeoJSON, Node 20.6+, sprints 06/23/06-B.7 cerrados en el roadmap.
 - `package.json` v2.1.0: scripts `catalog`, `smoke:db`, `smoke:chat`, `eval:chat` y `lint:fix` (antes solo documentados en `AGENTS.md`).
 - `README.md` y `docs/ROADMAP.md`: bloques de código, encabezados y tablas reparados.
+- Textos de NDVI, MSAVI2, VARI, MCARI, PSRI, NDYI, NDWI, NDCI, MSI y SWIR alineados a lenguaje no especialista, con rangos e interpretación por tramos.
+- Documentación: `ARCHITECTURE.md` §3 (capas satelitales), `DEV_GUIDE.md` §3.8 (agregar indicador), `README.md`, `AGENTS.md`, `ROADMAP.md` (Sprint 44) y `docs/specs/44-indicadores-copernicus.md`.
 
 ## [Sprint 42] — 2026-11-04
 
@@ -452,6 +464,62 @@
 ## Bloque 2 — ROADMAP (Sprint 01 en adelante)
 
 Sprints numerados según `docs/ROADMAP.md`. Orden cronológico descendente (lo más reciente primero).
+
+### Proxy de servicios externos (2026-11-06)
+
+**Objetivo:** consumir Copernicus WMS/WFS/WMTS y NASA Worldview Snapshots sin exponer credenciales al navegador y con control de cuota.
+
+#### Added
+- `api/proxy.js` + `server/proxy/`: proxy cerrado con allowlist de servicios (`copernicus-wms`, `copernicus-wfs`, `copernicus-wmts`, `worldview-snapshot`), inyección de `INSTANCE_ID` en el servidor, validación de parámetros, timeout, límite de tamaño, allowlist de content-types, caché LRU para JSON/XML y rate limit por IP.
+- `server/utils/cors.js` y `server/utils/request.js`: CORS e IP compartidos por `/api/chat` y `/api/proxy`.
+- `js/utils/externalServices.js`: helpers de frontend para WMS, WFS, GetFeatureInfo y Worldview.
+- Capas Copernicus en el sidebar: `Agricultura` (NDVI, AGRICULTURE, TRUE-COLOR-S2L2A) y `Clima` (MOISTURE-INDEX), bajo el grupo “Satélite (Copernicus)”.
+- Selector de fecha por capa Copernicus: consulta WFS de disponibilidad, resalta días con imágenes y aplica `TIME` al WMS; botón para volver a la imagen más reciente.
+- Leyenda WMS en el panel: `wmsLegend` (gradiente/nota/items) y render en `legendUtils.js`.
+- GetFeatureInfo al clic: `js/utils/wmsFeatureInfo.js` consulta el píxel y muestra valores `out1..outN`, escena, fecha y nubosidad en `#sidebarInfo`.
+- Panel de píxel rediseñado: nombre del indicador, descripción para usuarios no especialistas, color/valor del píxel y metadatos de la escena; se quitaron coordenadas e índice I/J.
+- Fix: `TIME` del selector de fecha enviaba un objeto `Date` a WFS (400); ahora usa `YYYY-MM-DD`.
+- Fix: iconos con espacios (`Torre Agua`, `Derechos Agua/Riego/Mineria`) renombrados a snake_case y normalización de espacios en `styleUtils.js` (404 en Vercel dev).
+- Proxy: timeout por defecto a 25 s y se dejó de enviar `info_format` en las requests `GetMap`.
+- GetFeatureInfo: consulta de 1×1 píxel alrededor del clic (`WIDTH=1`, `HEIGHT=1`) para evitar timeouts.
+- Sentinel WMS: `maxNativeZoom: 16`, `keepBuffer: 1`, `tileSize: 512`, `updateWhenIdle: true` y `updateWhenZooming: false` para reducir tiles y concurrencia; se eliminó el parámetro `tiled` de las requests.
+- Selector de fecha: la disponibilidad WFS se consulta al abrir el calendario, no al activar la capa, para no competir con la carga de tiles.
+- Selector de fecha: los pickers de flatpickr se destruyen al re-renderizar el sidebar y se abortan las consultas WFS pendientes (evita acumulación de instancias/listeners).
+- `/api/variable-availability`: fallback 200 `{ degraded: true, fecha_min: null }` si la RPC falla; el visor oculta el selector de fechas en vez de mostrar un 500.
+- Tests `node:test` para servicios, validación, handler, caché, rate limit, CORS e IP.
+- `docs/integrations/proxy-servicios-externos.md` con endpoints, ejemplos y límites.
+
+#### Changed
+- `vercel.json`: `api/proxy.js` con `maxDuration: 60` y `excludeFiles`.
+- `.env.example`: `COPERNICUS_INSTANCE_ID`, `COPERNICUS_CLIENT_ID/SECRET`, `PROXY_*`.
+- `CONTRACT.md` §5.5, `ARCHITECTURE.md` §4.14, `AGENTS.md`.
+
+#### Verified
+- Copernicus WMS `GetMap` (PNG), `GetFeatureInfo` (JSON con `out1..out4`), WFS `GetFeature` (GeoJSON) y Worldview Snapshot (JPEG 512×512).
+- CORS upstream abierto; el proxy restringe el origen del visor.
+
+### Sprint 17 — Ingesta RAG (2026-11-05)
+
+**Objetivo:** índice vectorial versionado y trazable de PDFs públicos, listo para la recuperación del Sprint 18. Se adaptó el diseño a PostgreSQL propio (VPS): sin RPCs `begin/append/finalize` ni wrappers `public.rag_*`.
+
+#### Added
+- `db/migrations/036_rag_schema.sql`: schema `rag` con `documents`, `chunks` (`vector(1024)`, `tsv` español, HNSW coseno) e `ingestion_runs`; RLS y roles `rag_writer`/`chat_ro`. Idempotente.
+- `db/roles/rag_roles.example.sql`: usuarios de login para el VPS (las contraseñas no se versionan).
+- `server/rag/`: `config`, `errors`, `extract` (pdfjs-dist), `normalize` (controles, Unicode invisible, guiones, encabezados repetidos), `chunker` (párrafo/oración/sección, 450/60, tope 1.5×) y `pipeline` (idempotencia por sha256, embeddings fuera de la transacción, escritura atómica y versionado).
+- `server/embeddings/`: driver OpenAI-compatible con batching, timeout, reintentos con backoff/`Retry-After` y validación de dimensión.
+- `scripts/ingest_docs.mjs`: manifiesto, `--dry-run`, `--force`, `--only`; scripts npm `ingest:dry` e `ingest`.
+- `rag/manifest.json`, `rag/manifest.example.json` y `rag/README.md`. `rag/inbox/` queda fuera de git.
+- Tests `node:test`: normalización, chunker, extracción de PDF, pipeline, proveedor de embeddings e integración CA-1..CA-4 (se salta sin `RAG_TEST_DATABASE_URL`).
+
+#### Changed
+- `vercel.json`: `rag/**` excluido del bundle de la Function.
+- `.env.example`: variables `DATABASE_URL`, `EMBEDDINGS_*` y `RAG_*`.
+- `docs/CONTRACT.md` §6.6 (reglas del RAG), `docs/ARCHITECTURE.md` §4.12-4.13 y §5.6, `docs/ROADMAP.md` Sprint 17, `docs/DECISIONS/022-embeddings-y-chunking.md`, `docs/specs/17-ingesta-rag.md`.
+- `package.json`: `pg` en dependencies; `pdfjs-dist` en devDependencies.
+
+#### Pending
+- Aplicar la migración 036 en el VPS y correr el test de integración.
+- Ingestar 3 PDFs públicos con licencia verificada y completar el reporte CA-12.
 
 ### Sprint 06-A — Backend geoespacial (2026-10-05)
 

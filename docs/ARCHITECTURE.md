@@ -78,11 +78,20 @@
 - **Vanilla JS ES Modules** — sin framework.
 - **CSS custom properties** — theming.
 
+#### Capas satelitales Copernicus
+
+- **Servicios:** `js/config/wms_services.js` usa el factory `copernicus()` y apunta a `/api/proxy?source=copernicus-wms`; tiles de 512, `maxNativeZoom: 16`, `keepBuffer: 1`, `updateWhenIdle` y `updateWhenZooming: false`.
+- **Fichas:** `js/config/copernicusLayer.js` centraliza fecha, nubosidad, bandas RGB, nota y `wmsHistoryStart`. Cada dimensión declara sus capas en `js/config/{agricultura,clima,agua,mineria}.js`.
+- **Fechas:** `js/utils/copernicusDateSelector.js` consulta WFS por mes (y vecinos), cachea 5 minutos, marca los días con imágenes en azul y aplica `TIME` al WMS. El archivo llega hasta 2017-01-01.
+- **Píxel:** `js/utils/wmsFeatureInfo.js` usa `layer.wmsParams.TIME`, por lo que el panel corresponde a la imagen visible.
+- **Leyendas:** `js/utils/legendUtils.js` renderiza `gradient`, `note` e `items`.
+- **Local:** `scripts/dev-proxy.mjs` + `js/config/proxy.js`; producción usa `/api/proxy` relativo.
+
 ### Backend (Vercel Functions)
 
 - **Node.js** (runtime de Vercel).
 - **fetch** nativo (Node 18+).
-- **Sin dependencias npm** en runtime (el `package.json` solo tiene ESLint como dev dep).
+- **Dependencias de runtime acotadas**: `pg` (driver PostgreSQL), `@google-cloud/vertexai` y `google-auth-library` (Vertex AI), `csv-parser` (ingesta). El parseo de PDF (`pdfjs-dist`) es **devDependency** y solo lo usa la CLI de ingesta, nunca `api/`.
 
 ### Base de datos
 
@@ -268,7 +277,35 @@ Service Account vía GOOGLE_APPLICATION_CREDENTIALS_JSON.
 
 Workload Identity Federation (producción en Vercel).
 
-5. Base de datos — schemas chat y admin
+4.12. server/rag/*
+Pipeline de ingesta de documentos (Sprint 17). No importa `pg`: recibe un pool ya construido, para poder testearse con dobles.
+
+Archivo	Responsabilidad
+config.js	Lee RAG_CHUNK_*, RAG_MAX_* y RAG_INSERT_BATCH.
+errors.js	RagError con `code` estable para ingestion_runs.error_code.
+extract.js	Extracción página a página con pdfjs-dist.
+normalize.js	Limpieza de controles/Unicode, des-guionizado y encabezados repetidos.
+chunker.js	Chunking por párrafo/oración/sección con solape controlado.
+pipeline.js	Validación del manifiesto, idempotencia, embeddings y escritura atómica.
+
+La CLI `scripts/ingest_docs.mjs` es el único punto de entrada operativo. No corre en `api/`.
+
+4.13. server/embeddings/*
+Driver de embeddings compatible con OpenAI `/embeddings` (Sprint 17). Interfaz `embed(texts[])`, batching, timeout, reintentos con backoff y validación de dimensión. El modelo activo se registra por chunk en `rag.chunks.embedding_model`. Decisión y alternativas en ADR 022.
+
+4.14. server/proxy/* + api/proxy.js
+Proxy cerrado para servicios geoespaciales externos (2026-11-06). No acepta URLs arbitrarias: cada servicio declara URL base, parámetros permitidos y límites.
+
+Archivo	Responsabilidad
+services.js	Allowlist de servicios (Copernicus WMS/WFS/WMTS, NASA Worldview Snapshots), inyección del INSTANCE_ID y construcción de la URL upstream.
+validate.js	Validación de forma/tamaño: BBOX, WIDTH/HEIGHT, TIME, formatos, MAXFEATURES, TILEMATRIX.
+handler.js	GET-only, timeout, allowlist de content-types, caché, rate limit y normalización de Retry-After.
+cache.js	Caché LRU en memoria para JSON/XML pequeños.
+rate-limiter.js	Límite por IP (no distribuido en Vercel; Redis/Nginx en el VPS).
+
+El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consume `/api/proxy?source=...` mediante `js/utils/externalServices.js`; nunca ve el INSTANCE_ID ni el client secret. Detalle en `docs/integrations/proxy-servicios-externos.md`. En local, `scripts/dev-proxy.mjs` reutiliza `handleProxy()` en el puerto 3001 y el frontend lo detecta con `js/config/proxy.js`.
+
+5. Base de datos — schemas chat, admin y rag
 5.1. Schema chat — tablas
 chat.chat_catalog: catálogo de capas para el LLM.
 
@@ -352,6 +389,24 @@ Fallback (INV-5): si la BD no responde, el código usa el hardcodeado. El chat n
 Caché: prompts y settings se cachean 5 min en memoria del módulo.
 
 Acceso: SECURITY DEFINER y solo service_role. PostgREST no expone el schema admin.
+
+5.6. Schema rag — índice documental (Sprint 17)
+Migración `036_rag_schema.sql`. Diseñado para PostgreSQL propio con pgvector; no usa RPCs ni PostgREST.
+
+Tabla	Propósito
+rag.documents	Documento versionado por slug, con sha256, procedencia, licencia, trust_level y estado (ready/superseded/needs_ocr/failed).
+rag.chunks	Fragmentos con embedding vector(1024), embedding_model, páginas, sección, sha256 de contenido y tsv español generado.
+rag.ingestion_runs	Bitácora de corridas (estado, chunks, modelo, tokens y costo estimado). Sin contenido.
+
+Índices: HNSW coseno sobre `embedding`, GIN sobre `tsv`, único parcial que garantiza una sola versión `ready` por slug.
+
+Roles y RLS:
+
+Rol	Permisos
+rag_writer	SELECT/INSERT/UPDATE/DELETE en las tres tablas; secuencias.
+chat_ro	SELECT solo de documentos `ready` y sus chunks; lectura de ingestion_runs.
+
+La ingesta calcula los embeddings antes de abrir la transacción y reemplaza la versión anterior en un único COMMIT. El chat del Sprint 18 usará `chat_ro` y delimitará los fragmentos como contenido no confiable (CONTRACT §6.6).
 
 6. Frontend
 6.1. Entry point
