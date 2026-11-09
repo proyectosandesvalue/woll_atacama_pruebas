@@ -46,20 +46,34 @@ export function createWMSLayer(configCapa, servicio) {
     return null;
   }
 
-  const layer = L.tileLayer.wms(servicio.url, {
+  const layerOptions = {
     layers: servicio.layers,
     format: servicio.format || 'image/png',
     transparent: servicio.transparent !== false,
     version: servicio.version || '1.3.0',
     attribution: servicio.attribution || '',
     opacity: configCapa?.opacity ?? servicio.opacity ?? 0.8,
-    tiled: servicio.tiled === true,
-    // Para que el GetFeatureInfo funcione en click (si el servicio lo soporta)
-    info_format: servicio.info_format || 'application/json',
-  });
+  };
+
+  // Solo pisar defaults de Leaflet cuando el servicio define el valor.
+  if (servicio.maxNativeZoom != null) layerOptions.maxNativeZoom = servicio.maxNativeZoom;
+  if (servicio.keepBuffer != null) layerOptions.keepBuffer = servicio.keepBuffer;
+  if (servicio.tileSize != null) layerOptions.tileSize = servicio.tileSize;
+  if (servicio.updateWhenIdle !== undefined) layerOptions.updateWhenIdle = servicio.updateWhenIdle;
+  if (servicio.updateWhenZooming !== undefined) layerOptions.updateWhenZooming = servicio.updateWhenZooming;
+
+  const layer = L.tileLayer.wms(servicio.url, layerOptions);
 
   layer._isWMS = true;
   layer._wmsService = servicio;
   layer._configCapa = configCapa;
+
+  // Fecha seleccionada por el usuario (selector de fecha). Se aplica
+  // como TIME en cada tile; si no hay, el servicio devuelve la última
+  // imagen válida.
+  if (configCapa?.wmsTime) {
+    layer.wmsParams.TIME = configCapa.wmsTime;
+  }
+
   return layer;
 }

@@ -8,12 +8,14 @@ import { ConcurrentQueue } from "../utils/concurrentQueue.js";
 import { crearElementoCapa, syncIndividualCheckboxes } from "./layerItem.js";
 import { loadLayer, clearLayer } from "../utils/stationsMapUtils.js";
 import { attachDateSelector, getDate, updateDateSelector } from "../utils/dateSelector.js";
+import { attachCopernicusDateSelector, cleanupCopernicusDateSelectors } from "../utils/copernicusDateSelector.js";
 
 const log = createContextLogger("DimensionBuilder");
 
 function agruparCapasPorDimensionEn(contenedor, temasConfig) {
   if (!contenedor || !temasConfig) return;
 
+  cleanupCopernicusDateSelectors(contenedor);
   contenedor.innerHTML = "";
   const dimensionKeys = Object.keys(temasConfig);
 
@@ -168,6 +170,8 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
               attachStationLayer(capaLi, capaConfig, capaNombre);
             } else if (capaConfig?.indicatorId) {
               attachChoroplethSelector(capaLi, capaConfig, capaNombre, temaKey, temasConfig);
+            } else if (capaConfig?.wmsDateSelector) {
+              attachCopernicusDateSelector(capaLi, { capaNombre, capaConfig });
             }
             
             containerUl.appendChild(capaLi);
@@ -290,6 +294,8 @@ function agruparCapasPorDimensionEn(contenedor, temasConfig) {
           attachStationLayer(capaLi, capaConfig, capaNombre);
         } else if (capaConfig?.indicatorId) {
           attachChoroplethSelector(capaLi, capaConfig, capaNombre, temaKey, temasConfig);
+        } else if (capaConfig?.wmsDateSelector) {
+          attachCopernicusDateSelector(capaLi, { capaNombre, capaConfig });
         }
         
         childrenContainer.appendChild(capaLi);

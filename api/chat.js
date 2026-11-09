@@ -11,41 +11,11 @@ import {
   getCountryFromRequest,
   getIpFromRequest,
 } from "../server/chat/geo-filter.js";
-
-const DEFAULT_ALLOWED_ORIGINS = [
-  "https://wollatacamapruebas.vercel.app",
-  "https://wollatacama.vercel.app",
-  "http://localhost:8099",
-  "http://localhost:3000",
-];
-
-function getAllowedOrigins() {
-  const env = process.env.ALLOWED_ORIGINS;
-  if (typeof env === "string" && env.length > 0) {
-    return env
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-  return DEFAULT_ALLOWED_ORIGINS;
-}
-
-function getOriginHeader(req) {
-  const origin = req?.headers?.origin;
-  if (typeof origin !== "string" || origin.length === 0) return null;
-  const allowed = getAllowedOrigins();
-  return allowed.includes(origin) ? origin : null;
-}
+import { applyCors } from "../server/utils/cors.js";
 
 export default async function handler(req, res) {
   // ── CORS ──────────────────────────────────────────────────
-  const allowedOrigin = getOriginHeader(req);
-  if (allowedOrigin) {
-    res.setHeader("Access-Control-Allow-Origin", allowedOrigin);
-    res.setHeader("Vary", "Origin");
-  }
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  applyCors(req, res, { methods: "POST, OPTIONS", headers: "Content-Type" });
 
   if (req.method === "OPTIONS") {
     return res.status(200).end();

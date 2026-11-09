@@ -3,7 +3,11 @@
   "functions": {
     "api/chat.js": {
       "maxDuration": 300,
-      "excludeFiles": "{geojson/**,db/**,scripts/**,docs/**,help.html,session_export.md,skills-lock.json}"
+      "excludeFiles": "{geojson/**,db/**,scripts/**,docs/**,rag/**,help.html,session_export.md,skills-lock.json}"
+    },
+    "api/proxy.js": {
+      "maxDuration": 60,
+      "excludeFiles": "{geojson/**,db/**,scripts/**,docs/**,rag/**,js/**,css/**,assets/**,help.html,index.html,session_export.md,skills-lock.json}"
     }
   },
   "rewrites": [

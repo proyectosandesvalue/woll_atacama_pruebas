@@ -1,3 +1,5 @@
+import { copernicusLayer } from "./copernicusLayer.js";
+
 const EMPTY_GEOJSON = "data:application/json,%7B%22type%22:%22FeatureCollection%22,%22features%22:%5B%5D%7D";
 
 const LIVE_LAYERS = [
@@ -551,6 +553,9 @@ const ARCLIM_LAYERS = [
 const climaConfig = {
   capas: [
     "zonas_climaticas",
+    "copernicus_moisture_index",
+    "copernicus_msi",
+    "copernicus_mdmi",
     ...ARCLIM_LAYERS.map(l => l.id),
     ...ARCLIM_VIENTO_RADIACION_HUMEDAD.map(l => l.id),
     "limite_comunal_linea",
@@ -566,6 +571,10 @@ const climaConfig = {
     clima: {
       nombre: "Clima",
       capas: ["zonas_climaticas"],
+    },
+    satelite: {
+      nombre: "Satélite (Copernicus)",
+      capas: ["copernicus_moisture_index", "copernicus_msi", "copernicus_mdmi"],
     },
     estaciones_meteorologicas: {
       nombre: "Estaciones Meteorológicas",
@@ -642,6 +651,75 @@ const climaConfig = {
       alias: { Nombre: "Nombre" },
       etiquetas: { campo: "Nombre", estilo: { color: "#000000", fontSize: "9px", fontFamily: "Arial, sans-serif", bufferColor: "#88304E", bufferWidth: 0.3, offsetY: -20 } },
     },
+    copernicus_moisture_index: copernicusLayer({
+      servicio: "copernicus_moisture_index",
+      nombre: "Índice de humedad (Sentinel-2)",
+      title: "Índice de Humedad",
+      description: "Estima el contenido de humedad de la vegetación y del suelo a partir de las bandas infrarroja cercana y de onda corta de Sentinel-2. Se utiliza para monitorear estrés hídrico, sequías y disponibilidad de agua en cultivos y ecosistemas.",
+      range: {
+        min: -1,
+        max: 1,
+        text: "Valores cercanos a -1 indican superficies muy secas; cerca de 0, humedad intermedia; cerca de 1, alta humedad en vegetación o suelo.",
+      },
+      legend: {
+        type: "gradient",
+        min: -1,
+        max: 1,
+        unit: "Índice",
+        labels: ["Seco", "Húmedo"],
+        stops: [
+          { value: -1, color: "#a6611a" },
+          { value: -0.5, color: "#d8b365" },
+          { value: 0, color: "#f5f5f5" },
+          { value: 0.5, color: "#5ab4ac" },
+          { value: 1, color: "#01665e" },
+        ],
+      },
+    }),
+    copernicus_msi: copernicusLayer({
+      servicio: "copernicus_msi",
+      nombre: "MSI (Sentinel-2)",
+      title: "Índice de Estrés Hídrico del Cultivo (MSI)",
+      description: "El MSI mide el contenido relativo de agua en la vegetación comparando la luz infrarroja de onda corta (SWIR) y la infrarroja cercana (NIR). Se utiliza para la detección temprana de sequía agrícola y la programación de riego.",
+      range: {
+        text: "No tiene un rango fijo. En vegetación verde el rango común es 0.4 a 2: entre 0.4 y 0.8 indica buena hidratación; entre 0.8 y 1.2, estrés hídrico moderado; sobre 1.2, estrés hídrico severo o vegetación seca.",
+      },
+      legend: {
+        type: "gradient",
+        min: 0.4,
+        max: 2,
+        unit: "MSI",
+        labels: ["Vegetación húmeda", "Estrés / seco"],
+        stops: [
+          { value: 0.4, color: "#2e7d32" },
+          { value: 0.8, color: "#9ccc65" },
+          { value: 1.2, color: "#fdd835" },
+          { value: 1.6, color: "#f57c00" },
+          { value: 2, color: "#b5651d" },
+        ],
+      },
+    }),
+
+    copernicus_mdmi: copernicusLayer({
+      servicio: "copernicus_mdmi",
+      nombre: "MDMI (Sentinel-2)",
+      title: "Índice de Humedad Modificado (MDMI)",
+      description: "El MDMI estima la humedad de la vegetación y del suelo comparando la luz infrarroja cercana (B08) con la infrarroja de onda corta (B11). Es una variante del NDMI que usa B08 en lugar de B8A y clasifica el territorio en tres niveles de humedad. Se utiliza para monitorear sequía y disponibilidad de agua en cultivos y ecosistemas.",
+      range: {
+        min: -1,
+        max: 1,
+        text: "Valores bajo -0.4 indican superficies secas; entre -0.4 y 0.1, humedad intermedia; sobre 0.1, mayor humedad en vegetación o suelo.",
+      },
+      note: "El mapa clasifica el índice en tres colores: marrón para seco, beige para humedad intermedia y azul para húmedo. Rojo, Verde y Azul son las partes del color del píxel, no el valor del índice.",
+      legend: {
+        type: "items",
+        items: [
+          { color: "#8a1f0f", label: "Seco (índice bajo -0.4)" },
+          { color: "#d4d18a", label: "Humedad intermedia (-0.4 a 0.1)" },
+          { color: "#1a4d80", label: "Húmedo (sobre 0.1)" },
+        ],
+      },
+    }),
     // Capas ARClim generadas por factory
     ...Object.fromEntries(ARCLIM_LAYERS.map(l => [l.id, l])),
     ...Object.fromEntries(ARCLIM_VIENTO_RADIACION_HUMEDAD.map(l => [l.id, l])),

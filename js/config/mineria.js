@@ -1,3 +1,5 @@
+import { copernicusLayer } from "./copernicusLayer.js";
+
 const mineriaConfig = {
   capas: [
     "sonami_mapa_minero",
@@ -8,6 +10,7 @@ const mineriaConfig = {
     "red_ferroviaria",
     "puertos",
     "distritos_mineros",
+    "copernicus_swir",
     "limite_comunal_linea",
     "toponimia",
   ],
@@ -41,6 +44,10 @@ const mineriaConfig = {
         "plantas_desaladoras_puntos",
         "desaladoras_acueductos",
       ],
+    },
+    satelite: {
+      nombre: "Satélite (Copernicus)",
+      capas: ["copernicus_swir"],
     },
     contexto: {
       nombre: "Territorio",
@@ -569,6 +576,21 @@ const mineriaConfig = {
         },
       },
     },
+    copernicus_swir: copernicusLayer({
+      servicio: "copernicus_swir",
+      nombre: "SWIR (Sentinel-2)",
+      title: "Composición Infrarroja de Onda Corta (SWIR)",
+      description: "Combina las bandas del infrarrojo de onda corta y el rojo (R: B12, G: B11, B: B04) para resaltar la humedad del suelo, la geología y la vegetación en colores falsos. Se utiliza para la inspección visual de humedad del terreno, la delimitación de incendios y la identificación de tipos de suelo.",
+      range: {
+        text: "Es una composición de color RGB, no un valor numérico único: los colores no tienen un rango.",
+      },
+      note: "Composición de bandas 12 (SWIR2), 11 (SWIR1) y 4 (rojo). Rojo, Verde y Azul son las partes del color del píxel, no un índice.",
+      collection: "DSS2",
+      legend: {
+        type: "note",
+        text: "Composición de bandas SWIR (R: B12, G: B11, B: B04).",
+      },
+    }),
   },
   leyenda: {},
 };

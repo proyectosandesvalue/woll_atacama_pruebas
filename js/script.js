@@ -16,6 +16,7 @@ import { initMapUI, initModalUI } from './ui/mapUI.js';
 import { initSearchUI } from './ui/searchUI.js';
 import { initMobileUI } from './ui/mobileUI.js';
 import { initChatUI } from './ui/chatUI.js';
+import { initWmsFeatureInfo } from './utils/wmsFeatureInfo.js';
 
 // ── Módulo principal de UI (se ejecuta cuando el DOM y el mapa están listos) ──
 async function initUI() {
@@ -35,6 +36,7 @@ async function initUI() {
   // Inicializar componentes
   initThemeUI();
   initSidebarUI(map);
+  initWmsFeatureInfo(map);
   initMapUI(map);
   initModalUI();
   initSearchUI(map);

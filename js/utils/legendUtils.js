@@ -4,6 +4,7 @@
  */
 
 import leyendaAliasesGlobales from "../config/leyendaAliases.js";
+import { normalizeIconFilename } from "./styleUtils.js";
 import { createContextLogger } from "./logger.js";
 import { appState } from "../store/appState.js";
 
@@ -215,6 +216,11 @@ function generarLeyendaAutomatica(tema, temasConfig, container) {
       legendContainer.appendChild(itemLeyenda);
       itemsAgregados++;
     }
+    // Leyenda de una capa WMS (gradiente, nota o items)
+    else if (capaConfig.wmsLegend) {
+      renderWmsLegend(legendContainer, capaConfig.wmsLegend);
+      itemsAgregados++;
+    }
 
     // Solo agregar si tiene contenido (más que solo el título)
     if (itemsAgregados > 0) {
@@ -274,8 +280,80 @@ function sanitizeIconFile(iconFile) {
   return trimmed;
 }
 
-function crearItemLeyenda(color, label, iconFile = null) {
-  const itemLeyenda = document.createElement("div");
+/**
+ * Renderiza la leyenda declarada en `capaConfig.wmsLegend`.
+ *
+ * Tipos:
+ *   - gradient: barra con stops { value, color } y labels.
+ *   - note: texto explicativo.
+ *   - items: lista de { color, label }.
+ *
+ * @param {HTMLElement} container
+ * @param {object} legend
+ */
+function renderWmsLegend(container, legend) {
+  if (!legend || typeof legend !== "object") return;
+
+  if (legend.type === "gradient" && Array.isArray(legend.stops) && legend.stops.length > 0) {
+    const values = legend.stops
+      .map((stop) => Number(stop.value))
+      .filter((value) => Number.isFinite(value));
+    const min = Number.isFinite(legend.min) ? legend.min : Math.min(...values);
+    const max = Number.isFinite(legend.max) ? legend.max : Math.max(...values);
+    const span = max - min || 1;
+
+    const background = legend.stops
+      .map((stop) => {
+        const pct = Math.min(
+          100,
+          Math.max(0, ((Number(stop.value) - min) / span) * 100)
+        );
+        return `${stop.color} ${pct}%`;
+      })
+      .join(", ");
+
+    const bar = document.createElement("div");
+    bar.className = "legend-gradient-bar";
+    bar.style.background = `linear-gradient(to right, ${background})`;
+    container.appendChild(bar);
+
+    if (Array.isArray(legend.labels) && legend.labels.length > 0) {
+      const labels = document.createElement("div");
+      labels.className = "legend-gradient-labels";
+      legend.labels.forEach((text) => {
+        const label = document.createElement("span");
+        label.textContent = text;
+        labels.appendChild(label);
+      });
+      container.appendChild(labels);
+    }
+
+    if (legend.unit) {
+      const unit = document.createElement("div");
+      unit.className = "legend-unit";
+      unit.textContent = legend.unit;
+      container.appendChild(unit);
+    }
+    return;
+  }
+
+  if (legend.type === "note" && legend.text) {
+    const note = document.createElement("p");
+    note.className = "text-muted small legend-note";
+    note.textContent = legend.text;
+    container.appendChild(note);
+    return;
+  }
+
+  if (Array.isArray(legend.items)) {
+    legend.items.forEach((item) => {
+      if (!item?.label || !item?.color) return;
+      container.appendChild(crearItemLeyenda(item.color, item.label));
+    });
+  }
+}
+
+function crearItemLeyenda(color, label, iconFile = null) {  const itemLeyenda = document.createElement("div");
   itemLeyenda.classList.add("legend-item", "d-flex", "align-items-center", "mb-1");
 
   const safeIconFile = sanitizeIconFile(iconFile);
@@ -288,7 +366,7 @@ function crearItemLeyenda(color, label, iconFile = null) {
     iconBox.style.flexShrink = "0";
 
     const icon = document.createElement("img");
-    icon.src = `./assets/icons/${safeIconFile}`;
+    icon.src = `./assets/icons/${normalizeIconFilename(safeIconFile)}`;
     icon.style.width = "100%";
     icon.style.height = "100%";
     icon.style.objectFit = "contain";

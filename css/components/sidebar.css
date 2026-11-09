@@ -965,6 +965,35 @@
   border: 1px solid var(--border-subtle);
 }
 
+.legend-gradient-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: -4px;
+}
+
+.legend-gradient-labels span {
+  flex: 1;
+}
+
+.legend-gradient-labels span:last-child {
+  text-align: right;
+}
+
+.legend-unit {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-align: right;
+  margin-top: 1px;
+}
+
+.legend-note {
+  margin: 0;
+  line-height: 1.4;
+}
+
 .layer-date-selector {
   display: flex;
   align-items: center;
@@ -1148,6 +1177,40 @@ span.flatpickr-weekday {
 .flatpickr-day.has-data.selected {
   background-color: var(--color-brand-text) !important;
   color: white !important;
+}
+
+/* Días con imágenes satelitales (Copernicus): azul para distinguirlos de las series DGA */
+.flatpickr-day.has-data-satellite {
+  background-color: rgba(0, 150, 199, 0.22) !important;
+  color: var(--text-primary) !important;
+  font-weight: 700 !important;
+  border-color: transparent !important;
+}
+.flatpickr-day.has-data-satellite:hover {
+  background-color: rgba(0, 150, 199, 0.34) !important;
+}
+.flatpickr-day.has-data-satellite.selected {
+  background-color: var(--color-brand-text) !important;
+  color: white !important;
+}
+
+/* Leyenda del calendario de Copernicus */
+.flatpickr-availability-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 8px;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  line-height: 1.3;
+}
+.flatpickr-availability-legend .legend-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: rgba(0, 150, 199, 0.9);
 }
 
 /* Días deshabilitados (fuera de rango de fechas) */

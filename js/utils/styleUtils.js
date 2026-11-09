@@ -17,9 +17,11 @@ const ICON_EXTENSION = '.webp';
  * @param {string} filename
  * @returns {string}
  */
-const normalizeIconFilename = (filename) => {
+export const normalizeIconFilename = (filename) => {
   if (!filename) return filename;
-  return filename.replace(/\.(png|webp)$/i, ICON_EXTENSION);
+  return filename
+    .replace(/\.(png|webp)$/i, ICON_EXTENSION)
+    .replace(/\s+/g, "_");
 };
 
 export function getPointStyle(feature, configCapa) {

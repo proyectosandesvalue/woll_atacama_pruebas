@@ -1,3 +1,5 @@
+import { copernicusLayer } from "./copernicusLayer.js";
+
 const EMPTY_GEOJSON = "data:application/json,%7B%22type%22:%22FeatureCollection%22,%22features%22:%5B%5D%7D";
 
 const CALIDAD_VARIABLES = [
@@ -35,6 +37,9 @@ const DGA_LAYERS = [
 const aguaConfig = {
   capas: [
     "hidrografia",
+    "copernicus_ndwi",
+    "copernicus_ndci",
+    "copernicus_wiw",
     "apr_rural",
     "plantas_desaladoras_puntos",
     "desaladoras_acueductos",
@@ -99,6 +104,10 @@ const aguaConfig = {
       nombre: "Estaciones DGA (Históricas)",
       capas: DGA_LAYERS.map(l => l.id),
     },
+    satelite: {
+      nombre: "Satélite (Copernicus)",
+      capas: ["copernicus_ndwi", "copernicus_ndci", "copernicus_wiw"],
+    },
     contexto: {
       nombre: "Territorio",
       capas: ["limite_comunal_linea", "toponimia"],
@@ -150,7 +159,7 @@ const aguaConfig = {
       atributo: "COD_REG",
       nombrePersonalizado: "Servicios Sanitarios Rurales (Ex APR)",
       iconos: {
-        "03": "Torre Agua.png",
+        "03": "Torre Agua.webp",
       },
       estiloAlternativo: {
         color: "#FF6B6B",
@@ -813,6 +822,72 @@ const aguaConfig = {
         },
       },
     },
+    copernicus_ndwi: copernicusLayer({
+      servicio: "copernicus_ndwi",
+      nombre: "NDWI (Sentinel-2)",
+      title: "Índice de Agua Superficial (NDWI)",
+      description: "El NDWI delimita cuerpos de agua libre comparando la luz verde con la infrarroja cercana. El agua absorbe el infrarrojo y se destaca claramente frente a la tierra. Se utiliza para monitorear niveles en embalses y demarcar ríos, lagunas y humedales.",
+      range: {
+        min: -1,
+        max: 1,
+        text: "Valores bajo 0 indican suelo, vegetación o zona urbana; entre 0 y 0.3, agua somera, zonas húmedas o bordes de cuenca; sobre 0.3, agua clara, profunda y libre.",
+      },
+      legend: {
+        type: "gradient",
+        min: -1,
+        max: 1,
+        unit: "NDWI",
+        labels: ["Suelo / vegetación", "Agua superficial"],
+        stops: [
+          { value: -1, color: "#8c6d46" },
+          { value: -0.2, color: "#d9c58a" },
+          { value: 0, color: "#f5f5f5" },
+          { value: 0.2, color: "#7fc8f8" },
+          { value: 0.5, color: "#2196f3" },
+          { value: 1, color: "#0d47a1" },
+        ],
+      },
+    }),
+    copernicus_ndci: copernicusLayer({
+      servicio: "copernicus_ndci",
+      nombre: "NDCI (Sentinel-2)",
+      title: "Índice de Clorofila en Agua (NDCI)",
+      description: "El NDCI estima la presencia de clorofila y algas en masas de agua comparando las bandas del borde rojo y roja. Se utiliza para controlar la eutrofización y la calidad del agua, y para detectar floraciones algales en lagos y embalses.",
+      range: {
+        min: -1,
+        max: 1,
+        text: "Valores bajos indican agua clara con muy baja concentración de microorganismos; valores altos, alta concentración de clorofila o presencia de algas.",
+      },
+      legend: {
+        type: "gradient",
+        min: -1,
+        max: 1,
+        unit: "NDCI",
+        labels: ["Agua clara", "Alta clorofila / algas"],
+        stops: [
+          { value: -1, color: "#0d47a1" },
+          { value: -0.2, color: "#4fc3f7" },
+          { value: 0, color: "#b3e5fc" },
+          { value: 0.2, color: "#a5d6a7" },
+          { value: 0.5, color: "#66bb6a" },
+          { value: 1, color: "#1b5e20" },
+        ],
+      },
+    }),
+    copernicus_wiw: copernicusLayer({
+      servicio: "copernicus_wiw",
+      nombre: "WIW (Sentinel-2)",
+      title: "Agua en Humedales (WIW)",
+      description: "El WIW detecta agua en humedales, incluso bajo vegetación densa, combinando la luz infrarroja cercana y la infrarroja de onda corta. Clasifica cada píxel como agua o sin agua usando umbrales: B8A menor que 0.1804 y B12 menor que 0.1131. Se utiliza para monitorear bofedales, salares, vegas y otros humedales de Atacama.",
+      range: {
+        text: "No es un índice continuo: es una clasificación. Azul indica agua detectada; los colores naturales indican superficie sin agua. Los umbrales son B8A menor que 0.1804 y B12 menor que 0.1131.",
+      },
+      note: "El mapa colorea el agua detectada en azul y el resto en colores naturales. La detección se basa en umbrales de las bandas B8A y B12, no en un valor único del píxel.",
+      legend: {
+        type: "note",
+        text: "Azul: agua detectada. Colores naturales: superficie sin agua.",
+      },
+    }),
   },
   leyenda: {},
 };

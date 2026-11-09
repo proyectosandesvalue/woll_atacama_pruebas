@@ -17,6 +17,8 @@
  *   - Header de país ausente + GEO_PROVIDER=none → tratar como LATAM.
  */
 
+import { getClientIp } from "../utils/request.js";
+
 /**
  * Códigos ISO 3166-1 alpha-2 de países considerados LATAM.
  */
@@ -109,37 +111,7 @@ export function getCountryFromRequest(req) {
  * @param {object} req
  * @returns {string|undefined}
  */
-export function getIpFromRequest(req) {
-  const headers = req?.headers || {};
-  const hops = Number(process.env.TRUST_PROXY_HOPS) || 2; // Vercel: 2 por defecto
-
-  const forwarded = headers["x-forwarded-for"];
-  if (typeof forwarded === "string" && forwarded.length > 0) {
-    const parts = forwarded
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    if (parts.length > 0) {
-      // Contar desde la derecha: hops = 2 → parts[length - 1 - 1] = penúltimo.
-      const index = Math.max(0, parts.length - 1 - hops + 1);
-      const ip = parts[index];
-      if (ip) {
-        dbg(`getIpFromRequest: IP real (hops=${hops}, index=${index}) = ${ip}`);
-        return ip;
-      }
-    }
-  }
-
-  const real = headers["x-real-ip"];
-  if (typeof real === "string" && real.length > 0) {
-    dbg(`getIpFromRequest: IP de x-real-ip = ${real.trim()}`);
-    return real.trim();
-  }
-
-  dbg("getIpFromRequest: no se encontró IP");
-  return undefined;
-}
+export const getIpFromRequest = getClientIp;
 
 export const GEO_CONFIG = {
   LATAM_COUNTRIES,

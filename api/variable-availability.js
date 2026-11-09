@@ -21,6 +21,16 @@ export default async function handler(req, res) {
     return res.status(200).json(data);
   } catch (err) {
     console.error("[/api/variable-availability] Error:", err);
-    return res.status(500).json({ error: err.message });
+    // Fallback (INV-5): el selector de fechas es auxiliar. Si la RPC o la
+    // vista materializada no están disponibles, devolvemos "sin
+    // disponibilidad" en vez de romper la carga del visor.
+    return res.status(200).json({
+      variable,
+      fecha_min: null,
+      fecha_max: null,
+      total_registros: 0,
+      estaciones_con_dato: 0,
+      degraded: true,
+    });
   }
 }
