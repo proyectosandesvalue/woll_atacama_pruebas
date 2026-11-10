@@ -61,7 +61,7 @@
 | 06 | Respuesta geoespacial (GeoJSON en mapa) | ✅ done | alta | 4-6h | — |
 | 06-B.7 | Pintado multi-capa del chat | ✅ done | alta | 3-4h | 06-B.2 |
 | 07 | `/api/config` + snapshot | ⏳ pending | alta | 3-4h | — |
-| 08 | Migración a PostGIS (fuente principal) | ⏳ pending | alta | 40-46h | 07 |
+| 08 | Migración a PostGIS (fuente principal) | ⏳ pending (bloqueado por 26) | alta | 48-58h | 07, 26 |
 | 09 | Rasters y capas meteorológicas dinámicas | 🔶 parcial (Copernicus cubre indicadores; NASA/raster pendientes) | media-alta | ~30-50h | decisión técnica |
 | 09-A | Spike/ADR de rasters (semi-resuelto) | 🔶 semi-resuelto | media | 4-6h | — |
 | 09-B | Implementación de rasters (NASA + lectura IMG/TIFF/COG + variables derivadas) | ⏳ pending (bloqueado por 09-A) | media | 12-20h | 09-A |
@@ -249,18 +249,23 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 08 — Migración a PostGIS (fuente principal)
 
-**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 40-46h · **Dependencias**: 07
+**Estado**: ⏳ pending (bloqueado por 26) · **Prioridad**: alta · **Duración**: 48-58h · **Dependencias**: 07, 26
+**Spec**: `docs/specs/08-postgis-fuente-principal/00-spec-madre.md` (DRAFT)
 
-**Objetivo**: PostGIS como fuente principal de capas. GeoJSON como fallback.
+**Objetivo**: PostGIS como fuente principal de capas, con GeoJSON como fallback. El navegador deja de descargar archivos completos y recibe tiles del viewport, páginas de tabla, agregados de cluster/heatmap y exportaciones bajo demanda. **Todas las opciones de capa deben seguir disponibles**: tabla de atributos, zoom a la capa/feature, filtros, cluster, mapa de calor y descarga.
 
-**Nota de ajuste**: la opción MVT con Martin o pg_tileserv es viable en el servidor propio (Sprint 26). Las migraciones de producción usan el runner del Sprint 26-C. Los ADR de la spec pasan a 012-015.
+**Corrección del modelo de carga (2026-11-10)**: "cargar desde la BD" no es más liviano por sí solo. Servir `ST_AsGeoJSON` completo desde PostGIS puede pesar más que el GeoJSON estático (consulta + serialización + transferencia + parse en cliente). El ahorro real viene de **MVT/vector tiles, endpoints paginados, filtros server-side, agregados y caché Nginx**; el VPS se dimensiona para generar tiles y servir consultas. Ver §2 de la spec.
+
+**Entorno**: se ejecuta sobre la imagen Docker PostgreSQL (PostGIS + pgvector), Node persistente y Nginx/Caddy del Sprint 26. Vercel + Supabase quedan congelados (ADR 005). Los ADR de este sprint son 012-015.
 
 **Sub-sprints**:
-- [ ] **A** — Infraestructura de tiles MVT (8h)
-- [ ] **B** — Migración piloto: 3 capas chicas (4h)
-- [ ] **C** — Migración completa: 70 capas (16-24h)
-- [ ] **D** — Estilos y popups vía MVT (6h)
-- [ ] **E** — Exportación/descarga desde PostGIS (4h)
+- [ ] **0** — Spike: línea base, inventario y ADR 012-013 (4h)
+- [ ] **A** — Infraestructura de tiles MVT y endpoints (8h)
+- [ ] **B** — Piloto: 3 capas chicas con doble fuente, tabla paginada y zoom (4h)
+- [ ] **D** — Estilos, popups, leyenda, tabla de atributos paginada y filtros (6h)
+- [ ] **F** — Zoom a capa/feature, cluster y heatmap sobre PostGIS (6h)
+- [ ] **C** — Migración completa: 70 capas por dimensión (16-26h)
+- [ ] **E** — Exportación/descarga en streaming desde PostGIS (4h)
 
 ### Sprint 09 — Rasters y capas meteorológicas dinámicas
 
