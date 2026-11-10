@@ -86,6 +86,7 @@ Reglas:
 - **Commits:** `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`; un commit por sub-sprint con el ID (`feat: sprint-06-A backend geoespacial`).
 - **Migraciones:** `db/migrations/NNN_nombre.sql`, idempotentes. Nunca editar una ya aplicada; crear una nueva.
 - **Infraestructura:** no agregar dependencias o servicios específicos de Vercel/Supabase que no sean portables al VPS sin un ADR que lo justifique.
+- **Migración a Docker/VPS:** desde el inicio de la imagen PostgreSQL (PostGIS + pgvector) en Docker, todo el desarrollo es para el entorno Docker/VPS. Vercel + Supabase quedan congelados para demo; no agregar features ni dependencias específicas. La imagen local se replica en el servidor.
 - **Chat:** el LLM nunca escribe SQL; solo invoca RPCs tipadas.
 - **RAG:** la ingesta corre en `scripts/` (nunca en `api/`); los PDFs viven en `rag/inbox/` fuera de git y todo fragmento se marca `untrusted`. El corpus se declara en `rag/manifest.json` con licencia y `copyright_cleared: true`.
 - **Proxy externo:** `/api/proxy` es cerrado (allowlist en `server/proxy/services.js`); `INSTANCE_ID` y `CLIENT_SECRET` viven solo en el servidor. Ver `docs/integrations/proxy-servicios-externos.md`.

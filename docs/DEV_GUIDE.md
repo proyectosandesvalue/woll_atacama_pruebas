@@ -94,6 +94,11 @@ El frontend detecta que está en `localhost` y usa el proxy de 3001; en producci
 > **Vercel + Supabase son solo demo/staging.** El despliegue final es un VPS
 > propio (ADR 005, Sprint 26). No optimizar límites de Hobby ni agregar
 > infraestructura específica de Vercel que no sea portable.
+>
+> **Disparador de migración:** cuando arranque la imagen Docker de PostgreSQL
+> (PostGIS + pgvector), el entorno local pasa a Docker Compose y Vercel +
+> Supabase quedan congelados. Desde ese momento, todo se desarrolla y prueba
+> primero en la imagen local, y luego se replica en el VPS.
 
 3.2. Lint
 bash

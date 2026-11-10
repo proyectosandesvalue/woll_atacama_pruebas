@@ -4,6 +4,7 @@
 > Última actualización: 2026-11-10.
 >
 > **Infraestructura (2026-11-10):** el destino final es un **VPS propio** (Node persistente + PostgreSQL/PostGIS/pgvector + Nginx/Caddy + proxy persistente). **Vercel + Supabase son solo demo/staging**: Supabase alcanzó su límite de almacenamiento y Vercel Hobby no alcanza para producción. Las optimizaciones serverless son para la demo; no invertir en Upstash/Redis/cron para Vercel salvo que sea portable. **Sprint 26 es la prioridad de producción.** Ver ADR 005.
+> **Disparador de migración:** la creación de la **imagen Docker de PostgreSQL (PostGIS + pgvector)** marca el inicio de la migración. Desde ese commit, el entorno de desarrollo es Docker Compose/VPS, Vercel + Supabase quedan congelados para demo, y todo cambio debe funcionar primero en la imagen local y luego replicarse en el servidor.
 >
 > **Este roadmap es dinámico.** Se modifica cada vez que aparece un hallazgo nuevo,
 > se cierra un sprint, se descubre un bug estructural, o cambia una decisión. Ninguna
@@ -538,6 +539,8 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 **Requiere**: spec madre (`docs/specs/26-plataforma/00-spec-madre.md`) y una spec por tramo.
 
 **Decisión 2026-11-10 (ADR 005)**: VPS propio para producción; Vercel + Supabase quedan como demo/staging. Supabase está en el límite de almacenamiento (~913 MB) y Vercel Hobby no es comercial ni suficiente. No se agrega infraestructura específica de Vercel que no sea portable.
+
+**Disparador de migración:** comenzar por la imagen Docker de PostgreSQL (PostGIS + pgvector) y el Compose local (26-C/26-D). Desde ese commit se congela Vercel/Supabase y todo el desarrollo se hace para el entorno Docker/VPS. La misma imagen se replica en el servidor.
 
 **Objetivo**: ejecutar el sistema completo en infraestructura propia (Postgres con PostGIS y pgvector, API Node persistente, proxy con TLS), idéntico en staging y producción, sin depender de Vercel ni Supabase.
 

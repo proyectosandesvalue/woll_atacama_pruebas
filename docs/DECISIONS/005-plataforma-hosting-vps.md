@@ -53,6 +53,24 @@ final.
    Dimensionar disco tomando como base el dump actual (~913 MB), el
    crecimiento previsto y los backups.
 
+## Disparador de migración y congelamiento
+
+La migración comienza con la creación de la **imagen Docker de PostgreSQL
+(PostGIS + pgvector)** y el Compose local. Desde el primer commit de esa
+imagen:
+
+- El entorno de desarrollo de referencia es **Docker Compose**, no Vercel ni
+  Supabase.
+- Todo el software se desarrolla para el **VPS**: Node persistente,
+  `pg.Pool`, Nginx/Caddy y proxy persistente.
+- **Vercel + Supabase quedan congelados**: solo demo, sin features nuevas ni
+  optimizaciones específicas.
+- La misma imagen y configuración se replican en el VPS; staging y producción
+  usan el mismo Compose/imagen.
+- La migración de datos (dump/restore) se ejecuta en ese momento.
+- Cualquier cambio posterior debe funcionar primero en la imagen local y luego
+  replicarse en el servidor.
+
 ## Herramientas a instalar en el VPS
 
 Lista mínima; la versión exacta se cierra en la spec 26:
