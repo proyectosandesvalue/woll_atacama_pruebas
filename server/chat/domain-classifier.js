@@ -32,7 +32,7 @@ Devuelve SIEMPRE un JSON con esta forma:
   "domain": "IN" | "OUT",
   "intent": "dato_simple" | "analisis_receta" | "contexto_documental" | "fuera_de_alcance",
   "pipeline": "listado_con_mapa" | "ubicacion_con_distribucion" | "distribucion_con_elementos" | "proximidad_conteo" | null,
-  "slots": { "layer_id": string|null, "filters": object|null, "group_by": string|null, "color_by": string|null, "layer_id_source": string|null, "layer_id_targets": string|null, "distance_m": number|null },
+  "slots": { "layer_id": string|null, "filters": object|null, "group_by": string|null, "color_by": string|null, "layer_id_source": string|null, "layer_id_targets": array<string>|null, "distance_m": number|null },
   "confidence": número entre 0 y 1
 }
 
@@ -90,7 +90,8 @@ pipeline = null (excepto proximidad_conteo, que sí matchea "a menos de N metros
    - group_by: campo para agrupar (ej: "COMUNA", "TIPO", "CLASIFICACION"). Si no hay, null.
    - color_by: campo para colorear (ej: "COMUNA", "CLASIFICACION"). Si no hay, null.
    - layer_id_source: capa origen (para proximidad). Si no hay, null.
-   - layer_id_targets: capa destino (para proximidad). Si no hay, null.
+   - layer_id_targets: array de capas destino (para proximidad). Aunque sea una sola capa, usar array; si no hay, null.
+   - En proximidad, distance_m va en metros (1 km = 1000) y layer_id_targets es un array, ej. ["hidrografia"].
    - distance_m: distancia en metros (para proximidad). Si no hay, null.
 5. confidence: 0.0 a 1.0. Alta (0.8+) si estás seguro de la
    clasificación, pipeline y slots. Baja (<0.5) si hay ambigüedad.
@@ -124,7 +125,7 @@ Pregunta: "Dame los derechos de agua de la cuenca Copiapó pero solo los consunt
 {"domain":"IN","intent":"dato_simple","pipeline":"listado_con_mapa","slots":{"layer_id":"derechos_agua_2025","filters":{"Cuenca":"Copiapó","Tipo Derecho":"Consuntivo"},"group_by":null,"color_by":null},"confidence":0.88}
 
 Pregunta: "¿Cuántos derechos de agua hay a menos de 1 km de un río?"
-{"domain":"IN","intent":"dato_simple","pipeline":"proximidad_conteo","slots":{"layer_id_source":"derechos_agua_2025","layer_id_targets":"red_hidrografica","distance_m":1000},"confidence":0.85}
+{"domain":"IN","intent":"dato_simple","pipeline":"proximidad_conteo","slots":{"layer_id":null,"filters":null,"group_by":null,"color_by":null,"layer_id_source":"derechos_agua_2025","layer_id_targets":["hidrografia"],"distance_m":1000},"confidence":0.92}
 
 Pregunta: "¿Dónde hay más concentración de derechos de agua?"
 {"domain":"IN","intent":"dato_simple","pipeline":null,"slots":{"layer_id":"derechos_agua_2025","filters":null,"group_by":null,"color_by":null},"confidence":0.85}
@@ -227,7 +228,7 @@ function parseClassifierResponse(raw) {
  * Valida y normaliza el resultado del clasificador.
  * Si algo falta o es inválido, devuelve confidence: 0.
  */
-function normalizeClassifierResult(parsed) {
+export function normalizeClassifierResult(parsed) {
   if (!parsed || typeof parsed !== "object") {
     return {
       domain: "IN",
@@ -282,9 +283,10 @@ function normalizeClassifierResult(parsed) {
         typeof parsed.slots.layer_id_source === "string"
           ? parsed.slots.layer_id_source
           : null,
-      layer_id_targets:
-        typeof parsed.slots.layer_id_targets === "string"
-          ? parsed.slots.layer_id_targets
+      layer_id_targets: Array.isArray(parsed.slots.layer_id_targets)
+        ? parsed.slots.layer_id_targets.map(String)
+        : typeof parsed.slots.layer_id_targets === "string"
+          ? [parsed.slots.layer_id_targets]
           : null,
       distance_m:
         typeof parsed.slots.distance_m === "number" ? parsed.slots.distance_m : null,
