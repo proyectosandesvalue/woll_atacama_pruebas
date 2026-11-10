@@ -1038,8 +1038,9 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   - Opción A: índice funcional `((geom::geography))` + proyección `geog`; count 580 ms, aggregate 759 ms; índice usado.
   - Migración 037: índices en tablas objetivo, funciones reescritas y `statement_timeout=5s`.
   - `AbortSignal` en `server/db/context.js`, `supabase.js` y `withTimeout`; tests.
-  - Pendiente: aplicar 037 en Supabase y re-medir `core-proximidad-derechos-rio`.
-- 📝 Próximo: aplicar 037, re-medir, y seguir con el bloque de concurrencia 20–50 (rate limit/caché/load test).
+  - **037 aplicado en Supabase**; RPC directo: count 1.799 ms, aggregate 785 ms.
+  - Caso remoto `core-proximidad-derechos-rio`: 19.743 ms → **11.211 ms**, 1/1 PASS. El resto es LLM/orquestación.
+- 📝 Próximo: bloque de concurrencia/LLM (clasificador, semáforo, caché, rate limit y load test 20–50).
 
 ### 2026-11-09
 - ✅ **Catálogo satelital Copernicus (Sprint 44)**.
@@ -1279,7 +1280,7 @@ Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de 
 - [ ] **Vercel cache de estáticos.**
 
 - [X] **Sprint 39: capas del chat en el sidebar izquierdo.**
-- [ ] **Optimizar `count_near_layer` (proximidad).** `derechos_agua_2025` (920 filas) × `hidrografia`: la consulta original tarda ~175 s (muestra 50: 9,5 s) por el cast a geography. Fix preparado en `db/migrations/037_proximity_geography.sql`: índice GIST funcional, funciones con `geog` y `statement_timeout=5s`; prueba en transacción 580/759 ms. Pendiente aplicar en Supabase y re-medir. Urgencia: alta.
+- [X] **Optimizar `count_near_layer` (proximidad).** Resuelto en `037_proximity_geography.sql` y aplicado en Supabase: GIST funcional, funciones con `geog` y `statement_timeout=5s`. RPC: count 1.799 ms, aggregate 785 ms. Caso remoto: 19.743 ms → **11.211 ms**. El cuello restante es LLM/orquestación.
 
 - [ ] **Panel admin para config del chat (Sprint 15).** La migración 024
       agregó 4 tablas (`admin.unavailable_data`, `admin.prompt_templates`,

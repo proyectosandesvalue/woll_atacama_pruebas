@@ -103,8 +103,15 @@ explica el timeout del SQL Editor y las consultas huérfanas.
 - `AbortSignal` en el driver Supabase para que el timeout del cliente aborte
   también la request HTTP.
 
-Pendiente: aplicar `037` en Supabase y re-medir el caso
-`core-proximidad-derechos-rio` contra producción.
+**Verificación post-037 (aplicado en Supabase):**
+
+- RPC directo vía PostgREST:
+  - `chat_count_near_layer`: **1.799 ms** (incluye red/PostgREST; SQL 580 ms).
+  - `chat_aggregate_near_layer`: **785 ms**.
+- Caso remoto `core-proximidad-derechos-rio`: **11.211 ms**, 1/1 PASS
+  (antes: 19.743 ms y riesgo de timeout).
+- El resto del tiempo ya no es la DB: es clasificador + LLM L1/L2 +
+  orquestación + red. La consulta de proximidad dejó de ser el cuello.
 
 ## Cómo reproducir
 

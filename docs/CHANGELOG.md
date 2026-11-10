@@ -60,6 +60,7 @@
 - Fix de proximidad: `db/migrations/037_proximity_geography.sql` con índice GIST funcional `((geom::geography))`, funciones reescritas para proyectar `geog` y `statement_timeout = 5s`.
 - `server/db/context.js` + `supabase.js`/`withTimeout`: el `AbortSignal` del timeout ahora aborta la request a PostgREST; tests de contexto y timeout.
 - Prueba en transacción: `count_near_layer` 9.541 ms → 580 ms; `aggregate_near_layer` 9.306 ms → 759 ms.
+- Verificado en producción tras aplicar 037: RPC count 1.799 ms, aggregate 785 ms; caso remoto `core-proximidad-derechos-rio` 19.743 ms → 11.211 ms. El cuello restante es LLM/orquestación.
 - Sprint 25 cerrado (25-A/B/C/D/E/F); baseline de latencia y decisión de streaming documentadas.
 
 ### Fixed
