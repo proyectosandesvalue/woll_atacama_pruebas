@@ -79,7 +79,7 @@
 | 22 | Alineación de documentación | 🔶 parcial (A-E cerrados; F y ajustes pendientes) | alta | 3-4h | — |
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
-| 25 | Calidad del chat: latencia y evaluación | 🔶 parcial (25-A/B/C/D/E cerrados; 25-F pendiente) | alta | 16h (2h restantes) | 23 |
+| 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
 | 26 | Plataforma propia (Postgres + Docker + proxy) | ⏳ pending | alta | 38-45h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
@@ -507,9 +507,9 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 25 — Calidad del chat: latencia y evaluación
 
-**Estado**: 🔶 parcial (25-A/B/C/D/E cerrados; 25-F pendiente) · **Prioridad**: alta · **Duración**: 16h (2h restantes) · **Dependencias**: 23
+**Estado**: ✅ done · **Prioridad**: alta · **Duración**: 16h · **Dependencias**: 23
 
-> **Actualizado 2026-11-09.** 25-A, 25-B, 25-C, 25-D y 25-E ya están implementados; el roadmap los tenía como pendientes. Queda 25-F (spike SSE).
+> **Actualizado 2026-11-09.** 25-A/B/C/D/E implementados. 25-F cerrado con el ADR 023: fase 1 (SSE de estado) aceptada; fase 2 (tokens) diferida por concurrencia.
 
 **Objetivo**: medir y reducir la latencia, y poder cambiar prompts o modelos sin degradar respuestas sin enterarse.
 
@@ -522,7 +522,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
   - Tests de preguntas de seguimiento.
 - [X] **D (2h) — L1.** Dividir `orchestrator.js` en módulos. **Implementado:** `orchestrator.js` en 257 líneas.
 - [X] **E (3h) — G6.** Proveedor de respaldo. **Implementado:** `server/llm/provider.js` reintenta con `LLM_FALLBACK_*`.
-- [ ] **F (2h) — Spike.** Streaming (SSE): factibilidad con el driver actual, decisión registrada en ADR.
+- [X] **F (2h) — Spike.** Streaming (SSE). **Implementado:** ADR 023; fase 1 de eventos de estado aceptada, fase 2 de tokens diferida.
 
 **Criterios de aceptación**:
 - **CA-1** ✅ Golden set de 38 casos y runner funcionando.
@@ -979,6 +979,7 @@ y eliminación.
 | 010 | Capa base con licencia | 28-C |
 | 011 | Proveedor LLM, respaldo y privacidad | 25-E, 32-C |
 | 012-015 | Los previstos en la spec 08 (renumerados) | Ajuste al 08 |
+| 023 | Streaming SSE del chat (fase 1); fase 2 diferida | 25-F |
 
 ---
 
@@ -1048,7 +1049,8 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   - 09-C redefinido como implementación de capas meteorológicas dinámicas (viento, nubes, lluvia) con `leaflet-velocity`.
   - 09-D pasa a optimización/variables adicionales; 37 (auditoría) diferido.
 - ✅ **25-B — Instrumentación de latencia** cerrado. Baseline de 20 preguntas en `docs/chat-latency-baseline.md` (p50 3.553 ms, p95 15.234 ms en producción).
-- 📝 Próximo: **25-F + 40-D.3 + 22**; luego **comparador de fechas Copernicus**. Después 09-B/09-C.
+- ✅ **25-F — Spike SSE** cerrado con `docs/DECISIONS/023-streaming-sse.md`: fase 1 (eventos de estado) aceptada; tokens diferidos.
+- 📝 Próximo: **40-D.3 + 22**; luego **comparador de fechas Copernicus**. Después 09-B/09-C.
 
 ### 2026-11-06
 - ✅ **Sprint 17 — Ingesta RAG (código base)**.

@@ -56,6 +56,8 @@
 - Instrumentación de latencia del chat (25-B): `server/chat/timing.js`, flag `CHAT_TIMING_ENABLED` y logs JSON `chat.timing` con etapas (`catalog`, `classifier`, `router`, orquestador L1/L2, tools, finish).
 - Runner `scripts/run-golden-set.mjs`: `--limit`, medición por caso y resumen p50/p95/mean; `skipUnansweredLog` para no escribir en la BD durante la evaluación.
 - Baseline de 20 preguntas en `docs/chat-latency-baseline.md` (p50 3.553 ms, p95 15.234 ms en producción; 19/20 PASS, un fallo no determinista).
+- ADR 023 (25-F): streaming SSE; fase 1 de eventos de estado aceptada y fase 2 de tokens diferida hasta tener concurrencia global, tools <2 s y proxy persistente.
+- Sprint 25 cerrado (25-A/B/C/D/E/F); baseline de latencia y decisión de streaming documentadas.
 
 ### Fixed
 - `server/chat/tools/list-climate-stations.js`: faltaba el `import { getDB }`; la tool fallaba en runtime con `ReferenceError`.
