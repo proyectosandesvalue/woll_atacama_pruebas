@@ -1043,7 +1043,9 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   - Router de proximidad corregido (`layer_id_targets` array + prompt): **3.763 ms**, ruta `router`.
   - Caché de `chat_catalog` (5 min), rate limit IP+sessión (120/30 y 12/4) y semáforo LLM (4 por instancia, cola 20).
   - Concurrencia: 10/10 y 20/20 requests 200; p95 5,45 s y 10,03 s en ráfaga; sin 429/503.
-- 📝 Próximo: optimizar clasificador (~1,5 s), probar 30–50, decidir Vercel Pro vs VPS.
+  - Fast path de proximidad (`classifier-fast.js`): caso único 2,259 s; 20 concurrentes p95 5,58 s; 30 concurrentes p95 11,33 s.
+  - 20 preguntas de orquestador concurrentes: 20/20 200, p95 8,90 s (semáforo/cola funcionando).
+- 📝 Próximo: clasificador general (~1,5 s) y seguimientos; load test 50 con think time; decidir Vercel Pro vs VPS.
 
 ### 2026-11-09
 - ✅ **Catálogo satelital Copernicus (Sprint 44)**.

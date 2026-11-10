@@ -137,6 +137,26 @@ Sin 429 ni 503. Es una **ráfaga** de 10/20 requests simultáneos, no el régime
 con think time; el SLO de 25 usuarios con 45-60 s es menos exigente. El
 clasificador (~1,5 s) y la tool de proximidad (~1,2 s) son el costo dominante.
 
+### Fast path de proximidad
+
+Se agregó `server/chat/classifier-fast.js`: preguntas explícitas de proximidad
+sin historial se clasifican sin llamar al LLM ni consultar el catálogo. El
+router recibe los slots ya normalizados.
+
+| Escenario | N | 200 | p50 | p95 | Máximo |
+|---|---:|---:|---:|---:|---:|
+| Caso único (fast path) | 1 | 1/1 | 2.259 ms | 2.259 ms | 2.259 ms |
+| Proximidad concurrente | 20 | 20/20 | 4.730 ms | 5.581 ms | 5.646 ms |
+| Orquestador concurrente | 20 | 20/20 | 7.634 ms | 8.895 ms | 8.939 ms |
+| Proximidad concurrente | 30 | 30/30 | 4.991 ms | 11.328 ms | 11.364 ms |
+
+- La prueba de 30 coincide con el burst de IP (30); un burst mayor devuelve
+  429 por diseño.
+- La prueba de 20 del orquestador ejercita el semáforo LLM y la cola: 20/20
+  respondieron 200, sin 503.
+- El clasificador general (~1,5 s) sigue aplicando a preguntas que no matchean
+  el fast path.
+
 ## Cómo reproducir
 
 ```bash

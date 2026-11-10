@@ -154,6 +154,7 @@ No hay build step. Los scripts que tocan Supabase o el LLM leen `.env.staging` v
 - El system prompt se cachea 5 min en memoria del módulo.
 - **Latencia:** `CHAT_TIMING_ENABLED=1` emite `chat.timing` (JSON por request, sin BD); baseline en `docs/chat-latency-baseline.md`.
 - **Concurrencia:** rate limit por IP+sessión, caché de `chat_catalog` (5 min) y semáforo LLM (`LLM_MAX_CONCURRENCY=4`, cola 20; `503` con `Retry-After`).
+- **Fast path:** proximidad explícita sin historial se clasifica sin LLM ni catálogo (`server/chat/classifier-fast.js`).
 - Contrato de gráficos: `charts` (array) es canónico; `chart` (singular) solo por compatibilidad. Tipos: `pie` (≤ 6 grupos), `bar` (≤ 20), `horizontalBar` (> 20); el frontend dibuja `horizontalBar` como `bar` con `indexAxis: 'y'`. `aggregate_by_admin_and_column` no genera gráfico.
 - `CHAT_VERBOSE` (el LLM puede nombrar tools y `layer_id`) y `ORCHESTRATOR_DEBUG` (logs de servidor) son independientes.
 - Header `x-opencode-session` para el proveedor OpenCode Go.
