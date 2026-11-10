@@ -17,6 +17,8 @@
  *     reemplaza por drivers/postgres.js sin tocar al orquestador.
  */
 
+import { getDbSignal } from "../context.js";
+
 /**
  * @param {{ url: string, serviceKey: string }} config
  * @returns {{ rpc: Function, query: Function }}
@@ -34,17 +36,20 @@ export function createDriver(config) {
    * Llama a una función RPC (Postgres SECURITY DEFINER).
    * @param {string} name Nombre de la RPC (sin prefijo de esquema; se resuelve como "chat.<name>")
    * @param {object} params Parámetros nombrados (snake-case → coincidan con la firma PL/pgSQL)
+   * @param {{signal?: AbortSignal}} [opts]
    * @returns {Promise<any>} Resultado JSON (puede ser objeto, array, etc.)
    */
-  async function rpc(name, params = {}) {
+  async function rpc(name, params = {}, opts = {}) {
     // Pre-pender esquema "chat" salvo que el llamador ya lo haya incluido.
     const fnName = name.includes(".") ? name : `chat.${name}`;
     const url = `${baseUrl}/rpc/${encodeURIComponent(fnName.split(".").pop())}`;
+    const signal = opts.signal || getDbSignal() || undefined;
 
     const res = await fetch(url, {
       method: "POST",
       headers,
       body: JSON.stringify(params),
+      signal,
     });
 
     if (!res.ok) {
@@ -77,7 +82,8 @@ export function createDriver(config) {
       }
     }
     const url = `${baseUrl}/${encodeURIComponent(table)}?${qs.toString()}`;
-    const res = await fetch(url, { method: "GET", headers });
+    const signal = opts.signal || getDbSignal() || undefined;
+    const res = await fetch(url, { method: "GET", headers, signal });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
       throw new Error(`Supabase query ${table} falló (${res.status}): ${text}`);

@@ -19,12 +19,16 @@ const MAX_LIMIT = 50;
  * Envuelve una promesa con un timeout.
  * @param {Promise<any>} promise
  * @param {number} ms
+ * @param {AbortController|null} [controller] Se aborta al vencer el timeout.
  * @returns {Promise<any>}
  */
-function withTimeout(promise, ms) {
+function withTimeout(promise, ms, controller = null) {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(
-      () => reject(new Error(`La RPC excedió el timeout de ${ms}ms.`)),
+      () => {
+        controller?.abort();
+        reject(new Error(`La RPC excedió el timeout de ${ms}ms.`));
+      },
       ms
     );
     promise.then(

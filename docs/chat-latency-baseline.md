@@ -72,6 +72,40 @@ post-procesamiento. La instrumentación es la del Sprint 25-B
 6. **L2 (síntesis) costó ~2,1 s** en el único caso que pasó por el orquestador
    y llegó a la respuesta final.
 
+## Fix de proximidad (037)
+
+La consulta original de `count_near_layer`/`aggregate_near_layer` castea ambos
+lados a `geography`:
+
+```sql
+ST_DWithin(s.geom::geography, t.geom::geography, 1000)
+```
+
+Eso impide usar los GIST existentes sobre `geom`. El plan actual muestra
+`Seq Scan on hidrografia` y `Join Filter: st_dwithin(...::geography...)`.
+
+| Consulta | Antes (muestra 50) | Después (920) | Mejora |
+|---|---:|---:|---:|
+| `count_near_layer` | 9.541 ms | 580 ms | ~16× |
+| `aggregate_near_layer` | 9.306 ms | 759 ms | ~12× |
+
+La extrapolación de la muestra de 50 a los 920 derechos era ~175 s, lo que
+explica el timeout del SQL Editor y las consultas huérfanas.
+
+**Fix preparado** en `db/migrations/037_proximity_geography.sql`:
+
+- Índice GIST funcional `((geom::geography))` en las tablas objetivo de
+  proximidad (`hidrografia`, glaciares, humedales, lagunas, salares,
+  `agua_superficial`).
+- Funciones reescritas para proyectar `geom::geography AS geog` y comparar
+  contra `t.geog`, de modo que el planner use el índice.
+- `statement_timeout = 5s` en las funciones `chat.*` y `public.*`.
+- `AbortSignal` en el driver Supabase para que el timeout del cliente aborte
+  también la request HTTP.
+
+Pendiente: aplicar `037` en Supabase y re-medir el caso
+`core-proximidad-derechos-rio` contra producción.
+
 ## Cómo reproducir
 
 ```bash

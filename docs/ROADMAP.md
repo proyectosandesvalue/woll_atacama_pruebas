@@ -1,7 +1,7 @@
 # ROADMAP.md — Plan de sprints
 
 > **Fuente de verdad del roadmap.** Se actualiza al inicio y al cierre de cada sesión de trabajo.
-> Última actualización: 2026-11-09.
+> Última actualización: 2026-11-10.
 >
 > **Este roadmap es dinámico.** Se modifica cada vez que aparece un hallazgo nuevo,
 > se cierra un sprint, se descubre un bug estructural, o cambia una decisión. Ninguna
@@ -1032,6 +1032,15 @@ y eliminación.
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
+### 2026-11-10
+- ✅ **Fix de proximidad (migración 037)**.
+  - EXPLAIN actual: `Seq Scan on hidrografia` + cast geography; muestra de 50 derechos: 9,5 s; extrapolación 920: ~175 s.
+  - Opción A: índice funcional `((geom::geography))` + proyección `geog`; count 580 ms, aggregate 759 ms; índice usado.
+  - Migración 037: índices en tablas objetivo, funciones reescritas y `statement_timeout=5s`.
+  - `AbortSignal` en `server/db/context.js`, `supabase.js` y `withTimeout`; tests.
+  - Pendiente: aplicar 037 en Supabase y re-medir `core-proximidad-derechos-rio`.
+- 📝 Próximo: aplicar 037, re-medir, y seguir con el bloque de concurrencia 20–50 (rate limit/caché/load test).
+
 ### 2026-11-09
 - ✅ **Catálogo satelital Copernicus (Sprint 44)**.
   - 16 capas nuevas con ficha, leyenda y selector de fecha: 10 en Agricultura, 2 en Clima, 3 en Agua y 1 en Minería.
@@ -1270,7 +1279,7 @@ Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de 
 - [ ] **Vercel cache de estáticos.**
 
 - [X] **Sprint 39: capas del chat en el sidebar izquierdo.**
-- [ ] **Optimizar `count_near_layer` (proximidad).** Timeout con `derechos_agua_2025` (920 filas) × `red_hidrografica`. Se ejecuta el pipeline `proximidad_conteo` pero la RPC tarda >8s. Fix: índice GIST (verificar), limitar distancia máxima, o cachear resultados. Sprint corto (2-3h). Urgencia: media (el sistema degrada elegantemente).
+- [ ] **Optimizar `count_near_layer` (proximidad).** `derechos_agua_2025` (920 filas) × `hidrografia`: la consulta original tarda ~175 s (muestra 50: 9,5 s) por el cast a geography. Fix preparado en `db/migrations/037_proximity_geography.sql`: índice GIST funcional, funciones con `geog` y `statement_timeout=5s`; prueba en transacción 580/759 ms. Pendiente aplicar en Supabase y re-medir. Urgencia: alta.
 
 - [ ] **Panel admin para config del chat (Sprint 15).** La migración 024
       agregó 4 tablas (`admin.unavailable_data`, `admin.prompt_templates`,

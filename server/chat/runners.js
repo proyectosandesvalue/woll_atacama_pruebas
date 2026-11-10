@@ -9,6 +9,7 @@ import {
   TOOL_NAMES,
 } from "./tools/index.js";
 import { normalizeArgs, withTimeout, RPC_TIMEOUT_MS } from "./tools/_helpers.js";
+import { runWithDbSignal } from "../db/context.js";
 
 /**
  * Tools que NO requieren 'layer_id' en sus argumentos.
@@ -44,7 +45,12 @@ export async function runTool(name, rawArgs) {
   }
 
   try {
-    const result = await withTimeout(fn(args), RPC_TIMEOUT_MS);
+    const controller = new AbortController();
+    const result = await withTimeout(
+      runWithDbSignal(controller.signal, () => fn(args)),
+      RPC_TIMEOUT_MS,
+      controller
+    );
     return { ok: true, result };
   } catch (err) {
     return { ok: false, error: String(err?.message || err) };
