@@ -14,6 +14,7 @@
 
 import { getDB } from "../db/pool.js";
 import { retrieveLayers, splitCatalog } from "./layer-retrieval.js";
+import { getCatalog } from "./catalog.js";
 
 /** Log de diagnóstico: activar con ORCHESTRATOR_DEBUG=1 */
 const DEBUG = /^(1|true|yes)$/i.test(process.env.ORCHESTRATOR_DEBUG || "");
@@ -246,7 +247,7 @@ export async function buildSystemPrompt(userText = "", history = []) {
   // ── 1. Catálogo (sin cambios) ─────────────────────────────
   let catalog = [];
   try {
-    catalog = (await db.rpc("chat_catalog")) ?? [];
+    catalog = await getCatalog();
   } catch {
     catalog = [];
   }

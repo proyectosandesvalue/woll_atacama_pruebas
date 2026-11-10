@@ -13,12 +13,12 @@
 
 import { runOrchestrator } from "../chat/orchestrator.js";
 import { validateChatInput } from "../chat/input-validator.js";
-import { checkRateLimit } from "../chat/rate-limiter.js";
-import { isLatam } from "../chat/geo-filter.js";
+import { checkChatRateLimit } from "../chat/rate-limiter.js";
 import { scopeFilter } from "../chat/scope-filter.js";
 import { classifyDomain } from "../chat/domain-classifier.js";
 import { route } from "../chat/router.js";
 import { getDB } from "../db/pool.js";
+import { getCatalog } from "../chat/catalog.js";
 import { retrieveLayers } from "../chat/layer-retrieval.js";
 import { detectUnavailable, buildUnavailableNotice,} from "../chat/unavailable.js";
 import { checkCostGuard, recordLLMCall } from "../chat/cost-guard.js";
@@ -32,9 +32,6 @@ import { randomBytes } from "node:crypto";
 function generateErrorId() {
   return randomBytes(4).toString("hex");
 }
-
-const LATAM_LIMIT = { perMinute: 20, perBurst: 5 };
-const NON_LATAM_LIMIT = { perMinute: 3, perBurst: 1 };
 
 const MSG_OUT_OF_SCOPE =
   "No puedo responder esa pregunta. Soy un asistente especializado " +
@@ -92,10 +89,12 @@ export async function handleChat(body, ctx = {}) {
     }
 
     // ── Paso 3: rate limiting (saltable para tests) ───────────
-    timing.mark("rate_limit", { skipped: Boolean(ctx.skipRateLimit) });
+    timing.mark("rate_limit", {
+      skipped: Boolean(ctx.skipRateLimit),
+      session: Boolean(sessionId),
+    });
     if (!ctx.skipRateLimit) {
-      const limits = isLatam(country) ? LATAM_LIMIT : NON_LATAM_LIMIT;
-      const rate = checkRateLimit(ip, limits.perMinute, limits.perBurst);
+      const rate = checkChatRateLimit({ ip, sessionId, country });
 
       if (!rate.ok) {
         timing.setMeta({ status: 429, reason: "rate_limit" });
@@ -121,8 +120,7 @@ export async function handleChat(body, ctx = {}) {
     let catalogContext = null;
     let catalogLayers = 0;
     try {
-      const db = await getDB();
-      const catalog = (await db.rpc("chat_catalog")) ?? [];
+      const catalog = await getCatalog();
       const { layers: retrieved } = retrieveLayers(text, catalog, 6);
       catalogLayers = retrieved.length;
       if (retrieved.length > 0) {
@@ -275,19 +273,28 @@ export async function handleChat(body, ctx = {}) {
     const isConfigError =
       typeof err?.message === "string" &&
       err.message.includes("Variable de entorno");
+    const isBusy = err?.code === "LLM_BUSY" || err?.status === 503;
 
-    const status = isConfigError ? 503 : 500;
-    timing.setMeta({ status, error: errInfo.name });
+    const status = isConfigError || isBusy ? 503 : 500;
+    timing.setMeta({
+      status,
+      error: errInfo.name,
+      reason: isBusy ? "llm_busy" : isConfigError ? "config" : "internal",
+    });
     timing.mark("error");
     return {
       status,
       body: {
-        error:
-          "Ocurrió un error procesando tu consulta. " +
-          "Intentá de nuevo en unos segundos. " +
-          "Si persiste, reportá el código de error al equipo.",
+        error: isBusy
+          ? "El asistente está con alta demanda. Intentá de nuevo en unos segundos."
+          : "Ocurrió un error procesando tu consulta. " +
+            "Intentá de nuevo en unos segundos. " +
+            "Si persiste, reportá el código de error al equipo.",
         errorId,
       },
+      ...(isBusy
+        ? { headers: { "Retry-After": String(err?.retryAfterSeconds || 5) } }
+        : {}),
     };
   } finally {
     timing.finish();

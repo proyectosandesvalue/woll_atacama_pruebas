@@ -16,7 +16,7 @@ import { buildSystemPrompt } from "./prompts.js";
 import { buildChartsFromHistory } from "./charts.js";
 import { compact, buildGeojsonLayersFromCtx, buildEvidence } from "./evidence.js";
 import { maybeFetchFeaturesForStyle } from "./post-process.js";
-import { getDB } from "../db/pool.js";
+import { getCatalog } from "./catalog.js";
 
 const DEFAULT_BUDGET_MS = 8000;
 const DEFAULT_MAX_ITERATIONS = 3;
@@ -234,8 +234,7 @@ async function finish(reply, ctx, messages, userText = "", timing = null) {
   let citations = [];
   let coverageWarnings = [];
   try {
-    const db = await getDB();
-    const catalog = (await db.rpc("chat_catalog")) ?? [];
+    const catalog = await getCatalog();
     const evidence = await buildEvidence(ctx, userText, catalog);
     citations = evidence.citations;
     coverageWarnings = evidence.coverageWarnings;

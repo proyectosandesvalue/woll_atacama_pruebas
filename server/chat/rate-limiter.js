@@ -22,6 +22,8 @@
  *   Cuando el tráfico crezca, migrar a Upstash Redis o similar.
  */
 
+import { isLatam } from "./geo-filter.js";
+
 const WINDOW_MS = 60 * 1000;        // ventana principal: 60s
 const BURST_WINDOW_MS = 10 * 1000;  // ventana de ráfaga: 10s
 
@@ -104,6 +106,57 @@ export function checkRateLimit(ip, maxPerMinute, maxPerBurst) {
   entry.burstTimestamps.push(now);
 
   return { ok: true };
+}
+
+/**
+ * Límites del chat para 20-50 usuarios concurrentes.
+ *
+ * - IP: generoso para NAT institucional (20-50 usuarios pueden compartir IP).
+ * - Sesión: más estricto, pero el sessionId es generado por el cliente y
+ *   puede rotarse; la IP y el tope global siguen siendo la defensa real.
+ */
+export const CHAT_RATE_LIMITS = {
+  latam: { perMinute: 120, perBurst: 30 },
+  nonLatam: { perMinute: 30, perBurst: 5 },
+  session: { perMinute: 12, perBurst: 4 },
+};
+
+/**
+ * Rate limit en capas: IP + sesión.
+ *
+ * @param {{ip: string, sessionId?: string|null, country?: string}} opts
+ * @returns {{ok: true} | {ok: false, retryAfterSeconds: number}}
+ */
+export function checkChatRateLimit({ ip, sessionId, country }) {
+  const limits = isLatam(country)
+    ? CHAT_RATE_LIMITS.latam
+    : CHAT_RATE_LIMITS.nonLatam;
+
+  const ipResult = checkRateLimit(
+    `ip:${ip}`,
+    limits.perMinute,
+    limits.perBurst
+  );
+
+  let sessionResult = { ok: true };
+  if (sessionId) {
+    const key = `session:${String(sessionId).slice(0, 80)}`;
+    sessionResult = checkRateLimit(
+      key,
+      CHAT_RATE_LIMITS.session.perMinute,
+      CHAT_RATE_LIMITS.session.perBurst
+    );
+  }
+
+  if (ipResult.ok && sessionResult.ok) return { ok: true };
+
+  return {
+    ok: false,
+    retryAfterSeconds: Math.max(
+      ipResult.ok ? 0 : ipResult.retryAfterSeconds || 1,
+      sessionResult.ok ? 0 : sessionResult.retryAfterSeconds || 1
+    ),
+  };
 }
 
 /**

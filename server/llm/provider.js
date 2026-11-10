@@ -13,6 +13,7 @@
 import { getLLMConfig, getFallbackConfig } from "./config.js";
 import { createProvider as createOpenAICompatible } from "./drivers/openai-compatible.js";
 import { createProvider as createVertexOpenAI } from "./drivers/vertex-openai.js";
+import { createSemaphore } from "./semaphore.js";
 
 const DRIVERS = {
   "openai-compatible": createOpenAICompatible,
@@ -20,6 +21,12 @@ const DRIVERS = {
 };
 
 let _llm = null;
+
+const llmSemaphore = createSemaphore({
+  max: Number(process.env.LLM_MAX_CONCURRENCY) || 4,
+  maxQueue: Number(process.env.LLM_MAX_QUEUE) || 20,
+  timeoutMs: Number(process.env.LLM_QUEUE_TIMEOUT_MS) || 15000,
+});
 
 /**
  * Determina si un error es "recuperable con fallback".
@@ -55,28 +62,33 @@ function createWrapper(primaryConfig, fallbackConfig) {
 
   return {
     async chat(args) {
+      await llmSemaphore.acquire();
       try {
-        return await primary.chat(args);
-      } catch (err) {
-        if (!fallback) throw err;
-        if (!isFallbackable(err)) throw err;
-
-        console.warn(
-          `[llm] Modelo principal (${primaryConfig.model}) falló. ` +
-            `Reintentando con fallback (${fallbackConfig.model})... ` +
-            `Error: ${err?.message || err}`
-        );
-
         try {
-          const result = await fallback.chat(args);
-          console.log(`[llm] Fallback (${fallbackConfig.model}) respondió OK.`);
-          return result;
-        } catch (fallbackErr) {
-          console.error(
-            `[llm] Fallback también falló: ${fallbackErr?.message || fallbackErr}`
+          return await primary.chat(args);
+        } catch (err) {
+          if (!fallback) throw err;
+          if (!isFallbackable(err)) throw err;
+
+          console.warn(
+            `[llm] Modelo principal (${primaryConfig.model}) falló. ` +
+              `Reintentando con fallback (${fallbackConfig.model})... ` +
+              `Error: ${err?.message || err}`
           );
-          throw err;
+
+          try {
+            const result = await fallback.chat(args);
+            console.log(`[llm] Fallback (${fallbackConfig.model}) respondió OK.`);
+            return result;
+          } catch (fallbackErr) {
+            console.error(
+              `[llm] Fallback también falló: ${fallbackErr?.message || fallbackErr}`
+            );
+            throw err;
+          }
         }
+      } finally {
+        llmSemaphore.release();
       }
     },
   };

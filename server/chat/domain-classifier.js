@@ -389,6 +389,7 @@ export async function classifyDomain(text, sessionId = null, catalogContext = nu
     setInCache(key, result);
     return result;
   } catch (err) {
+    if (err?.code === "LLM_BUSY") throw err;
     log.warn(`Clasificador falló (fail-open → IN, confidence 0): ${err?.message || err}`);
     return { domain: "IN", intent: "dato_simple", pipeline: null, slots: null, confidence: 0 };
   }
