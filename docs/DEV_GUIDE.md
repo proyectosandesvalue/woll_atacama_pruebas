@@ -91,6 +91,10 @@ npm run dev:proxy  # terminal 2
 
 El frontend detecta que está en `localhost` y usa el proxy de 3001; en producción sigue usando `/api/proxy` relativo. Esto evita que `vercel dev` ejecute una Function por cada tile.
 
+> **Vercel + Supabase son solo demo/staging.** El despliegue final es un VPS
+> propio (ADR 005, Sprint 26). No optimizar límites de Hobby ni agregar
+> infraestructura específica de Vercel que no sea portable.
+
 3.2. Lint
 bash
 npm run lint

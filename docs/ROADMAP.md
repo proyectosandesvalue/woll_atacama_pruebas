@@ -3,6 +3,8 @@
 > **Fuente de verdad del roadmap.** Se actualiza al inicio y al cierre de cada sesión de trabajo.
 > Última actualización: 2026-11-10.
 >
+> **Infraestructura (2026-11-10):** el destino final es un **VPS propio** (Node persistente + PostgreSQL/PostGIS/pgvector + Nginx/Caddy + proxy persistente). **Vercel + Supabase son solo demo/staging**: Supabase alcanzó su límite de almacenamiento y Vercel Hobby no alcanza para producción. Las optimizaciones serverless son para la demo; no invertir en Upstash/Redis/cron para Vercel salvo que sea portable. **Sprint 26 es la prioridad de producción.** Ver ADR 005.
+>
 > **Este roadmap es dinámico.** Se modifica cada vez que aparece un hallazgo nuevo,
 > se cierra un sprint, se descubre un bug estructural, o cambia una decisión. Ninguna
 > sección es definitiva. Si algo no está acá, no se hace. Si algo urge, se agrega al
@@ -80,7 +82,7 @@
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
-| 26 | Plataforma propia (Postgres + Docker + proxy) | ⏳ pending | alta | 38-45h | 23, 24 |
+| 26 | Plataforma propia (Postgres + Docker + proxy) | ⏳ pending (prioridad alta; decisión tomada) | alta | 38-45h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
@@ -532,8 +534,10 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 26 — Plataforma propia (épica)
 
-**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 38-45h · **Dependencias**: 23, 24
+**Estado**: ⏳ pending (prioridad alta; decisión tomada) · **Prioridad**: alta · **Duración**: 38-45h · **Dependencias**: 23, 24
 **Requiere**: spec madre (`docs/specs/26-plataforma/00-spec-madre.md`) y una spec por tramo.
+
+**Decisión 2026-11-10 (ADR 005)**: VPS propio para producción; Vercel + Supabase quedan como demo/staging. Supabase está en el límite de almacenamiento (~913 MB) y Vercel Hobby no es comercial ni suficiente. No se agrega infraestructura específica de Vercel que no sea portable.
 
 **Objetivo**: ejecutar el sistema completo en infraestructura propia (Postgres con PostGIS y pgvector, API Node persistente, proxy con TLS), idéntico en staging y producción, sin depender de Vercel ni Supabase.
 
@@ -971,7 +975,7 @@ y eliminación.
 
 | ADR | Tema | Origen |
 |---|---|---|
-| 005 | Plataforma y hosting (servidor, proxy, Node sin framework o Fastify) | 24-C |
+| 005 | Plataforma y hosting: VPS propio para producción; Vercel + Supabase solo demo (Aceptada 2026-11-10) | 24-C |
 | 006 | Postgres propio: instancia única, schemas `public`/`admin`/`rag`, pgvector | 24-C |
 | 007 | Autenticación de administradores | 24-C |
 | 008 | Entrega por artefactos versionados (reemplaza al 004) | 27-B |
@@ -1045,7 +1049,8 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   - Concurrencia: 10/10 y 20/20 requests 200; p95 5,45 s y 10,03 s en ráfaga; sin 429/503.
   - Fast path de proximidad (`classifier-fast.js`): caso único 2,259 s; 20 concurrentes p95 5,58 s; 30 concurrentes p95 11,33 s.
   - 20 preguntas de orquestador concurrentes: 20/20 200, p95 8,90 s (semáforo/cola funcionando).
-- 📝 Próximo: clasificador general (~1,5 s) y seguimientos; load test 50 con think time; decidir Vercel Pro vs VPS.
+- ✅ **Decisión de infraestructura (ADR 005)**: el destino final es un **VPS propio**; Vercel + Supabase quedan como demo/staging. Supabase llegó a su límite (~913 MB) y Vercel Hobby no alcanza para producción. Las optimizaciones serverless son para la demo.
+- 📝 Próximo: **Sprint 26 (VPS)** — ADR 005, spec madre, driver Postgres, servidor Node, proxy persistente y migración de datos. Las optimizaciones Vercel restantes quedan para la demo.
 
 ### 2026-11-09
 - ✅ **Catálogo satelital Copernicus (Sprint 44)**.
@@ -1254,6 +1259,8 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 ## Pendientes inmediatos
 
 Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de cada sesión.
+
+- [ ] **Migración a VPS (Sprint 26) — prioridad de producción.** Supabase está en el límite de almacenamiento (~913 MB) y Vercel Hobby no alcanza. Vercel + Supabase son demo/staging. No seguir optimizando límites de Hobby; escribir la spec 26 y ejecutar el corte (Node persistente + PostgreSQL/PostGIS/pgvector + Nginx + proxy persistente).
 
 - [X] **H1 — `get_layer_features` envía hasta 1000 features al LLM.** Contradice la spec 06. Resuelto en Sprint 23-A.
 - [X] **H2 — Geo-filter con `isLatam(undefined) = false`.** Aplica límite estricto sin header. Resuelto en Sprint 23-C.

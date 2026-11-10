@@ -75,6 +75,7 @@
 - Lint: resueltos los 9 errores preexistentes (`flatpickr` global, `while (true)` en el orquestador, escapes innecesarios en adapters). `npm run lint` queda en 0 errores.
 
 ### Changed
+- **Decisión de infraestructura (ADR 005):** el destino final es un VPS propio; Vercel + Supabase quedan como demo/staging. Supabase en límite (~913 MB) y Vercel Hobby insuficiente. No se invierte en infraestructura específica de Vercel no portable.
 - Documentación sincronizada con el código: 13 tools (9 de capas + 4 de clima), 71 GeoJSON, Node 20.6+, sprints 06/23/06-B.7 cerrados en el roadmap.
 - `package.json` v2.1.0: scripts `catalog`, `smoke:db`, `smoke:chat`, `eval:chat` y `lint:fix` (antes solo documentados en `AGENTS.md`).
 - `README.md` y `docs/ROADMAP.md`: bloques de código, encabezados y tablas reparados.

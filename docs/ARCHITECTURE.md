@@ -1,7 +1,7 @@
 # ARCHITECTURE.md — Arquitectura actual
 
 > Descripción del sistema actual. Se actualiza cuando cambia algo estructural.
-> Última revisión: 2026-10-23.
+> Última revisión: 2026-11-10.
 
 ---
 
@@ -33,34 +33,51 @@
 
 ## 2. Ambientes
 
-### 2.1. Producción
+> **Decisión 2026-11-10 (ADR 005):** la producción final es un **VPS propio**
+> (Node persistente + PostgreSQL/PostGIS/pgvector + Nginx/Caddy + proxy
+> persistente). **Vercel + Supabase son solo demo/staging**: Supabase llegó a
+> su límite de almacenamiento y Vercel Hobby no alcanza para producción.
 
-- **Repo**: (repo privado de producción)
-- **Vercel**: proyecto de producción
-- **Supabase**: proyecto de producción
-- **URL**: (dominio real)
+### 2.1. Producción final (VPS) — objetivo del Sprint 26
 
-**Nota**: la migración 024 (admin config) y 025 (admin rollback) están aplicadas solo en staging. En producción se aplicarán cuando se migre todo al entorno real (Sprint 26).
+- **API:** Node persistente (`server/index.js`, http o Fastify).
+- **Base de datos:** PostgreSQL + PostGIS + pgvector en el VPS; driver
+  `pg.Pool` (`server/db/drivers/postgres.js`).
+- **Borde:** Nginx/Caddy con TLS, compresión, caché de estáticos/GeoJSON y
+  `limit_req`.
+- **Proxy:** persistente, con caché en disco/Redis y reutilización de
+  conexiones para Copernicus/tiles.
+- **Operación:** backups, healthchecks, logs y monitoreo.
+- **Estado:** pendiente de migración (Sprint 26); ver `docs/DECISIONS/005-plataforma-hosting-vps.md`.
 
-### 2.2. Pruebas (staging)
+### 2.2. Demo/staging actual (Vercel + Supabase)
 
-- **Repo**: `proyectosandesvalue/woll_atacama_pruebas`
-- **Vercel**: `visor_atacama_pruebas`
-- **Supabase**: `visor_atacama_pruebas`
-- **URL**: `https://wollatacamapruebas.vercel.app`
+- **Repo:** `proyectosandesvalue/woll_atacama_pruebas`
+- **Vercel:** proyecto `woll_atacama_pruebas` (plan Hobby; solo demo)
+- **Supabase:** proyecto de pruebas; ~913 MB, en el límite del plan
+- **URL:** `https://wollatacamapruebas.vercel.app`
+
+Limitaciones de esta etapa:
+
+- Rate limit, caché y semáforo LLM **por instancia** (serverless).
+- Cold starts y `maxDuration` efectivo menor que el configurado.
+- El proxy de Copernicus ejecuta una Function por tile.
+- Supabase REST/PostgREST, sin pool TCP propio.
+- CDN de Vercel útil para la demo, no parte de la arquitectura final.
 
 ### 2.3. Local (dev)
 
-- **Repo**: `woll_atacama_pruebas` en tu máquina
-- **Vercel CLI**: `npx vercel dev` (para testear `/api/chat` localmente)
+- **Repo:** `woll_atacama_pruebas` en tu máquina
+- **Vercel CLI:** `npx vercel dev` (para testear `/api/chat` localmente)
 - **`.env.staging`**: credenciales de Supabase staging
 - **Vertex AI**: requiere `gcloud auth application-default login` (ADC local) o `GOOGLE_APPLICATION_CREDENTIALS_JSON` (Service Account).
 
-**Reglas**:
-- Producción y pruebas tienen **Supabase separado**.
-- Los repos **no se sincronizan**.
-- La promoción a producción es **manual**.
+**Reglas:**
+
+- **Vercel + Supabase no son producción**: son demo/staging para el cliente.
+- La producción final usa el VPS y PostgreSQL propio; el corte se define en el Sprint 26.
 - Los secretos **nunca** están en código.
+- No agregar infraestructura específica de Vercel/Supabase que no sea portable al VPS sin ADR.
 
 ---
 
@@ -87,13 +104,13 @@
 - **Leyendas:** `js/utils/legendUtils.js` renderiza `gradient`, `note` e `items`.
 - **Local:** `scripts/dev-proxy.mjs` + `js/config/proxy.js`; producción usa `/api/proxy` relativo.
 
-### Backend (Vercel Functions)
+### Backend (demo/staging: Vercel Functions; final: Node en VPS)
 
 - **Node.js** (runtime de Vercel).
 - **fetch** nativo (Node 18+).
 - **Dependencias de runtime acotadas**: `pg` (driver PostgreSQL), `@google-cloud/vertexai` y `google-auth-library` (Vertex AI), `csv-parser` (ingesta). El parseo de PDF (`pdfjs-dist`) es **devDependency** y solo lo usa la CLI de ingesta, nunca `api/`.
 
-### Base de datos
+### Base de datos (demo/staging: Supabase; final: PostgreSQL/PostGIS/pgvector en VPS)
 
 - **Supabase** (PostgreSQL + PostGIS).
 - **RPCs tipadas** (`chat.*` + wrappers `public.chat_*`).

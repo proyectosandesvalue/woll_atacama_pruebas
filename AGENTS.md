@@ -4,6 +4,8 @@
 
 Plataforma Territorial Water Oriented Living Lab Atacama: WebGIS para la Región de Atacama, Chile. Archivos estáticos (sin build) + Vercel Functions para el chat IA + Supabase PostGIS + LLM OpenAI-compatible.
 
+**Destino final (2026-11-10):** el despliegue definitivo es un **VPS propio** (Node persistente + PostgreSQL/PostGIS/pgvector + Nginx/Caddy + proxy persistente). **Vercel + Supabase son solo demo/staging**: Supabase alcanzó su límite de almacenamiento y Vercel Hobby no alcanza para producción. Las optimizaciones serverless (rate limit/caché/semáforo por instancia, `maxDuration` de Hobby, Supabase REST, CDN) son para la demo; no invertir en infraestructura específica de Vercel (Upstash/Redis, cron, colas) salvo que sea portable. Ver ADR 005 y Sprint 26.
+
 **Antes de cambiar código, lee en este orden:**
 
 1. `docs/CONTRACT.md` — reglas que no se rompen.
@@ -83,6 +85,7 @@ Reglas:
 - **Ramas:** un solo dev, se commitea **directo a `main`**. Sin `develop`.
 - **Commits:** `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`; un commit por sub-sprint con el ID (`feat: sprint-06-A backend geoespacial`).
 - **Migraciones:** `db/migrations/NNN_nombre.sql`, idempotentes. Nunca editar una ya aplicada; crear una nueva.
+- **Infraestructura:** no agregar dependencias o servicios específicos de Vercel/Supabase que no sean portables al VPS sin un ADR que lo justifique.
 - **Chat:** el LLM nunca escribe SQL; solo invoca RPCs tipadas.
 - **RAG:** la ingesta corre en `scripts/` (nunca en `api/`); los PDFs viven en `rag/inbox/` fuera de git y todo fragmento se marca `untrusted`. El corpus se declara en `rag/manifest.json` con licencia y `copyright_cleared: true`.
 - **Proxy externo:** `/api/proxy` es cerrado (allowlist en `server/proxy/services.js`); `INSTANCE_ID` y `CLIENT_SECRET` viven solo en el servidor. Ver `docs/integrations/proxy-servicios-externos.md`.
@@ -95,7 +98,7 @@ Reglas:
 
 ## Stack
 
-Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGLHeatMap, Turf.js 6.5.0 (solo `bbox`), DOMPurify 3.0.3, Chart.js 4.4.0 (chat). Vanilla JS ES Modules, CSS custom properties (tema claro/oscuro). Backend: Vercel Functions + Supabase + LLM OpenAI-compatible. Detalle en `docs/ARCHITECTURE.md` §3.
+Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGLHeatMap, Turf.js 6.5.0 (solo `bbox`), DOMPurify 3.0.3, Chart.js 4.4.0 (chat). Vanilla JS ES Modules, CSS custom properties (tema claro/oscuro). Backend demo/staging: Vercel Functions + Supabase + LLM OpenAI-compatible. Producción final: Node persistente + PostgreSQL/PostGIS/pgvector en VPS (ADR 005). Detalle en `docs/ARCHITECTURE.md` §3.
 
 ## Comandos
 
@@ -179,6 +182,8 @@ Los prompts (`chat.system`, `chat.classifier`), las settings (`chat.router.*`, `
 - El header del runner imprime estos flags, el modelo y las versiones de prompt.
 
 ## Vercel
+
+**Vercel es solo demo/staging.** El despliegue final es el VPS (ADR 005, Sprint 26); no optimizar límites de Hobby como si fueran producción.
 
 `vercel.json` aplica la config de Functions **solo a `api/chat.js`** (`maxDuration: 300`); el resto de endpoints (`arclim-geojson`, `stations-map`, `station-series`, etc.) usa los defaults de Vercel. `excludeFiles` excluye `geojson/`, `db/`, `scripts/`, `docs/`, `help.html`, `session_export.md`, `skills-lock.json`.
 

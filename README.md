@@ -2,6 +2,8 @@
 
 > Plataforma WebGIS territorial para la Región de Atacama, Chile, potenciada con Inteligencia Artificial.
 
+> **Infraestructura (2026-11-10):** **Vercel + Supabase son solo demo/staging.** El despliegue final será un **VPS propio** (Node persistente + PostgreSQL/PostGIS/pgvector + Nginx + proxy persistente). Supabase está en el límite de almacenamiento y Vercel Hobby no alcanza para producción. Ver ADR 005 y Sprint 26.
+
 ![Version](https://img.shields.io/badge/version-2.1-blue.svg)
 ![License](https://img.shields.io/badge/license-Proprietary-red.svg)
 
@@ -203,7 +205,7 @@ No conviene instalar decenas de skills a la vez: la lista que ve el modelo crece
 
 ## Tecnologías
 
-Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGL Heatmap, Turf.js (solo `bbox`), DOMPurify, Chart.js; Vanilla JS ES Modules y CSS custom properties; Vercel Functions, Supabase (PostGIS) y Vertex AI (Gemini 3.1 Flash-Lite). Versiones y detalle en `docs/ARCHITECTURE.md` §3.
+Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGL Heatmap, Turf.js (solo `bbox`), DOMPurify, Chart.js; Vanilla JS ES Modules y CSS custom properties. **Demo/staging:** Vercel Functions + Supabase (PostGIS) + Vertex AI. **Producción final:** VPS con Node persistente y PostgreSQL/PostGIS/pgvector (ADR 005). Versiones y detalle en `docs/ARCHITECTURE.md` §3.
 
 ## Configuración básica
 
@@ -216,7 +218,11 @@ Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGL Heatmap, Turf.js (sol
 
 ## Despliegue
 
-Push a `main` → Vercel despliega automáticamente (~30 s). Las variables de entorno se configuran en Vercel → Settings → Environment Variables (lista en `.env.example`). La promoción a producción sigue el ADR 004.
+> **Vercel es solo demo/staging.** El despliegue final es un VPS propio (Sprint 26, ADR 005); no optimizar límites de Hobby como producción.
+
+**Demo/staging:** push a `main` → Vercel despliega automáticamente (~30 s). Las variables de entorno se configuran en Vercel → Settings → Environment Variables (lista en `.env.example`).
+
+**Producción final:** VPS con Node persistente, PostgreSQL/PostGIS/pgvector, Nginx/Caddy y proxy persistente. La promoción y el corte se definen en el Sprint 26/ADR 005.
 
 Variables de entorno relevantes (ver `.env.example` para la lista completa):
 
