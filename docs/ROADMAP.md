@@ -1039,8 +1039,11 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   - Migración 037: índices en tablas objetivo, funciones reescritas y `statement_timeout=5s`.
   - `AbortSignal` en `server/db/context.js`, `supabase.js` y `withTimeout`; tests.
   - **037 aplicado en Supabase**; RPC directo: count 1.799 ms, aggregate 785 ms.
-  - Caso remoto `core-proximidad-derechos-rio`: 19.743 ms → **11.211 ms**, 1/1 PASS. El resto es LLM/orquestación.
-- 📝 Próximo: bloque de concurrencia/LLM (clasificador, semáforo, caché, rate limit y load test 20–50).
+  - Caso remoto `core-proximidad-derechos-rio`: 19.743 ms → **11.211 ms**, 1/1 PASS.
+  - Router de proximidad corregido (`layer_id_targets` array + prompt): **3.763 ms**, ruta `router`.
+  - Caché de `chat_catalog` (5 min), rate limit IP+sessión (120/30 y 12/4) y semáforo LLM (4 por instancia, cola 20).
+  - Concurrencia: 10/10 y 20/20 requests 200; p95 5,45 s y 10,03 s en ráfaga; sin 429/503.
+- 📝 Próximo: optimizar clasificador (~1,5 s), probar 30–50, decidir Vercel Pro vs VPS.
 
 ### 2026-11-09
 - ✅ **Catálogo satelital Copernicus (Sprint 44)**.

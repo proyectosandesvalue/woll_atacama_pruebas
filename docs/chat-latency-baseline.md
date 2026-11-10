@@ -113,6 +113,30 @@ explica el timeout del SQL Editor y las consultas huérfanas.
 - El resto del tiempo ya no es la DB: es clasificador + LLM L1/L2 +
   orquestación + red. La consulta de proximidad dejó de ser el cuello.
 
+### Router de proximidad y caché
+
+El clasificador no extraía `layer_id_targets` como array; el router no
+matcheaba `proximidad_conteo` y caía al orquestador. Corregido el prompt y la
+normalización:
+
+- Caso `core-proximidad-derechos-rio`: **3.763 ms**, ruta `router`,
+  pipeline `proximidad_conteo`.
+- Etapas del request (router hit): catálogo 371 ms, clasificador 1.504 ms,
+  router/tool 1.204 ms; total servidor ~3,1 s.
+- Se agregó caché de `chat_catalog` (5 min) para no consultarlo en
+  `handleChat`, `buildSystemPrompt` y `buildEvidence` del mismo request.
+
+### Prueba de concurrencia (misma pregunta, producción)
+
+| N | 200 | p50 | p95 | Máximo |
+|---:|---:|---:|---:|---:|
+| 10 | 10/10 | 5.146 ms | 5.450 ms | 5.450 ms |
+| 20 | 20/20 | 9.147 ms | 10.028 ms | 10.235 ms |
+
+Sin 429 ni 503. Es una **ráfaga** de 10/20 requests simultáneos, no el régimen
+con think time; el SLO de 25 usuarios con 45-60 s es menos exigente. El
+clasificador (~1,5 s) y la tool de proximidad (~1,2 s) son el costo dominante.
+
 ## Cómo reproducir
 
 ```bash

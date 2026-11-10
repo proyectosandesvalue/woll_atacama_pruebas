@@ -61,6 +61,10 @@
 - `server/db/context.js` + `supabase.js`/`withTimeout`: el `AbortSignal` del timeout ahora aborta la request a PostgREST; tests de contexto y timeout.
 - Prueba en transacción: `count_near_layer` 9.541 ms → 580 ms; `aggregate_near_layer` 9.306 ms → 759 ms.
 - Verificado en producción tras aplicar 037: RPC count 1.799 ms, aggregate 785 ms; caso remoto `core-proximidad-derechos-rio` 19.743 ms → 11.211 ms. El cuello restante es LLM/orquestación.
+- Router de proximidad: `layer_id_targets` se normaliza a array y el prompt incluye un ejemplo consistente. El caso remoto baja a 3.763 ms (ruta `router`).
+- Caché de `chat_catalog` (5 min), rate limit IP+sessión y semáforo LLM con cola/`503 Retry-After`.
+- Concurrencia en producción: 10/10 y 20/20 requests 200; p95 5,45 s y 10,03 s; sin 429/503.
+- Tests: 249 (248 pasan, 1 omitido).
 - Sprint 25 cerrado (25-A/B/C/D/E/F); baseline de latencia y decisión de streaming documentadas.
 
 ### Fixed
