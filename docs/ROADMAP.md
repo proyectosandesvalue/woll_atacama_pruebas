@@ -59,11 +59,11 @@
 | 06-B.7 | Pintado multi-capa del chat | ✅ done | alta | 3-4h | 06-B.2 |
 | 07 | `/api/config` + snapshot | ⏳ pending | alta | 3-4h | — |
 | 08 | Migración a PostGIS (fuente principal) | ⏳ pending | alta | 40-46h | 07 |
-| 09 | Soporte de imágenes raster | 🚫 blocked | media | 2-25h | decisión técnica |
-| 09-A | Spike de rasters (investigación) | ⏳ pending | media | 4-6h | — |
-| 09-B | Implementación de rasters | ⏳ pending (bloqueado por 09-A) | media | 8-20h | 09-A |
-| 09-C | Spike de capas meteorológicas tipo Windy | ⏳ pending | media-alta | 4-6h | — |
-| 09-D | Implementación de capas meteorológicas | ⏳ pending (bloqueado por 09-C) | media-alta | 8-16h | 09-C |
+| 09 | Rasters y capas meteorológicas dinámicas | 🔶 parcial (Copernicus cubre indicadores; NASA/raster pendientes) | media-alta | ~30-50h | decisión técnica |
+| 09-A | Spike/ADR de rasters (semi-resuelto) | 🔶 semi-resuelto | media | 4-6h | — |
+| 09-B | Implementación de rasters (NASA + lectura IMG/TIFF/COG + variables derivadas) | ⏳ pending (bloqueado por 09-A) | media | 12-20h | 09-A |
+| 09-C | Capas meteorológicas dinámicas tipo Windy (viento, nubes, lluvia) | ⏳ pending | media-alta | 10-18h | — (requiere spec) |
+| 09-D | Optimización y variables meteorológicas adicionales | ⏳ pending (depende de 09-C) | media | 4-8h | 09-C |
 | 10 | Vista 3D del visor | ⏳ pending | baja | 20-40h | 08, 09 |
 | 11 | Análisis por Área de Interés (AOI) | ⏳ pending | alta | 15-28h | 08 |
 | 12 | Registro y visualización de indicadores | ⏳ pending | media | 20-33h | 08, 11, 14 |
@@ -76,10 +76,10 @@
 | 19 | APIs externas + CRUD | ⏳ pending | media | 15-25h | 16 |
 | 20 | Adapter real: meteorología | ⏳ pending | baja | 4-6h | 19 |
 | 21 | Adapter real: leyes (BCN) | ⏳ pending | baja | 6-8h | 19 |
-| 22 | Alineación de documentación | ⏳ pending | alta | 3-4h | — |
+| 22 | Alineación de documentación | 🔶 parcial (A-E cerrados; F y ajustes pendientes) | alta | 3-4h | — |
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
-| 25 | Calidad del chat: latencia y evaluación | ⏳ pending | alta | 16h | 23 |
+| 25 | Calidad del chat: latencia y evaluación | 🔶 parcial (25-A/C/D/E cerrados; 25-B/F pendientes) | alta | 16h (4h restantes) | 23 |
 | 26 | Plataforma propia (Postgres + Docker + proxy) | ⏳ pending | alta | 38-45h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
@@ -91,7 +91,7 @@
 | 34 | Refactor de mantenibilidad (frontend) | ⏳ pending | media | 20-25h | 26-D, 28 |
 | 35 | Refactor de estilos CSS | ⏳ pending | media | 8-10h | 34 |
 | 36 | Refactor de configs de capas | ⏳ pending | media | 6-8h | 29-C |
-| 37 | Auditoría y normalización de datos | ⏳ pending | alta | 20-24h | 23 |
+| 37 | Auditoría y normalización de datos | ⏳ pending (diferido) | media | 22-26h | 23 |
 | 40 | Orquestación determinística del chat (épica) | 🔶 parcial (40-C y 40-D.2 cerrados) | alta | 26-31h | 25-A, 25-D |
 | 41 | Recetas de análisis (épica) | ⏳ pending | media | 14-20h + experto | 40-C |
 | 42 | Ingesta de fuentes externas (DGAC, ArClim) | 🔄 parcial (42-A y 42-C completados) | media | 18-28h | 24-A, 24-B |
@@ -259,86 +259,82 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - [ ] **D** — Estilos y popups vía MVT (6h)
 - [ ] **E** — Exportación/descarga desde PostGIS (4h)
 
-### Sprint 09 — Imágenes raster (spike + implementación)
+### Sprint 09 — Rasters y capas meteorológicas dinámicas
 
-**Estado**: 🚫 blocked (esperando decisión técnica) · **Prioridad**: media.
+**Estado**: 🔶 parcial (Copernicus cubre indicadores satelitales; NASA y lectura raster pendientes; 09-C por implementar) · **Prioridad**: media-alta.
 
-**Sub-sprints**:
+**Contexto (2026-11-09)**: el spike 09-A quedó semi-resuelto. Copernicus WMS ya cubre los indicadores satelitales (NDVI, EVI, SAVI, etc.). Queda:
+1. Agregar data NASA vía WMS de mayor resolución (30 m/píxel).
+2. Implementar lectura de archivos raster (IMG, TIFF/COG) para indicadores satelitales y variables derivadas de GIS (pendiente, orientación/aspecto, exposición solar, etc.).
+3. Redefinir 09-C como implementación de capas meteorológicas dinámicas (viento, nubes, lluvia) con `leaflet-velocity` o similar.
 
-#### 09-A: Spike de rasters (4-6h)
+#### 09-A: Spike/ADR de rasters (semi-resuelto)
 
-**Objetivo**: decidir la tecnología para servir rasters en el visor.
+**Estado**: 🔶 semi-resuelto · **Duración restante**: 4-6h · **Dependencias**: ninguna.
 
-**Opciones a evaluar**:
-- **WMS externo** (2-3h): usar un servicio WMS público (IDE Chile, CIREN) para rasters. Simple, pero limitado a lo que ofrezca el servicio.
-- **Google Earth Engine** (8-12h): procesar rasters en la nube, exportar tiles. Potente, pero requiere cuenta GEE.
-- **GeoTIFF / COG** (15-25h): servir archivos GeoTIFF optimizados para la nube (Cloud Optimized GeoTIFF). Control total, pero requiere servidor.
-- **PostGIS Raster** (10-15h): guardar rasters en PostGIS. Integración con las capas vectoriales, pero requiere Postgres propio.
+**Ya resuelto**:
+- Copernicus WMS cubre los indicadores satelitales del visor (NDVI, EVI, EVI2, GNDVI, SAVI, MSAVI2, VARI, MCARI, PSRI, NDYI, ARI_1, NDWI, NDCI, MSI, MDMI, WIW, SWIR).
 
-**Salida**: ADR con la decisión + lista de rasters prioritarios.
+**Pendiente de decisión**:
+- **NASA WMS 30 m/píxel**: evaluar cobertura, licencia, formato, zoom máximo y disponibilidad; definir las capas prioritarias.
+- **Lectura de archivos raster** (IMG, TIFF/COG): evaluar `geotiff.js`, `gdal3.js`/WASM o preprocesamiento; límites de tamaño/memoria en el navegador.
+- **Variables derivadas GIS** (pendiente, orientación/aspecto, exposición solar): decidir si se calculan en cliente (WASM), se preprocesan como COG/PNG o se consultan por WMS.
+- **Sin VPS/BD**: descartar PostGIS Raster y GEE para esta fase; priorizar WMS y archivos estáticos.
+
+**Salida**: ADR con la decisión + lista de 3-5 rasters/variables prioritarias y caso de uso (visualización, análisis o cruce con vectoriales).
 
 **Criterios de aceptación**:
 - ADR aceptado.
-- Lista de 3-5 rasters prioritarios.
-- Caso de uso definido (solo visualización / análisis / cruce con vectoriales).
+- Lista de 3-5 rasters/variables priorizadas.
+- Caso de uso definido y costo estimado de 09-B.
 
-#### 09-B: Implementación de rasters (8-20h)
+#### 09-B: Implementación de rasters (12-20h)
 
 **Estado**: ⏳ pending (bloqueado por 09-A) · **Dependencias**: 09-A.
 
-**Objetivo**: implementar la opción elegida en 09-A.
+**Objetivo**: implementar la decisión de 09-A: NASA WMS, lectura de raster y variables derivadas.
 
 **Tareas**:
-- Implementar la tecnología elegida.
-- Cargar 2-3 rasters de prueba.
-- Integrar con Leaflet.
-- Tool del chat: `get_raster_value(lat, lon, raster_id)`.
+- Integrar las capas NASA WMS de 30 m.
+- Implementar la lectura de IMG/TIFF/COG (cliente o preprocesado) y su visualización en Leaflet.
+- Calcular/mostrar variables derivadas (pendiente, orientación/aspecto, exposición solar) cuando aplique.
+- Tool del chat `get_raster_value(lat, lon, raster_id)` vía WMS `GetFeatureInfo` o metadatos del raster; **sin nuevas tablas**.
+- Documentar el formato de archivo y el flujo de carga.
 
 **Criterios de aceptación**:
-- Los 2-3 rasters se ven en el visor.
-- El chat puede consultar un valor puntual de un raster.
-- Sin regresiones en las capas existentes.
+- 2-3 rasters visibles en el visor.
+- Un TIFF/COG de prueba se lee y se muestra.
+- Una variable derivada (ej. pendiente) se calcula y visualiza.
+- El chat puede consultar un valor puntual.
+- Sin regresiones y sin nuevas tablas.
 
-### Sprint 09-M — Capas meteorológicas tipo Windy (spike + implementación)
+#### 09-C: Capas meteorológicas dinámicas tipo Windy (10-18h)
 
-**Estado**: 🚫 blocked (esperando decisión técnica) · **Prioridad**: media-alta.
+**Estado**: ⏳ pending · **Prioridad**: media-alta · **Dependencias**: ninguna (requiere spec `09-C`).
 
-**Sub-sprints**:
+**Objetivo**: consumir datos de satélites meteorológicos y mostrarlos como capas dinámicas de viento, nubes y lluvia, con animación tipo Windy.
 
-#### 09-M-A: Spike de capas meteorológicas (4-6h)
-
-**Objetivo**: decidir la tecnología para mostrar capas meteorológicas animadas en el visor.
-
-**Opciones a evaluar**:
-- **Windy API** (4-6h): usar el plugin de Leaflet de Windy. Simple, pero requiere API key de Windy.
-- **RainViewer** (2-3h): radar de precipitación gratuito. Simple, pero solo precipitación.
-- **OpenWeatherMap** (4-6h): capas de viento, precipitación, nubes, temperatura. Requiere API key.
-- **Implementación propia** (8-12h): usar Leaflet + datos de NOAA/NASA + animación de partículas. Control total, pero más trabajo.
-- **Radar DGAC** (a confirmar): si la DGAC publica datos de radar en un formato accesible.
-
-**Salida**: ADR con la decisión + lista de variables prioritarias.
+**Alcance**:
+- **Fuente de datos**: evaluar NOAA/NASA/EUMETSAT, GFS/Open-Meteo, RainViewer u otra API; definir licencia, formato y frecuencia en la spec/ADR.
+- **Viento**: `leaflet-velocity` (partículas animadas de velocidad/dirección) o plugin similar.
+- **Nubes y lluvia**: tiles/radar o capas canvas con opacidad, leyenda y control temporal.
+- **UI**: selector de variable, leyenda, play/pause, time slider y opacidad.
+- **Sin nuevas tablas**: datos en vivo o caché en memoria; no se persisten en la BD.
+- **Sin VPS**: APIs/tiles externos y, si hace falta, una Function de Vercel para normalizar datos.
 
 **Criterios de aceptación**:
-- ADR aceptado.
-- Lista de 2-3 variables prioritarias (viento, precipitación, temperatura).
-- Tipo de visualización definido (partículas animadas / radar estático / capas de color).
+- Viento animado con `leaflet-velocity`.
+- Nubes y lluvia conmutables, con opacidad y control de tiempo.
+- Sin regresiones y sin nuevas tablas.
+- Documentar la fuente, licencia y límites de uso.
 
-#### 09-M-B: Implementación de capas meteorológicas (8-16h)
+**Requiere**: `docs/specs/09-C-capas-meteorologicas.md` antes de código.
 
-**Estado**: ⏳ pending (bloqueado por 09-M-A) · **Dependencias**: 09-M-A.
+#### 09-D: Optimización y variables adicionales (4-8h)
 
-**Objetivo**: implementar la opción elegida en 09-M-A.
+**Estado**: ⏳ pending (depende de 09-C) · **Dependencias**: 09-C.
 
-**Tareas**:
-- Implementar la tecnología elegida.
-- Integrar con Leaflet.
-- Agregar un toggle "capa meteorológica" en el visor.
-- Tool del chat: `get_weather_layer(lat, lon, variable)`.
-
-**Criterios de aceptación**:
-- Las 2-3 variables se ven en el visor (animadas o estáticas).
-- El chat puede consultar el valor de la capa en un punto.
-- Sin regresiones en las capas existentes.
+**Objetivo**: pulir rendimiento, caché y agregar variables (temperatura, humedad) si la fuente lo permite.
 
 ### Sprint 10 — Vista 3D del visor
 
@@ -431,23 +427,23 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 22 — Alineación de documentación
 
-**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 3-4h · **Dependencias**: ninguna
+**Estado**: 🔶 parcial (A-E cerrados; F y ajustes pendientes) · **Prioridad**: alta · **Duración**: 3-4h · **Dependencias**: ninguna
 
 **Objetivo**: Dejar todos los documentos coherentes entre sí y con el código actual.
 
 **Sub-sprints**:
-- [ ] **A** — Reemplazar `AGENTS.md`; mantener el conteo de tools sincronizado (hoy 13) (45 min)
-- [ ] **B** — Actualizar `ARCHITECTURE.md`: proveedor LLM, tools por archivo, timeout 6 s, nueva tool `get_layer_features` (45 min)
-- [ ] **C** — Actualizar `CONTRACT.md §6.2` y `§9.1` (30 min)
-- [ ] **D** — Actualizar `DEV_GUIDE.md §8` (30 min)
-- [ ] **E** — Actualizar `README.md` si tiene desalineaciones de conteos (30 min)
+- [X] **A** — Reemplazar `AGENTS.md`; mantener el conteo de tools sincronizado (hoy 13) (45 min)
+- [X] **B** — Actualizar `ARCHITECTURE.md`: proveedor LLM, tools por archivo, timeout 6 s, nueva tool `get_layer_features` (45 min)
+- [X] **C** — Actualizar `CONTRACT.md §6.2` y `§9.1` (30 min)
+- [X] **D** — Actualizar `DEV_GUIDE.md §8` (30 min)
+- [X] **E** — Actualizar `README.md` si tiene desalineaciones de conteos (30 min)
 - [ ] **F** — Verificar coherencia entre todos los documentos (30 min)
 
 **Ajustes adicionales (agregados 2026-10-05)**:
-- Reparar ADR 004 (texto pegado, reemplazar por ADR 008).
-- Documentar hueco de migración 009.
-- Eliminar entrada duplicada del Sprint 22.
-- CONTRACT §5.3 con excepción explícita para `/api/chat`.
+- [ ] Reparar ADR 004 (texto pegado, reemplazar por ADR 008).
+- [ ] Documentar hueco de migración 009.
+- [X] Eliminar entrada duplicada del Sprint 22.
+- [ ] CONTRACT §5.3 con excepción explícita para `/api/chat`.
 
 ### Sprint 23 — Hotfixes críticos del chat y la API
 
@@ -511,28 +507,28 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 25 — Calidad del chat: latencia y evaluación
 
-**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 16h · **Dependencias**: 23
+**Estado**: 🔶 parcial (25-A/C/D/E cerrados; 25-B/F pendientes) · **Prioridad**: alta · **Duración**: 16h (4h restantes) · **Dependencias**: 23
+
+> **Actualizado 2026-11-09.** 25-A, 25-C, 25-D y 25-E ya están implementados; el roadmap los tenía como pendientes. Quedan 25-B (instrumentación) y 25-F (spike SSE).
 
 **Objetivo**: medir y reducir la latencia, y poder cambiar prompts o modelos sin degradar respuestas sin enterarse.
 
 **Sub-sprints**:
-- [ ] **A (4h) — G7.** Conjunto de evaluación.
-  - `server/chat/__evals__/golden.json` con 30-50 preguntas (tool esperada, argumentos clave, cifra esperada con tolerancia).
-  - `npm run eval:chat` (usa LLM real; no corre en CI por defecto) y reporte de aciertos.
+- [X] **A (4h) — G7.** Conjunto de evaluación. **Implementado:** `golden.json` con 38 casos y runner `npm run eval:chat`.
 - [ ] **B (2h) — H8.** Instrumentación por etapa (clasificador, L1, tools, L2) en logs estructurados. Línea base con 20 preguntas, registrada en `docs/`.
-- [ ] **C (3h) — H8, H9.** Clasificador.
+- [X] **C (3h) — H8, H9.** Clasificador. **Cubierto por 40-C.2.**
   - Ejecutar en paralelo con L1 y abortar L1 si responde `OUT`.
   - Omitirlo cuando hay historial reciente o términos del dominio; pasarle el último turno como contexto.
   - Tests de preguntas de seguimiento.
-- [ ] **D (2h) — L1.** Dividir `orchestrator.js` en módulos (`prompts/`, `charts.js`, `geojson.js`, `synthesis.js`) sin cambiar comportamiento.
-- [ ] **E (3h) — G6.** Proveedor de respaldo: `LLM_FALLBACK_*`, reintento con espera creciente, y estado claro en la interfaz si el chat no está disponible.
+- [X] **D (2h) — L1.** Dividir `orchestrator.js` en módulos. **Implementado:** `orchestrator.js` en 257 líneas.
+- [X] **E (3h) — G6.** Proveedor de respaldo. **Implementado:** `server/llm/provider.js` reintenta con `LLM_FALLBACK_*`.
 - [ ] **F (2h) — Spike.** Streaming (SSE): factibilidad con el driver actual, decisión registrada en ADR.
 
 **Criterios de aceptación**:
-- **CA-1** El conjunto de evaluación corre y produce un porcentaje de aciertos base (la meta se fija tras la línea base).
-- **CA-2** Dada una pregunta de seguimiento sobre una consulta anterior, entonces no es bloqueada.
-- **CA-3** Dado el proveedor principal caído, entonces el chat usa el de respaldo o muestra un estado claro; el visor sigue funcionando.
-- **CA-4** El p95 de latencia queda medido antes y después, y se documenta la mejora.
+- **CA-1** ✅ Golden set de 38 casos y runner funcionando.
+- **CA-2** ✅ Router/clasificador (40-C.2) y tests de seguimiento.
+- **CA-3** ✅ Fallback implementado en `server/llm/provider.js`.
+- **CA-4** ⏳ Pendiente: 25-B (instrumentación y baseline).
 
 ### Sprint 26 — Plataforma propia (épica)
 
@@ -776,18 +772,9 @@ regresión en cada paso.
 
 ### Sprint 37 — Auditoría y normalización de datos
 
-**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 20-24h · **Dependencias**: 23
+**Estado**: ⏳ pending (diferido) · **Prioridad**: media · **Duración**: 22-26h · **Dependencias**: 23
 **Requiere**: acceso al cliente para validación (37-E).
-
-**Objetivo**: dejar las tablas del catálogo con esquema documentado y columnas
-normalizadas (numéricos como `numeric`, fechas como `date`, categorías con dominios
-cerrados). **No se hace todo de una**: se auditan las 71 tablas, pero se normalizan
-por fases, empezando por las que el chat y la Pieza 2 usan.
-
-### Sprint 37 — Auditoría y normalización de datos
-
-**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 22-26h · **Dependencias**: 23
-**Requiere**: acceso al cliente para validación (37-E).
+**Nota**: diferido por decisión del equipo (2026-11-09); se retomará cuando haya espacio/backups y ventana de mantenimiento.
 
 **Objetivo**: dejar las tablas del catálogo con esquema documentado y columnas
 normalizadas (numéricos como `numeric`, fechas como `date`, categorías con dominios
@@ -1054,7 +1041,13 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   - Tests `server/config/copernicus-layers.test.js`; verificación en navegador de enero/febrero 2019.
   - Textos de NDVI, MSAVI2, VARI, MCARI, PSRI, NDYI, NDWI, NDCI, MSI y SWIR alineados a lenguaje no especialista.
   - Docs actualizadas: CHANGELOG, ROADMAP, ARCHITECTURE §3, DEV_GUIDE §3.8, README, AGENTS, `docs/integrations/proxy-servicios-externos.md` y spec 44.
-- 📝 Próximo: push a `main` y deploy en Vercel con `COPERNICUS_INSTANCE_ID`; aplicar la migración 036 en el VPS, ingestar los 3 PDFs de 17-E y confirmar las bandas de `SWIR`.
+- ✅ Push y deploy en Vercel verificados (proxy + 20 capas Copernicus).
+- 🔄 **Roadmap reclassificado**:
+  - 25-A/C/D/E cerrados; quedan 25-B y 25-F.
+  - 09-A semi-resuelto: Copernicus cubre indicadores; quedan NASA WMS 30 m, lectura IMG/TIFF/COG y variables derivadas GIS.
+  - 09-C redefinido como implementación de capas meteorológicas dinámicas (viento, nubes, lluvia) con `leaflet-velocity`.
+  - 09-D pasa a optimización/variables adicionales; 37 (auditoría) diferido.
+- 📝 Próximo: bloque corto **25-B + 25-F + 40-D.3 + 22**; luego **comparador de fechas Copernicus**. Después 09-B/09-C.
 
 ### 2026-11-06
 - ✅ **Sprint 17 — Ingesta RAG (código base)**.
@@ -1248,7 +1241,7 @@ Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de 
 - [X] **H2 — Geo-filter con `isLatam(undefined) = false`.** Aplica límite estricto sin header. Resuelto en Sprint 23-C.
 - [X] **H3 — `err.message` crudo y CORS `*`.** Resuelto en Sprint 23-B y 23-D.
 - [X] **H4 — Sin tope de costo ni abuso real.** Resuelto en Sprint 23-E (el límite distribuido queda para 26-D).
-- [ ] **H9 — Clasificador bloquea preguntas de seguimiento.** Resuelto en Sprint 25-C.
+- [X] **H9 — Clasificador bloquea preguntas de seguimiento.** Resuelto en Sprint 25-C (router/clasificador).
 - [X] **H11 — Prompt desalineado (8 vs 9 tools) y deriva spec 06 ↔ código.** Resuelto en Sprint 23-F (conteo actual: 13).
 - [X] **H12 — `npm test` con glob sin comillas.** Verificar. Resuelto en Sprint 23-F.
 - [ ] **L6 — Migración 009 ausente; ADR 004 con texto pegado.** Resuelto en Sprint 22.
@@ -1256,11 +1249,9 @@ Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de 
 - [ ] **L9 — CONTRACT §5.3 vs formato real del chat.** Resuelto en Sprint 22.
 - [ ] **Timeout por tool (CA-12 spec 06).** Hoy `RPC_TIMEOUT_MS=6000` es global. Fix: parámetro `timeoutMs` en `withTimeout`. Sprint corto (1h). Urgencia: baja.
 - [ ] **Limpieza de logs de diagnóstico en `orchestrator.js`.** Dejar 1-2 días, después remover.
-- [ ] **Fallback de proveedor LLM.**
-      Gemini 3.1 Flash-Lite se satura (503) con frecuencia. Hoy
-      no hay fallback automático. Implementar: en
-      `server/llm/provider.js`, intentar `LLM_FALLBACK_*` si el
-      principal falla con 503. Sprint corto (2-3h).
+- [X] **Fallback de proveedor LLM.**
+      Implementado en `server/llm/provider.js` (25-E): reintenta con
+      `LLM_FALLBACK_*` ante 503/502/504/timeout.
 
 - [ ] **Contexto del historial (mezcla de temas).**
       El LLM mezcla la pregunta actual con turnos previos.

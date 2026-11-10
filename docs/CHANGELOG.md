@@ -65,6 +65,7 @@
 - `README.md` y `docs/ROADMAP.md`: bloques de código, encabezados y tablas reparados.
 - Textos de NDVI, MSAVI2, VARI, MCARI, PSRI, NDYI, NDWI, NDCI, MSI y SWIR alineados a lenguaje no especialista, con rangos e interpretación por tramos.
 - Documentación: `ARCHITECTURE.md` §3 (capas satelitales), `DEV_GUIDE.md` §3.8 (agregar indicador), `README.md`, `AGENTS.md`, `ROADMAP.md` (Sprint 44) y `docs/specs/44-indicadores-copernicus.md`.
+- ROADMAP: 25-A/C/D/E cerrados; 22-A/E cerrados; 09-A semi-resuelto (Copernicus cubre indicadores; NASA WMS 30 m y lectura raster pendientes); 09-C redefinido como implementación de capas meteorológicas dinámicas; 09-D pasa a optimización; 37 diferido; eliminado el duplicado de Sprint 37.
 
 ## [Sprint 42] — 2026-11-04
 
