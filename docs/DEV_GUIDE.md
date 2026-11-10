@@ -176,6 +176,35 @@ Notas:
 - Para leyendas clasificadas, `wmsLegend.type = "items"` con `{ color, label }`.
 - El historial se controla con `wmsHistoryStart`; el valor por defecto es `2017-01-01`.
 
+3.9. Medir latencia del chat
+
+Con `CHAT_TIMING_ENABLED=1` el handler emite una línea JSON `chat.timing` por
+request, con las etapas (`catalog`, `classifier`, `router`, orquestador L1/L2,
+tools y finish). No escribe en la BD.
+
+Corrida local de 20 casos:
+
+```bash
+CHAT_TIMING_ENABLED=1 \
+  node --env-file=.env.staging scripts/run-golden-set.mjs --all --limit 20
+```
+
+En producción:
+
+1. Activar `CHAT_TIMING_ENABLED=1` en Vercel y desplegar.
+2. Correr el runner con `--remote`.
+3. Traer los logs y filtrar las líneas `chat.timing`:
+
+   ```bash
+   npx vercel logs --json --deployment <url-del-deploy> --since 30m --limit 5000 \
+     | grep chat.timing
+   ```
+
+4. Apagar el flag (`0`) y volver a desplegar.
+
+El runner imprime p50/p95/mean por caso. La línea base está en
+`docs/chat-latency-baseline.md`.
+
 4. Flujo de trabajo
 4.1. Antes de escribir código
 Preguntate:

@@ -22,6 +22,7 @@ import { getDB } from "../db/pool.js";
 import { retrieveLayers } from "../chat/layer-retrieval.js";
 import { detectUnavailable, buildUnavailableNotice,} from "../chat/unavailable.js";
 import { checkCostGuard, recordLLMCall } from "../chat/cost-guard.js";
+import { createTiming } from "../chat/timing.js";
 import { randomBytes } from "node:crypto";
 
 /**
@@ -41,12 +42,17 @@ const MSG_OUT_OF_SCOPE =
   "consultas sobre los datos geoespaciales del portal.";
 
 export async function handleChat(body, ctx = {}) {
+  const timing = createTiming({ case_id: ctx.timingLabel || null });
+  timing.mark("start");
+
   try {
     // ── Paso 0: cost guard (killswitch + tope diario) ─────────
     // Se verifica ANTES de validar input, para no gastar ciclos
     // si el chat está apagado.
     const guard = checkCostGuard();
+    timing.mark("cost_guard");
     if (!guard.ok) {
+      timing.setMeta({ status: guard.status, reason: "cost_guard" });
       return {
         status: guard.status,
         body: { error: guard.message },
@@ -55,17 +61,26 @@ export async function handleChat(body, ctx = {}) {
 
     // ── Paso 1: validar input ─────────────────────────────────
     const validation = validateChatInput(body);
+    timing.mark("validate");
     if (!validation.ok) {
+      timing.setMeta({ status: 400, reason: "validation" });
       return { status: 400, body: { error: validation.error } };
     }
 
     const { text, history, sessionId } = validation;
+    timing.setMeta({
+      text_chars: text.length,
+      history_turns: Array.isArray(history) ? history.length : 0,
+      session_id: sessionId || null,
+    });
 
     // ── Paso 2: detectar IP y país ────────────────────────────
     const ip = ctx.ip;
     const country = ctx.country;
+    timing.mark("auth");
 
     if (!ip) {
+      timing.setMeta({ status: 403, reason: "ip" });
       return {
         status: 403,
         body: {
@@ -77,11 +92,13 @@ export async function handleChat(body, ctx = {}) {
     }
 
     // ── Paso 3: rate limiting (saltable para tests) ───────────
+    timing.mark("rate_limit", { skipped: Boolean(ctx.skipRateLimit) });
     if (!ctx.skipRateLimit) {
       const limits = isLatam(country) ? LATAM_LIMIT : NON_LATAM_LIMIT;
       const rate = checkRateLimit(ip, limits.perMinute, limits.perBurst);
 
       if (!rate.ok) {
+        timing.setMeta({ status: 429, reason: "rate_limit" });
         return {
           status: 429,
           body: {
@@ -94,16 +111,20 @@ export async function handleChat(body, ctx = {}) {
 
     // ── Paso 4: scope filter ──────────────────────────────────
     const scope = scopeFilter(text);
+    timing.mark("scope");
     if (scope.blocked) {
+      timing.setMeta({ status: 403, reason: "scope" });
       return { status: 403, body: { error: MSG_OUT_OF_SCOPE } };
     }
 
     // ── Paso 5a: construir contexto de columnas para el clasificador ─
     let catalogContext = null;
+    let catalogLayers = 0;
     try {
       const db = await getDB();
       const catalog = (await db.rpc("chat_catalog")) ?? [];
       const { layers: retrieved } = retrieveLayers(text, catalog, 6);
+      catalogLayers = retrieved.length;
       if (retrieved.length > 0) {
         const relevantIds = retrieved.map((r) => r.layer_id);
         const lines = [];
@@ -123,6 +144,7 @@ export async function handleChat(body, ctx = {}) {
     } catch (err) {
       // Fail-open: sin contexto, el clasificador usa solo el texto.
     }
+    timing.mark("catalog", { layers: catalogLayers });
 
     // ── Paso 5b: clasificador (dominio + intent + pipeline + slots) ─
     // Si hay historial, concatenar el último turno del usuario para
@@ -134,9 +156,21 @@ export async function handleChat(body, ctx = {}) {
       ? `${lastUserTurn}\n\n[Turno actual] ${text}`
       : text;
 
-      const classification = await classifyDomain(classifierText, sessionId, catalogContext);
+    const classification = await classifyDomain(classifierText, sessionId, catalogContext);
     recordLLMCall();  // ← 1ra llamada al LLM (NO TOCAR)
+    timing.mark("classifier", {
+      domain: classification.domain,
+      intent: classification.intent || null,
+      pipeline: classification.pipeline || null,
+      confidence: classification.confidence ?? null,
+    });
+    timing.setMeta({
+      domain: classification.domain,
+      pipeline: classification.pipeline || null,
+      confidence: classification.confidence ?? null,
+    });
     if (classification.domain === "OUT") {
+      timing.setMeta({ status: 403, reason: "domain_out" });
       return { status: 403, body: { error: MSG_OUT_OF_SCOPE } };
     }
 
@@ -150,10 +184,17 @@ export async function handleChat(body, ctx = {}) {
     } catch (err) {
       // Fail-open: sin detección, seguimos con el pipeline normal.
     }
+    timing.mark("unavailable", { matches: unavailableMatches.length });
 
     // ── Paso 7: router determinístico ─────────────────────────
     const routed = await route(classification, text);
+    timing.mark("router", {
+      hit: Boolean(routed),
+      pipeline: routed?.pipeline?.id || null,
+      tools: routed?.results?.length || 0,
+    });
     if (routed) {
+      timing.setMeta({ status: 200, route: "router" });
       const payload = buildPayloadFromPipeline(
         routed,
         text,
@@ -169,18 +210,24 @@ export async function handleChat(body, ctx = {}) {
           ok: r.ok,
         }));
       }
+      timing.mark("done");
       return { status: 200, body: payload };
     }
 
     // ── Paso 8: orquestador (fallback) ────────────────────────
-    const payload = await runOrchestrator({ text, history, sessionId });
+    const payload = await runOrchestrator({ text, history, sessionId, timing });
     recordLLMCall();
+    timing.mark("orchestrator");
+    timing.setMeta({ route: "orchestrator" });
     const charts = Array.isArray(payload?.charts) ? payload.charts : [];
 
-    await maybeLogUnanswered({
-      text, history, sessionId, ctx, classification, routed,
-      reply: payload?.reply, unavailableMatches,
-    });
+    if (!ctx.skipUnansweredLog) {
+      await maybeLogUnanswered({
+        text, history, sessionId, ctx, classification, routed,
+        reply: payload?.reply, unavailableMatches,
+      });
+    }
+    timing.mark("log_unanswered", { skipped: Boolean(ctx.skipUnansweredLog) });
 
     // Unir notice del orquestador con el de datos no disponibles.
     const notices = [];
@@ -207,6 +254,8 @@ export async function handleChat(body, ctx = {}) {
       normalized.trace = payload?.trace || [];
     }
 
+    timing.mark("done");
+    timing.setMeta({ status: 200 });
     return { status: 200, body: normalized };
     } catch (err) {
     // ── Error inesperado: mensaje genérico + errorId ─────────
@@ -228,6 +277,8 @@ export async function handleChat(body, ctx = {}) {
       err.message.includes("Variable de entorno");
 
     const status = isConfigError ? 503 : 500;
+    timing.setMeta({ status, error: errInfo.name });
+    timing.mark("error");
     return {
       status,
       body: {
@@ -238,6 +289,8 @@ export async function handleChat(body, ctx = {}) {
         errorId,
       },
     };
+  } finally {
+    timing.finish();
   }
 
 /**

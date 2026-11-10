@@ -27,7 +27,7 @@ function dbg(...args) {
   if (DEBUG) console.log("[orchestrator]", ...args);
 }
 
-export async function runOrchestrator({ text, history = [], sessionId = null }) {
+export async function runOrchestrator({ text, history = [], sessionId = null, timing = null }) {
   const budgetMs =
     Number(process.env.ORCHESTRATOR_BUDGET_MS) || DEFAULT_BUDGET_MS;
   const maxSteps =
@@ -39,9 +39,14 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
 
   const RESERVE_MS = 500;
   const deadline = Date.now() + budgetMs;
+  timing?.mark("orchestrator.start");
 
   const llm = await getLLM();
+  const systemStarted = Date.now();
   const system = await buildSystemPrompt(text, history);
+  timing?.mark("orchestrator.system_prompt", {
+    duration_ms: Date.now() - systemStarted,
+  });
 
   dbg(
     `budget=${budgetMs}ms maxSteps=${maxSteps} model=${process.env.LLM_MODEL}`
@@ -103,6 +108,13 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
     }
 
     const stepMs = Date.now() - t1;
+    timing?.mark("orchestrator.llm", {
+      step,
+      phase: isLast ? "l2" : "l1",
+      duration_ms: stepMs,
+      tool_calls: response.toolCalls?.length || 0,
+      content_len: (response.content || "").length,
+    });
 
     console.log(
       `[orchestrator] step=${step} isLast=${isLast} ms=${stepMs} | ` +
@@ -116,7 +128,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
 
       await maybeFetchFeaturesForStyle(ctx, text);
 
-      return await finish(response.content, ctx, messages, text);
+      return await finish(response.content, ctx, messages, text, timing);
     }
 
     messages.push({
@@ -135,12 +147,23 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
       }),
     });
 
+    const toolsStarted = Date.now();
     const toolResults = await Promise.all(
-      response.toolCalls.map(async (tc) => ({
-        tc,
-        out: await runTool(tc.name, tc.arguments),
-      }))
+      response.toolCalls.map(async (tc) => {
+        const toolStarted = Date.now();
+        const out = await runTool(tc.name, tc.arguments);
+        timing?.mark("orchestrator.tool", {
+          name: tc.name,
+          duration_ms: Date.now() - toolStarted,
+          ok: out.ok,
+        });
+        return { tc, out };
+      })
     );
+    timing?.mark("orchestrator.tools", {
+      duration_ms: Date.now() - toolsStarted,
+      count: response.toolCalls.length,
+    });
 
     for (const { tc, out } of toolResults) {
       ctx.trace.push({ tool: tc.name, args: tc.arguments, ok: out.ok });
@@ -203,7 +226,8 @@ export async function runOrchestrator({ text, history = [], sessionId = null }) 
   }
 }
 
-async function finish(reply, ctx, messages, userText = "") {
+async function finish(reply, ctx, messages, userText = "", timing = null) {
+  const finishStarted = Date.now();
   const { layers: geojsonLayers, truncated } = await buildGeojsonLayersFromCtx(ctx, userText);
 
   // Paquete de evidencia.
@@ -227,6 +251,10 @@ async function finish(reply, ctx, messages, userText = "") {
   for (const w of coverageWarnings) {
     notices.push(w);
   }
+
+  timing?.mark("orchestrator.finish", {
+    duration_ms: Date.now() - finishStarted,
+  });
 
   return {
     reply: String(reply || "").trim() || "Sin respuesta.",

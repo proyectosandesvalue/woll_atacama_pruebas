@@ -79,7 +79,7 @@
 | 22 | Alineación de documentación | 🔶 parcial (A-E cerrados; F y ajustes pendientes) | alta | 3-4h | — |
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
-| 25 | Calidad del chat: latencia y evaluación | 🔶 parcial (25-A/C/D/E cerrados; 25-B/F pendientes) | alta | 16h (4h restantes) | 23 |
+| 25 | Calidad del chat: latencia y evaluación | 🔶 parcial (25-A/B/C/D/E cerrados; 25-F pendiente) | alta | 16h (2h restantes) | 23 |
 | 26 | Plataforma propia (Postgres + Docker + proxy) | ⏳ pending | alta | 38-45h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
@@ -507,15 +507,15 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 25 — Calidad del chat: latencia y evaluación
 
-**Estado**: 🔶 parcial (25-A/C/D/E cerrados; 25-B/F pendientes) · **Prioridad**: alta · **Duración**: 16h (4h restantes) · **Dependencias**: 23
+**Estado**: 🔶 parcial (25-A/B/C/D/E cerrados; 25-F pendiente) · **Prioridad**: alta · **Duración**: 16h (2h restantes) · **Dependencias**: 23
 
-> **Actualizado 2026-11-09.** 25-A, 25-C, 25-D y 25-E ya están implementados; el roadmap los tenía como pendientes. Quedan 25-B (instrumentación) y 25-F (spike SSE).
+> **Actualizado 2026-11-09.** 25-A, 25-B, 25-C, 25-D y 25-E ya están implementados; el roadmap los tenía como pendientes. Queda 25-F (spike SSE).
 
 **Objetivo**: medir y reducir la latencia, y poder cambiar prompts o modelos sin degradar respuestas sin enterarse.
 
 **Sub-sprints**:
 - [X] **A (4h) — G7.** Conjunto de evaluación. **Implementado:** `golden.json` con 38 casos y runner `npm run eval:chat`.
-- [ ] **B (2h) — H8.** Instrumentación por etapa (clasificador, L1, tools, L2) en logs estructurados. Línea base con 20 preguntas, registrada en `docs/`.
+- [X] **B (2h) — H8.** Instrumentación por etapa. **Implementado:** `server/chat/timing.js`, flag `CHAT_TIMING_ENABLED`, logs `chat.timing` y baseline de 20 preguntas en `docs/chat-latency-baseline.md`.
 - [X] **C (3h) — H8, H9.** Clasificador. **Cubierto por 40-C.2.**
   - Ejecutar en paralelo con L1 y abortar L1 si responde `OUT`.
   - Omitirlo cuando hay historial reciente o términos del dominio; pasarle el último turno como contexto.
@@ -528,7 +528,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - **CA-1** ✅ Golden set de 38 casos y runner funcionando.
 - **CA-2** ✅ Router/clasificador (40-C.2) y tests de seguimiento.
 - **CA-3** ✅ Fallback implementado en `server/llm/provider.js`.
-- **CA-4** ⏳ Pendiente: 25-B (instrumentación y baseline).
+- **CA-4** ✅ Baseline: p50 3.553 ms / p95 15.234 ms (n=20, producción).
 
 ### Sprint 26 — Plataforma propia (épica)
 
@@ -1047,7 +1047,8 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   - 09-A semi-resuelto: Copernicus cubre indicadores; quedan NASA WMS 30 m, lectura IMG/TIFF/COG y variables derivadas GIS.
   - 09-C redefinido como implementación de capas meteorológicas dinámicas (viento, nubes, lluvia) con `leaflet-velocity`.
   - 09-D pasa a optimización/variables adicionales; 37 (auditoría) diferido.
-- 📝 Próximo: bloque corto **25-B + 25-F + 40-D.3 + 22**; luego **comparador de fechas Copernicus**. Después 09-B/09-C.
+- ✅ **25-B — Instrumentación de latencia** cerrado. Baseline de 20 preguntas en `docs/chat-latency-baseline.md` (p50 3.553 ms, p95 15.234 ms en producción).
+- 📝 Próximo: **25-F + 40-D.3 + 22**; luego **comparador de fechas Copernicus**. Después 09-B/09-C.
 
 ### 2026-11-06
 - ✅ **Sprint 17 — Ingesta RAG (código base)**.

@@ -53,6 +53,9 @@
 - Selector de fecha de Copernicus: navegación histórica desde 2017-01-01, disponibilidad WFS por mes con caché, marcas azules y leyenda con el número de fechas del mes visible.
 - Proxy persistente de desarrollo: `scripts/dev-proxy.mjs` (`npm run dev:proxy`), `js/config/proxy.js`, `npm run dev` y `PROXY_PORT`/`PROXY_DEV_CONCURRENCY` en `.env.example`.
 - Test `server/config/copernicus-layers.test.js`: valida ficha, leyenda, servicio y grupo de cada capa Copernicus.
+- Instrumentación de latencia del chat (25-B): `server/chat/timing.js`, flag `CHAT_TIMING_ENABLED` y logs JSON `chat.timing` con etapas (`catalog`, `classifier`, `router`, orquestador L1/L2, tools, finish).
+- Runner `scripts/run-golden-set.mjs`: `--limit`, medición por caso y resumen p50/p95/mean; `skipUnansweredLog` para no escribir en la BD durante la evaluación.
+- Baseline de 20 preguntas en `docs/chat-latency-baseline.md` (p50 3.553 ms, p95 15.234 ms en producción; 19/20 PASS, un fallo no determinista).
 
 ### Fixed
 - `server/chat/tools/list-climate-stations.js`: faltaba el `import { getDB }`; la tool fallaba en runtime con `ReferenceError`.

@@ -152,6 +152,7 @@ No hay build step. Los scripts que tocan Supabase o el LLM leen `.env.staging` v
 - Orquestador: L1 (tool calling) + L2 (síntesis forzada). `ORCHESTRATOR_MAX_ITERATIONS` controla las rondas de tools (default 1, mínimo 1). Presupuesto: `ORCHESTRATOR_BUDGET_MS` (default 8000).
 - **13 tools**, una por archivo en `server/chat/tools/`: 9 de capas (`get_layer_stats`, `get_layer_schema`, `query_layer`, `aggregate_layer`, `aggregate_by_admin`, `aggregate_by_admin_and_column`, `count_near_layer`, `aggregate_near_layer`, `get_layer_features`) y 4 de clima (`get_station_weather`, `get_historical_climate`, `list_climate_stations`, `get_arclim_forecast`). `normalizeArgs` y `withTimeout` en `tools/_helpers.js`. Las RPCs tienen timeout de 6 s. El router determinístico solo conoce las 9 de capas (`server/chat/capabilities/registry.js`); las de clima las invoca el orquestador.
 - El system prompt se cachea 5 min en memoria del módulo.
+- **Latencia:** `CHAT_TIMING_ENABLED=1` emite `chat.timing` (JSON por request, sin BD); baseline en `docs/chat-latency-baseline.md`.
 - Contrato de gráficos: `charts` (array) es canónico; `chart` (singular) solo por compatibilidad. Tipos: `pie` (≤ 6 grupos), `bar` (≤ 20), `horizontalBar` (> 20); el frontend dibuja `horizontalBar` como `bar` con `indexAxis: 'y'`. `aggregate_by_admin_and_column` no genera gráfico.
 - `CHAT_VERBOSE` (el LLM puede nombrar tools y `layer_id`) y `ORCHESTRATOR_DEBUG` (logs de servidor) son independientes.
 - Header `x-opencode-session` para el proveedor OpenCode Go.

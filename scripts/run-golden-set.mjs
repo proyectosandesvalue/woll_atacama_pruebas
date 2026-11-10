@@ -13,6 +13,7 @@
  * Flags:
  *   --level <n>   Solo casos con level <= n (1, 2, 3).
  *   --all         Todos los casos.
+ *   --limit <n>   Limita a los primeros n casos (después del filtro).
  *   --id <id>     Un caso específico.
  *   --remote      Usa la URL de Vercel en lugar del orquestador local.
  *                 En modo remoto, los checks que dependen de `trace`
@@ -38,6 +39,7 @@ const opts = {
   level: null,
   all: false,
   id: null,
+  limit: null,
   remote: false,
   url: DEFAULT_REMOTE_URL,
   quiet: false,
@@ -48,6 +50,7 @@ for (let i = 0; i < args.length; i++) {
   if (a === "--level") opts.level = Number(args[++i]);
   else if (a === "--all") opts.all = true;
   else if (a === "--id") opts.id = args[++i];
+  else if (a === "--limit") opts.limit = Number(args[++i]);
   else if (a === "--remote") opts.remote = true;
   else if (a === "--url") opts.url = args[++i];
   else if (a === "--quiet") opts.quiet = true;
@@ -82,6 +85,10 @@ if (opts.id) {
   cases = cases.filter((c) => c.level <= opts.level);
 } else if (opts.all) {
   // Todos.
+}
+
+if (opts.limit && Number.isFinite(opts.limit) && opts.limit > 0) {
+  cases = cases.slice(0, opts.limit);
 }
 
 if (cases.length === 0) {
@@ -134,7 +141,7 @@ if (opts.remote) {
 log("");
 
 // ── Llamar al chat ──────────────────────────────────────────
-async function callChat(question, history = []) {
+async function callChat(question, history = [], caseId = null) {
   const sessionId = `golden-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
   // Resetear caché del clasificador, del LLM y del system prompt.
@@ -189,7 +196,14 @@ async function callChat(question, history = []) {
     const { handleChat } = await import("../server/handlers/chat.js");
     const result = await handleChat(
       { text: question, history, sessionId },
-      { ip: "127.0.0.1", country: "CL", skipRateLimit: true, includeTrace: true }
+      {
+        ip: "127.0.0.1",
+        country: "CL",
+        skipRateLimit: true,
+        includeTrace: true,
+        skipUnansweredLog: true,
+        timingLabel: caseId,
+      }
     );
     return { status: result.status, data: result.body };
   } catch (err) {
@@ -451,27 +465,31 @@ function verifyCase(c, response) {
 let passed = 0;
 let failed = 0;
 const failures = [];
+const caseTimings = [];
 
 for (const c of cases) {
   log(`${C.bold}[${c.level}] ${c.id}${C.reset}`);
   log(`${C.gray}Q: ${c.question}${C.reset}`);
 
   let response;
+  const caseStarted = Date.now();
   try {
-    response = await callChat(c.question, c.history || []);
+    response = await callChat(c.question, c.history || [], c.id);
   } catch (err) {
     response = { status: 0, data: { error: err?.message || String(err) } };
   }
+  const caseMs = Date.now() - caseStarted;
+  caseTimings.push({ id: c.id, ms: caseMs, status: response.status });
 
   const result = verifyCase(c, response);
 
   if (result.ok) {
     passed++;
-    log(`${C.green}✓ PASS${C.reset} (status ${response.status})`);
+    log(`${C.green}✓ PASS${C.reset} (status ${response.status}, ${caseMs} ms)`);
   } else {
     failed++;
     failures.push({ case: c, result, response });
-    log(`${C.red}✗ FAIL${C.reset} (status ${response.status})`);
+    log(`${C.red}✗ FAIL${C.reset} (status ${response.status}, ${caseMs} ms)`);
     for (const f of result.failures) {
       log(`  ${C.red}• ${f}${C.reset}`);
     }
@@ -491,6 +509,23 @@ log(`${C.bold}Resumen${C.reset}`);
 log(`${C.green}✓ ${passed} pasaron${C.reset}`);
 if (failed > 0) {
   log(`${C.red}✗ ${failed} fallaron${C.reset}`);
+}
+if (caseTimings.length > 0) {
+  const sorted = caseTimings.map((t) => t.ms).sort((a, b) => a - b);
+  const percentile = (p) => {
+    const index = Math.min(
+      sorted.length - 1,
+      Math.max(0, Math.ceil((p / 100) * sorted.length) - 1)
+    );
+    return sorted[index];
+  };
+  const mean = Math.round(
+    sorted.reduce((acc, ms) => acc + ms, 0) / sorted.length
+  );
+  log(
+    `${C.gray}Latencia: p50=${percentile(50)} ms, p95=${percentile(95)} ms, ` +
+      `mean=${mean} ms (n=${sorted.length})${C.reset}`
+  );
 }
 log("");
 
