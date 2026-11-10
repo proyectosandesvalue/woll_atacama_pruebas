@@ -19,6 +19,7 @@ import { classifyDomain } from "../chat/domain-classifier.js";
 import { route } from "../chat/router.js";
 import { getDB } from "../db/pool.js";
 import { getCatalog } from "../chat/catalog.js";
+import { fastClassify } from "../chat/classifier-fast.js";
 import { retrieveLayers } from "../chat/layer-retrieval.js";
 import { detectUnavailable, buildUnavailableNotice,} from "../chat/unavailable.js";
 import { checkCostGuard, recordLLMCall } from "../chat/cost-guard.js";
@@ -117,32 +118,40 @@ export async function handleChat(body, ctx = {}) {
     }
 
     // ── Paso 5a: construir contexto de columnas para el clasificador ─
+    // Fast path: proximidad explícita sin historial. Evita el catálogo y el
+    // clasificador LLM; el router resuelve directo.
+    const fast = fastClassify(text, history);
     let catalogContext = null;
     let catalogLayers = 0;
-    try {
-      const catalog = await getCatalog();
-      const { layers: retrieved } = retrieveLayers(text, catalog, 6);
-      catalogLayers = retrieved.length;
-      if (retrieved.length > 0) {
-        const relevantIds = retrieved.map((r) => r.layer_id);
-        const lines = [];
-        for (const c of catalog) {
-          if (!relevantIds.includes(c.layer_id)) continue;
-          const attrs = Array.isArray(c.attributes)
-            ? c.attributes
-                .map((a) => (typeof a === "string" ? a : a?.name))
-                .filter(Boolean)
-            : [];
-          if (attrs.length > 0) {
-            lines.push(`- ${c.layer_id}: ${attrs.join(", ")}`);
+
+    if (fast) {
+      timing.mark("catalog", { skipped: true, layers: 0 });
+    } else {
+      try {
+        const catalog = await getCatalog();
+        const { layers: retrieved } = retrieveLayers(text, catalog, 6);
+        catalogLayers = retrieved.length;
+        if (retrieved.length > 0) {
+          const relevantIds = retrieved.map((r) => r.layer_id);
+          const lines = [];
+          for (const c of catalog) {
+            if (!relevantIds.includes(c.layer_id)) continue;
+            const attrs = Array.isArray(c.attributes)
+              ? c.attributes
+                  .map((a) => (typeof a === "string" ? a : a?.name))
+                  .filter(Boolean)
+              : [];
+            if (attrs.length > 0) {
+              lines.push(`- ${c.layer_id}: ${attrs.join(", ")}`);
+            }
           }
+          catalogContext = lines.join("\n");
         }
-        catalogContext = lines.join("\n");
+      } catch (err) {
+        // Fail-open: sin contexto, el clasificador usa solo el texto.
       }
-    } catch (err) {
-      // Fail-open: sin contexto, el clasificador usa solo el texto.
+      timing.mark("catalog", { layers: catalogLayers });
     }
-    timing.mark("catalog", { layers: catalogLayers });
 
     // ── Paso 5b: clasificador (dominio + intent + pipeline + slots) ─
     // Si hay historial, concatenar el último turno del usuario para
@@ -154,9 +163,10 @@ export async function handleChat(body, ctx = {}) {
       ? `${lastUserTurn}\n\n[Turno actual] ${text}`
       : text;
 
-    const classification = await classifyDomain(classifierText, sessionId, catalogContext);
-    recordLLMCall();  // ← 1ra llamada al LLM (NO TOCAR)
+    const classification = fast || await classifyDomain(classifierText, sessionId, catalogContext);
+    if (!fast) recordLLMCall();  // ← 1ra llamada al LLM (NO TOCAR)
     timing.mark("classifier", {
+      fast: Boolean(fast),
       domain: classification.domain,
       intent: classification.intent || null,
       pipeline: classification.pipeline || null,
@@ -166,6 +176,7 @@ export async function handleChat(body, ctx = {}) {
       domain: classification.domain,
       pipeline: classification.pipeline || null,
       confidence: classification.confidence ?? null,
+      classifier_fast: Boolean(fast),
     });
     if (classification.domain === "OUT") {
       timing.setMeta({ status: 403, reason: "domain_out" });
