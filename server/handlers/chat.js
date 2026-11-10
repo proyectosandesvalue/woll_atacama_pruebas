@@ -317,9 +317,11 @@ function buildPayloadFromPipeline(
   let truncated = null;
   let replyTable = "";
 
+  const proximitySummaries = [];
+
   for (const r of results) {
     if (!r.ok || !r.result) continue;
-    const layerId = r.args?.layer_id || null;
+    const layerId = r.args?.layer_id || r.args?.layer_id_source || null;
     if (layerId) layersInvolved.add(layerId);
 
     // query_layer: tolerar array Y {rows: [...]}
@@ -370,9 +372,26 @@ function buildPayloadFromPipeline(
       }
     }
 
+    // count_near_layer: resumen de proximidad
+    if (r.tool === "count_near_layer" && typeof r.result.count === "number") {
+      const src = r.result.source_layer || r.args?.layer_id_source || "la capa";
+      const targets = Array.isArray(r.result.target_layers)
+        ? r.result.target_layers.join(", ")
+        : Array.isArray(r.args?.layer_id_targets)
+          ? r.args.layer_id_targets.join(", ")
+          : String(r.args?.layer_id_targets || "");
+      const dist = r.result.distance_m ?? r.args?.distance_m;
+      proximitySummaries.push(
+        `Se encontraron **${r.result.count}** elementos de **${src}** ` +
+          `a menos de **${dist} m** de **${targets}**.`
+      );
+    }
+
     // aggregate_*: charts
     if (
-      (r.tool === "aggregate_by_admin" || r.tool === "aggregate_layer") &&
+      (r.tool === "aggregate_by_admin" ||
+        r.tool === "aggregate_layer" ||
+        r.tool === "aggregate_near_layer") &&
       Array.isArray(r.result) &&
       r.result.length > 0 &&
       r.result[0]?.group !== undefined
@@ -387,11 +406,19 @@ function buildPayloadFromPipeline(
         values: sliced.map((d) => Number(d.value)),
         totalGroups,
       });
+
+      if (r.tool === "aggregate_near_layer") {
+        proximitySummaries.push(
+          `Distribución de **${r.args?.layer_id_source || "la capa"}** ` +
+            `por **${r.args?.admin_level || "nivel administrativo"}** ` +
+            `(${totalGroups} grupos).`
+        );
+      }
     }
   }
 
   // reply enriquecido (siempre menciona capas y filtros) — fix F2
-  const summaryParts = [];
+  const summaryParts = [...proximitySummaries];
   if (layersInvolved.size > 0) {
     summaryParts.push(
       `Recuperé información de **${Array.from(layersInvolved).join(", ")}**.`
@@ -417,14 +444,15 @@ function buildPayloadFromPipeline(
   const citations = [];
   const seen = new Set();
   for (const r of results) {
-    if (!r.ok || !r.args?.layer_id) continue;
-    const key = `${r.args.layer_id}:${r.tool}`;
+    const citationLayer = r.args?.layer_id || r.args?.layer_id_source;
+    if (!r.ok || !citationLayer) continue;
+    const key = `${citationLayer}:${r.tool}`;
     if (seen.has(key)) continue;
     seen.add(key);
     citations.push({
-      layer_id: r.args.layer_id,
+      layer_id: citationLayer,
       tool: r.tool,
-      label: r.args.layer_id,
+      label: citationLayer,
     });
   }
 
