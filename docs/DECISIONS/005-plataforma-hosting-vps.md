@@ -76,7 +76,7 @@ imagen:
 Lista mínima; la versión exacta se cierra en la spec 26:
 
 - Node.js 20/22 LTS + npm.
-- PostgreSQL 16 + PostGIS + pgvector.
+- PostgreSQL 17 + PostGIS + pgvector.
 - Nginx o Caddy + TLS (Let's Encrypt/certbot).
 - Docker + Docker Compose, o systemd para los procesos Node.
 - `pg_dump`/`pg_restore`, `rsync`, `ufw`/`fail2ban`, `logrotate`.

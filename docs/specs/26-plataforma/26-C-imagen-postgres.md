@@ -14,7 +14,7 @@
 
 ## 1. Objetivo
 
-Tener una base PostgreSQL 16 reproducible en Docker, con PostGIS y pgvector, un
+Tener una base PostgreSQL 17 reproducible en Docker, con PostGIS y pgvector, un
 Compose mínimo para desarrollo, la migración `000_compat_roles.sql` y un runner
 de migraciones portable que aplique `000-037` dos veces sobre una base vacía sin
 errores.
@@ -23,7 +23,7 @@ errores.
 
 **Dentro**
 
-- `docker/postgres/Dockerfile`: PostgreSQL 16 + PostGIS 3.7.0 + pgvector
+- `docker/postgres/Dockerfile`: PostgreSQL 17 + PostGIS 3.7.0 + pgvector
   0.8.7, versiones fijadas con `ARG`.
 - `docker-compose.yml` base con el servicio `postgres` y volumen `pgdata`.
 - `docker-compose.dev.yml` con el puerto `127.0.0.1:5432` para desarrollo.
@@ -47,15 +47,15 @@ errores.
 ### 3.1. Imagen
 
 ```dockerfile
-FROM postgres:16-bookworm
+FROM postgres:17-bookworm
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-      postgresql-16-postgis-3 \
-      postgresql-16-pgvector \
+      postgresql-17-postgis-3 \
+      postgresql-17-pgvector \
  && rm -rf /var/lib/apt/lists/*
 ```
 
-- Tag local: `woll/postgres:16`.
+- Tag local: `woll/postgres:17`.
 - Versiones fijadas: `POSTGIS_VERSION=3.7.0+dfsg-1.pgdg12+1` y
   `PGVECTOR_VERSION=0.8.7-1.pgdg12+1`.
 - El contenedor corre como el usuario `postgres` de la imagen oficial.
@@ -66,7 +66,7 @@ RUN apt-get update \
 
 | Servicio | Imagen | Puertos | Volumen | Healthcheck |
 |---|---|---|---|---|
-| `postgres` | `woll/postgres:16` | Ninguno en base; `127.0.0.1:5432` en dev | `pgdata:/var/lib/postgresql/data` | `pg_isready` |
+| `postgres` | `woll/postgres:17` | Ninguno en base; `127.0.0.1:5432` en dev | `pgdata:/var/lib/postgresql/data` | `pg_isready` |
 
 `docker-compose.yml` no publica el puerto; `docker-compose.dev.yml` lo agrega
 solo en `127.0.0.1`. La red es interna (`internal`).
@@ -142,7 +142,7 @@ compatibilidad.
 
 | Riesgo | Mitigación |
 |---|---|
-| El paquete `postgresql-16-pgvector` no está en el repo de la imagen | Verificar en el build; si falta, compilar pgvector en la imagen |
+| El paquete `postgresql-17-pgvector` no está en el repo de la imagen | Verificar en el build; si falta, compilar pgvector en la imagen |
 | Migraciones 001-037 asumen objetos de Supabase | Probar en base vacía; agregar `000` y, si falta, una migración nueva (no editar las existentes) |
 | `CREATE EXTENSION` requiere superusuario | El runner usa `DATABASE_ADMIN_URL`; el API no |
 | Docker no está instalado en el entorno local | Validar con Podman 5.8 (compatible) y dejar el Compose para Docker |
@@ -156,7 +156,7 @@ compatibilidad.
 ## 8. Cierre
 
 - **Estado:** CERRADA 2026-11-10.
-- **Validación:** imagen construida con Podman 5.8; Compose levantado con
+- **Validación:** imagen construida con Podman 5.8; actualizada a PostgreSQL 17.11 en 26-E y revalidada (000-037 y tests); Compose levantado con
   `podman-compose`; `000-037` aplicadas dos veces (34 migraciones), extensiones
   `postgis`/`vector`/`unaccent`, roles `woll_api`/`woll_ingest` sin login ni
   `BYPASSRLS`, y login de ambos roles probado. Docker Compose no está instalado

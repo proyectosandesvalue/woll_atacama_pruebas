@@ -62,7 +62,7 @@ Instala ESLint (dev) y las dependencias de runtime (`pg`, Vertex AI, `csv-parser
 
 ### 2.6. PostgreSQL local (Sprint 26)
 
-Desde 26-C el entorno de referencia es Docker/Podman + PostgreSQL 16 con
+Desde 26-C el entorno de referencia es Docker/Podman + PostgreSQL 17 con
 PostGIS y pgvector. La demo Vercel + Supabase queda congelada.
 
 1. Copiá `.env.example` a `.env.local` y completá:

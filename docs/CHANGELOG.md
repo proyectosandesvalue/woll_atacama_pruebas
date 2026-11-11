@@ -81,7 +81,7 @@
 - **Spec 08 revisada:** corrige el supuesto de que "la BD es más liviana" (el ahorro real viene de MVT, paginación, filtros server-side y caché; el VPS se dimensiona para tiles/DB) y exige paridad de opciones de capa: tabla de atributos, zoom a capa/feature, filtros, cluster, heatmap y descarga. Se agrega el tramo 08-F, la dependencia del Sprint 26 y la duración 48-58h.
 - **Spec 08 aprobada (2026-11-10):** M1 (puntos por GeoJSON bbox + agregados server-side), M2 (ruta Node `ST_AsMVT` + caché Nginx) y M7 (umbral 5.000 puntos) como decisiones iniciales a validar en el spike. Ejecución bloqueada hasta cerrar el Sprint 26.
 - **ADR 006 (Postgres propio):** instancia única, schemas `public`/`chat`/`admin`/`ingest`/`rag`, extensiones en `extensions`, roles `woll_api`/`woll_ingest` sin `BYPASSRLS` y migraciones con checksum.
-- **Imagen PostgreSQL 26-C:** PostgreSQL 16 + PostGIS 3.7.0 + pgvector 0.8.7, versiones fijadas con `ARG`; Compose base y runner de migraciones con checksum.
+- **Imagen PostgreSQL 26-C:** PostgreSQL 17.11 + PostGIS 3.7.0 + pgvector 0.8.7, versiones fijadas con `ARG`; Compose base y runner de migraciones con checksum.
 - **Spec madre 26 aprobada (2026-11-10):** plataforma propia con PostgreSQL/PostGIS/pgvector, servidor Node persistente, Nginx, paridad de los 10 endpoints, migración de datos, ingestas por systemd timers, staging, backups, hardening y corte. Duración 42-46h; 26-J agregado al roadmap. Arranca 26-C.
 - Documentación sincronizada con el código: 13 tools (9 de capas + 4 de clima), 71 GeoJSON, Node 20.6+, sprints 06/23/06-B.7 cerrados en el roadmap.
 - `package.json` v2.1.0: scripts `catalog`, `smoke:db`, `smoke:chat`, `eval:chat` y `lint:fix` (antes solo documentados en `AGENTS.md`).
@@ -106,6 +106,7 @@
 - `server/db/rpc-signatures.js`: agrega `chat_table_exists`, `chat_upsert_layer` y `chat_refresh_stats`.
 - `buildRpcCall` serializa arrays `jsonb` como JSON (necesario para `p_attributes`, `p_values`).
 - `.gitignore`: `backups/`, `*.dump`, `*.dump.sha256`.
+- **Imagen destino PostgreSQL 17.11:** se actualizó de PostgreSQL 16 a 17.11 porque Supabase corre 17.11; PostGIS 3.7.0 y pgvector 0.8.7. Migraciones 000-037 y tests verificados en PG17.
 
 ### Validated locally
 - Dump/restore de la base de prueba, `000` antes del restore y baseline 000-035.
@@ -177,7 +178,7 @@
 ## [Sprint 26-C] — 2026-11-10
 
 ### Added
-- Imagen `docker/postgres/Dockerfile`: PostgreSQL 16 + PostGIS 3.7.0 + pgvector 0.8.7, versiones fijadas con `ARG`.
+- Imagen `docker/postgres/Dockerfile`: PostgreSQL 17.11 + PostGIS 3.7.0 + pgvector 0.8.7, versiones fijadas con `ARG` (actualizada desde PostgreSQL 16 en 26-E para igualar Supabase).
 - `docker-compose.yml` base y `docker-compose.dev.yml` con PostgreSQL en `127.0.0.1:5432`.
 - `db/migrations/000_compat_roles.sql`: schema `extensions`, PostGIS/pgvector/unaccent, roles `woll_api`/`woll_ingest` y roles de compatibilidad `anon`/`authenticated`/`service_role`.
 - `scripts/migrate.mjs` con checksum, `--status`, `--dry-run` y `--to`; scripts `npm run migrate` y `npm run migrate:status`.

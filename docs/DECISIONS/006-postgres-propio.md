@@ -21,7 +21,7 @@ El chat ya usa RPCs tipadas y el LLM nunca escribe SQL. La migración 037 agreg�
 
 ## Decisión
 
-1. **Una instancia PostgreSQL 16** en Docker, con **PostGIS 3.7.0** y
+1. **Una instancia PostgreSQL 17** en Docker, con **PostGIS 3.7.0** y
    **pgvector 0.8.7**, versiones fijadas en `docker/postgres/Dockerfile`.
    - La misma imagen se usa en local, staging y producción.
    - Las extensiones se crean en el schema `extensions` mediante migración, no

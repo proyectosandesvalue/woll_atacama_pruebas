@@ -4,8 +4,10 @@
 # Uso:
 #   SOURCE_DATABASE_URL='postgres://...' ./scripts/dump-supabase.sh
 #   SOURCE_DATABASE_URL='...' SCHEMAS=public,chat,admin,ingest,rag ./scripts/dump-supabase.sh
+#   PG_DUMP_IMAGE=postgres:17 ./scripts/dump-supabase.sh   # si Supabase es PG17
+#   DUMP_VIA_PODMAN=1 ./scripts/dump-supabase.sh           # ignora pg_dump local
 #
-# Requiere `pg_dump` en PATH o Podman para usar la imagen postgres:16.
+# Requiere `pg_dump` en PATH o Podman para usar la imagen postgres:17.
 # El dump incluye schema + datos de los schemas indicados, sin owners ni ACL.
 set -euo pipefail
 
@@ -19,6 +21,18 @@ fi
 
 SCHEMAS="${SCHEMAS:-public,chat,admin,ingest}"
 OUT_DIR="${OUT_DIR:-backups}"
+PG_DUMP_IMAGE="${PG_DUMP_IMAGE:-docker.io/library/postgres:17}"
+
+if [[ -n "${CONTAINER_RUNTIME:-}" ]]; then
+  RUNTIME="$CONTAINER_RUNTIME"
+elif command -v podman >/dev/null 2>&1; then
+  RUNTIME=podman
+elif command -v docker >/dev/null 2>&1; then
+  RUNTIME=docker
+else
+  echo "[dump] falta Podman o Docker para ejecutar pg_dump" >&2
+  exit 2
+fi
 mkdir -p "$OUT_DIR"
 
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -32,14 +46,18 @@ for schema in "${SCHEMA_LIST[@]}"; do
   [[ -n "$schema" ]] && ARGS+=(--schema="$schema")
 done
 
-if command -v pg_dump >/dev/null 2>&1; then
+if [[ "${DUMP_VIA_PODMAN:-0}" != "1" ]] && command -v pg_dump >/dev/null 2>&1; then
   echo "[dump] pg_dump local -> $OUT"
   pg_dump --dbname="$SOURCE_DATABASE_URL" "${ARGS[@]}" --file="$OUT"
 else
-  echo "[dump] pg_dump vía Podman -> $OUT"
-  podman run --rm --network host \
+  echo "[dump] pg_dump vía $RUNTIME ($PG_DUMP_IMAGE) -> $OUT"
+  PODMAN_ENV=()
+  if [[ -n "${PGPASSWORD:-}" ]]; then
+    PODMAN_ENV=(-e PGPASSWORD)
+  fi
+  "$RUNTIME" run --rm --network host "${PODMAN_ENV[@]}" \
     -v "$PWD/$OUT_DIR:/backup:Z" \
-    docker.io/library/postgres:16 \
+    "$PG_DUMP_IMAGE" \
     pg_dump --dbname="$SOURCE_DATABASE_URL" "${ARGS[@]}" --file="/backup/$NAME"
 fi
 

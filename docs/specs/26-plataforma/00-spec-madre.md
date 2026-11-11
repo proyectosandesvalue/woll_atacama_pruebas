@@ -46,7 +46,7 @@ Vercel ni Supabase.
 
 **Dentro del alcance**
 
-- Imagen Docker de PostgreSQL 16 + PostGIS + pgvector y Compose local.
+- Imagen Docker de PostgreSQL 17 + PostGIS + pgvector y Compose local.
 - Runner de migraciones portable y migración `000` de compatibilidad de roles.
 - Driver `postgres` con `pg.Pool`, roles de mínimo privilegio y pruebas de
   integración.
@@ -174,7 +174,7 @@ Internet
                 │ pg.Pool (red interna, sin puerto público)
                 ▼
 ┌─────────────────────────────────────────────────────────────┐
-│ PostgreSQL 16 + PostGIS + pgvector (contenedor)             │
+│ PostgreSQL 17 + PostGIS + pgvector (contenedor)             │
 │ - schemas public, chat, admin, ingest, rag, extensions      │
 │ - volumen pgdata                                            │
 └─────────────────────────────────────────────────────────────┘
@@ -263,7 +263,7 @@ tests no deben asumir corte inmediato.
 
 | Archivo | Propósito |
 |---|---|
-| `docker/postgres/Dockerfile` | PostgreSQL 16 + PostGIS + pgvector, versiones fijadas |
+| `docker/postgres/Dockerfile` | PostgreSQL 17 + PostGIS + pgvector, versiones fijadas |
 | `docker/api/Dockerfile` | Imagen Node 22 con `server/` y `scripts/`; usuario no root |
 | `docker-compose.yml` | Servicios `postgres`, `api`, `nginx`, `ingest` (perfil tools), volúmenes y redes |
 | `docker-compose.prod.yml` | Overrides de producción: sin puertos de Postgres, límites, restart |
@@ -389,7 +389,7 @@ Supabase CLI y una conexión DBeaver en la máquina local para obtener el dump.
 | M4 | ¿Destino de backups externos? | **Aprobado:** Restic a S3-compatible (Backblaze B2) o `rsync` a otro host | Cambia 26-G | no (26-G) |
 | M5 | ¿Nginx o Caddy? | **Aprobado:** Nginx (limit_req y caché nativos; Caddy requiere plugin) | Cambia la config del borde | no (26-D) |
 | M6 | ¿Cómo se programan las ingestas? | **Aprobado:** systemd timers en el host → `docker compose run --rm ingest` | Cambia 26-J | no (26-J) |
-| M7 | ¿Versiones exactas? | **Aprobado:** PostgreSQL 16, PostGIS 3.7.0, pgvector 0.8.7, Node 22 LTS (versiones fijadas en la imagen) | Cambia la imagen y las pruebas | no (26-C) |
+| M7 | ¿Versiones exactas? | **Aprobado:** PostgreSQL 17.11, PostGIS 3.7.0, pgvector 0.8.7, Node 22 LTS (versiones fijadas en la imagen) | Cambia la imagen y las pruebas | no (26-C) |
 | M8 | ¿Se aplica el esquema RAG (036) en este sprint? | **Aprobado:** sí, esquema y pgvector; no se ingesta corpus nuevo | Si no, queda deuda para Sprint 18 | no |
 | M9 | ¿Qué pasa con los 4 workflows de GitHub Actions? | **Aprobado:** se desactivan y se reemplazan por timers del VPS | Si se mantienen, escriben en Supabase y duplican | no (26-J) |
 

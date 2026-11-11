@@ -27,6 +27,17 @@ ABS_DUMP="$(cd "$(dirname "$DUMP")" && pwd)/$(basename "$DUMP")"
 DIR="$(dirname "$ABS_DUMP")"
 NAME="$(basename "$ABS_DUMP")"
 
+if [[ -n "${CONTAINER_RUNTIME:-}" ]]; then
+  RUNTIME="$CONTAINER_RUNTIME"
+elif command -v podman >/dev/null 2>&1; then
+  RUNTIME=podman
+elif command -v docker >/dev/null 2>&1; then
+  RUNTIME=docker
+else
+  echo "[restore] falta Podman o Docker para ejecutar pg_restore/psql" >&2
+  exit 2
+fi
+
 echo "[restore] $ABS_DUMP -> $TARGET_DATABASE_URL"
 
 # La base destino necesita el schema `extensions`, los roles y el search_path
@@ -39,7 +50,11 @@ fi
 if command -v psql >/dev/null 2>&1; then
   psql "$TARGET_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$BOOTSTRAP" >/dev/null
 else
-  podman run --rm --network host     -v "$PWD/db/migrations:/migrations:ro,Z"     docker.io/library/postgres:16     psql "$TARGET_DATABASE_URL" -v ON_ERROR_STOP=1       -f /migrations/000_compat_roles.sql >/dev/null
+  "$RUNTIME" run --rm --network host \
+    -v "$PWD/db/migrations:/migrations:ro,Z" \
+    docker.io/library/postgres:17 \
+    psql "$TARGET_DATABASE_URL" -v ON_ERROR_STOP=1 \
+      -f /migrations/000_compat_roles.sql >/dev/null
 fi
 
 if command -v pg_restore >/dev/null 2>&1; then
@@ -48,10 +63,10 @@ if command -v pg_restore >/dev/null 2>&1; then
     --no-owner --no-privileges --clean --if-exists --exit-on-error \
     "$ABS_DUMP"
 else
-  echo "[restore] pg_restore vía Podman (--network host)"
-  podman run --rm --network host \
+  echo "[restore] pg_restore vía $RUNTIME (--network host)"
+  "$RUNTIME" run --rm --network host \
     -v "$DIR:/backup:Z" \
-    docker.io/library/postgres:16 \
+    docker.io/library/postgres:17 \
     pg_restore \
       --dbname="$TARGET_DATABASE_URL" \
       --no-owner --no-privileges --clean --if-exists --exit-on-error \

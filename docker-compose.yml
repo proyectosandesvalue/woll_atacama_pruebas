@@ -19,7 +19,7 @@ services:
     build:
       context: .
       dockerfile: docker/postgres/Dockerfile
-    image: woll/postgres:16
+    image: woll/postgres:17
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-woll}

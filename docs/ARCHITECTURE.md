@@ -70,7 +70,7 @@ Limitaciones de esta etapa:
 ### 2.3. Local (dev)
 
 - **Entorno de referencia (desde 26-C):** Docker/Podman + `docker-compose.yml` +
-  `docker-compose.dev.yml`; PostgreSQL 16 + PostGIS + pgvector en
+  `docker-compose.dev.yml`; PostgreSQL 17 + PostGIS + pgvector en
   `127.0.0.1:5432`.
 - **Variables:** `.env.local` con `DB_DRIVER=postgres`, `DATABASE_URL` (rol
   `woll_api`), `DATABASE_ADMIN_URL` (migraciones) y `WOLL_*_PASSWORD`.
@@ -128,7 +128,7 @@ Limitaciones de esta etapa:
 
 ### Base de datos (demo/staging: Supabase; final: PostgreSQL/PostGIS/pgvector en VPS)
 
-- **Supabase** (PostgreSQL + PostGIS) en demo/staging; **PostgreSQL 16 +
+- **Supabase** (PostgreSQL + PostGIS) en demo/staging; **PostgreSQL 17 +
   PostGIS 3.7 + pgvector 0.8.7** en el VPS (imagen
   `docker/postgres/Dockerfile`, Sprint 26-C).
 - **RPCs tipadas** (`chat.*` + wrappers `public.chat_*`).

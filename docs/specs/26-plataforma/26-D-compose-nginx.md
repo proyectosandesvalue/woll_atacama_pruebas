@@ -46,7 +46,7 @@ imágenes se usan en local, staging y producción.
 
 | Servicio | Imagen | Puertos | Notas |
 |---|---|---|---|
-| `postgres` | `woll/postgres:16` | Ninguno | Volumen `pgdata`; healthcheck `pg_isready` |
+| `postgres` | `woll/postgres:17` | Ninguno | Volumen `pgdata`; healthcheck `pg_isready` |
 | `api` | `woll/api:latest` | Ninguno en base; `127.0.0.1:3000` en dev | `pg.Pool`, `/healthz`, usuario `node`, rootfs read-only |
 | `nginx` | `nginx:1.27-alpine` | `80/443` en prod; `127.0.0.1:8080` en dev | Único servicio público; sirve estáticos y proxya `/api/*` |
 | `ingest` | `woll/api:latest` | Ninguno | Perfil `tools`; `entrypoint: node scripts/ingest-run.mjs` |

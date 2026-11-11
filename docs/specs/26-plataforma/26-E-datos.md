@@ -50,7 +50,7 @@ SCHEMAS=public,chat,admin,ingest,rag npm run db:dump
 ```
 
 Genera `backups/woll-<timestamp>.dump` + `.sha256`. Si no hay `pg_dump` local,
-usa Podman con `postgres:16`. `rag` es opcional: si 036 no está aplicada en
+usa Podman con `postgres:17`. `rag` es opcional: si 036 no está aplicada en
 Supabase, omitirlo.
 
 ### 3.2. Restore
@@ -159,7 +159,7 @@ npm run layer:load -- geojson/foo.geojson --table foo --dimension agua \
 | `pg_restore` choca con `public`/roles existentes | `--clean --if-exists` + base vacía |
 | Semillas duplicadas al re-ejecutar migraciones | `--baseline` evita re-ejecutar 000-035 |
 | Las 12 RPCs no están versionadas | `extract-legacy-rpcs` genera 038; `check:rpcs` bloquea |
-| Diferencias de PostGIS/versión | Comparar `geometry_columns`, SRID e invalid; fijar imagen |
+| Diferencias de PostGIS/versión (Supabase PG17.11) | Comparar `geometry_columns`, SRID e invalid; fijar imagen |
 | Tablas grandes hacen lento el conteo | `statement_timeout` 120 s; ignorar auditoría |
 | Shapefile sin GDAL | Error claro; usar `osgeo/gdal` o cargar GeoJSON |
 
@@ -172,7 +172,7 @@ destino y se repite el dump. El baseline/038 solo toca la base nueva.
 
 - **Estado:** EN EJECUCIÓN. Tooling y validación local completos; falta ejecutar
   el dump real de Supabase y correr `db:verify` + `check:rpcs` contra esa base.
-- **Validado localmente:** dump/restore de la base de prueba, baseline 000-035,
+- **Validado localmente (PostgreSQL 17.11):** dump/restore de la base de prueba, baseline 000-035,
   migraciones 036-037, `load-layer` con GeoJSON, `build_catalog` PostgreSQL,
   `verify-migration` (solo fallan las 12 RPCs heredadas en la base de prueba) y
   extractor de RPCs con funciones existentes.
