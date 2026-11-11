@@ -83,7 +83,7 @@
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
-| 26 | Plataforma propia (Postgres + Docker + proxy) | ⏳ pending (prioridad alta; decisión tomada) | alta | 38-45h | 23, 24 |
+| 26 | Plataforma propia (Postgres + Docker + proxy) | ⏳ pending (spec DRAFT) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
@@ -540,8 +540,8 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 26 — Plataforma propia (épica)
 
-**Estado**: ⏳ pending (prioridad alta; decisión tomada) · **Prioridad**: alta · **Duración**: 38-45h · **Dependencias**: 23, 24
-**Requiere**: spec madre (`docs/specs/26-plataforma/00-spec-madre.md`) y una spec por tramo.
+**Estado**: ⏳ pending (spec DRAFT) · **Prioridad**: alta · **Duración**: 42-46h · **Dependencias**: 23, 24
+**Spec**: `docs/specs/26-plataforma/00-spec-madre.md` (DRAFT) y una spec por tramo.
 
 **Decisión 2026-11-10 (ADR 005)**: VPS propio para producción; Vercel + Supabase quedan como demo/staging. Supabase está en el límite de almacenamiento (~913 MB) y Vercel Hobby no es comercial ni suficiente. No se agrega infraestructura específica de Vercel que no sea portable.
 
@@ -559,14 +559,15 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 | Tramo | Contenido | Horas |
 |---|---|---|
-| 26-A | **Handler puro y servidor Node.** `server/handlers/chat.js` con `handleChat(body, ctx)`; `api/chat.js` queda como wrapper delgado; `server/index.js` (node:http o Fastify) sirve `/api/chat` y `/healthz`; cierre ordenado; budget configurable | 4 |
-| 26-B | **Driver Postgres y rol de mínimo privilegio (H17, G3).** `server/db/drivers/postgres.js` con `pg.Pool`, `statement_timeout`, registro de firmas de RPC con tipos (`jsonb`, `text[]`), llamada con parámetros nombrados y lista cerrada de funciones; rol `chat_ro`; tests de integración contra Postgres en contenedor | 5 |
-| 26-C | **Migraciones portables (G2).** `000_compat_roles.sql` idempotente (roles `service_role`/`anon`/`authenticated` sin login, schema `extensions`, extensiones `postgis`, `pgvector`, `unaccent`); runner de migraciones con tabla de control (dbmate o node-pg-migrate); imagen Postgres propia (PostGIS + pgvector); probar 000-010 sobre BD vacía dos veces | 4 |
-| 26-D | **Compose y proxy.** Servicios `postgres`, `api`, `proxy`; TLS, compresión gzip/brotli, caché de estáticos y GeoJSON, `limit_req` sobre `/api/chat`, headers; red interna, Postgres sin puerto publicado; healthchecks; `.dockerignore`; `.env.example` actualizado. Nginx trae `limit_req` nativo; Caddy requiere plugin: decidir en ADR 005 | 6 |
+| 26-A | **Servidor Node y paridad de endpoints.** Extraer handlers de estaciones/ARClim; `server/index.js` (node:http) y `server/http/` con router, body limit, CORS, errores y cierre ordenado; rutas de los 10 endpoints y `/healthz`; budget configurable | 6 |
+| 26-B | **Driver Postgres y roles de mínimo privilegio (H17, G3).** `server/db/drivers/postgres.js` con `pg.Pool`, `statement_timeout`, registro de firmas de RPC con tipos (`jsonb`, `text[]`), llamada con parámetros nombrados y lista cerrada de funciones; roles `woll_api`/`woll_ingest`; tests de integración contra Postgres en contenedor | 5 |
+| 26-C | **Imagen Postgres y migraciones portables (G2).** `000_compat_roles.sql` idempotente (roles `service_role`/`anon`/`authenticated` sin login, schema `extensions`, extensiones `postgis`, `pgvector`, `unaccent`); runner `scripts/migrate.mjs` con tabla de control y checksum; imagen PostgreSQL 16 + PostGIS + pgvector; probar 000-037 (y 038 si se crea) sobre BD vacía dos veces | 5 |
+| 26-D | **Compose, Nginx y proxy.** Servicios `postgres`, `api`, `nginx`, `ingest`; TLS, compresión, caché de estáticos/GeoJSON y de `/api/proxy`, `limit_req` sobre `/api/chat`; red interna, Postgres sin puerto publicado; healthchecks; `.dockerignore`; `.env.example` actualizado | 6 |
 | 26-E | **Datos.** Dump desde Supabase y restauración; `scripts/load-layer` (shp/GeoJSON → PostGIS con SRID, índice GIST, alta en catálogo y refresh de stats); `comunas_poligonos`; `build_catalog` contra la nueva BD; verificación de conteos por capa | 5 |
+| 26-J | **Ingestas programadas.** Reemplazar los 4 workflows de GitHub Actions por systemd timers sobre `docker compose run --rm ingest`; `flock`, logs y verificación de no duplicar datos | 3 |
 | 26-F | **Staging idéntico a producción (G1).** Segundo entorno con el mismo compose, datos de prueba y variables propias | 3 |
 | 26-G | **Backups y restauración (G4).** `pg_dump` diario comprimido y cifrado, retención, copia fuera del servidor, alerta si falla, simulacro de restauración con RPO/RTO medidos | 4 |
-| 26-H | **Endurecimiento (G14) y ajuste de Postgres.** SSH solo con llave, sin root, firewall, fail2ban, actualizaciones de seguridad automáticas, permisos de `.env`, rotación de logs de Docker; `shared_buffers`, `work_mem`, `random_page_cost` | 4 |
+| 26-H | **Endurecimiento (G14), monitoreo y ajuste de Postgres.** SSH solo con llave, sin root, firewall, fail2ban, actualizaciones de seguridad automáticas, permisos de `.env`, rotación de logs de Docker; `shared_buffers`, `work_mem`, `random_page_cost`; prueba de carga 20/50; healthcheck externo y rotación de secretos | 4 |
 | 26-I | **Corte.** Plan de corte, TTL de DNS, pruebas de humo posteriores, y retorno al stack anterior si falla | 3 |
 
 **Criterios de aceptación del sprint**:
@@ -988,6 +989,8 @@ y eliminación.
 | 007 | Autenticación de administradores | 24-C |
 | 008 | Entrega por artefactos versionados (reemplaza al 004) | 27-B |
 | 009 | Contrato de `charts` plural (pendiente desde antes) | Deuda técnica |
+| 010 | Borde y entrega estática: Nginx + TLS + caché + `limit_req` | 26-D |
+| 011 | Ingestas programadas: systemd timers sobre `docker compose run` | 26-J |
 | 010 | Capa base con licencia | 28-C |
 | 011 | Proveedor LLM, respaldo y privacidad | 25-E, 32-C |
 | 012-015 | Los previstos en la spec 08 (renumerados) | Ajuste al 08 |
