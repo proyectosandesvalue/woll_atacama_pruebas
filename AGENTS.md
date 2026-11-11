@@ -118,6 +118,9 @@ npm run migrate:status # Estado de migraciones
 npm run check:rpcs  # Verifica que las RPCs registradas existan en la BD
 npm run db:up       # Levanta PostgreSQL local (Docker Compose)
 npm run db:down     # Baja PostgreSQL local
+npm run stack:up    # Stack completo dev: postgres + api + nginx (8080)
+npm run stack:down  # Baja el stack completo
+npm run stack:logs  # Logs del stack dev
 npm run dev:api     # Servidor Node persistente en watch (puerto 3000)
 npm start           # Servidor Node persistente sin watch
 npm run dev:proxy   # Proxy persistente para Copernicus en local (puerto 3001)

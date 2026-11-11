@@ -83,7 +83,7 @@
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
-| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D siguiente) | alta | 42-46h | 23, 24 |
+| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E siguiente) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
@@ -540,7 +540,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 26 — Plataforma propia (épica)
 
-**Estado**: 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D siguiente) · **Prioridad**: alta · **Duración**: 42-46h · **Dependencias**: 23, 24
+**Estado**: 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E siguiente) · **Prioridad**: alta · **Duración**: 42-46h · **Dependencias**: 23, 24
 **Spec**: `docs/specs/26-plataforma/00-spec-madre.md` (APROBADA 2026-11-10) y una spec por tramo.
 
 **Decisión 2026-11-10 (ADR 005)**: VPS propio para producción; Vercel + Supabase quedan como demo/staging. Supabase está en el límite de almacenamiento (~913 MB) y Vercel Hobby no es comercial ni suficiente. No se agrega infraestructura específica de Vercel que no sea portable.
@@ -575,6 +575,8 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 **26-B cerrado (2026-11-10):** driver `pg.Pool`, registro cerrado de 47 RPCs, `check:rpcs` y 10 tests de integración contra PostgreSQL. `check:rpcs` detecta 12 RPCs heredadas que llegan con el dump de 26-E. Tests: 277.
 
 **26-A cerrado (2026-11-11):** servidor Node persistente, router HTTP, CORS, body limit, `/healthz`/`/readyz`, cierre ordenado y paridad de los 10 endpoints. Handlers de estaciones/ARClim compartidos con Vercel. Smoke real con PostgreSQL y SIGTERM. Tests: 310.
+
+**26-D cerrado (2026-11-11):** imagen API, Compose dev/prod, Nginx con TLS, estáticos, caché de `/api/proxy`, `limit_req` y denegación de rutas internas. Validado con Podman: stack healthy, caché servida con API detenida, 40 requests a chat → 400/429 y `nginx -t` con TLS autofirmado.
 
 **Criterios de aceptación del sprint**:
 - **CA-1** Dada una BD vacía, cuando se aplica el runner dos veces, entonces termina sin errores y las 71 capas cargan con el mismo conteo que en Supabase.
@@ -995,7 +997,7 @@ y eliminación.
 | 007 | Autenticación de administradores | 24-C |
 | 008 | Entrega por artefactos versionados (reemplaza al 004) | 27-B |
 | 009 | Contrato de `charts` plural (pendiente desde antes) | Deuda técnica |
-| 010 | Borde y entrega estática: Nginx + TLS + caché + `limit_req` | 26-D |
+| 010 | Borde y entrega estática: Nginx + TLS + caché + `limit_req` (Aceptada 2026-11-11) | 26-D |
 | 011 | Ingestas programadas: systemd timers sobre `docker compose run` | 26-J |
 | 010 | Capa base con licencia | 28-C |
 | 011 | Proveedor LLM, respaldo y privacidad | 25-E, 32-C |

@@ -40,15 +40,17 @@
 
 ### 2.1. Producción final (VPS) — objetivo del Sprint 26
 
-- **API:** Node persistente (`server/index.js`, http o Fastify).
+- **API:** Node persistente (`server/index.js`, `node:http`), sin framework.
 - **Base de datos:** PostgreSQL + PostGIS + pgvector en el VPS; driver
   `pg.Pool` (`server/db/drivers/postgres.js`).
-- **Borde:** Nginx/Caddy con TLS, compresión, caché de estáticos/GeoJSON y
-  `limit_req`.
-- **Proxy:** persistente, con caché en disco/Redis y reutilización de
-  conexiones para Copernicus/tiles.
+- **Borde:** Nginx 1.27 con TLS, HTTP/2, compresión, estáticos/GeoJSON, caché
+  de `/api/proxy` y `limit_req`.
+- **Proxy:** persistente, con caché en disco (Nginx) y caché en memoria
+  (handler), reutilización de conexiones para Copernicus/tiles.
 - **Operación:** backups, healthchecks, logs y monitoreo.
-- **Estado:** pendiente de migración (Sprint 26); ver `docs/DECISIONS/005-plataforma-hosting-vps.md`.
+- **Estado:** 26-C/B/A/D cerrados; pendientes datos, staging, backups,
+  hardening y corte (26-E a 26-I). Ver `docs/DECISIONS/005-plataforma-hosting-vps.md`
+  y `010-borde-nginx.md`.
 
 ### 2.2. Demo/staging actual (Vercel + Supabase)
 
@@ -74,6 +76,10 @@ Limitaciones de esta etapa:
   `woll_api`), `DATABASE_ADMIN_URL` (migraciones) y `WOLL_*_PASSWORD`.
 - **Migraciones:** `npm run migrate` / `npm run migrate:status`
   (`scripts/migrate.mjs`).
+- **Stack completo:** `npm run stack:up` levanta PostgreSQL, API y Nginx; el
+  visor queda en `http://localhost:8080` y la API en `http://localhost:3000`.
+- **TLS local:** el compose de desarrollo usa HTTP; el de producción usa
+  `woll.conf` con certificados de certbot.
 - **Demo legacy:** `npx vercel dev` + `.env.staging` + Supabase, congelada
   (ADR 005). Se mantiene hasta cerrar el Sprint 26.
 - **Vertex AI:** requiere `gcloud auth application-default login` (ADC local) o `GOOGLE_APPLICATION_CREDENTIALS_JSON` (Service Account).
@@ -115,6 +121,8 @@ Limitaciones de esta etapa:
 - **Node.js** (runtime de Vercel en demo; Node 22 LTS en el VPS).
 - **Servidor persistente (26-A):** `server/index.js` + `server/app.js` con
   router, CORS, body limit, `/healthz`/`/readyz` y cierre ordenado.
+- **Borde (26-D):** Nginx sirve estáticos/GeoJSON, proxya `/api/*` y cachea
+  `/api/proxy`; solo Nginx publica puertos en producción.
 - **fetch** nativo (Node 18+).
 - **Dependencias de runtime acotadas**: `pg` (driver PostgreSQL), `@google-cloud/vertexai` y `google-auth-library` (Vertex AI), `csv-parser` (ingesta). El parseo de PDF (`pdfjs-dist`) es **devDependency** y solo lo usa la CLI de ingesta, nunca `api/`.
 

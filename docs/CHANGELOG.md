@@ -90,6 +90,30 @@
 - Documentación: `ARCHITECTURE.md` §3 (capas satelitales), `DEV_GUIDE.md` §3.8 (agregar indicador), `README.md`, `AGENTS.md`, `ROADMAP.md` (Sprint 44) y `docs/specs/44-indicadores-copernicus.md`.
 - ROADMAP: 25-A/C/D/E cerrados; 22-A/E cerrados; 09-A semi-resuelto (Copernicus cubre indicadores; NASA WMS 30 m y lectura raster pendientes); 09-C redefinido como implementación de capas meteorológicas dinámicas; 09-D pasa a optimización; 37 diferido; eliminado el duplicado de Sprint 37.
 
+## [Sprint 26-D] — 2026-11-11
+
+### Added
+- `docker/api/Dockerfile`: imagen Node 22 con `server/`, `scripts/` y `db/`, sin devDependencies y usuario `node`.
+- `docker-compose.yml`: servicios `postgres`, `api`, `nginx` e `ingest` (perfil `tools`), red interna, volúmenes y healthchecks.
+- `docker-compose.dev.yml`: puertos en loopback (PostgreSQL 5432, API 3000, Nginx 8080) y config Nginx sin TLS.
+- `docker-compose.prod.yml`: Nginx 80/443, TLS, certificados y certbot (perfil `tls`).
+- `deploy/nginx/`: config TLS, config dev, locations compartidas, proxy headers, caché de `/api/proxy` y `limit_req`.
+- Scripts `stack:up`, `stack:down`, `stack:logs`.
+- ADR 010 (borde Nginx).
+
+### Changed
+- `.env.example`: `DATABASE_URL_DOCKER`, `DOMAIN`, `CERTBOT_EMAIL`, `API_PORT`, `NGINX_PORT` y orígenes del VPS.
+- Nginx sirve estáticos y deniega `docs`, `db`, `server`, `scripts`, `rag`, `docker`, `deploy`, `data`, dotfiles y archivos de repo.
+- `/api/proxy` usa `proxy_cache` en disco; `/api/chat` y `/api/proxy` usan `limit_req`.
+
+### Validation
+- Compose dev/prod válido; stack dev con PostgreSQL, API y Nginx healthy.
+- `/healthz` 200, `/api/stations-map` 200, `/api/chat` 400 con `{}`, `/docs` 404, `/.env.local` 403.
+- Caché de Nginx servida con la API detenida (imagen idéntica).
+- 40 requests a `/api/chat`: 32×400 y 8×429, sin 5xx.
+- TLS autofirmado: `nginx -t` OK, `/nginx-health` por 443 y HSTS.
+- API como usuario `node`, rootfs read-only y `/tmp` tmpfs.
+
 ## [Sprint 26-A] — 2026-11-11
 
 ### Added

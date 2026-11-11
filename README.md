@@ -66,6 +66,8 @@ Para correr en local:
 npx http-server -p 8099   # visor sin chat → http://localhost:8099
 npm run dev               # visor + chat + proxy Copernicus → http://localhost:3000
 npm run dev:api           # API Node persistente → http://localhost:3000 (sin frontend)
+npm run stack:up          # stack completo: PostgreSQL + API + Nginx → http://localhost:8080
+npm run stack:down        # baja el stack completo
 npm start                 # API Node sin watch (producción)
 ```
 
@@ -93,10 +95,10 @@ npm run db:down
 ```
 
 La base queda en `127.0.0.1:5432` (solo loopback). En el VPS no se publica:
-queda en la red interna de Compose (26-D). El servidor Node se prueba con
-`npm run dev:api` y `curl` (`/healthz`, `/api/stations-map`, etc.); el frontend
-sigue usando `vercel dev` + Supabase para la demo hasta que Nginx sirva los
-estáticos en 26-D.
+queda en la red interna de Compose. `npm run stack:up` levanta PostgreSQL, API y
+Nginx; el visor queda en `http://localhost:8080` y la API directa en
+`http://localhost:3000`. No corras `dev:api` y `stack:up` a la vez: ambos usan
+el puerto 3000. La demo Vercel + Supabase sigue disponible con `vercel dev`.
 
 ## Estructura del proyecto
 
@@ -104,6 +106,9 @@ estáticos en 26-D.
 woll_atacama_pruebas/
 ├── index.html, help.html       # SPA y manual de ayuda
 ├── api/*.js                    # Vercel Functions (adapters delgados para la demo)
+├── docker/                     # Dockerfiles de PostgreSQL y API
+├── deploy/nginx/               # Config TLS, dev, locations y proxy headers
+├── docker-compose*.yml         # Stack base, dev y prod
 ├── server/
 │   ├── index.js, app.js        # servidor Node persistente y app HTTP
 │   ├── http/                   # router, body, response y adapter Vercel
@@ -140,6 +145,9 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `api/chat.js` | Vercel Function del chat (adapter delgado) | Cambios de CORS/método del endpoint, no de lógica |
 | `api/proxy.js` | Proxy cerrado de servicios externos | Agregar un servicio o ajustar CORS/timeout |
 | `api/arclim-geojson.js`, `api/stations-*.js`, `api/variable-*.js` | Adapters Vercel de datos climáticos/estaciones | Cambios de CORS/método, no de lógica |
+| `docker-compose.yml`, `docker-compose.dev.yml`, `docker-compose.prod.yml` | Stack PostgreSQL + API + Nginx + ingest | Cambios de servicios, puertos o volúmenes |
+| `docker/api/Dockerfile`, `docker/postgres/Dockerfile` | Imágenes de API y PostgreSQL/PostGIS/pgvector | Cambios de runtime o versiones |
+| `deploy/nginx/` | TLS, estáticos, caché de proxy y `limit_req` | Cambios de borde, rutas o headers |
 | `server/index.js`, `server/app.js` | Servidor Node persistente y app HTTP (VPS) | Cambios de arranque, timeouts o router |
 | `server/http/` | Router, body, respuestas, errores y adapter Vercel | Cambios transversales de HTTP |
 | `server/routes/` | Rutas Node de chat, proxy, ARClim, estaciones y health | Agregar o cambiar una ruta |
@@ -236,7 +244,7 @@ No conviene instalar decenas de skills a la vez: la lista que ve el modelo crece
 
 ## Tecnologías
 
-Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGL Heatmap, Turf.js (solo `bbox`), DOMPurify, Chart.js; Vanilla JS ES Modules y CSS custom properties. **Demo/staging:** Vercel Functions + Supabase (PostGIS) + Vertex AI. **Producción final:** VPS con Node persistente y PostgreSQL/PostGIS/pgvector (ADR 005). Versiones y detalle en `docs/ARCHITECTURE.md` §3.
+Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGL Heatmap, Turf.js (solo `bbox`), DOMPurify, Chart.js; Vanilla JS ES Modules y CSS custom properties. **Demo/staging:** Vercel Functions + Supabase (PostGIS) + Vertex AI. **Producción final:** VPS con Node persistente, PostgreSQL/PostGIS/pgvector y Nginx (ADR 005/010). Versiones y detalle en `docs/ARCHITECTURE.md` §3.
 
 ## Configuración básica
 
@@ -254,6 +262,15 @@ Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGL Heatmap, Turf.js (sol
 **Demo/staging:** push a `main` → Vercel despliega automáticamente (~30 s). Las variables de entorno se configuran en Vercel → Settings → Environment Variables (lista en `.env.example`).
 
 **Producción final:** VPS con Node persistente, PostgreSQL/PostGIS/pgvector, Nginx/Caddy y proxy persistente. La promoción y el corte se definen en el Sprint 26/ADR 005.
+
+```bash
+# En el VPS, con .env completo y el certificado emitido
+docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+Nginx sirve el visor por 443, proxya `/api/*` a la API y cachea `/api/proxy`.
+PostgreSQL y la API no publican puertos. El detalle de TLS y certbot está en
+`docs/DEV_GUIDE.md` §2.8 y en `docs/specs/26-plataforma/26-D-compose-nginx.md`.
 
 Variables de entorno relevantes (ver `.env.example` para la lista completa):
 

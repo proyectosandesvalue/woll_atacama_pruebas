@@ -120,6 +120,41 @@ npm start         # sin watch, para producción
   `/api/historical-stations`.
 - Cierre: `Ctrl+C` o `SIGTERM` cierran el HTTP y el pool de PostgreSQL.
 
+### 2.8. Stack completo con Nginx (Sprint 26-D)
+
+```bash
+npm run stack:up     # PostgreSQL + API + Nginx
+npm run stack:logs
+npm run stack:down
+```
+
+- Visor: `http://localhost:8080` (Nginx).
+- API directa: `http://localhost:3000`.
+- Health: `http://localhost:8080/healthz` y `http://localhost:8080/nginx-health`.
+- No corras `npm run dev:api` al mismo tiempo: ambos usan el puerto 3000.
+- Si recreás solo el contenedor `api` en desarrollo, reiniciá Nginx
+  (`docker compose ... restart nginx`) para que resuelva la nueva IP.
+
+**Producción (VPS):**
+
+```bash
+docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+Antes del primer arranque hay que emitir el certificado:
+
+```bash
+docker run --rm -p 80:80 \
+  -v woll_letsencrypt:/etc/letsencrypt \
+  docker.io/certbot/certbot:latest certonly --standalone \
+  -d "$DOMAIN" --cert-name woll \
+  --email "$CERTBOT_EMAIL" --agree-tos --no-eff-email
+```
+
+El servicio `certbot` del perfil `tls` renueva por webroot; Nginx sirve
+`/.well-known/acme-challenge/`. El certificado se monta en
+`/etc/letsencrypt/live/woll/`.
+
 3. Comandos útiles
 3.1. Desarrollo local
 Opción A — servidor estático (más simple, sin backend):

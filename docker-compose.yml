@@ -1,10 +1,18 @@
 # Compose base del Sprint 26.
 #
-# En este tramo (26-C) solo existe PostgreSQL. Los servicios api, nginx e
-# ingest se agregan en 26-D. El puerto no se publica en la base: para
-# desarrollo se usa docker-compose.dev.yml, que lo expone solo en 127.0.0.1.
+# Desarrollo:  docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d
+# Producción:  docker compose --env-file .env -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# La base no se publica: solo la red interna de Compose. Nginx es el único
+# servicio con puertos expuestos (en el override de producción).
 
 name: woll
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
 
 services:
   postgres:
@@ -33,14 +41,104 @@ services:
       start_period: 10s
     networks:
       - internal
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "5"
+    logging: *default-logging
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    image: woll/api:latest
+    restart: unless-stopped
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DB_DRIVER: postgres
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Define DATABASE_URL_DOCKER en .env}
+      PG_APPLICATION_NAME: woll-api
+      GEO_PROVIDER: none
+      TRUST_PROXY_HOPS: "1"
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
+    expose:
+      - "3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - internal
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  nginx:
+    image: docker.io/library/nginx:1.27.5-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1/nginx-health >/dev/null || exit 1",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - internal
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+
+  ingest:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    image: woll/api:latest
+    restart: "no"
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DB_DRIVER: postgres
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Define DATABASE_URL_DOCKER en .env}
+      PG_APPLICATION_NAME: woll-ingest
+      GEO_PROVIDER: none
+    entrypoint: ["node", "scripts/ingest-run.mjs"]
+    networks:
+      - internal
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
 
 volumes:
   pgdata:
+  nginx_cache:
+  letsencrypt:
+  certbot_www:
 
 networks:
   internal:

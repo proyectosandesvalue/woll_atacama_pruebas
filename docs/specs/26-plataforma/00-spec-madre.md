@@ -128,7 +128,7 @@ Vercel ni Supabase.
 | Decisión | ADR | Estado |
 |---|---|---|
 | PostgreSQL propio: instancia única, schemas, extensiones, roles, pool y migraciones | `006-postgres-propio.md` | Aceptado 2026-11-10 |
-| Borde y entrega estática: Nginx + TLS + caché + `limit_req` | `010-borde-nginx.md` | Pendiente (se escribe en 26-D) |
+| Borde y entrega estática: Nginx + TLS + caché + `limit_req` | `010-borde-nginx.md` | Aceptado 2026-11-11 |
 | Programación de ingestas: systemd timers sobre `docker compose run` | `011-ingestas-programadas.md` | Pendiente (se escribe en 26-J) |
 | Autenticación de administradores | `007-auth-admin.md` | Fuera de este sprint (Sprint 15) |
 | Entrega por artefactos versionados | `008-entrega-artefactos.md` | Sprint 27 |
@@ -285,8 +285,8 @@ tests no deben asumir corte inmediato.
 | 26-C | Imagen PostgreSQL/PostGIS/pgvector, `000_compat_roles.sql` y runner de migraciones | 5 | — | Borrar el volumen y volver a Supabase | `26-C-imagen-postgres.md` | ✅ done |
 | 26-B | Driver `postgres` con `pg.Pool`, roles y pruebas de integración | 5 | 26-C | `DB_DRIVER=supabase` | `26-B-driver-postgres.md` | ✅ done |
 | 26-A | Servidor Node, extracción de handlers de estaciones/ARClim, rutas de los 10 endpoints, `/healthz` y cierre ordenado | 6 | 26-B | Apagar Node y volver a Vercel | `26-A-servidor-node.md` | ✅ done |
-| 26-D | Compose, Nginx/Caddy, TLS (certbot), estáticos, caché de proxy y `limit_req` | 6 | 26-A, 26-C | Volver al proxy/Function de demo | `26-D-compose-nginx.md` | siguiente |
-| 26-E | Dump/restore, `load-layer`, `build_catalog` y verificación de conteos | 5 | 26-C | Supabase sigue intacto | `26-E-datos.md` | pendiente |
+| 26-D | Compose, Nginx/Caddy, TLS (certbot), estáticos, caché de proxy y `limit_req` | 6 | 26-A, 26-C | Volver al proxy/Function de demo | `26-D-compose-nginx.md` | ✅ done |
+| 26-E | Dump/restore, `load-layer`, `build_catalog` y verificación de conteos | 5 | 26-C | Supabase sigue intacto | `26-E-datos.md` | siguiente |
 | 26-J | Ingestas programadas en el VPS (systemd timers) y retiro de los workflows de Supabase | 3 | 26-B, 26-E | Reactivar los workflows de GitHub Actions | `26-J-ingestas.md` | pendiente |
 | 26-F | Staging idéntico a producción (misma imagen/Compose, datos y dominio) | 3 | 26-D, 26-E | Apagar staging | `26-F-staging.md` | pendiente |
 | 26-G | Backups cifrados, retención, copia externa y simulacro de restauración | 4 | 26-C | Desactivar el timer de backup | `26-G-backups.md` | pendiente |
@@ -339,6 +339,7 @@ Un tramo no se cierra hasta cumplir todo:
 | Integración (Docker) | Todas las RPCs usadas por el chat, las tools, las estaciones y las ingestas (47 nombres identificados en `server/`, `scripts/` y `api/`) contra PostgreSQL; endpoints de estaciones; migraciones 000-037 (y 038 si se crea) dos veces; `build_catalog` |
 | Contrato | `/api/chat` con el golden set; los 10 endpoints comparados contra la demo |
 | Carga | 20 y 50 usuarios concurrentes; ráfaga de tiles de Copernicus |
+| Borde | `podman/docker compose config`, healthchecks, estáticos, denegaciones, caché de `/api/proxy`, `limit_req` y `nginx -t` con TLS |
 | Seguridad | Escaneo de puertos, `docker compose config`, permisos de `.env`, ausencia de secretos |
 | Operación | Reinicio del VPS, caída de `api`, restauración de backup, timers de ingesta |
 
