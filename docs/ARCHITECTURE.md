@@ -48,9 +48,9 @@
 - **Proxy:** persistente, con caché en disco (Nginx) y caché en memoria
   (handler), reutilización de conexiones para Copernicus/tiles.
 - **Operación:** backups, healthchecks, logs y monitoreo.
-- **Estado:** 26-C/B/A/D cerrados; pendientes datos, staging, backups,
-  hardening y corte (26-E a 26-I). Ver `docs/DECISIONS/005-plataforma-hosting-vps.md`
-  y `010-borde-nginx.md`.
+- **Estado:** 26-C/B/A/D cerrados; 26-E con tooling listo (falta el dump real
+  de Supabase); pendientes staging, backups, hardening y corte (26-F a 26-I).
+  Ver `docs/DECISIONS/005-plataforma-hosting-vps.md` y `010-borde-nginx.md`.
 
 ### 2.2. Demo/staging actual (Vercel + Supabase)
 

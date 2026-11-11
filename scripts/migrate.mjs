@@ -43,7 +43,7 @@ export function checksum(sql) {
  * @returns {{status:boolean,dryRun:boolean,to:string|null,help:boolean}}
  */
 export function parseArgs(argv = []) {
-  const opts = { status: false, dryRun: false, to: null, help: false };
+  const opts = { status: false, dryRun: false, baseline: false, to: null, help: false };
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -52,6 +52,8 @@ export function parseArgs(argv = []) {
       opts.status = true;
     } else if (arg === "--dry-run") {
       opts.dryRun = true;
+    } else if (arg === "--baseline") {
+      opts.baseline = true;
     } else if (arg === "--help" || arg === "-h") {
       opts.help = true;
     } else if (arg === "--to") {
@@ -220,6 +222,7 @@ export async function runMigrations({
   connectionString,
   dir = MIGRATIONS_DIR,
   dryRun = false,
+  baseline = false,
   to = null,
   log = console.log,
 }) {
@@ -257,6 +260,35 @@ export async function runMigrations({
     const pending = plan.filter((item) => item.status === "pending");
     if (pending.length === 0) {
       log("No hay migraciones pendientes.");
+      return { applied: 0, skipped: plan.length };
+    }
+
+    if (baseline) {
+      if (dryRun) {
+        for (const item of pending) {
+          log(`B ${item.file} (baseline dry-run)`);
+        }
+        log(`Dry-run baseline: ${pending.length} migración(es).`);
+        return { applied: 0, skipped: plan.length };
+      }
+
+      await client.query("BEGIN");
+      try {
+        for (const item of pending) {
+          await client.query(
+            `INSERT INTO ${MIGRATIONS_TABLE} (version, checksum, execution_ms)
+             VALUES ($1, $2, 0)`,
+            [item.file, item.checksum]
+          );
+          log(`B ${item.file} (baseline)`);
+        }
+        await client.query("COMMIT");
+      } catch (err) {
+        await client.query("ROLLBACK").catch(() => {});
+        throw err;
+      }
+
+      log(`Baseline: ${pending.length} migración(es) marcadas como aplicadas.`);
       return { applied: 0, skipped: plan.length };
     }
 
@@ -336,6 +368,7 @@ Uso:
   node scripts/migrate.mjs              Aplica migraciones pendientes
   node scripts/migrate.mjs --status     Muestra aplicadas/pendientes
   node scripts/migrate.mjs --dry-run    Lista lo que aplicaría, sin escribir
+  node scripts/migrate.mjs --baseline   Marca como aplicadas sin ejecutar (tras restore)
   node scripts/migrate.mjs --to 010     Aplica hasta el prefijo indicado
   node scripts/migrate.mjs --help       Esta ayuda
 
@@ -376,6 +409,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
   await runMigrations({
     connectionString,
     dryRun: opts.dryRun,
+    baseline: opts.baseline,
     to: opts.to,
   });
 }

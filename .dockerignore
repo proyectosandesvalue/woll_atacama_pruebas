@@ -19,3 +19,8 @@ rag/inbox
 session_export.md
 skills-lock.json
 help.html
+
+# Dumps/backups locales
+backups
+*.dump
+*.dump.sha256

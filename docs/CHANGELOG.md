@@ -66,7 +66,7 @@
 - Concurrencia en producción: 10/10 y 20/20 requests 200; p95 5,45 s y 10,03 s; sin 429/503.
 - Fast path de proximidad (`server/chat/classifier-fast.js`): evita catálogo y clasificador LLM en preguntas explícitas sin historial.
 - Pruebas de concurrencia: caso único 2.259 ms; 20 proximidad p95 5.581 ms; 20 orquestador p95 8.895 ms; 30 proximidad p95 11.328 ms; sin 429/503.
-- Tests: 310 (309 pasan con BD de integración, 1 omitido; sin BD, 10 tests de integración se omiten).
+- Tests: 317 (316 pasan con BD de integración, 1 omitido; sin BD, 10 tests de integración y 1 de RAG se omiten).
 - Sprint 25 cerrado (25-A/B/C/D/E/F); baseline de latencia y decisión de streaming documentadas.
 
 ### Fixed
@@ -89,6 +89,33 @@
 - Textos de NDVI, MSAVI2, VARI, MCARI, PSRI, NDYI, NDWI, NDCI, MSI y SWIR alineados a lenguaje no especialista, con rangos e interpretación por tramos.
 - Documentación: `ARCHITECTURE.md` §3 (capas satelitales), `DEV_GUIDE.md` §3.8 (agregar indicador), `README.md`, `AGENTS.md`, `ROADMAP.md` (Sprint 44) y `docs/specs/44-indicadores-copernicus.md`.
 - ROADMAP: 25-A/C/D/E cerrados; 22-A/E cerrados; 09-A semi-resuelto (Copernicus cubre indicadores; NASA WMS 30 m y lectura raster pendientes); 09-C redefinido como implementación de capas meteorológicas dinámicas; 09-D pasa a optimización; 37 diferido; eliminado el duplicado de Sprint 37.
+
+## [Sprint 26-E] — 2026-11-11
+
+### Added
+- `scripts/dump-supabase.sh`: dump custom de schemas de aplicación, con checksum.
+- `scripts/restore-local.sh`: bootstrap de `000_compat_roles.sql` + `pg_restore` seguro.
+- `scripts/migrate.mjs --baseline`: marca migraciones ya presentes en un dump sin re-ejecutarlas.
+- `scripts/extract-legacy-rpcs.mjs`: genera `038_legacy_rpcs.sql` desde Supabase.
+- `scripts/verify-migration.mjs`: compara tablas, geometrías, secuencias, extensiones, roles y RPCs.
+- `scripts/load-layer.mjs`: carga GeoJSON/Shapefile a PostGIS con SRID, GIST, catálogo y stats.
+- `scripts/build_catalog.mjs`: soporte `DB_DRIVER=postgres` y `--only`.
+- Scripts `db:dump`, `db:restore`, `db:verify`, `db:extract-rpcs`, `layer:load`.
+
+### Changed
+- `server/db/rpc-signatures.js`: agrega `chat_table_exists`, `chat_upsert_layer` y `chat_refresh_stats`.
+- `buildRpcCall` serializa arrays `jsonb` como JSON (necesario para `p_attributes`, `p_values`).
+- `.gitignore`: `backups/`, `*.dump`, `*.dump.sha256`.
+
+### Validated locally
+- Dump/restore de la base de prueba, `000` antes del restore y baseline 000-035.
+- `load-layer` con GeoJSON: tabla, GIST, catálogo y stats.
+- `build_catalog --only` con PostgreSQL.
+- `verify-migration`: conteos, geometrías, secuencias, extensiones y roles OK; solo faltan las 12 RPCs heredadas de la base de prueba.
+- `extract-legacy-rpcs` genera SQL válido con `REVOKE`/`GRANT`.
+
+### Pending
+- Ejecutar el dump real de Supabase con `SOURCE_DATABASE_URL`, restaurar, generar 038 y cerrar `check:rpcs` 50/50 y `db:verify` OK.
 
 ## [Sprint 26-D] — 2026-11-11
 

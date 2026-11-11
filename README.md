@@ -69,6 +69,11 @@ npm run dev:api           # API Node persistente → http://localhost:3000 (sin 
 npm run stack:up          # stack completo: PostgreSQL + API + Nginx → http://localhost:8080
 npm run stack:down        # baja el stack completo
 npm start                 # API Node sin watch (producción)
+npm run db:dump           # dump de Supabase (SOURCE_DATABASE_URL)
+npm run db:restore -- backups/woll-....dump  # restore local (TARGET_DATABASE_URL)
+npm run db:verify         # compara origen/destino (SOURCE_* y TARGET_*)
+npm run db:extract-rpcs   # genera 038 con las RPCs heredadas
+npm run layer:load -- geojson/foo.geojson --table foo --dimension agua
 ```
 
 `npm run dev` levanta `vercel dev` y el proxy persistente de Copernicus en `http://localhost:3001/api/proxy`. `npm run dev:api` levanta el servidor Node del VPS contra el PostgreSQL local; no lo corras junto con `vercel dev` porque ambos usan el puerto 3000. Si prefieres levantar Vercel y el proxy por separado:
@@ -120,7 +125,7 @@ woll_atacama_pruebas/
 │   ├── llm/                    # driver Vertex AI (OpenAI-compatible)
 │   └── db/                     # pool y drivers postgres/supabase
 ├── db/migrations/              # migraciones SQL numeradas (NNN_nombre.sql)
-├── scripts/                    # catálogo, smoke tests, golden set, prompts
+├── scripts/                    # catálogo, dump/restore, load-layer, smoke tests, golden set
 ├── js/
 │   ├── app.js, script.js       # bootstrap y UI shell
 │   ├── config/                 # una dimensión por archivo + WMS, capas base, aliases
@@ -164,7 +169,12 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `js/script.js` | UI shell: sidebars, tabs, chat, GetFeatureInfo | Cambios de interacción global |
 | `js/config/` | Una dimensión por archivo + WMS, capas base y aliases | Agregar/quitar capas o servicios |
 | `js/config/copernicusLayer.js` | Ficha común de capas satelitales Copernicus | Nuevos índices o cambios de ficha |
+| `scripts/dump-supabase.sh`, `scripts/restore-local.sh` | Dump de Supabase y restore al PostgreSQL local | Migración de datos o restore de staging |
+| `scripts/verify-migration.mjs` | Compara conteos, geometrías, secuencias, roles y RPCs | Antes de promover staging/producción |
+| `scripts/extract-legacy-rpcs.mjs` | Genera `038_legacy_rpcs.sql` desde Supabase | Cerrar el gap de RPCs heredadas |
+| `scripts/load-layer.mjs` | Carga GeoJSON/Shapefile a PostGIS + catálogo | Agregar o reemplazar una capa |
 | `scripts/dev-proxy.mjs`, `js/config/proxy.js` | Proxy persistente para desarrollo local (3001) | Cambios del entorno local |
+| `scripts/build_catalog.mjs` | Reconstruye `chat.chat_catalog` (Supabase o PostgreSQL) | Nuevas capas o cambios de config |
 | `js/store/appState.js` | Única fuente de verdad del visor | Nuevo estado global o ciclo de capas |
 | `js/sidebar/` | Render de dimensiones, grupos, capas y leyenda | Cambios de sidebar o controles por capa |
 | `js/utils/layerUtils.js`, `glifyAdapter.js`, `wmsUtils.js` | Carga y render de capas | Cambios de render, WMS o filtros |

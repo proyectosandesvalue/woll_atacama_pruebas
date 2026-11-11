@@ -138,6 +138,31 @@ export const RPC_SIGNATURES = Object.freeze({
     params: { p_schema: text, p_table: text },
     returns: "value",
   },
+  chat_table_exists: {
+    schema: "public",
+    params: { p_schema: text, p_table: text },
+    returns: "value",
+  },
+  chat_upsert_layer: {
+    schema: "public",
+    params: {
+      p_layer_id: text,
+      p_physical_table: text,
+      p_display_name: text,
+      p_dimension: text,
+      p_geometry_type: text,
+      p_srid: int,
+      p_description: text,
+      p_attributes: jsonb,
+      p_enabled: boolean,
+    },
+    returns: "value",
+  },
+  chat_refresh_stats: {
+    schema: "public",
+    params: {},
+    returns: "value",
+  },
 
   // ── Auditoría / catálogo interno ──────────────────────────────────
   chat_audit_start_run: {
@@ -425,7 +450,16 @@ export function buildRpcCall(name, params = {}) {
   const args = entries.map(
     ([param, type], index) => `${param} => $${index + 1}::${type}`
   );
-  const values = entries.map(([param]) => input[param]);
+  const values = entries.map(([param, type]) => {
+    const value = input[param];
+    // `pg` serializa arrays como arrays de PostgreSQL, no como JSON. Para
+    // jsonb hay que enviar el JSON como texto; los objetos ya los serializa,
+    // pero homogeneizamos para evitar diferencias.
+    if (type === "jsonb" && value !== null && typeof value !== "string") {
+      return JSON.stringify(value);
+    }
+    return value;
+  });
 
   return {
     sql: `SELECT ${signature.schema}.${name}(${args.join(", ")}) AS result`,

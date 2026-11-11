@@ -41,3 +41,8 @@ data/
 rag/inbox/*
 !rag/inbox/.gitkeep
 rag/**/*.pdf
+
+# Dumps/backups locales (nunca se versionan)
+backups/
+*.dump
+*.dump.sha256

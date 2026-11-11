@@ -74,7 +74,7 @@ test("construye una RPC con parámetros nombrados y casts", () => {
     call.sql,
     "SELECT public.chat_query(p_layer => $1::text, p_filters => $2::jsonb, p_limit => $3::int) AS result"
   );
-  assert.deepEqual(call.values, ["desaladoras", { tipo: "salar" }, 20]);
+  assert.deepEqual(call.values, ["desaladoras", '{"tipo":"salar"}', 20]);
 });
 
 test("omite parámetros ausentes y respeta null", () => {

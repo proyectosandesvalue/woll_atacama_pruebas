@@ -83,7 +83,7 @@
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
-| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E siguiente) | alta | 42-46h | 23, 24 |
+| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E tooling listo; falta dump) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
@@ -540,7 +540,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 26 — Plataforma propia (épica)
 
-**Estado**: 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E siguiente) · **Prioridad**: alta · **Duración**: 42-46h · **Dependencias**: 23, 24
+**Estado**: 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E tooling listo; falta dump) · **Prioridad**: alta · **Duración**: 42-46h · **Dependencias**: 23, 24
 **Spec**: `docs/specs/26-plataforma/00-spec-madre.md` (APROBADA 2026-11-10) y una spec por tramo.
 
 **Decisión 2026-11-10 (ADR 005)**: VPS propio para producción; Vercel + Supabase quedan como demo/staging. Supabase está en el límite de almacenamiento (~913 MB) y Vercel Hobby no es comercial ni suficiente. No se agrega infraestructura específica de Vercel que no sea portable.
@@ -572,11 +572,13 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 **26-C cerrado (2026-11-10):** imagen PostgreSQL 16 + PostGIS 3.7.0 + pgvector 0.8.7, Compose base, `000_compat_roles.sql`, runner `scripts/migrate.mjs` y `scripts/bootstrap-roles.sh`. 34 migraciones aplicadas dos veces; roles y extensiones verificados. Validado con Podman 5.8 + `podman-compose`; Docker Compose no estaba disponible en el entorno. Tests: 258.
 
-**26-B cerrado (2026-11-10):** driver `pg.Pool`, registro cerrado de 47 RPCs, `check:rpcs` y 10 tests de integración contra PostgreSQL. `check:rpcs` detecta 12 RPCs heredadas que llegan con el dump de 26-E. Tests: 277.
+**26-B cerrado (2026-11-10):** driver `pg.Pool`, registro cerrado de 47 RPCs (50 tras sumar las de catálogo en 26-E), `check:rpcs` y 10 tests de integración contra PostgreSQL. `check:rpcs` detecta 12 RPCs heredadas que llegan con el dump de 26-E. Tests: 277.
 
 **26-A cerrado (2026-11-11):** servidor Node persistente, router HTTP, CORS, body limit, `/healthz`/`/readyz`, cierre ordenado y paridad de los 10 endpoints. Handlers de estaciones/ARClim compartidos con Vercel. Smoke real con PostgreSQL y SIGTERM. Tests: 310.
 
 **26-D cerrado (2026-11-11):** imagen API, Compose dev/prod, Nginx con TLS, estáticos, caché de `/api/proxy`, `limit_req` y denegación de rutas internas. Validado con Podman: stack healthy, caché servida con API detenida, 40 requests a chat → 400/429 y `nginx -t` con TLS autofirmado.
+
+**26-E en ejecución (2026-11-11):** dump/restore, baseline de migraciones, extractor de las 12 RPCs heredadas, verificación de conteos/geometrías/secuencias y `load-layer` listos y validados en local. Falta el `SOURCE_DATABASE_URL` de Supabase para ejecutar el dump real y cerrar `check:rpcs` 50/50.
 
 **Criterios de aceptación del sprint**:
 - **CA-1** Dada una BD vacía, cuando se aplica el runner dos veces, entonces termina sin errores y las 71 capas cargan con el mismo conteo que en Supabase.

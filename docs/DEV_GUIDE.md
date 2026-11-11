@@ -155,6 +155,47 @@ El servicio `certbot` del perfil `tls` renueva por webroot; Nginx sirve
 `/.well-known/acme-challenge/`. El certificado se monta en
 `/etc/letsencrypt/live/woll/`.
 
+### 2.9. Migración de datos desde Supabase (Sprint 26-E)
+
+La conexión directa a Supabase (DBeaver o `supabase db dump`) **no se guarda en
+el repo**. Exportá `SOURCE_DATABASE_URL` solo en la sesión.
+
+```bash
+export SOURCE_DATABASE_URL='postgres://...'
+SCHEMAS=public,chat,admin,ingest,rag npm run db:dump
+# genera backups/woll-<timestamp>.dump + .sha256
+```
+
+Restore en una base destino vacía/staging:
+
+```bash
+export TARGET_DATABASE_URL='postgres://postgres:...@127.0.0.1:5432/woll'
+npm run db:restore -- backups/woll-<timestamp>.dump
+node scripts/migrate.mjs --baseline --to 035   # el dump ya trae 000-035
+npm run migrate                                # 036 rag + 038 si existe
+```
+
+RPCs heredadas y verificación:
+
+```bash
+export SOURCE_DATABASE_URL='postgres://...'
+npm run db:extract-rpcs
+npm run migrate
+npm run check:rpcs
+SOURCE_DATABASE_URL="$SOURCE_DATABASE_URL" \
+TARGET_DATABASE_URL="$TARGET_DATABASE_URL" \
+npm run db:verify
+```
+
+Carga de capas nuevas:
+
+```bash
+npm run layer:load -- geojson/foo.geojson --table foo --dimension agua \
+  --display-name "Foo" [--force]
+```
+
+`backups/` está en `.gitignore`; los dumps no se versionan.
+
 3. Comandos útiles
 3.1. Desarrollo local
 Opción A — servidor estático (más simple, sin backend):

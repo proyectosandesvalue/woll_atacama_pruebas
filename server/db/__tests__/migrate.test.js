@@ -12,6 +12,7 @@ test("parsea --status, --dry-run y --to", () => {
   assert.deepEqual(parseArgs(["--status", "--dry-run", "--to", "010"]), {
     status: true,
     dryRun: true,
+    baseline: false,
     to: "010",
     help: false,
   });
@@ -19,9 +20,12 @@ test("parsea --status, --dry-run y --to", () => {
   assert.deepEqual(parseArgs(["--to=001"]), {
     status: false,
     dryRun: false,
+    baseline: false,
     to: "001",
     help: false,
   });
+
+  assert.equal(parseArgs(["--baseline", "--to", "035"]).baseline, true);
 });
 
 test("rechaza --to sin tres dígitos y argumentos desconocidos", () => {
