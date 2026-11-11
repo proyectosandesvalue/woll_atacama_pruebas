@@ -1,17 +1,6 @@
-import { getDB } from "../server/db/pool.js";
+import { handleHistoricalStations } from "../server/handlers/stations.js";
+import { respondWithHandler } from "../server/http/vercel-adapter.js";
 
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" });
-
-  const tipo = req.query.tipo || "METEOROLOGICA";
-
-  try {
-    const db = await getDB();
-    const stations = await db.rpc("chat_historical_stations", { p_tipo: tipo });
-    return res.status(200).json({ stations });
-  } catch (err) {
-    console.error("[/api/historical-stations] Error:", err);
-    return res.status(500).json({ error: err.message });
-  }
+export default function handler(req, res) {
+  return respondWithHandler(req, res, handleHistoricalStations);
 }

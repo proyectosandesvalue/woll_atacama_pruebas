@@ -65,9 +65,11 @@ Para correr en local:
 ```bash
 npx http-server -p 8099   # visor sin chat → http://localhost:8099
 npm run dev               # visor + chat + proxy Copernicus → http://localhost:3000
+npm run dev:api           # API Node persistente → http://localhost:3000 (sin frontend)
+npm start                 # API Node sin watch (producción)
 ```
 
-`npm run dev` levanta `vercel dev` y el proxy persistente de Copernicus en `http://localhost:3001/api/proxy`. Si prefieres levantarlos por separado:
+`npm run dev` levanta `vercel dev` y el proxy persistente de Copernicus en `http://localhost:3001/api/proxy`. `npm run dev:api` levanta el servidor Node del VPS contra el PostgreSQL local; no lo corras junto con `vercel dev` porque ambos usan el puerto 3000. Si prefieres levantar Vercel y el proxy por separado:
 
 ```bash
 npx vercel dev            # terminal 1
@@ -91,20 +93,27 @@ npm run db:down
 ```
 
 La base queda en `127.0.0.1:5432` (solo loopback). En el VPS no se publica:
-queda en la red interna de Compose (26-D). Mientras 26-A no esté implementado,
-el visor y el chat siguen usando `vercel dev` + Supabase para la demo.
+queda en la red interna de Compose (26-D). El servidor Node se prueba con
+`npm run dev:api` y `curl` (`/healthz`, `/api/stations-map`, etc.); el frontend
+sigue usando `vercel dev` + Supabase para la demo hasta que Nginx sirva los
+estáticos en 26-D.
 
 ## Estructura del proyecto
 
 ```text
 woll_atacama_pruebas/
 ├── index.html, help.html       # SPA y manual de ayuda
-├── api/chat.js                 # Vercel Function (handler delgado)
+├── api/*.js                    # Vercel Functions (adapters delgados para la demo)
 ├── server/
+│   ├── index.js, app.js        # servidor Node persistente y app HTTP
+│   ├── http/                   # router, body, response y adapter Vercel
+│   ├── routes/                 # chat, proxy, ARClim, estaciones y health
 │   ├── handlers/chat.js        # pipeline completo (handleChat)
+│   ├── handlers/arclim.js      # ARClim compartido Vercel/VPS
+│   ├── handlers/stations.js    # estaciones compartido Vercel/VPS
 │   ├── chat/                   # orchestrator, router, capabilities, tools/
 │   ├── llm/                    # driver Vertex AI (OpenAI-compatible)
-│   └── db/                     # driver REST de Supabase
+│   └── db/                     # pool y drivers postgres/supabase
 ├── db/migrations/              # migraciones SQL numeradas (NNN_nombre.sql)
 ├── scripts/                    # catálogo, smoke tests, golden set, prompts
 ├── js/
@@ -130,8 +139,14 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `index.html`, `help.html` | Entry point de la SPA y manual de ayuda | Cambios de shell, carga de scripts o UI global |
 | `api/chat.js` | Vercel Function del chat (adapter delgado) | Cambios de CORS/método del endpoint, no de lógica |
 | `api/proxy.js` | Proxy cerrado de servicios externos | Agregar un servicio o ajustar CORS/timeout |
-| `api/arclim-geojson.js`, `api/stations-*.js`, `api/variable-*.js` | Endpoints de datos climáticos/estaciones | Cambios de contrato o consultas de esos datos |
+| `api/arclim-geojson.js`, `api/stations-*.js`, `api/variable-*.js` | Adapters Vercel de datos climáticos/estaciones | Cambios de CORS/método, no de lógica |
+| `server/index.js`, `server/app.js` | Servidor Node persistente y app HTTP (VPS) | Cambios de arranque, timeouts o router |
+| `server/http/` | Router, body, respuestas, errores y adapter Vercel | Cambios transversales de HTTP |
+| `server/routes/` | Rutas Node de chat, proxy, ARClim, estaciones y health | Agregar o cambiar una ruta |
 | `server/handlers/chat.js` | Pipeline completo de `handleChat()` | Cambios de flujo del chat |
+| `server/handlers/arclim.js`, `server/handlers/stations.js` | Lógica compartida Vercel/VPS | Cambios de contrato o consultas |
+| `server/db/drivers/postgres.js`, `server/db/rpc-signatures.js` | Driver `pg.Pool` y registro de RPCs | Cambiar transporte o agregar una RPC |
+| `server/db/drivers/supabase.js` | Driver REST de Supabase (solo demo) | No agregar features; congelado |
 | `server/chat/` | Orquestador, router, clasificador, tools, filtros | Cambios de comportamiento del chat |
 | `server/llm/` | Driver LLM OpenAI-compatible / Vertex AI | Cambiar proveedor, modelo o fallback |
 | `server/db/` | Driver de BD (`supabase`/`postgres`) | Cambiar transporte o conexión |

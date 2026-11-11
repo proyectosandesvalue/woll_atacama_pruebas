@@ -83,13 +83,13 @@ Vercel ni Supabase.
 | Hosting | Vercel Hobby (demo) | Se reemplaza por Nginx + Node en VPS |
 | Base de datos | Supabase ~913 MB, PostgREST | Se reemplaza por PostgreSQL propio con `pg.Pool` |
 | Driver | `DB_DRIVER=postgres` (`server/db/drivers/postgres.js`) con `pg.Pool`; Supabase queda como legacy | Implementado en 26-B; `check:rpcs` detecta 12 RPCs heredadas |
-| Endpoints | 10 públicos en `api/*.js` + `api/cron/ingest.js` vacío | Hay que extraer handlers y montar rutas Node |
+| Endpoints | 10 públicos; `api/*.js` delegan en handlers puros y `server/routes/` los monta en Node | Implementado en 26-A |
 | Chat | `api/chat.js` → `handleChat()` | Ya es un handler puro; falta el adapter Node |
 | Proxy | `api/proxy.js` → `handleProxy()` | Ya es un handler puro; falta caché de disco/Nginx |
 | Ingestas | 4 workflows de GitHub Actions contra Supabase | Deben pasar a timers del VPS |
 | Migraciones | `db/migrations/001-037`; `036` RAG no aplicada | Falta runner portable y `000_compat_roles.sql` |
 | Dependencia `pg` | `pg@8.23.1` ya instalada | Se usa para el driver y el runner |
-| Tests | 277 (276 pasan con BD de integración, 1 omitido) | Deben seguir pasando; se agregan tests de integración |
+| Tests | 310 (309 pasan con BD de integración, 1 omitido) | Deben seguir pasando; se agregan tests de integración |
 
 **Endpoints a migrar** (contrato actual, sin cambios de payload):
 
@@ -284,8 +284,8 @@ tests no deben asumir corte inmediato.
 |---|---|---|---|---|---|---|
 | 26-C | Imagen PostgreSQL/PostGIS/pgvector, `000_compat_roles.sql` y runner de migraciones | 5 | — | Borrar el volumen y volver a Supabase | `26-C-imagen-postgres.md` | ✅ done |
 | 26-B | Driver `postgres` con `pg.Pool`, roles y pruebas de integración | 5 | 26-C | `DB_DRIVER=supabase` | `26-B-driver-postgres.md` | ✅ done |
-| 26-A | Servidor Node, extracción de handlers de estaciones/ARClim, rutas de los 10 endpoints, `/healthz` y cierre ordenado | 6 | 26-B | Apagar Node y volver a Vercel | `26-A-servidor-node.md` | siguiente |
-| 26-D | Compose, Nginx/Caddy, TLS (certbot), estáticos, caché de proxy y `limit_req` | 6 | 26-A, 26-C | Volver al proxy/Function de demo | `26-D-compose-nginx.md` | pendiente |
+| 26-A | Servidor Node, extracción de handlers de estaciones/ARClim, rutas de los 10 endpoints, `/healthz` y cierre ordenado | 6 | 26-B | Apagar Node y volver a Vercel | `26-A-servidor-node.md` | ✅ done |
+| 26-D | Compose, Nginx/Caddy, TLS (certbot), estáticos, caché de proxy y `limit_req` | 6 | 26-A, 26-C | Volver al proxy/Function de demo | `26-D-compose-nginx.md` | siguiente |
 | 26-E | Dump/restore, `load-layer`, `build_catalog` y verificación de conteos | 5 | 26-C | Supabase sigue intacto | `26-E-datos.md` | pendiente |
 | 26-J | Ingestas programadas en el VPS (systemd timers) y retiro de los workflows de Supabase | 3 | 26-B, 26-E | Reactivar los workflows de GitHub Actions | `26-J-ingestas.md` | pendiente |
 | 26-F | Staging idéntico a producción (misma imagen/Compose, datos y dominio) | 3 | 26-D, 26-E | Apagar staging | `26-F-staging.md` | pendiente |
@@ -335,7 +335,7 @@ Un tramo no se cierra hasta cumplir todo:
 
 | Nivel | Qué se prueba |
 |---|---|
-| Unitario (`node:test`) | Router HTTP, parseo de query/body, CORS/IP, `/healthz`, envelope de errores, driver `postgres` (mapeo de RPCs y tipos), runner de migraciones (checksum/orden) |
+| Unitario (`node:test`) | Router HTTP, parseo de query/body, CORS/IP, `/healthz`, envelope de errores, driver `postgres` (mapeo de RPCs y tipos), runner de migraciones (checksum/orden); handlers de estaciones/ARClim |
 | Integración (Docker) | Todas las RPCs usadas por el chat, las tools, las estaciones y las ingestas (47 nombres identificados en `server/`, `scripts/` y `api/`) contra PostgreSQL; endpoints de estaciones; migraciones 000-037 (y 038 si se crea) dos veces; `build_catalog` |
 | Contrato | `/api/chat` con el golden set; los 10 endpoints comparados contra la demo |
 | Carga | 20 y 50 usuarios concurrentes; ráfaga de tiles de Copernicus |

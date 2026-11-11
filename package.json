@@ -25,6 +25,8 @@
     "db:up": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d postgres",
     "db:down": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml down",
     "dev:proxy": "node --env-file=.env.staging scripts/dev-proxy.mjs",
+    "dev:api": "node --env-file=.env.local --watch server/index.js",
+    "start": "node server/index.js",
     "dev": "bash scripts/dev.sh"
   },
   "devDependencies": {

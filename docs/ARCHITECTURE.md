@@ -112,7 +112,9 @@ Limitaciones de esta etapa:
 
 ### Backend (demo/staging: Vercel Functions; final: Node en VPS)
 
-- **Node.js** (runtime de Vercel).
+- **Node.js** (runtime de Vercel en demo; Node 22 LTS en el VPS).
+- **Servidor persistente (26-A):** `server/index.js` + `server/app.js` con
+  router, CORS, body limit, `/healthz`/`/readyz` y cierre ordenado.
 - **fetch** nativo (Node 18+).
 - **Dependencias de runtime acotadas**: `pg` (driver PostgreSQL), `@google-cloud/vertexai` y `google-auth-library` (Vertex AI), `csv-parser` (ingesta). El parseo de PDF (`pdfjs-dist`) es **devDependency** y solo lo usa la CLI de ingesta, nunca `api/`.
 
@@ -147,7 +149,11 @@ Limitaciones de esta etapa:
 
 ## 4. Estructura del backend
 
-### 4.1. `api/chat.js`
+> **26-A:** en el VPS, `server/index.js` monta `createApp()` y las rutas de
+> `server/routes/`; los adapters `api/*.js` quedan para la demo Vercel y
+> delegan en los mismos handlers puros. `/healthz` y `/readyz` verifican la BD.
+
+### 4.1. `api/chat.js` (demo) y `/api/chat` (VPS)
 
 Endpoint del chat. Es un **adapter delgado**: delega toda la lógica a `handleChat()` en `server/handlers/chat.js`.
 
@@ -190,7 +196,7 @@ Devuelve { status, body, headers? }.
 4.3. server/chat/orchestrator.js
 Orquesta el ciclo del chat cuando el router no resuelve. ~234 líneas (después del refactor 25-D).
 
-Construye el system prompt con el catálogo de Supabase (cacheado 5 min).
+Construye el system prompt con el catálogo de la BD (PostgreSQL o Supabase; cacheado 5 min).
 
 Loop de tool calling (por defecto 3 iteraciones).
 

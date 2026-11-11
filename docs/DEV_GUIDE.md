@@ -101,6 +101,25 @@ no se publica: queda en la red interna de Compose. Si usás Podman sin Compose,
 podés levantar el contenedor equivalente con `podman run` o instalar
 `podman-compose`.
 
+### 2.7. Servidor Node (Sprint 26-A)
+
+El servidor del VPS atiende solo `/api/*`, `/healthz` y `/readyz`; los estáticos
+los sirve Nginx en 26-D.
+
+```bash
+npm run dev:api   # node --watch server/index.js con .env.local
+npm start         # sin watch, para producción
+```
+
+- Puerto: `PORT` (default 3000). No lo levantes junto con `vercel dev`, que usa
+  el mismo puerto.
+- Health: `curl http://localhost:3000/healthz`.
+- Rutas: `/api/chat`, `/api/proxy`, `/api/arclim-geojson`, `/api/stations-map`,
+  `/api/station-details`, `/api/station-series`, `/api/station-available-dates`,
+  `/api/variable-availability`, `/api/variable-available-dates` y
+  `/api/historical-stations`.
+- Cierre: `Ctrl+C` o `SIGTERM` cierran el HTTP y el pool de PostgreSQL.
+
 3. Comandos útiles
 3.1. Desarrollo local
 Opción A — servidor estático (más simple, sin backend):
@@ -115,7 +134,8 @@ bash
 npx vercel dev
 Abrí http://localhost:3000. El chat funciona porque Vercel CLI levanta las Functions localmente.
 
-Recomiendo Opción B si vas a tocar el chat.
+Recomiendo Opción B si vas a tocar el chat. Para probar el servidor del VPS sin
+el frontend, usá `npm run dev:api` (también en 3000).
 
 La forma más simple es:
 

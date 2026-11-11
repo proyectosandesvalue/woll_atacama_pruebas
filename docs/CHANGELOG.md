@@ -66,7 +66,7 @@
 - Concurrencia en producción: 10/10 y 20/20 requests 200; p95 5,45 s y 10,03 s; sin 429/503.
 - Fast path de proximidad (`server/chat/classifier-fast.js`): evita catálogo y clasificador LLM en preguntas explícitas sin historial.
 - Pruebas de concurrencia: caso único 2.259 ms; 20 proximidad p95 5.581 ms; 20 orquestador p95 8.895 ms; 30 proximidad p95 11.328 ms; sin 429/503.
-- Tests: 277 (276 pasan con BD de integración, 1 omitido; sin BD, 10 tests de integración se omiten).
+- Tests: 310 (309 pasan con BD de integración, 1 omitido; sin BD, 10 tests de integración se omiten).
 - Sprint 25 cerrado (25-A/B/C/D/E/F); baseline de latencia y decisión de streaming documentadas.
 
 ### Fixed
@@ -89,6 +89,23 @@
 - Textos de NDVI, MSAVI2, VARI, MCARI, PSRI, NDYI, NDWI, NDCI, MSI y SWIR alineados a lenguaje no especialista, con rangos e interpretación por tramos.
 - Documentación: `ARCHITECTURE.md` §3 (capas satelitales), `DEV_GUIDE.md` §3.8 (agregar indicador), `README.md`, `AGENTS.md`, `ROADMAP.md` (Sprint 44) y `docs/specs/44-indicadores-copernicus.md`.
 - ROADMAP: 25-A/C/D/E cerrados; 22-A/E cerrados; 09-A semi-resuelto (Copernicus cubre indicadores; NASA WMS 30 m y lectura raster pendientes); 09-C redefinido como implementación de capas meteorológicas dinámicas; 09-D pasa a optimización; 37 diferido; eliminado el duplicado de Sprint 37.
+
+## [Sprint 26-A] — 2026-11-11
+
+### Added
+- `server/index.js`: servidor Node persistente con timeouts, manejo de `clientError`, SIGTERM/SIGINT y cierre ordenado del pool.
+- `server/app.js`: router, CORS por allowlist, lectura JSON con límite de 1 MB, errores uniformes y escritura de respuestas.
+- `server/http/`: router, body, response, `HttpError` y adapter Vercel.
+- `server/routes/`: chat, proxy, ARClim, estaciones, `/healthz` y `/readyz`.
+- `server/handlers/arclim.js` y `server/handlers/stations.js`: lógica compartida entre Vercel y el VPS.
+- `npm start` y `npm run dev:api`.
+
+### Changed
+- `api/arclim-geojson.js`, `api/stations-map.js`, `api/station-details.js`, `api/station-series.js`, `api/station-available-dates.js`, `api/variable-availability.js`, `api/variable-available-dates.js` y `api/historical-stations.js` delegan en handlers puros; ya no duplican lógica.
+- CORS de esos endpoints pasa de `*` a la allowlist (`ALLOWED_ORIGINS`).
+
+### Known gap
+- `station-details` devuelve el fallback 200 porque `chat_station_details` aún no existe en la base creada desde migraciones; llega con el dump de 26-E.
 
 ## [Sprint 26-B] — 2026-11-10
 
