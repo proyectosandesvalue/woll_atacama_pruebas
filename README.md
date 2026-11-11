@@ -261,6 +261,7 @@ npm run lint            # objetivo: 0 errores
 npm test                # tests con node:test
 npm run migrate         # migraciones al PostgreSQL local
 npm run migrate:status  # estado de migraciones
+npm run check:rpcs      # RPCs registradas vs. BD
 npm run db:up / db:down # PostgreSQL local en Docker/Podman
 ```
 

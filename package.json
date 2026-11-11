@@ -21,6 +21,7 @@
     "ingest": "node --env-file=.env.local scripts/ingest_docs.mjs",
     "migrate": "node --env-file=.env.local scripts/migrate.mjs",
     "migrate:status": "node --env-file=.env.local scripts/migrate.mjs --status",
+    "check:rpcs": "node --env-file=.env.local scripts/check-rpc-signatures.mjs",
     "db:up": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d postgres",
     "db:down": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml down",
     "dev:proxy": "node --env-file=.env.staging scripts/dev-proxy.mjs",

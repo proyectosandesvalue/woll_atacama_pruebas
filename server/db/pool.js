@@ -22,11 +22,11 @@
 
 import { getDBConfig } from "./config.js";
 import { createDriver as createSupabaseDriver } from "./drivers/supabase.js";
-// import { createDriver as createPostgresDriver } from "./drivers/postgres.js";
+import { createDriver as createPostgresDriver } from "./drivers/postgres.js";
 
 const DRIVERS = {
   supabase: createSupabaseDriver,
-  // postgres: createPostgresDriver,
+  postgres: createPostgresDriver,
 };
 
 function buildDriver(config) {
@@ -42,13 +42,14 @@ function buildDriver(config) {
 let _client = null;
 
 /**
- * Devuelve el cliente del driver activo. Singleton dentro de la
- * invocación actual (en serverless se recrea en cada cold start, lo
- * cual está bien: Supabase REST no requiere conexión persistente).
+ * Devuelve el cliente del driver activo.
+ *
+ * En Vercel se recrea en cada invocación/cold start. En el VPS es un singleton
+ * de proceso con un `pg.Pool` persistente; no crear pools por request.
  *
  * Interfaz:
- *   await db.rpc('chat_query', { p_layer: 'desaladoras', p_filters: { ... } })
- *   await db.rpc('chat_layer_stats', { p_layer: 'desaladoras' })
+ *   await db.rpc("chat_query", { p_layer: "desaladoras", p_filters: {} })
+ *   await db.rpc("chat_layer_stats", { p_layer: "desaladoras" })
  */
 export async function getDB() {
   if (_client) return _client;
@@ -62,5 +63,15 @@ export async function getDB() {
  * entorno entre ejecuciones; no usar en producción.
  */
 export function _resetDB() {
+  _client = null;
+}
+
+/**
+ * Cierra el pool del driver activo. Para tests y cierre ordenado del servidor.
+ */
+export async function closeDB() {
+  if (_client && typeof _client.close === "function") {
+    await _client.close();
+  }
   _client = null;
 }

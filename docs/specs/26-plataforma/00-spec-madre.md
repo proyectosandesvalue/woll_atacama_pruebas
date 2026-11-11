@@ -82,14 +82,14 @@ Vercel ni Supabase.
 |---|---|---|
 | Hosting | Vercel Hobby (demo) | Se reemplaza por Nginx + Node en VPS |
 | Base de datos | Supabase ~913 MB, PostgREST | Se reemplaza por PostgreSQL propio con `pg.Pool` |
-| Driver | `DB_DRIVER=supabase` (`server/db/drivers/supabase.js`) | Falta `server/db/drivers/postgres.js` |
+| Driver | `DB_DRIVER=postgres` (`server/db/drivers/postgres.js`) con `pg.Pool`; Supabase queda como legacy | Implementado en 26-B; `check:rpcs` detecta 12 RPCs heredadas |
 | Endpoints | 10 públicos en `api/*.js` + `api/cron/ingest.js` vacío | Hay que extraer handlers y montar rutas Node |
 | Chat | `api/chat.js` → `handleChat()` | Ya es un handler puro; falta el adapter Node |
 | Proxy | `api/proxy.js` → `handleProxy()` | Ya es un handler puro; falta caché de disco/Nginx |
 | Ingestas | 4 workflows de GitHub Actions contra Supabase | Deben pasar a timers del VPS |
 | Migraciones | `db/migrations/001-037`; `036` RAG no aplicada | Falta runner portable y `000_compat_roles.sql` |
 | Dependencia `pg` | `pg@8.23.1` ya instalada | Se usa para el driver y el runner |
-| Tests | 253 (252 pasan, 1 omitido) | Deben seguir pasando; se agregan tests de integración |
+| Tests | 277 (276 pasan con BD de integración, 1 omitido) | Deben seguir pasando; se agregan tests de integración |
 
 **Endpoints a migrar** (contrato actual, sin cambios de payload):
 
@@ -283,8 +283,8 @@ tests no deben asumir corte inmediato.
 | Tramo | Nombre | Horas | Depende de | Reversión | Spec | Estado |
 |---|---|---|---|---|---|---|
 | 26-C | Imagen PostgreSQL/PostGIS/pgvector, `000_compat_roles.sql` y runner de migraciones | 5 | — | Borrar el volumen y volver a Supabase | `26-C-imagen-postgres.md` | ✅ done |
-| 26-B | Driver `postgres` con `pg.Pool`, roles y pruebas de integración | 5 | 26-C | `DB_DRIVER=supabase` | `26-B-driver-postgres.md` | siguiente |
-| 26-A | Servidor Node, extracción de handlers de estaciones/ARClim, rutas de los 10 endpoints, `/healthz` y cierre ordenado | 6 | 26-B | Apagar Node y volver a Vercel | `26-A-servidor-node.md` | pendiente |
+| 26-B | Driver `postgres` con `pg.Pool`, roles y pruebas de integración | 5 | 26-C | `DB_DRIVER=supabase` | `26-B-driver-postgres.md` | ✅ done |
+| 26-A | Servidor Node, extracción de handlers de estaciones/ARClim, rutas de los 10 endpoints, `/healthz` y cierre ordenado | 6 | 26-B | Apagar Node y volver a Vercel | `26-A-servidor-node.md` | siguiente |
 | 26-D | Compose, Nginx/Caddy, TLS (certbot), estáticos, caché de proxy y `limit_req` | 6 | 26-A, 26-C | Volver al proxy/Function de demo | `26-D-compose-nginx.md` | pendiente |
 | 26-E | Dump/restore, `load-layer`, `build_catalog` y verificación de conteos | 5 | 26-C | Supabase sigue intacto | `26-E-datos.md` | pendiente |
 | 26-J | Ingestas programadas en el VPS (systemd timers) y retiro de los workflows de Supabase | 3 | 26-B, 26-E | Reactivar los workflows de GitHub Actions | `26-J-ingestas.md` | pendiente |
@@ -366,6 +366,7 @@ el patrón actual de RAG (`RAG_TEST_DATABASE_URL`).
 |---|---|---|---|---|
 | No hay acceso directo para dump de Supabase (solo SQL Editor con timeout) | Alta | Alto | Obtener `SUPABASE_DB_URL`/`supabase db dump`; probar un dump parcial temprano | 26-E no puede empezar |
 | Diferencias entre PostgREST y `pg` (tipos, `jsonb`, `null`, errores) | Alta | Alto | Driver con registro de firmas y tests de todas las RPCs usadas | Una tool devuelve forma distinta |
+| RPCs heredadas que existen en Supabase pero no en las migraciones | Alta | Alto | `npm run check:rpcs` + dump de schemas en 26-E; no inventar definiciones | `check:rpcs` reporta faltantes |
 | El restore choca con extensiones, roles o `search_path` | Media | Alto | `000_compat_roles.sql`, base limpia y restore de prueba | Error de extensión/rol en 26-E |
 | El VPS se queda corto de CPU/RAM con 50 usuarios y tiles | Media | Alto | Dimensionar 8 vCPU/16 GB si se activa MVT; medir en 26-H | CPU > 80 % o p95 > 12 s |
 | El corte de DNS/TLS falla o tarda | Media | Alto | TTL 300, ensayo con staging, rollback documentado | Certificado o DNS no propagan |

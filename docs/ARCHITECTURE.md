@@ -126,6 +126,9 @@ Limitaciones de esta etapa:
 - **Supabase:** solo `service_role` ejecuta las RPCs. **VPS:** `woll_api` tiene
   `EXECUTE` sobre las RPCs y `SELECT` sobre las tablas de capas; no tiene
   `BYPASSRLS` ni DDL. `woll_ingest` escribe en `ingest.*`.
+- **Driver (26-B):** `server/db/drivers/postgres.js` con `pg.Pool`,
+  `statement_timeout`/`query_timeout` y un registro cerrado de 47 RPCs en
+  `server/db/rpc-signatures.js`. `npm run check:rpcs` verifica que existan.
 - **Migraciones:** runner `scripts/migrate.mjs` con checksum y
   `db/migrations/000-037`; `000_compat_roles.sql` crea extensiones, roles y
   `search_path`.

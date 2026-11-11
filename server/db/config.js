@@ -10,10 +10,10 @@
  *   SUPABASE_URL         https://...supabase.co
  *   SUPABASE_SERVICE_KEY eyJ...   (SERVICE_ROLE, secreto, solo server)
  *
- * Drivers futuros (solo se documentan las variables; la implementación
- * del driver PostgreSQL nativo llega cuando se salga de Supabase a un
- * servidor propio):
- *   POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD
+ * PostgreSQL propio (Sprint 26-B):
+ *   DATABASE_URL          postgres://woll_api:...@host:5432/woll
+ *   PG_APPLICATION_NAME   nombre visible en pg_stat_activity (default woll-api)
+ *   PGPOOL_MAX, PG_STATEMENT_TIMEOUT_MS, PG_QUERY_TIMEOUT_MS
  */
 
 function required(name) {
@@ -47,6 +47,7 @@ export function getDBConfig() {
     return {
       driver,
       connectionString: required("DATABASE_URL"),
+      applicationName: optional("PG_APPLICATION_NAME", "woll-api"),
     };
   }
 
