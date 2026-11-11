@@ -250,7 +250,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 ### Sprint 08 — Migración a PostGIS (fuente principal)
 
 **Estado**: ⏳ pending (bloqueado por 26) · **Prioridad**: alta · **Duración**: 48-58h · **Dependencias**: 07, 26
-**Spec**: `docs/specs/08-postgis-fuente-principal/00-spec-madre.md` (DRAFT)
+**Spec**: `docs/specs/08-postgis-fuente-principal/00-spec-madre.md` (APROBADA 2026-11-10)
 
 **Objetivo**: PostGIS como fuente principal de capas, con GeoJSON como fallback. El navegador deja de descargar archivos completos y recibe tiles del viewport, páginas de tabla, agregados de cluster/heatmap y exportaciones bajo demanda. **Todas las opciones de capa deben seguir disponibles**: tabla de atributos, zoom a la capa/feature, filtros, cluster, mapa de calor y descarga.
 
@@ -259,7 +259,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 **Entorno**: se ejecuta sobre la imagen Docker PostgreSQL (PostGIS + pgvector), Node persistente y Nginx/Caddy del Sprint 26. Vercel + Supabase quedan congelados (ADR 005). Los ADR de este sprint son 012-015.
 
 **Sub-sprints**:
-- [ ] **0** — Spike: línea base, inventario y ADR 012-013 (4h)
+- [ ] **0** — Spike: línea base, inventario y ADR 012, 013 y 015 (4h)
 - [ ] **A** — Infraestructura de tiles MVT y endpoints (8h)
 - [ ] **B** — Piloto: 3 capas chicas con doble fuente, tabla paginada y zoom (4h)
 - [ ] **D** — Estilos, popups, leyenda, tabla de atributos paginada y filtros (6h)

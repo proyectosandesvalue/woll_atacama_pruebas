@@ -78,6 +78,7 @@
 - **Decisión de infraestructura (ADR 005):** el destino final es un VPS propio; Vercel + Supabase quedan como demo/staging. Supabase en límite (~913 MB) y Vercel Hobby insuficiente. No se invierte en infraestructura específica de Vercel no portable.
 - **Disparador de migración:** la imagen Docker de PostgreSQL (PostGIS + pgvector) inicia la migración. Desde ese commit, Docker/VPS es el entorno de desarrollo, Vercel + Supabase quedan congelados y la imagen local se replica en el servidor.
 - **Spec 08 revisada:** corrige el supuesto de que "la BD es más liviana" (el ahorro real viene de MVT, paginación, filtros server-side y caché; el VPS se dimensiona para tiles/DB) y exige paridad de opciones de capa: tabla de atributos, zoom a capa/feature, filtros, cluster, heatmap y descarga. Se agrega el tramo 08-F, la dependencia del Sprint 26 y la duración 48-58h.
+- **Spec 08 aprobada (2026-11-10):** M1 (puntos por GeoJSON bbox + agregados server-side), M2 (ruta Node `ST_AsMVT` + caché Nginx) y M7 (umbral 5.000 puntos) como decisiones iniciales a validar en el spike. Ejecución bloqueada hasta cerrar el Sprint 26.
 - Documentación sincronizada con el código: 13 tools (9 de capas + 4 de clima), 71 GeoJSON, Node 20.6+, sprints 06/23/06-B.7 cerrados en el roadmap.
 - `package.json` v2.1.0: scripts `catalog`, `smoke:db`, `smoke:chat`, `eval:chat` y `lint:fix` (antes solo documentados en `AGENTS.md`).
 - `README.md` y `docs/ROADMAP.md`: bloques de código, encabezados y tablas reparados.

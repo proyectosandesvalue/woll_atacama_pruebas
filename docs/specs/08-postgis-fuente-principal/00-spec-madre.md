@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 08 |
-| **Estado de la spec** | DRAFT (M1, M2 y M7 abiertas; M1 y M2 bloquean el spike) |
+| **Estado de la spec** | APROBADA (2026-11-10; M1, M2 y M7 aprobadas como decisión inicial a validar en el spike) |
 | **Tamaño** | Grande (> 15h) |
 | **Duración estimada** | 48-58h |
 | **Dependencias** | Sprint 07 (`/api/config` + snapshot) y Sprint 26 (imagen Docker PostgreSQL/PostGIS, Node persistente, Compose) |
@@ -19,6 +19,9 @@
 > Elaborada a partir de ROADMAP (Sprint 08), CONTRACT, ARCHITECTURE, AGENTS.md y
 > CHANGELOG. Esta spec fija el marco; el detalle de cada tramo se escribe al
 > empezarlo (`08-A-*.md`, `08-B-*.md`...).
+>
+> **Aprobada 2026-11-10.** La ejecución queda bloqueada hasta cerrar el Sprint
+> 26 (imagen Docker PostgreSQL/PostGIS, Node persistente y Compose).
 
 ---
 
@@ -94,7 +97,8 @@ Con 20-50 usuarios concurrentes, el diseño debe incluir:
 El menú de `js/sidebar/layerItem.js` expone hoy estas acciones:
 `zoom-capa`, `ver-tabla`, `filter-data`, `toggle-cluster`, `toggle-heatmap` y
 `descargar-capa`. Todas deben funcionar igual en capas con `source.type:
-"postgis"`. La opción no desaparece ni se degrada a "no disponible".
+"postgis"`. En esas capas la opción no desaparece ni se degrada a "no
+disponible"; las capas WMS conservan su comportamiento actual.
 
 | Opción | Hoy (GeoJSON en memoria) | Con PostGIS | Verificación |
 |---|---|---|---|
@@ -108,10 +112,10 @@ El menú de `js/sidebar/layerItem.js` expone hoy estas acciones:
 | **Estilos, popups y leyenda** | Config + atributos del feature | Mismos estilos/popups; los atributos llegan como `properties` del tile o de la página | CA-1 |
 
 **Umbral de carga completa.** Para capas pequeñas (a definir en M7, propuesta:
-≤ 5.000 puntos) se permite cargar todas las features por el endpoint paginado y
-usar `markerCluster`/`WebGLHeatMap` en cliente. Sobre ese umbral, cluster y
-heatmap son obligatoriamente server-side. El umbral se documenta en
-`AGENTS.md`.
+≤ 5.000 puntos) se permite cargar todas las features (paginación interna con
+un tope de 5.000) y usar `markerCluster`/`WebGLHeatMap` en cliente. Sobre ese
+umbral, cluster y heatmap son obligatoriamente server-side y el render base de
+puntos usa bbox + clusters. El umbral se documenta en `AGENTS.md`.
 
 **Filtros consistentes.** Un mismo filtro debe producir el mismo conjunto en
 mapa, tabla, agregados y descarga. Se define una especificación única
@@ -122,7 +126,7 @@ mapa, tabla, agregados y descarga. Se define una especificación única
 
 | # | Invariante | Cómo se comprueba en cada puerta |
 |---|---|---|
-| INV-1 | El visor en producción no cambia hasta la promoción explícita (CONTRACT §1.1, ADR 004) | El corte a VPS se hace en Sprint 26; este sprint no toca producción |
+| INV-1 | El visor en producción no se rompe; cada tramo se valida en staging y se promueve explícitamente (CONTRACT §1.1, ADR 004) | El corte a VPS se hace en Sprint 26; este sprint promueve por tramo, nunca directo a producción sin validación |
 | INV-2 | Toda capa puede volver a GeoJSON cambiando solo su `source.type`, sin tocar código | Reversión probada en una capa por tramo |
 | INV-3 | Si PostGIS o el endpoint de tiles no responde, la capa carga desde GeoJSON automáticamente | Prueba cortando el endpoint en Docker |
 | INV-4 | El chat IA sigue funcionando igual | Smoke del orquestador (`npm run smoke:chat`) |
@@ -161,8 +165,8 @@ reservados por el ROADMAP para PostgreSQL propio y autenticación de admin.
 
 ## 8. Spike (fase 0, máximo 4h)
 
-**Entregable:** ADR 012 y ADR 013 con una recomendación respaldada por
-mediciones, más la línea base y el inventario.
+**Entregable:** ADR 012, ADR 013 y ADR 015 con una recomendación respaldada
+por mediciones, más la línea base y el inventario.
 
 | Tarea | Salida |
 |---|---|
@@ -175,7 +179,7 @@ mediciones, más la línea base y el inventario.
 | Pregunta | Opciones | Criterios de decisión |
 |---|---|---|
 | ¿Cómo se sirven los tiles? (M2) | **(a)** ruta Node con `ST_AsMVT` + caché Nginx · **(b)** Martin o pg_tileserv como sidecar · **(c)** tiles pregenerados | Latencia, CPU/RAM del VPS, complejidad de operar, caché, portabilidad |
-| ¿Cómo se cargan los puntos? (M1) | **(a)** MVT también para puntos + agregados server-side · **(b)** GeoJSON paginado por bbox + agregados server-side · **(c)** GeoJSON completo bajo umbral | Paridad de cluster/heatmap, peso real de las capas de puntos, memoria del cliente |
+| ¿Cómo se cargan los puntos? (M1) | **(a)** MVT también para puntos + agregados server-side · **(b)** GeoJSON por bbox + clusters/heatmap server-side · **(c)** GeoJSON completo bajo umbral | Paridad de iconos/popups, peso real de las capas de puntos, memoria del cliente |
 
 ## 9. Mapa de tramos
 
@@ -184,10 +188,10 @@ dimensión es un tramo de 2-3h con su puerta.
 
 | Tramo | Nombre | Horas | Depende de | Reversión | Spec | Estado |
 |---|---|---|---|---|---|---|
-| 08-0 | Spike: línea base, inventario y ADRs 012-013 | 4 | Sprint 07 + 26 | Nada que revertir (descartable) | esta spec | pendiente |
+| 08-0 | Spike: línea base, inventario y ADRs 012, 013 y 015 | 4 | Sprint 07 + 26 | Nada que revertir (descartable) | esta spec | pendiente |
 | 08-A | Infraestructura de tiles y endpoints (Node + PostGIS + caché Nginx) | 8 | 08-0 | Apagar las rutas; ninguna capa las usa aún | 08-A-*.md | pendiente |
-| 08-B | Piloto: 3 capas chicas con doble fuente, tabla paginada y zoom | 4 | 08-A | Cambiar `source.type` de las 3 capas | 08-B-*.md | pendiente |
-| 08-D | Estilos, popups, leyenda, tabla de atributos paginada y filtros | 6 | 08-B | Igual que 08-B | 08-D-*.md | pendiente |
+| 08-B | Piloto: 3 capas chicas con doble fuente, tabla básica paginada y zoom | 4 | 08-A | Cambiar `source.type` de las 3 capas | 08-B-*.md | pendiente |
+| 08-D | Estilos, popups, leyenda, tabla completa (búsqueda, orden, filtros y conteo) | 6 | 08-B | Igual que 08-B | 08-D-*.md | pendiente |
 | 08-F | Zoom a capa/feature, cluster y heatmap sobre PostGIS | 6 | 08-D | Volver al renderer en cliente para esas capas | 08-F-*.md | pendiente |
 | 08-C1 … C9 | Migración por dimensión (agua, agricultura, clima, energía, minería, otros, planificación, riesgos, suelo) | 2-3 c/u (16-26 total) | 08-F | Por capa (`source.type`) | 08-C*.md | pendiente |
 | 08-E | Exportación/descarga en streaming desde PostGIS | 4 | 08-D | Quitar la opción de la UI | 08-E-*.md | pendiente |
@@ -274,7 +278,8 @@ Operadores permitidos: `=`, `!=`, `>`, `>=`, `<`, `<=`, `in`, `contains`.
 Columnas y operadores se validan contra una allowlist; los valores se pasan
 como parámetros (`$1`, `$2`...). Nunca se concatena SQL del cliente.
 
-**Seguridad.** Rol de mínimo privilegio (`chat_ro`/`layer_ro`), sin `SELECT *`,
+**Seguridad.** Rol de mínimo privilegio de solo lectura (a definir/crear en el
+Sprint 26-B), sin `SELECT *`,
 sin acceso a tablas `admin.*`/`rag.*`, `statement_timeout`, límite de celdas y
 de filas, y validación de `z/x/y` y `bbox`.
 
@@ -290,7 +295,7 @@ de filas, y validación de `z/x/y` y `bbox`.
 | CA-6 | una capa de puntos migrada | se activa cluster y se navega entre zooms | los clusters se recalculan en servidor y el total agregado coincide con el filtro | manual + comparación con `markerCluster` |
 | CA-7 | una capa de puntos migrada | se activa mapa de calor | la intensidad y distribución son equivalentes a la versión GeoJSON | manual (captura comparada) |
 | CA-8 | una capa migrada | se descarga en GeoJSON o CSV | el archivo contiene todas las features filtradas, no solo el viewport, con el mismo conteo que la tabla | comparación de conteos |
-| CA-9 | una capa migrada con `dataFilter` activo | se renderiza | el filtro se respeta en el mapa (INV-5) | manual |
+| CA-9 | una capa migrada con `dataFilter` o `hiddenAttributes` activos | se renderiza | el filtro y las categorías ocultas se respetan en el mapa (INV-5) | manual |
 | CA-10 | una capa PostGIS | se activa y se usan sus opciones | el navegador no descarga su `.geojson` completo | DevTools → Network (INV-9) |
 | CA-11 | una capa mediana | se activa en 4G | transfiere ≥ 70 % menos bytes que el GeoJSON completo y la primera carga sigue < 3 s | Lighthouse + Network |
 | CA-12 | el VPS de staging | 25 y 50 usuarios concurrentes ejecutan tiles, tabla y agregados | sin 5xx; p95 de tile < 300 ms con caché y < 800 ms en frío; tabla < 500 ms | prueba de carga (k6/autocannon) |
@@ -351,26 +356,32 @@ Supabase.
 | El sprint crece por "ya que estamos" (estilos nuevos, mejoras de UI) | Alta | Medio | Fuera de alcance explícito; solo se corrige paridad | Tramo supera 8h |
 | Dependencia del Sprint 26 retrasa el inicio | Alta | Medio | No empezar hasta la imagen Docker; el spike usa esa imagen | Sprint 26 sin cerrar |
 
-## 16. Preguntas abiertas
+## 16. Decisiones aprobadas y preguntas abiertas
 
-| # | Pregunta | Default propuesto | Impacto si cambia | ¿Bloquea? |
+M1, M2 y M7 quedaron **aprobadas el 2026-11-10** como decisión inicial. El
+spike las **valida con mediciones**; si las contradicen, se actualiza el ADR
+correspondiente y esta spec antes de empezar 08-A, sin cambiar el alcance en
+silencio.
+
+| # | Pregunta | Decisión | Impacto si cambia | ¿Bloquea? |
 |---|---|---|---|---|
-| M1 | ¿Cómo se manejan los puntos (cluster y heatmap)? | MVT/GeoJSON paginado + agregados server-side; carga completa solo bajo umbral (≤ 5.000) | Si todo va por MVT sin agregados, hay que reimplementar cluster/heatmap | **sí (spike)** |
-| M2 | ¿Cómo se sirven los tiles? | Ruta Node con `ST_AsMVT` + caché Nginx; Martin/pg_tileserv solo si las mediciones lo justifican | Cambia la infraestructura del tramo A | **sí (spike)** |
+| M1 | ¿Cómo se manejan los puntos (cluster y heatmap)? | **Aprobada:** puntos por GeoJSON filtrado por bbox (conserva iconos y popups); en zooms bajos se muestran clusters server-side; heatmap por agregados; carga completa solo bajo umbral. MVT solo para polígonos y líneas | Si se usa MVT para puntos, hay que reimplementar iconos/popups; si no hay agregados, cluster/heatmap cargan todo | no (el spike valida) |
+| M2 | ¿Cómo se sirven los tiles? | **Aprobada:** ruta Node con `ST_AsMVT` + caché Nginx; Martin/pg_tileserv solo si las mediciones lo justifican | Cambia la infraestructura del tramo A | no (el spike valida) |
 | M3 | ¿Cuántas de las ~70 capas ya tienen tabla física con geometría, SRID e índice GIST? | Las del catálogo del chat; el resto, por verificar | Si son pocas, el tramo C crece (carga desde QGIS/ogr2ogr) | no (lo mide el spike) |
 | M4 | ¿Qué librería cliente se usa para tiles vectoriales en Leaflet? | La más simple que conviva con glify (evaluar `leaflet.vectorgrid`); decidir con la prueba del spike | Si exige otro mapa, el alcance toca el Sprint 10 | no (spike) |
 | M5 | ¿Orden de las dimensiones en el tramo C? | De menor a mayor riesgo según el inventario | Solo reordena los tramos | no |
 | M6 | ¿Los filtros se aplican en cliente o en servidor? | En servidor para capas PostGIS; `dataFilter` se mantiene en cliente para los renderers legacy | Afecta el diseño del tramo D y de AGENTS.md | no |
-| M7 | ¿Umbral de puntos para cargar todo en cliente vs. agregación server-side? | 5.000 puntos por capa | Cambia qué capas usan cluster/heatmap server-side | **sí (spike)** |
+| M7 | ¿Umbral de puntos para cargar todo en cliente vs. agregación server-side? | **Aprobada:** 5.000 puntos por capa | Cambia qué capas usan cluster/heatmap server-side | no (el spike valida) |
 
 ## 17. Reversión global y promoción
 
 - **Reversión global:** cambiar `source.type` de todas las capas a `geojson` (un
   valor por capa; la config puede hacerlo en lote). El fallback GeoJSON
   permanece en el repo durante todo el sprint y después de él.
-- **Promoción:** el corte a producción es el Sprint 26. Dentro de este sprint,
-  cada tramo se valida en el Compose local y luego se replica en el VPS de
-  staging. No se promueve nada a Vercel/Supabase.
+- **Promoción:** el corte inicial a VPS es el Sprint 26. Dentro de este sprint,
+  cada tramo se valida en el Compose local y se replica en el VPS de staging;
+  la promoción a producción sigue el ADR 004 y se hace por tramo, nunca directo
+  sin validación. No se promueve nada a Vercel/Supabase.
 - **No se retira en este sprint:** los GeoJSON del repo ni el loader GeoJSON.
 
 ## 18. Documentos a actualizar
