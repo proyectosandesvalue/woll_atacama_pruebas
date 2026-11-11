@@ -74,7 +74,8 @@ solo en `127.0.0.1`. La red es interna (`internal`).
 ### 3.3. Migración 000
 
 - Crea `extensions` si no existe.
-- `postgis`, `vector` y `unaccent` en `extensions`.
+- PostGIS en `public` (las tablas del dump usan `public.geometry`); `vector` y
+  `unaccent` en `extensions`.
 - Roles NOLOGIN de compatibilidad: `anon`, `authenticated`, `service_role`.
 - Roles NOLOGIN de login: `woll_api`, `woll_ingest` (el password se setea con
   `scripts/bootstrap-roles.sh` desde `.env`).

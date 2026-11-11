@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 26-E |
-| **Estado de la spec** | EN EJECUCIÓN — tooling listo; falta el dump real de Supabase |
+| **Estado de la spec** | CERRADA — dump real restaurado; `db:verify` contra el Supabase vivo queda como gate de staging |
 | **Tamaño** | Mediano (5h) |
 | **Dependencias** | 26-C (imagen/migraciones), 26-B (driver), 26-A (API) |
 | **Última revisión** | 2026-11-11 |
@@ -25,7 +25,7 @@ geometrías ni RPCs, y dejar herramientas repetibles para cargar capas nuevas
 - `scripts/migrate.mjs --baseline`: marcar migraciones ya presentes en el dump
   sin re-ejecutarlas.
 - `scripts/extract-legacy-rpcs.mjs`: extraer de Supabase las 12 RPCs heredadas y
-  generar `db/migrations/038_legacy_rpcs.sql`.
+  generar `db/migrations/039_legacy_rpcs.sql` (más `038_legacy_station_columns.sql`).
 - `scripts/verify-migration.mjs`: comparar conteos, secuencias, geometrías,
   extensiones, roles y RPCs entre origen y destino.
 - `scripts/load-layer.mjs`: GeoJSON → PostGIS y Shapefile → PostGIS vía
@@ -60,8 +60,8 @@ export TARGET_DATABASE_URL='postgres://postgres:...@127.0.0.1:5432/woll'
 npm run db:restore backups/woll-<timestamp>.dump
 ```
 
-El script aplica `000_compat_roles.sql` antes del restore (schema `extensions`,
-roles y `search_path`) y luego `pg_restore --clean --if-exists --no-owner
+El script aplica `000_compat_roles.sql` antes del restore (PostGIS en `public`,
+schema `extensions` para pgvector/unaccent, roles y `search_path`) y luego `pg_restore --clean --if-exists --no-owner
 --no-privileges`. La base destino debe estar vacía o ser staging desechable.
 
 ### 3.3. Baseline y migraciones nuevas
@@ -70,19 +70,19 @@ El dump ya trae el schema/funciones de Supabase. Para no re-ejecutar 000-035:
 
 ```bash
 node scripts/migrate.mjs --baseline --to 035
-npm run migrate          # 036 rag + 038 legacy RPCs (si existe 038)
+npm run migrate          # 036 rag + 038 columnas + 039 RPCs + 040 overloads
 npm run check:rpcs
 ```
 
 Si el dump ya trae `rag`, el baseline puede llegar a 037. Si no, 036 crea el
-schema RAG. `038` se genera en el paso siguiente si faltan las 12 RPCs.
+schema RAG. `038`/`039` se generan en el paso siguiente si faltan columnas/RPCs.
 
 ### 3.4. RPCs heredadas
 
 ```bash
 export SOURCE_DATABASE_URL='postgres://...'
 npm run db:extract-rpcs
-git diff db/migrations/038_legacy_rpcs.sql
+git diff db/migrations/038_legacy_station_columns.sql db/migrations/039_legacy_rpcs.sql
 npm run migrate
 npm run check:rpcs
 ```
@@ -104,7 +104,7 @@ Compara:
 - `last_value` de secuencias;
 - extensiones `postgis`, `vector`, `unaccent`;
 - roles `woll_api`/`woll_ingest` sin `BYPASSRLS` ni superuser;
-- las 50 RPCs del registro.
+- las 48 RPCs del registro.
 
 Ignora auditoría, preguntas no respondidas, runs de ingesta y
 `spatial_ref_sys` por defecto; `--ignore schema.tabla` agrega excepciones.
@@ -131,7 +131,7 @@ npm run layer:load -- geojson/foo.geojson --table foo --dimension agua \
 | CA-2 | una base vacía | se restaura el dump | las tablas de los 5 schemas existen | `verify-migration` |
 | CA-3 | el dump | se hace baseline 000-035 y se corre `migrate` | 036/038 aplican sin re-ejecutar lo existente | `schema_migrations` |
 | CA-4 | origen y destino | se corre `db:verify` | conteos, geometrías y secuencias coinciden | script |
-| CA-5 | el destino | se corre `check:rpcs` | 50/50 RPCs presentes | script |
+| CA-5 | el destino | se corre `check:rpcs` | 48/48 RPCs presentes | script |
 | CA-6 | un GeoJSON | se carga con `layer:load` | tabla, GIST, catálogo y stats correctos | SQL + catálogo |
 | CA-7 | un Shapefile | hay `ogr2ogr` | carga con SRID 4326 e índice GIST | manual |
 | CA-8 | `comunas_poligonos` | se carga | tabla disponible para las RPCs de administración | SQL |
@@ -155,10 +155,10 @@ npm run layer:load -- geojson/foo.geojson --table foo --dimension agua \
 | Riesgo | Mitigación |
 |---|---|
 | No hay conexión directa a Supabase | DBeaver/CLI + `SOURCE_DATABASE_URL`; el dump es el bloqueo actual |
-| El dump referencia `extensions.geometry` | `restore-local.sh` aplica 000 antes del restore |
+| El dump referencia `public.geometry` | `restore-local.sh` aplica 000 antes del restore |
 | `pg_restore` choca con `public`/roles existentes | `--clean --if-exists` + base vacía |
 | Semillas duplicadas al re-ejecutar migraciones | `--baseline` evita re-ejecutar 000-035 |
-| Las 12 RPCs no están versionadas | `extract-legacy-rpcs` genera 038; `check:rpcs` bloquea |
+| Las 12 RPCs no están versionadas | `extract-legacy-rpcs` genera 039; `check:rpcs` bloquea |
 | Diferencias de PostGIS/versión (Supabase PG17.11) | Comparar `geometry_columns`, SRID e invalid; fijar imagen |
 | Tablas grandes hacen lento el conteo | `statement_timeout` 120 s; ignorar auditoría |
 | Shapefile sin GDAL | Error claro; usar `osgeo/gdal` o cargar GeoJSON |
@@ -166,16 +166,18 @@ npm run layer:load -- geojson/foo.geojson --table foo --dimension agua \
 ## 7. Reversión
 
 Supabase sigue intacto hasta el corte. Si el restore falla, se descarta la base
-destino y se repite el dump. El baseline/038 solo toca la base nueva.
+destino y se repite el dump. El baseline/038-039 solo toca la base nueva.
 
 ## 8. Cierre
 
-- **Estado:** EN EJECUCIÓN. Tooling y validación local completos; falta ejecutar
-  el dump real de Supabase y correr `db:verify` + `check:rpcs` contra esa base.
-- **Validado localmente (PostgreSQL 17.11):** dump/restore de la base de prueba, baseline 000-035,
-  migraciones 036-037, `load-layer` con GeoJSON, `build_catalog` PostgreSQL,
-  `verify-migration` (solo fallan las 12 RPCs heredadas en la base de prueba) y
-  extractor de RPCs con funciones existentes.
-- **Pendiente:** `SOURCE_DATABASE_URL` de Supabase, `db:dump`, restore real,
-  `db:extract-rpcs` → `038`, `check:rpcs` 50/50 y `db:verify` OK.
+- **Estado:** CERRADA. Dump real de Supabase restaurado en PostgreSQL 17.11;
+  baseline 000-035, migraciones 036-040 y `check:rpcs` 48/48. El `db:verify`
+  contra el Supabase vivo queda como gate de staging (26-F).
+- **Validado localmente (PostgreSQL 17.11):** dump real de Supabase, restore con
+  90 tablas/71 capas/1.425.842 valores, baseline 000-035, migraciones 036-040,
+  `check:rpcs` 48/48, `load-layer` con GeoJSON y `build_catalog` PostgreSQL.
+  `verify-migration` local: 86 tablas, 69 geometrías y 72 secuencias comparadas,
+  extensiones/roles/RPCs OK.
+- **Pendiente:** comparar el Supabase vivo contra el destino con `db:verify` al
+  promover staging; el dump y el restore ya están verificados.
 - **Horas reales:** pendiente de registrar por el dev.

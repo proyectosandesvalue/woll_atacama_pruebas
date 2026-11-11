@@ -72,7 +72,7 @@ npm start                 # API Node sin watch (producción)
 npm run db:dump           # dump de Supabase (SOURCE_DATABASE_URL)
 npm run db:restore -- backups/woll-....dump  # restore local (TARGET_DATABASE_URL)
 npm run db:verify         # compara origen/destino (SOURCE_* y TARGET_*)
-npm run db:extract-rpcs   # genera 038 con las RPCs heredadas
+npm run db:extract-rpcs   # genera 039 con las RPCs heredadas
 npm run layer:load -- geojson/foo.geojson --table foo --dimension agua
 ```
 
@@ -171,7 +171,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `js/config/copernicusLayer.js` | Ficha común de capas satelitales Copernicus | Nuevos índices o cambios de ficha |
 | `scripts/dump-supabase.sh`, `scripts/restore-local.sh` | Dump de Supabase y restore al PostgreSQL local | Migración de datos o restore de staging |
 | `scripts/verify-migration.mjs` | Compara conteos, geometrías, secuencias, roles y RPCs | Antes de promover staging/producción |
-| `scripts/extract-legacy-rpcs.mjs` | Genera `038_legacy_rpcs.sql` desde Supabase | Cerrar el gap de RPCs heredadas |
+| `scripts/extract-legacy-rpcs.mjs` | Genera `039_legacy_rpcs.sql` desde Supabase | Cerrar el gap de RPCs heredadas |
 | `scripts/load-layer.mjs` | Carga GeoJSON/Shapefile a PostGIS + catálogo | Agregar o reemplazar una capa |
 | `scripts/dev-proxy.mjs`, `js/config/proxy.js` | Proxy persistente para desarrollo local (3001) | Cambios del entorno local |
 | `scripts/build_catalog.mjs` | Reconstruye `chat.chat_catalog` (Supabase o PostgreSQL) | Nuevas capas o cambios de config |

@@ -24,8 +24,9 @@ El chat ya usa RPCs tipadas y el LLM nunca escribe SQL. La migración 037 agreg�
 1. **Una instancia PostgreSQL 17** en Docker, con **PostGIS 3.7.0** y
    **pgvector 0.8.7**, versiones fijadas en `docker/postgres/Dockerfile`.
    - La misma imagen se usa en local, staging y producción.
-   - Las extensiones se crean en el schema `extensions` mediante migración, no
-     en `initdb`.
+   - PostGIS se crea en `public` (igual que Supabase, para resolver
+     `public.geometry`); `pgvector` y `unaccent` se crean en `extensions`. Las
+     extensiones se crean por migración, no en `initdb`.
 2. **Schemas:** `public` (capas y wrappers), `chat` (catálogo, auditoría, RPCs),
    `admin` (configuración), `ingest` (fuentes/valores/estaciones), `rag`
    (documentos/chunks) y `extensions`.

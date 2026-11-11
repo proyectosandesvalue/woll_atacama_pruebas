@@ -39,7 +39,7 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUT="$OUT_DIR/woll-${STAMP}.dump"
 NAME="$(basename "$OUT")"
 
-ARGS=(--format=custom --no-owner --no-privileges --verbose)
+ARGS=(--format=custom --no-owner --no-privileges --verbose --exclude-table=public.spatial_ref_sys)
 IFS=',' read -ra SCHEMA_LIST <<< "$SCHEMAS"
 for schema in "${SCHEMA_LIST[@]}"; do
   schema="$(echo "$schema" | xargs)"

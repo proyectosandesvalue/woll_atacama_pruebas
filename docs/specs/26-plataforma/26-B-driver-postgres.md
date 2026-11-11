@@ -22,7 +22,7 @@ LLM.
 
 - `server/db/drivers/postgres.js` con `pg.Pool`, `rpc`, `query`, `ping` y
   `close`.
-- `server/db/rpc-signatures.js` con las 47 RPCs usadas en `server/`, `scripts/`
+- `server/db/rpc-signatures.js` con las 48 RPCs usadas en `server/`, `scripts/`
   y `api/`.
 - Registro del driver en `server/db/pool.js` (`DB_DRIVER=postgres`).
 - `server/db/config.js` con `DATABASE_URL` y `PG_APPLICATION_NAME`.
@@ -100,7 +100,7 @@ No se inventan versiones nuevas sin comparar con la definición real.
 | CA-4 | una base migrada | se ejecutan las RPCs de catálogo/config/ingestas | devuelven el tipo esperado sin error | test de integración |
 | CA-5 | una base migrada | se hace `ping` y una query directa | responde | test de integración |
 | CA-6 | un `AbortSignal` ya abortado | se llama a `rpc` | se rechaza antes de ejecutar | test unitario |
-| CA-7 | una base restaurada de Supabase | se corre `npm run check:rpcs` | 47/47 RPCs presentes y con argumentos esperados | script + 26-E |
+| CA-7 | una base restaurada de Supabase | se corre `npm run check:rpcs` | 48/48 RPCs presentes y con argumentos esperados | script + 26-E |
 
 ## 5. Tests
 

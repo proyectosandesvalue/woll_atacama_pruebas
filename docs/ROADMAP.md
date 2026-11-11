@@ -83,7 +83,7 @@
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
-| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E tooling listo; falta dump) | alta | 42-46h | 23, 24 |
+| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E ✅; 26-F siguiente) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
@@ -540,7 +540,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 26 — Plataforma propia (épica)
 
-**Estado**: 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E tooling listo; falta dump) · **Prioridad**: alta · **Duración**: 42-46h · **Dependencias**: 23, 24
+**Estado**: 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E ✅; 26-F siguiente) · **Prioridad:** alta · **Duración**: 42-46h · **Dependencias**: 23, 24
 **Spec**: `docs/specs/26-plataforma/00-spec-madre.md` (APROBADA 2026-11-10) y una spec por tramo.
 
 **Decisión 2026-11-10 (ADR 005)**: VPS propio para producción; Vercel + Supabase quedan como demo/staging. Supabase está en el límite de almacenamiento (~913 MB) y Vercel Hobby no es comercial ni suficiente. No se agrega infraestructura específica de Vercel que no sea portable.
@@ -561,7 +561,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 |---|---|---|
 | 26-A | **Servidor Node y paridad de endpoints.** Extraer handlers de estaciones/ARClim; `server/index.js` (node:http) y `server/http/` con router, body limit, CORS, errores y cierre ordenado; rutas de los 10 endpoints y `/healthz`; budget configurable | 6 |
 | 26-B | **Driver Postgres y roles de mínimo privilegio (H17, G3).** `server/db/drivers/postgres.js` con `pg.Pool`, `statement_timeout`, registro de firmas de RPC con tipos (`jsonb`, `text[]`), llamada con parámetros nombrados y lista cerrada de funciones; roles `woll_api`/`woll_ingest`; tests de integración contra Postgres en contenedor | 5 |
-| 26-C | **Imagen Postgres y migraciones portables (G2).** `000_compat_roles.sql` idempotente (roles `service_role`/`anon`/`authenticated` sin login, schema `extensions`, extensiones `postgis`, `pgvector`, `unaccent`); runner `scripts/migrate.mjs` con tabla de control y checksum; imagen PostgreSQL 17 + PostGIS + pgvector; probar 000-037 (y 038 si se crea) sobre BD vacía dos veces | 5 |
+| 26-C | **Imagen Postgres y migraciones portables (G2).** `000_compat_roles.sql` idempotente (roles `service_role`/`anon`/`authenticated` sin login, PostGIS en `public`, `pgvector`/`unaccent` en `extensions`); runner `scripts/migrate.mjs` con tabla de control y checksum; imagen PostgreSQL 17 + PostGIS + pgvector; probar 000-040 sobre BD vacía dos veces | 5 |
 | 26-D | **Compose, Nginx y proxy.** Servicios `postgres`, `api`, `nginx`, `ingest`; TLS, compresión, caché de estáticos/GeoJSON y de `/api/proxy`, `limit_req` sobre `/api/chat`; red interna, Postgres sin puerto publicado; healthchecks; `.dockerignore`; `.env.example` actualizado | 6 |
 | 26-E | **Datos.** Dump desde Supabase y restauración; `scripts/load-layer` (shp/GeoJSON → PostGIS con SRID, índice GIST, alta en catálogo y refresh de stats); `comunas_poligonos`; `build_catalog` contra la nueva BD; verificación de conteos por capa | 5 |
 | 26-J | **Ingestas programadas.** Reemplazar los 4 workflows de GitHub Actions por systemd timers sobre `docker compose run --rm ingest`; `flock`, logs y verificación de no duplicar datos | 3 |
@@ -572,13 +572,13 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 **26-C cerrado (2026-11-10):** imagen PostgreSQL 16 + PostGIS 3.7.0 + pgvector 0.8.7 (actualizada a PostgreSQL 17 el 2026-11-11 para igualar Supabase), Compose base, `000_compat_roles.sql`, runner `scripts/migrate.mjs` y `scripts/bootstrap-roles.sh`. 34 migraciones aplicadas dos veces; roles y extensiones verificados. Validado con Podman 5.8 + `podman-compose`; Docker Compose no estaba disponible en el entorno. Tests: 258.
 
-**26-B cerrado (2026-11-10):** driver `pg.Pool`, registro cerrado de 47 RPCs (50 tras sumar las de catálogo en 26-E), `check:rpcs` y 10 tests de integración contra PostgreSQL. `check:rpcs` detecta 12 RPCs heredadas que llegan con el dump de 26-E. Tests: 277.
+**26-B cerrado (2026-11-10):** driver `pg.Pool`, registro cerrado de 48 RPCs, `check:rpcs` y 10 tests de integración contra PostgreSQL. `check:rpcs` detectó 12 RPCs heredadas que llegaron con el dump de 26-E. Tests: 277.
 
 **26-A cerrado (2026-11-11):** servidor Node persistente, router HTTP, CORS, body limit, `/healthz`/`/readyz`, cierre ordenado y paridad de los 10 endpoints. Handlers de estaciones/ARClim compartidos con Vercel. Smoke real con PostgreSQL y SIGTERM. Tests: 310.
 
 **26-D cerrado (2026-11-11):** imagen API, Compose dev/prod, Nginx con TLS, estáticos, caché de `/api/proxy`, `limit_req` y denegación de rutas internas. Validado con Podman: stack healthy, caché servida con API detenida, 40 requests a chat → 400/429 y `nginx -t` con TLS autofirmado.
 
-**26-E en ejecución (2026-11-11):** dump/restore, baseline de migraciones, extractor de las 12 RPCs heredadas, verificación de conteos/geometrías/secuencias y `load-layer` listos y validados en local. Falta el `SOURCE_DATABASE_URL` de Supabase para ejecutar el dump real y cerrar `check:rpcs` 50/50.
+**26-E cerrado (2026-11-11):** dump real de Supabase restaurado en PostgreSQL 17.11 (90 tablas, 71 capas, 1.425.842 valores), baseline 000-035, migraciones 036-040, `check:rpcs` 48/48 y `db:verify` local OK. El `db:verify` contra el Supabase vivo queda como gate de staging.
 
 **Criterios de aceptación del sprint**:
 - **CA-1** Dada una BD vacía, cuando se aplica el runner dos veces, entonces termina sin errores y las 71 capas cargan con el mismo conteo que en Supabase.

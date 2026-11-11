@@ -80,7 +80,7 @@
 - **Disparador de migración:** la imagen Docker de PostgreSQL (PostGIS + pgvector) inicia la migración. Desde ese commit, Docker/VPS es el entorno de desarrollo, Vercel + Supabase quedan congelados y la imagen local se replica en el servidor.
 - **Spec 08 revisada:** corrige el supuesto de que "la BD es más liviana" (el ahorro real viene de MVT, paginación, filtros server-side y caché; el VPS se dimensiona para tiles/DB) y exige paridad de opciones de capa: tabla de atributos, zoom a capa/feature, filtros, cluster, heatmap y descarga. Se agrega el tramo 08-F, la dependencia del Sprint 26 y la duración 48-58h.
 - **Spec 08 aprobada (2026-11-10):** M1 (puntos por GeoJSON bbox + agregados server-side), M2 (ruta Node `ST_AsMVT` + caché Nginx) y M7 (umbral 5.000 puntos) como decisiones iniciales a validar en el spike. Ejecución bloqueada hasta cerrar el Sprint 26.
-- **ADR 006 (Postgres propio):** instancia única, schemas `public`/`chat`/`admin`/`ingest`/`rag`, extensiones en `extensions`, roles `woll_api`/`woll_ingest` sin `BYPASSRLS` y migraciones con checksum.
+- **ADR 006 (Postgres propio):** instancia única, schemas `public`/`chat`/`admin`/`ingest`/`rag`, PostGIS en `public` y pgvector/unaccent en `extensions`, roles `woll_api`/`woll_ingest` sin `BYPASSRLS` y migraciones con checksum.
 - **Imagen PostgreSQL 26-C:** PostgreSQL 17.11 + PostGIS 3.7.0 + pgvector 0.8.7, versiones fijadas con `ARG`; Compose base y runner de migraciones con checksum.
 - **Spec madre 26 aprobada (2026-11-10):** plataforma propia con PostgreSQL/PostGIS/pgvector, servidor Node persistente, Nginx, paridad de los 10 endpoints, migración de datos, ingestas por systemd timers, staging, backups, hardening y corte. Duración 42-46h; 26-J agregado al roadmap. Arranca 26-C.
 - Documentación sincronizada con el código: 13 tools (9 de capas + 4 de clima), 71 GeoJSON, Node 20.6+, sprints 06/23/06-B.7 cerrados en el roadmap.
@@ -96,7 +96,7 @@
 - `scripts/dump-supabase.sh`: dump custom de schemas de aplicación, con checksum.
 - `scripts/restore-local.sh`: bootstrap de `000_compat_roles.sql` + `pg_restore` seguro.
 - `scripts/migrate.mjs --baseline`: marca migraciones ya presentes en un dump sin re-ejecutarlas.
-- `scripts/extract-legacy-rpcs.mjs`: genera `038_legacy_rpcs.sql` desde Supabase.
+- `scripts/extract-legacy-rpcs.mjs`: genera `039_legacy_rpcs.sql` desde Supabase.
 - `scripts/verify-migration.mjs`: compara tablas, geometrías, secuencias, extensiones, roles y RPCs.
 - `scripts/load-layer.mjs`: carga GeoJSON/Shapefile a PostGIS con SRID, GIST, catálogo y stats.
 - `scripts/build_catalog.mjs`: soporte `DB_DRIVER=postgres` y `--only`.
@@ -106,17 +106,18 @@
 - `server/db/rpc-signatures.js`: agrega `chat_table_exists`, `chat_upsert_layer` y `chat_refresh_stats`.
 - `buildRpcCall` serializa arrays `jsonb` como JSON (necesario para `p_attributes`, `p_values`).
 - `.gitignore`: `backups/`, `*.dump`, `*.dump.sha256`.
-- **Imagen destino PostgreSQL 17.11:** se actualizó de PostgreSQL 16 a 17.11 porque Supabase corre 17.11; PostGIS 3.7.0 y pgvector 0.8.7. Migraciones 000-037 y tests verificados en PG17.
+- **Imagen destino PostgreSQL 17.11:** se actualizó de PostgreSQL 16 a 17.11 porque Supabase corre 17.11; PostGIS 3.7.0 en `public` y pgvector 0.8.7 en `extensions`. Migraciones 000-040 y tests verificados en PG17.
 
 ### Validated locally
-- Dump/restore de la base de prueba, `000` antes del restore y baseline 000-035.
+- Dump real de Supabase (70 MB, checksum OK) restaurado en PostgreSQL 17.11: 90 tablas, 71 capas, 920 derechos de agua y 1.425.842 valores.
+- `000` antes del restore, baseline 000-035 y migraciones 036-040.
+- `check:rpcs` 48/48 y `verify-migration` local: 86 tablas, 69 geometrías, 72 secuencias, extensiones/roles/RPCs OK.
 - `load-layer` con GeoJSON: tabla, GIST, catálogo y stats.
 - `build_catalog --only` con PostgreSQL.
-- `verify-migration`: conteos, geometrías, secuencias, extensiones y roles OK; solo faltan las 12 RPCs heredadas de la base de prueba.
-- `extract-legacy-rpcs` genera SQL válido con `REVOKE`/`GRANT`.
+- `extract-legacy-rpcs` generó las 12 funciones reales desde el dump.
 
 ### Pending
-- Ejecutar el dump real de Supabase con `SOURCE_DATABASE_URL`, restaurar, generar 038 y cerrar `check:rpcs` 50/50 y `db:verify` OK.
+- Comparar el Supabase vivo contra el destino con `db:verify` al promover staging (26-F).
 
 ## [Sprint 26-D] — 2026-11-11
 
@@ -163,7 +164,7 @@
 
 ### Added
 - `server/db/drivers/postgres.js`: driver nativo con `pg.Pool`, `statement_timeout`, `query_timeout`, `rpc`, `query`, `ping` y `close`.
-- `server/db/rpc-signatures.js`: registro cerrado de 47 RPCs con parámetros nombrados, casts explícitos y rechazo de SQL/parámetros no declarados.
+- `server/db/rpc-signatures.js`: registro cerrado de 48 RPCs con parámetros nombrados, casts explícitos y rechazo de SQL/parámetros no declarados.
 - `scripts/check-rpc-signatures.mjs` y `npm run check:rpcs` para verificar que las RPCs existan en la base restaurada.
 - Tests unitarios del registro y tests de integración del driver (10/10 contra PostgreSQL del Compose).
 
@@ -180,7 +181,7 @@
 ### Added
 - Imagen `docker/postgres/Dockerfile`: PostgreSQL 17.11 + PostGIS 3.7.0 + pgvector 0.8.7, versiones fijadas con `ARG` (actualizada desde PostgreSQL 16 en 26-E para igualar Supabase).
 - `docker-compose.yml` base y `docker-compose.dev.yml` con PostgreSQL en `127.0.0.1:5432`.
-- `db/migrations/000_compat_roles.sql`: schema `extensions`, PostGIS/pgvector/unaccent, roles `woll_api`/`woll_ingest` y roles de compatibilidad `anon`/`authenticated`/`service_role`.
+- `db/migrations/000_compat_roles.sql`: PostGIS en `public`, pgvector/unaccent en `extensions`, roles `woll_api`/`woll_ingest` y roles de compatibilidad `anon`/`authenticated`/`service_role`.
 - `scripts/migrate.mjs` con checksum, `--status`, `--dry-run` y `--to`; scripts `npm run migrate` y `npm run migrate:status`.
 - `scripts/bootstrap-roles.sh` + `scripts/bootstrap-roles.mjs` para habilitar LOGIN con passwords desde `.env`.
 - `db:up`/`db:down` para el PostgreSQL local.

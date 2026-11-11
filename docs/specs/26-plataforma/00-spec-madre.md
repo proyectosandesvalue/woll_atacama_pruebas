@@ -235,8 +235,8 @@ tests no deben asumir corte inmediato.
 
 ### 7.3. Migraciones
 
-- `db/migrations/000_compat_roles.sql`: crea schema `extensions`, extensiones
-  `postgis`, `vector` y `unaccent`, roles de compatibilidad y roles de login
+- `db/migrations/000_compat_roles.sql`: crea schema `extensions`, PostGIS en
+  `public` y `vector`/`unaccent` en `extensions`, roles de compatibilidad y roles de login
   NOLOGIN; fija `search_path` de la base y de los roles.
 - `db/migrations/001-037`: se aplican sin editar. `036` RAG se aplica en el VPS
   (en Supabase no estaba aplicada).
@@ -286,9 +286,9 @@ tests no deben asumir corte inmediato.
 | 26-B | Driver `postgres` con `pg.Pool`, roles y pruebas de integración | 5 | 26-C | `DB_DRIVER=supabase` | `26-B-driver-postgres.md` | ✅ done |
 | 26-A | Servidor Node, extracción de handlers de estaciones/ARClim, rutas de los 10 endpoints, `/healthz` y cierre ordenado | 6 | 26-B | Apagar Node y volver a Vercel | `26-A-servidor-node.md` | ✅ done |
 | 26-D | Compose, Nginx/Caddy, TLS (certbot), estáticos, caché de proxy y `limit_req` | 6 | 26-A, 26-C | Volver al proxy/Function de demo | `26-D-compose-nginx.md` | ✅ done |
-| 26-E | Dump/restore, `load-layer`, `build_catalog` y verificación de conteos | 5 | 26-C | Supabase sigue intacto | `26-E-datos.md` | 🔶 en ejecución (tooling; falta dump) |
+| 26-E | Dump/restore, `load-layer`, `build_catalog` y verificación de conteos | 5 | 26-C | Supabase sigue intacto | `26-E-datos.md` | ✅ done |
 | 26-J | Ingestas programadas en el VPS (systemd timers) y retiro de los workflows de Supabase | 3 | 26-B, 26-E | Reactivar los workflows de GitHub Actions | `26-J-ingestas.md` | pendiente |
-| 26-F | Staging idéntico a producción (misma imagen/Compose, datos y dominio) | 3 | 26-D, 26-E | Apagar staging | `26-F-staging.md` | pendiente |
+| 26-F | Staging idéntico a producción (misma imagen/Compose, datos y dominio) | 3 | 26-D, 26-E | Apagar staging | `26-F-staging.md` | siguiente |
 | 26-G | Backups cifrados, retención, copia externa y simulacro de restauración | 4 | 26-C | Desactivar el timer de backup | `26-G-backups.md` | pendiente |
 | 26-H | Endurecimiento del VPS, ajuste de PostgreSQL, monitoreo básico y rotación de secretos | 4 | 26-D, 26-F | Revertir reglas de firewall/SSH | `26-H-hardening.md` | pendiente |
 | 26-I | Corte de DNS/TLS, smoke posterior y procedimiento de retorno | 3 | Todos | DNS de vuelta a Vercel | `26-I-corte.md` | pendiente |
@@ -336,7 +336,7 @@ Un tramo no se cierra hasta cumplir todo:
 | Nivel | Qué se prueba |
 |---|---|
 | Unitario (`node:test`) | Router HTTP, parseo de query/body, CORS/IP, `/healthz`, envelope de errores, driver `postgres` (mapeo de RPCs y tipos), runner de migraciones (checksum/orden); handlers de estaciones/ARClim |
-| Integración (Docker) | Todas las RPCs usadas por el chat, las tools, las estaciones y las ingestas (47 nombres identificados en `server/`, `scripts/` y `api/`) contra PostgreSQL; endpoints de estaciones; migraciones 000-037 (y 038 si se crea) dos veces; `build_catalog` |
+| Integración (Docker) | Todas las RPCs usadas por el chat, las tools, las estaciones y las ingestas (48 nombres identificados en `server/`, `scripts/` y `api/`) contra PostgreSQL; endpoints de estaciones; migraciones 000-040 dos veces; `build_catalog` |
 | Contrato | `/api/chat` con el golden set; los 10 endpoints comparados contra la demo |
 | Carga | 20 y 50 usuarios concurrentes; ráfaga de tiles de Copernicus |
 | Borde | `podman/docker compose config`, healthchecks, estáticos, denegaciones, caché de `/api/proxy`, `limit_req` y `nginx -t` con TLS |
@@ -365,7 +365,7 @@ el patrón actual de RAG (`RAG_TEST_DATABASE_URL`).
 
 | Riesgo | Prob. | Impacto | Mitigación | Señal de alarma |
 |---|---|---|---|---|
-| No hay acceso directo para dump de Supabase (solo SQL Editor con timeout) | Alta | Alto | Obtener `SUPABASE_DB_URL`/`supabase db dump`; probar un dump parcial temprano | 26-E no puede empezar |
+| El host directo de Supabase es IPv6 y la red no lo soporta | Media | Medio | Usar Session pooler en 5432 (no transaction pooler 6543) | `Network is unreachable` al conectar |
 | Diferencias entre PostgREST y `pg` (tipos, `jsonb`, `null`, errores) | Alta | Alto | Driver con registro de firmas y tests de todas las RPCs usadas | Una tool devuelve forma distinta |
 | RPCs heredadas que existen en Supabase pero no en las migraciones | Alta | Alto | `npm run check:rpcs` + dump de schemas en 26-E; no inventar definiciones | `check:rpcs` reporta faltantes |
 | El restore choca con extensiones, roles o `search_path` | Media | Alto | `000_compat_roles.sql`, base limpia y restore de prueba | Error de extensión/rol en 26-E |

@@ -52,7 +52,7 @@ export async function main(env = process.env) {
   try {
     const { rows } = await client.query(
       `SELECT p.proname,
-              pg_get_function_arguments(p.oid) AS args
+              pg_get_function_identity_arguments(p.oid) AS args
          FROM pg_proc p
          JOIN pg_namespace n ON n.oid = p.pronamespace
         WHERE n.nspname = 'public'
@@ -60,7 +60,14 @@ export async function main(env = process.env) {
       [names]
     );
 
-    const found = new Map(rows.map((row) => [row.proname, row.args]));
+    // Puede haber overloads (Supabase dejó versiones viejas). Se pasa si
+    // al menos una firma contiene todos los parámetros esperados.
+    const found = new Map();
+    for (const row of rows) {
+      if (!found.has(row.proname)) found.set(row.proname, []);
+      found.get(row.proname).push(row.args);
+    }
+
     const missing = [];
     const argumentsMismatch = [];
 
@@ -70,11 +77,19 @@ export async function main(env = process.env) {
         continue;
       }
 
-      const declared = new Set(argumentNames(found.get(name)));
       const expected = Object.keys(RPC_SIGNATURES[name].params);
-      const absent = expected.filter((param) => !declared.has(param));
-      if (absent.length > 0) {
-        argumentsMismatch.push(`${name}: faltan ${absent.join(", ")}`);
+      const matches = found
+        .get(name)
+        .some((args) => {
+          const declared = new Set(argumentNames(args));
+          return expected.every((param) => declared.has(param));
+        });
+
+      if (!matches) {
+        const available = found.get(name).join(" | ");
+        argumentsMismatch.push(
+          `${name}: esperaba ${expected.join(", ")}; disponible: ${available || "(sin args)"}`
+        );
       }
     }
 

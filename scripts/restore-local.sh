@@ -57,19 +57,32 @@ else
       -f /migrations/000_compat_roles.sql >/dev/null
 fi
 
+# El dump de Supabase puede incluir TABLE DATA public.spatial_ref_sys. Es una
+# tabla de PostGIS que en el destino vive en `extensions`; se excluye del TOC.
+LIST="$DIR/$NAME.list"
 if command -v pg_restore >/dev/null 2>&1; then
+  pg_restore --list "$ABS_DUMP" \
+    | grep -v -E 'SCHEMA - |TABLE DATA public spatial_ref_sys' > "$LIST"
+
   pg_restore \
     --dbname="$TARGET_DATABASE_URL" \
     --no-owner --no-privileges --clean --if-exists --exit-on-error \
+    --use-list="$LIST" \
     "$ABS_DUMP"
 else
   echo "[restore] pg_restore vía $RUNTIME (--network host)"
+  "$RUNTIME" run --rm -v "$DIR:/backup:Z" \
+    docker.io/library/postgres:17 \
+    pg_restore --list "/backup/$NAME" \
+    | grep -v -E 'SCHEMA - |TABLE DATA public spatial_ref_sys' > "$LIST"
+
   "$RUNTIME" run --rm --network host \
     -v "$DIR:/backup:Z" \
     docker.io/library/postgres:17 \
     pg_restore \
       --dbname="$TARGET_DATABASE_URL" \
       --no-owner --no-privileges --clean --if-exists --exit-on-error \
+      --use-list="/backup/$NAME.list" \
       "/backup/$NAME"
 fi
 
@@ -77,7 +90,7 @@ cat <<'EOF'
 
 [restore] Listo. Pasos siguientes:
   1. node scripts/migrate.mjs --baseline --to 035  (si el dump ya trae el schema)
-  2. npm run migrate                              (036 rag, 038 legacy RPCs, etc.)
+  2. npm run migrate                              (036 rag, 038 columnas, 039 RPCs, 040 overloads)
   3. npm run check:rpcs
   4. node scripts/verify-migration.mjs
 EOF

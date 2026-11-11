@@ -28,10 +28,9 @@ CREATE SCHEMA IF NOT EXISTS ingest;
 CREATE SCHEMA IF NOT EXISTS rag;
 
 -- ── Extensiones ──────────────────────────────────────────────────────
--- PostGIS: geometrías, índices GIST y funciones espaciales.
--- pgvector: embeddings del RAG.
--- unaccent: búsquedas sin tildes en el catálogo/columnas.
-CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA extensions;
+-- PostGIS vive en `public` para igualar Supabase: las tablas del dump usan
+-- `public.geometry`. pgvector y unaccent van en `extensions`.
+CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
 CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA extensions;
 CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA extensions;
 
@@ -125,7 +124,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA ingest
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 
 COMMENT ON SCHEMA extensions IS
-  'Extensiones compartidas: PostGIS, pgvector y unaccent.';
+  'Extensiones compartidas: pgvector y unaccent (PostGIS vive en public).';
 COMMENT ON ROLE woll_api IS
   'API Node: solo lectura/execute; sin BYPASSRLS ni superuser.';
 COMMENT ON ROLE woll_ingest IS

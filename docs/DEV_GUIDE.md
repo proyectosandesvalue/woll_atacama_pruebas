@@ -172,7 +172,7 @@ Restore en una base destino vacía/staging:
 export TARGET_DATABASE_URL='postgres://postgres:...@127.0.0.1:5432/woll'
 npm run db:restore -- backups/woll-<timestamp>.dump
 node scripts/migrate.mjs --baseline --to 035   # el dump ya trae 000-035
-npm run migrate                                # 036 rag + 038 si existe
+npm run migrate                                # 036 rag + 038 columnas + 039 RPCs + 040 overloads
 ```
 
 RPCs heredadas y verificación:

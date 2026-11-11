@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Extrae de Supabase las RPCs heredadas que no están en db/migrations/ y genera
- * una migración `038_legacy_rpcs.sql` con sus definiciones y grants.
+ * una migración `039_legacy_rpcs.sql` con sus definiciones y grants.
  *
  * Uso:
  *   SOURCE_DATABASE_URL='postgres://...' node scripts/extract-legacy-rpcs.mjs
@@ -34,7 +34,7 @@ export const LEGACY_RPCS = [
 
 function parseArgs(argv) {
   const opts = {
-    output: "db/migrations/038_legacy_rpcs.sql",
+    output: "db/migrations/039_legacy_rpcs.sql",
     force: false,
     names: LEGACY_RPCS,
     help: false,
@@ -63,7 +63,7 @@ Uso:
   SOURCE_DATABASE_URL='postgres://...' node scripts/extract-legacy-rpcs.mjs
 
 Opciones:
-  --output <ruta>   Archivo de salida (default: db/migrations/038_legacy_rpcs.sql)
+  --output <ruta>   Archivo de salida (default: db/migrations/039_legacy_rpcs.sql)
   --force            Sobrescribe si existe
   --names a,b,c      Nombres a extraer (default: las 12 RPCs heredadas)
 `);
@@ -119,7 +119,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
     }
 
     const chunks = [
-      "-- 038_legacy_rpcs.sql",
+      "-- 039_legacy_rpcs.sql",
       "--",
       "-- RPCs heredadas que existían en Supabase pero no estaban versionadas en",
       "-- db/migrations/. Generado por scripts/extract-legacy-rpcs.mjs.",
@@ -148,7 +148,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
 
     chunks.push("-- Verificación rápida");
     chunks.push(
-      `DO $$ BEGIN RAISE NOTICE '[038] RPCs heredadas aplicadas: ${opts.names.length}'; END $$;`
+      `DO $$ BEGIN RAISE NOTICE '[039] RPCs heredadas aplicadas: ${opts.names.length}'; END $$;`
     );
     chunks.push("");
 
