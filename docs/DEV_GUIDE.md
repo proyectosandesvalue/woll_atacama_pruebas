@@ -58,7 +58,47 @@ GOOGLE_APPLICATION_CREDENTIALS_JSON (si usás Vertex AI en local).
 2.5. Instalar dependencias
 bash
 npm install
-Solo instala ESLint (dev dependency). El runtime no tiene dependencias npm.
+Instala ESLint (dev) y las dependencias de runtime (`pg`, Vertex AI, `csv-parser`).
+
+### 2.6. PostgreSQL local (Sprint 26)
+
+Desde 26-C el entorno de referencia es Docker/Podman + PostgreSQL 16 con
+PostGIS y pgvector. La demo Vercel + Supabase queda congelada.
+
+1. Copiá `.env.example` a `.env.local` y completá:
+   - `POSTGRES_PASSWORD`
+   - `DATABASE_URL` (rol `woll_api`)
+   - `DATABASE_ADMIN_URL` (rol `postgres`, solo migraciones)
+   - `WOLL_API_PASSWORD`, `WOLL_INGEST_PASSWORD`
+2. Levantá la base:
+
+```bash
+npm run db:up
+```
+
+3. Aplicá las migraciones (idempotente):
+
+```bash
+npm run migrate
+npm run migrate:status
+```
+
+4. Habilitá los roles de login (una vez por base):
+
+```bash
+./scripts/bootstrap-roles.sh
+```
+
+5. Para bajar la base:
+
+```bash
+npm run db:down
+```
+
+La base escucha solo en `127.0.0.1:5432` con `docker-compose.dev.yml`. En el VPS
+no se publica: queda en la red interna de Compose. Si usás Podman sin Compose,
+podés levantar el contenedor equivalente con `podman run` o instalar
+`podman-compose`.
 
 3. Comandos útiles
 3.1. Desarrollo local

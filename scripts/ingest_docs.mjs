@@ -14,7 +14,8 @@
  *   --help                Esta ayuda.
  *
  * Requiere (solo sin --dry-run):
- *   DATABASE_URL          postgres://rag_ingest:...@host:5432/woll
+ *   RAG_DATABASE_URL      postgres://rag_ingest:...@host:5432/woll
+ *                         (si falta, usa DATABASE_URL por compatibilidad)
  *   EMBEDDINGS_*          ver server/embeddings/config.js
  *
  * Los logs nunca incluyen contenido de documentos ni API keys.
@@ -59,10 +60,10 @@ if (hasFlag("--help") || hasFlag("-h")) {
     [
       "Ingesta RAG de PDFs",
       "",
-      "  node --env-file=.env.staging scripts/ingest_docs.mjs [--dry-run] [--force]",
+      "  node --env-file=.env.local scripts/ingest_docs.mjs [--dry-run] [--force]",
       "       [--only slug] [--manifest rag/manifest.json]",
       "",
-      "--dry-run no necesita DATABASE_URL ni proveedor de embeddings.",
+      "--dry-run no necesita RAG_DATABASE_URL ni proveedor de embeddings.",
     ].join("\n")
   );
   process.exit(0);
@@ -105,15 +106,17 @@ let embedder = null;
 let pricePerMTok = 0;
 
 if (!dryRun) {
-  if (!process.env.DATABASE_URL) {
-    console.error("Falta DATABASE_URL (o usa --dry-run).");
+  const databaseUrl =
+    process.env.RAG_DATABASE_URL || process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    console.error("Falta RAG_DATABASE_URL (o usa --dry-run).");
     process.exit(2);
   }
 
   const { default: pg } = await import("pg");
 
   pool = new pg.Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: databaseUrl,
     max: 2,
     application_name: "woll-rag-ingest",
     statement_timeout: 120_000,

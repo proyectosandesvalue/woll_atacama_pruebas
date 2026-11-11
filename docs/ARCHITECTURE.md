@@ -67,10 +67,16 @@ Limitaciones de esta etapa:
 
 ### 2.3. Local (dev)
 
-- **Repo:** `woll_atacama_pruebas` en tu máquina
-- **Vercel CLI:** `npx vercel dev` (para testear `/api/chat` localmente)
-- **`.env.staging`**: credenciales de Supabase staging
-- **Vertex AI**: requiere `gcloud auth application-default login` (ADC local) o `GOOGLE_APPLICATION_CREDENTIALS_JSON` (Service Account).
+- **Entorno de referencia (desde 26-C):** Docker/Podman + `docker-compose.yml` +
+  `docker-compose.dev.yml`; PostgreSQL 16 + PostGIS + pgvector en
+  `127.0.0.1:5432`.
+- **Variables:** `.env.local` con `DB_DRIVER=postgres`, `DATABASE_URL` (rol
+  `woll_api`), `DATABASE_ADMIN_URL` (migraciones) y `WOLL_*_PASSWORD`.
+- **Migraciones:** `npm run migrate` / `npm run migrate:status`
+  (`scripts/migrate.mjs`).
+- **Demo legacy:** `npx vercel dev` + `.env.staging` + Supabase, congelada
+  (ADR 005). Se mantiene hasta cerrar el Sprint 26.
+- **Vertex AI:** requiere `gcloud auth application-default login` (ADC local) o `GOOGLE_APPLICATION_CREDENTIALS_JSON` (Service Account).
 
 **Reglas:**
 
@@ -112,10 +118,17 @@ Limitaciones de esta etapa:
 
 ### Base de datos (demo/staging: Supabase; final: PostgreSQL/PostGIS/pgvector en VPS)
 
-- **Supabase** (PostgreSQL + PostGIS).
+- **Supabase** (PostgreSQL + PostGIS) en demo/staging; **PostgreSQL 16 +
+  PostGIS 3.7 + pgvector 0.8.7** en el VPS (imagen
+  `docker/postgres/Dockerfile`, Sprint 26-C).
 - **RPCs tipadas** (`chat.*` + wrappers `public.chat_*`).
 - **RLS activo** en todas las tablas del schema `chat`.
-- **Solo `service_role`** puede ejecutar las RPCs.
+- **Supabase:** solo `service_role` ejecuta las RPCs. **VPS:** `woll_api` tiene
+  `EXECUTE` sobre las RPCs y `SELECT` sobre las tablas de capas; no tiene
+  `BYPASSRLS` ni DDL. `woll_ingest` escribe en `ingest.*`.
+- **Migraciones:** runner `scripts/migrate.mjs` con checksum y
+  `db/migrations/000-037`; `000_compat_roles.sql` crea extensiones, roles y
+  `search_path`.
 - **Schema `admin.*`**: configuración editable (prompts, settings, mensajes, datos no disponibles). PostgREST no lo expone; solo se accede vía RPCs `SECURITY DEFINER`.
 
 ### LLM

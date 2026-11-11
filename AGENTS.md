@@ -108,11 +108,15 @@ npm run lint        # ESLint sobre js/ + server/
 npm run lint:fix    # ESLint con --fix
 npm test            # node:test
 npm run catalog     # Genera chat.chat_catalog desde allTemasConfig.js
-npm run smoke:db    # Verifica conexión a Supabase
+npm run smoke:db    # Verifica conexión a la BD del driver activo
 npm run smoke:chat  # Smoke test end-to-end del orquestador (acepta una pregunta)
 npm run eval:chat   # Golden set completo (equivale a run-golden-set.mjs --all)
 npm run ingest:dry  # Ingesta RAG: estima chunks/tokens/costo sin BD ni proveedor
-npm run ingest      # Ingesta RAG real (requiere DATABASE_URL + EMBEDDINGS_*)
+npm run ingest      # Ingesta RAG real (requiere RAG_DATABASE_URL + EMBEDDINGS_*)
+npm run migrate     # Aplica migraciones al PostgreSQL local
+npm run migrate:status # Estado de migraciones
+npm run db:up       # Levanta PostgreSQL local (Docker Compose)
+npm run db:down     # Baja PostgreSQL local
 npm run dev:proxy   # Proxy persistente para Copernicus en local (puerto 3001)
 npm run dev         # Vercel dev + proxy Copernicus juntos
 ```

@@ -127,7 +127,7 @@ Vercel ni Supabase.
 
 | Decisión | ADR | Estado |
 |---|---|---|
-| PostgreSQL propio: instancia única, schemas, extensiones, roles, pool y migraciones | `006-postgres-propio.md` | Pendiente (se escribe en 26-C) |
+| PostgreSQL propio: instancia única, schemas, extensiones, roles, pool y migraciones | `006-postgres-propio.md` | Aceptado 2026-11-10 |
 | Borde y entrega estática: Nginx + TLS + caché + `limit_req` | `010-borde-nginx.md` | Pendiente (se escribe en 26-D) |
 | Programación de ingestas: systemd timers sobre `docker compose run` | `011-ingestas-programadas.md` | Pendiente (se escribe en 26-J) |
 | Autenticación de administradores | `007-auth-admin.md` | Fuera de este sprint (Sprint 15) |
@@ -282,8 +282,8 @@ tests no deben asumir corte inmediato.
 
 | Tramo | Nombre | Horas | Depende de | Reversión | Spec | Estado |
 |---|---|---|---|---|---|---|
-| 26-C | Imagen PostgreSQL/PostGIS/pgvector, `000_compat_roles.sql` y runner de migraciones | 5 | — | Borrar el volumen y volver a Supabase | `26-C-imagen-postgres.md` | pendiente |
-| 26-B | Driver `postgres` con `pg.Pool`, roles y pruebas de integración | 5 | 26-C | `DB_DRIVER=supabase` | `26-B-driver-postgres.md` | pendiente |
+| 26-C | Imagen PostgreSQL/PostGIS/pgvector, `000_compat_roles.sql` y runner de migraciones | 5 | — | Borrar el volumen y volver a Supabase | `26-C-imagen-postgres.md` | ✅ done |
+| 26-B | Driver `postgres` con `pg.Pool`, roles y pruebas de integración | 5 | 26-C | `DB_DRIVER=supabase` | `26-B-driver-postgres.md` | siguiente |
 | 26-A | Servidor Node, extracción de handlers de estaciones/ARClim, rutas de los 10 endpoints, `/healthz` y cierre ordenado | 6 | 26-B | Apagar Node y volver a Vercel | `26-A-servidor-node.md` | pendiente |
 | 26-D | Compose, Nginx/Caddy, TLS (certbot), estáticos, caché de proxy y `limit_req` | 6 | 26-A, 26-C | Volver al proxy/Function de demo | `26-D-compose-nginx.md` | pendiente |
 | 26-E | Dump/restore, `load-layer`, `build_catalog` y verificación de conteos | 5 | 26-C | Supabase sigue intacto | `26-E-datos.md` | pendiente |
@@ -387,7 +387,7 @@ Supabase CLI y una conexión DBeaver en la máquina local para obtener el dump.
 | M4 | ¿Destino de backups externos? | **Aprobado:** Restic a S3-compatible (Backblaze B2) o `rsync` a otro host | Cambia 26-G | no (26-G) |
 | M5 | ¿Nginx o Caddy? | **Aprobado:** Nginx (limit_req y caché nativos; Caddy requiere plugin) | Cambia la config del borde | no (26-D) |
 | M6 | ¿Cómo se programan las ingestas? | **Aprobado:** systemd timers en el host → `docker compose run --rm ingest` | Cambia 26-J | no (26-J) |
-| M7 | ¿Versiones exactas? | **Aprobado:** PostgreSQL 16, PostGIS 3.4, pgvector 0.8, Node 22 LTS | Cambia la imagen y las pruebas | no (26-C) |
+| M7 | ¿Versiones exactas? | **Aprobado:** PostgreSQL 16, PostGIS 3.7.0, pgvector 0.8.7, Node 22 LTS (versiones fijadas en la imagen) | Cambia la imagen y las pruebas | no (26-C) |
 | M8 | ¿Se aplica el esquema RAG (036) en este sprint? | **Aprobado:** sí, esquema y pgvector; no se ingesta corpus nuevo | Si no, queda deuda para Sprint 18 | no |
 | M9 | ¿Qué pasa con los 4 workflows de GitHub Actions? | **Aprobado:** se desactivan y se reemplazan por timers del VPS | Si se mantienen, escriben en Supabase y duplican | no (26-J) |
 

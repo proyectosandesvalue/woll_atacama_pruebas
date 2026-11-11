@@ -1,0 +1,10 @@
+# Overrides para desarrollo local.
+#
+# Publica PostgreSQL solo en loopback para que `npm run migrate` y DBeaver
+# puedan conectarse. En producción (26-D) este archivo no se usa y la base
+# queda únicamente en la red interna de Compose.
+
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"

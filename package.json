@@ -18,7 +18,11 @@
     "audit": "node --env-file=.env.staging scripts/audit-data.mjs",
     "audit:layer": "node --env-file=.env.staging scripts/audit-data.mjs --layer",
     "ingest:dry": "node scripts/ingest_docs.mjs --dry-run",
-    "ingest": "node --env-file=.env.staging scripts/ingest_docs.mjs",
+    "ingest": "node --env-file=.env.local scripts/ingest_docs.mjs",
+    "migrate": "node --env-file=.env.local scripts/migrate.mjs",
+    "migrate:status": "node --env-file=.env.local scripts/migrate.mjs --status",
+    "db:up": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d postgres",
+    "db:down": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml down",
     "dev:proxy": "node --env-file=.env.staging scripts/dev-proxy.mjs",
     "dev": "bash scripts/dev.sh"
   },

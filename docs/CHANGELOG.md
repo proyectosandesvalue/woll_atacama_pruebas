@@ -66,10 +66,11 @@
 - Concurrencia en producción: 10/10 y 20/20 requests 200; p95 5,45 s y 10,03 s; sin 429/503.
 - Fast path de proximidad (`server/chat/classifier-fast.js`): evita catálogo y clasificador LLM en preguntas explícitas sin historial.
 - Pruebas de concurrencia: caso único 2.259 ms; 20 proximidad p95 5.581 ms; 20 orquestador p95 8.895 ms; 30 proximidad p95 11.328 ms; sin 429/503.
-- Tests: 253 (252 pasan, 1 omitido).
+- Tests: 258 (257 pasan, 1 omitido).
 - Sprint 25 cerrado (25-A/B/C/D/E/F); baseline de latencia y decisión de streaming documentadas.
 
 ### Fixed
+- **Portabilidad de migraciones (26-C):** `021_fix_filters_robust.sql` usaba `sql :=` sin declarar `sql text;` en `chat_layer_features`; no compilaba en una base nueva. Se agregó la declaración para permitir reproducir `000-037`. En Supabase ya estaba aplicada y no se re-ejecuta.
 - `server/chat/tools/list-climate-stations.js`: faltaba el `import { getDB }`; la tool fallaba en runtime con `ReferenceError`.
 - `scripts/build_catalog.mjs`: excluye las capas WMS (`tipo/type === "wms"`) para que no se registren como tablas PostGIS inexistentes en `chat_catalog`.
 - Lint: resueltos los 9 errores preexistentes (`flatpickr` global, `while (true)` en el orquestador, escapes innecesarios en adapters). `npm run lint` queda en 0 errores.
@@ -79,6 +80,8 @@
 - **Disparador de migración:** la imagen Docker de PostgreSQL (PostGIS + pgvector) inicia la migración. Desde ese commit, Docker/VPS es el entorno de desarrollo, Vercel + Supabase quedan congelados y la imagen local se replica en el servidor.
 - **Spec 08 revisada:** corrige el supuesto de que "la BD es más liviana" (el ahorro real viene de MVT, paginación, filtros server-side y caché; el VPS se dimensiona para tiles/DB) y exige paridad de opciones de capa: tabla de atributos, zoom a capa/feature, filtros, cluster, heatmap y descarga. Se agrega el tramo 08-F, la dependencia del Sprint 26 y la duración 48-58h.
 - **Spec 08 aprobada (2026-11-10):** M1 (puntos por GeoJSON bbox + agregados server-side), M2 (ruta Node `ST_AsMVT` + caché Nginx) y M7 (umbral 5.000 puntos) como decisiones iniciales a validar en el spike. Ejecución bloqueada hasta cerrar el Sprint 26.
+- **ADR 006 (Postgres propio):** instancia única, schemas `public`/`chat`/`admin`/`ingest`/`rag`, extensiones en `extensions`, roles `woll_api`/`woll_ingest` sin `BYPASSRLS` y migraciones con checksum.
+- **Imagen PostgreSQL 26-C:** PostgreSQL 16 + PostGIS 3.7.0 + pgvector 0.8.7, versiones fijadas con `ARG`; Compose base y runner de migraciones con checksum.
 - **Spec madre 26 aprobada (2026-11-10):** plataforma propia con PostgreSQL/PostGIS/pgvector, servidor Node persistente, Nginx, paridad de los 10 endpoints, migración de datos, ingestas por systemd timers, staging, backups, hardening y corte. Duración 42-46h; 26-J agregado al roadmap. Arranca 26-C.
 - Documentación sincronizada con el código: 13 tools (9 de capas + 4 de clima), 71 GeoJSON, Node 20.6+, sprints 06/23/06-B.7 cerrados en el roadmap.
 - `package.json` v2.1.0: scripts `catalog`, `smoke:db`, `smoke:chat`, `eval:chat` y `lint:fix` (antes solo documentados en `AGENTS.md`).
@@ -86,6 +89,29 @@
 - Textos de NDVI, MSAVI2, VARI, MCARI, PSRI, NDYI, NDWI, NDCI, MSI y SWIR alineados a lenguaje no especialista, con rangos e interpretación por tramos.
 - Documentación: `ARCHITECTURE.md` §3 (capas satelitales), `DEV_GUIDE.md` §3.8 (agregar indicador), `README.md`, `AGENTS.md`, `ROADMAP.md` (Sprint 44) y `docs/specs/44-indicadores-copernicus.md`.
 - ROADMAP: 25-A/C/D/E cerrados; 22-A/E cerrados; 09-A semi-resuelto (Copernicus cubre indicadores; NASA WMS 30 m y lectura raster pendientes); 09-C redefinido como implementación de capas meteorológicas dinámicas; 09-D pasa a optimización; 37 diferido; eliminado el duplicado de Sprint 37.
+
+## [Sprint 26-C] — 2026-11-10
+
+### Added
+- Imagen `docker/postgres/Dockerfile`: PostgreSQL 16 + PostGIS 3.7.0 + pgvector 0.8.7, versiones fijadas con `ARG`.
+- `docker-compose.yml` base y `docker-compose.dev.yml` con PostgreSQL en `127.0.0.1:5432`.
+- `db/migrations/000_compat_roles.sql`: schema `extensions`, PostGIS/pgvector/unaccent, roles `woll_api`/`woll_ingest` y roles de compatibilidad `anon`/`authenticated`/`service_role`.
+- `scripts/migrate.mjs` con checksum, `--status`, `--dry-run` y `--to`; scripts `npm run migrate` y `npm run migrate:status`.
+- `scripts/bootstrap-roles.sh` + `scripts/bootstrap-roles.mjs` para habilitar LOGIN con passwords desde `.env`.
+- `db:up`/`db:down` para el PostgreSQL local.
+- `RAG_DATABASE_URL` para separar el rol de ingesta RAG del rol del API.
+
+### Changed
+- `.env.example`: `DB_DRIVER=postgres` por defecto y variables `POSTGRES_*`, `DATABASE_URL`, `DATABASE_ADMIN_URL`, `WOLL_*_PASSWORD`.
+- `scripts/ingest_docs.mjs` prefiere `RAG_DATABASE_URL` y cae a `DATABASE_URL`.
+- Documentación de setup local (README, DEV_GUIDE, ARCHITECTURE, AGENTS) apunta a Docker/PostgreSQL.
+
+### Fixed
+- `021_fix_filters_robust.sql`: `chat_layer_features` usaba `sql :=` sin declarar `sql text;`; no compilaba en una base nueva. Corregido con aprobación; Supabase no se re-ejecuta.
+
+### Tests
+- 258 tests (257 pasan, 1 omitido); runner de migraciones con 5 tests unitarios.
+- Validación con Podman: 34 migraciones aplicadas dos veces, extensiones y roles verificados, login de `woll_api`/`woll_ingest` probado.
 
 ## [Sprint 42] — 2026-11-04
 

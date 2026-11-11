@@ -18,6 +18,11 @@
 --   - Campo desconocido: error explícito con las columnas válidas.
 --
 -- Idempotente: re-ejecutable.
+--
+-- 2026-11-10 (Sprint 26-C): se declara `sql text;` en chat_layer_features.
+-- La versión anterior usaba `sql :=` sin declarar la variable y no compilaba
+-- en una base nueva. En Supabase ya estaba aplicada; este cambio solo afecta
+-- instalaciones desde cero y permite reproducir 000-037.
 -- =====================================================================
 
 SET search_path TO chat, public, extensions;
@@ -224,6 +229,7 @@ DECLARE
   result jsonb;
   total_count int;
   capped_limit int;
+  sql text;
 BEGIN
   SELECT physical_table INTO phys FROM chat.chat_catalog
    WHERE layer_id = p_layer AND enabled;

@@ -1,0 +1,21 @@
+# Contexto de build: solo lo necesario para las imágenes del Sprint 26.
+.git
+.gitignore
+.github
+.opencode
+.vercel
+.agents
+node_modules
+docs
+geojson
+reports
+rag/inbox
+*.log
+*.bak
+*.bak.js
+.env
+.env.*
+!.env.example
+session_export.md
+skills-lock.json
+help.html

@@ -78,6 +78,22 @@ El frontend local detecta que está en `localhost` y usa el proxy de 3001 en vez
 
 El visor funciona sin API keys: mapa, sidebar y leyenda operan con los GeoJSON locales. El chat necesita el backend (`vercel dev` o Vercel desplegado) y Vertex AI autenticado.
 
+### PostgreSQL local (Sprint 26)
+
+El entorno de referencia desde 26-C es PostgreSQL propio en Docker/Podman:
+
+```bash
+cp .env.example .env.local   # completar POSTGRES_PASSWORD, DATABASE_* y WOLL_*_PASSWORD
+npm run db:up                # docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d postgres
+npm run migrate              # aplica db/migrations/000-037
+npm run migrate:status       # pendientes / aplicadas / cambiadas
+npm run db:down
+```
+
+La base queda en `127.0.0.1:5432` (solo loopback). En el VPS no se publica:
+queda en la red interna de Compose (26-D). Mientras 26-A no esté implementado,
+el visor y el chat siguen usando `vercel dev` + Supabase para la demo.
+
 ## Estructura del proyecto
 
 ```text
@@ -241,8 +257,11 @@ Proyecto privado. Hoy trabaja un solo desarrollador, por lo que se commitea dire
 Convención de commits: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`, `test:`.
 
 ```bash
-npm run lint   # objetivo: 0 errores
-npm test       # tests con node:test
+npm run lint            # objetivo: 0 errores
+npm test                # tests con node:test
+npm run migrate         # migraciones al PostgreSQL local
+npm run migrate:status  # estado de migraciones
+npm run db:up / db:down # PostgreSQL local en Docker/Podman
 ```
 
 ## Dimensiones disponibles

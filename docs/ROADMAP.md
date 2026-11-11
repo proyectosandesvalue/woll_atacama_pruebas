@@ -83,7 +83,7 @@
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
-| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-C) | alta | 42-46h | 23, 24 |
+| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-C ✅; 26-B siguiente) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
@@ -540,7 +540,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 26 — Plataforma propia (épica)
 
-**Estado**: 🔶 en ejecución (26-C) · **Prioridad**: alta · **Duración**: 42-46h · **Dependencias**: 23, 24
+**Estado**: 🔶 en ejecución (26-C ✅; 26-B siguiente) · **Prioridad**: alta · **Duración**: 42-46h · **Dependencias**: 23, 24
 **Spec**: `docs/specs/26-plataforma/00-spec-madre.md` (APROBADA 2026-11-10) y una spec por tramo.
 
 **Decisión 2026-11-10 (ADR 005)**: VPS propio para producción; Vercel + Supabase quedan como demo/staging. Supabase está en el límite de almacenamiento (~913 MB) y Vercel Hobby no es comercial ni suficiente. No se agrega infraestructura específica de Vercel que no sea portable.
@@ -569,6 +569,8 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 | 26-G | **Backups y restauración (G4).** `pg_dump` diario comprimido y cifrado, retención, copia fuera del servidor, alerta si falla, simulacro de restauración con RPO/RTO medidos | 4 |
 | 26-H | **Endurecimiento (G14), monitoreo y ajuste de Postgres.** SSH solo con llave, sin root, firewall, fail2ban, actualizaciones de seguridad automáticas, permisos de `.env`, rotación de logs de Docker; `shared_buffers`, `work_mem`, `random_page_cost`; prueba de carga 20/50; healthcheck externo y rotación de secretos | 4 |
 | 26-I | **Corte.** Plan de corte, TTL de DNS, pruebas de humo posteriores, y retorno al stack anterior si falla | 3 |
+
+**26-C cerrado (2026-11-10):** imagen PostgreSQL 16 + PostGIS 3.7.0 + pgvector 0.8.7, Compose base, `000_compat_roles.sql`, runner `scripts/migrate.mjs` y `scripts/bootstrap-roles.sh`. 34 migraciones aplicadas dos veces; roles y extensiones verificados. Validado con Podman 5.8 + `podman-compose`; Docker Compose no estaba disponible en el entorno. Tests: 258.
 
 **Criterios de aceptación del sprint**:
 - **CA-1** Dada una BD vacía, cuando se aplica el runner dos veces, entonces termina sin errores y las 71 capas cargan con el mismo conteo que en Supabase.
@@ -985,7 +987,7 @@ y eliminación.
 | ADR | Tema | Origen |
 |---|---|---|
 | 005 | Plataforma y hosting: VPS propio para producción; Vercel + Supabase solo demo (Aceptada 2026-11-10) | 24-C |
-| 006 | Postgres propio: instancia única, schemas `public`/`admin`/`rag`, pgvector | 24-C |
+| 006 | Postgres propio: instancia única, schemas, extensiones y roles de mínimo privilegio (Aceptada 2026-11-10) | 26-C |
 | 007 | Autenticación de administradores | 24-C |
 | 008 | Entrega por artefactos versionados (reemplaza al 004) | 27-B |
 | 009 | Contrato de `charts` plural (pendiente desde antes) | Deuda técnica |
