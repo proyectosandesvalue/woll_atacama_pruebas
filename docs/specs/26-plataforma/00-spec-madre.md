@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 26 |
-| **Estado de la spec** | DRAFT (lista para revisión; M1 bloquea 26-E y M2-M7 necesitan confirmación) |
+| **Estado de la spec** | APROBADA / EN EJECUCIÓN (2026-11-10; defaults aprobados; M1 resuelto con Supabase CLI + DBeaver) |
 | **Tamaño** | Grande (> 15h) |
 | **Duración estimada** | 42-46h |
 | **Dependencias** | Sprint 23 (concurrencia/observabilidad) y Sprint 24 (infraestructura) |
@@ -17,6 +17,9 @@
 > **Decisión de origen:** ADR 005 (VPS propio para producción; Vercel + Supabase
 > solo demo). La migración empieza con la imagen Docker de PostgreSQL
 > (PostGIS + pgvector) y desde ese commit Vercel + Supabase quedan congelados.
+>
+> **Aprobada 2026-11-10.** Se arranca por 26-C (imagen PostgreSQL + migraciones).
+> El dump de Supabase se obtiene con la CLI y la conexión DBeaver existente.
 
 ---
 
@@ -371,19 +374,22 @@ el patrón actual de RAG (`RAG_TEST_DATABASE_URL`).
 | Se filtran secretos en la imagen o el repo | Baja | Alto | `.dockerignore`, `git grep`, revisión de `docker history` | Clave en capas de imagen |
 | Se sigue optimizando Vercel por inercia | Media | Medio | INV-6 y revisión de diff | Cambios en `vercel.json` o driver Supabase |
 
-## 14. Preguntas abiertas
+## 14. Decisiones aprobadas y preguntas abiertas
 
-| # | Pregunta | Default propuesto | Impacto si cambia | ¿Bloquea? |
+Los defaults de M2-M9 quedaron **aprobados el 2026-11-10**. M1 se resolvió: hay
+Supabase CLI y una conexión DBeaver en la máquina local para obtener el dump.
+
+| # | Pregunta | Decisión | Impacto si cambia | ¿Bloquea? |
 |---|---|---|---|---|
-| M1 | ¿Cómo se obtiene el dump de Supabase? | `supabase db dump` o `pg_dump` con conexión directa; probar un dump parcial en 26-C | Sin dump no hay migración de datos | **sí (26-E)** |
-| M2 | ¿Qué VPS se contrata? | 4 vCPU, 8 GB RAM, 80 GB NVMe, Ubuntu 24.04 LTS; 8 vCPU/16 GB si se activa MVT | Cambia límites, tuning y costo | no (26-D/H) |
-| M3 | ¿Dominio y DNS? | Subdominio del cliente, TTL 300 desde 24 h antes del corte | Sin DNS no hay TLS ni corte | no (26-I) |
-| M4 | ¿Destino de backups externos? | Restic a S3-compatible (Backblaze B2) o `rsync` a otro host | Cambia 26-G | no (26-G) |
-| M5 | ¿Nginx o Caddy? | Nginx (limit_req y caché nativos; Caddy requiere plugin) | Cambia la config del borde | no (26-D) |
-| M6 | ¿Cómo se programan las ingestas? | systemd timers en el host → `docker compose run --rm ingest` | Cambia 26-J | no (26-J) |
-| M7 | ¿Versiones exactas? | PostgreSQL 16, PostGIS 3.4, pgvector 0.8, Node 22 LTS | Cambia la imagen y las pruebas | no (26-C) |
-| M8 | ¿Se aplica el esquema RAG (036) en este sprint? | Sí, esquema y pgvector; no se ingesta corpus nuevo | Si no, queda deuda para Sprint 18 | no |
-| M9 | ¿Qué pasa con los 4 workflows de GitHub Actions? | Se desactivan y se reemplazan por timers del VPS | Si se mantienen, escriben en Supabase y duplican | no (26-J) |
+| M1 | ¿Cómo se obtiene el dump de Supabase? | **Resuelta:** Supabase CLI + conexión DBeaver; se prueba un dump parcial en 26-E | Sin dump no hay migración de datos | no |
+| M2 | ¿Qué VPS se contrata? | **Aprobado:** 4 vCPU, 8 GB RAM, 80 GB NVMe, Ubuntu 24.04 LTS; 8 vCPU/16 GB si se activa MVT | Cambia límites, tuning y costo | no (26-D/H) |
+| M3 | ¿Dominio y DNS? | **Aprobado:** subdominio del cliente, TTL 300 desde 24 h antes del corte | Sin DNS no hay TLS ni corte | no (26-I) |
+| M4 | ¿Destino de backups externos? | **Aprobado:** Restic a S3-compatible (Backblaze B2) o `rsync` a otro host | Cambia 26-G | no (26-G) |
+| M5 | ¿Nginx o Caddy? | **Aprobado:** Nginx (limit_req y caché nativos; Caddy requiere plugin) | Cambia la config del borde | no (26-D) |
+| M6 | ¿Cómo se programan las ingestas? | **Aprobado:** systemd timers en el host → `docker compose run --rm ingest` | Cambia 26-J | no (26-J) |
+| M7 | ¿Versiones exactas? | **Aprobado:** PostgreSQL 16, PostGIS 3.4, pgvector 0.8, Node 22 LTS | Cambia la imagen y las pruebas | no (26-C) |
+| M8 | ¿Se aplica el esquema RAG (036) en este sprint? | **Aprobado:** sí, esquema y pgvector; no se ingesta corpus nuevo | Si no, queda deuda para Sprint 18 | no |
+| M9 | ¿Qué pasa con los 4 workflows de GitHub Actions? | **Aprobado:** se desactivan y se reemplazan por timers del VPS | Si se mantienen, escriben en Supabase y duplican | no (26-J) |
 
 ## 15. Reversión global y promoción
 

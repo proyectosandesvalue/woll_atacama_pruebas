@@ -83,7 +83,7 @@
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
-| 26 | Plataforma propia (Postgres + Docker + proxy) | ⏳ pending (spec DRAFT) | alta | 42-46h | 23, 24 |
+| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-C) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
@@ -540,8 +540,8 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 26 — Plataforma propia (épica)
 
-**Estado**: ⏳ pending (spec DRAFT) · **Prioridad**: alta · **Duración**: 42-46h · **Dependencias**: 23, 24
-**Spec**: `docs/specs/26-plataforma/00-spec-madre.md` (DRAFT) y una spec por tramo.
+**Estado**: 🔶 en ejecución (26-C) · **Prioridad**: alta · **Duración**: 42-46h · **Dependencias**: 23, 24
+**Spec**: `docs/specs/26-plataforma/00-spec-madre.md` (APROBADA 2026-11-10) y una spec por tramo.
 
 **Decisión 2026-11-10 (ADR 005)**: VPS propio para producción; Vercel + Supabase quedan como demo/staging. Supabase está en el límite de almacenamiento (~913 MB) y Vercel Hobby no es comercial ni suficiente. No se agrega infraestructura específica de Vercel que no sea portable.
 
