@@ -82,6 +82,7 @@ npm run db:up
 npm run migrate
 npm run migrate:status
 npm run check:rpcs
+npm run audit:db
 ```
 
 4. Habilitá los roles de login (una vez por base):

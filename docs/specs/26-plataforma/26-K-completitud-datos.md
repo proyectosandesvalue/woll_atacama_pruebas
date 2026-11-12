@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 26-K |
-| **Estado de la spec** | DRAFT (plan aprobado en conversación; falta ejecución) |
+| **Estado de la spec** | EN EJECUCIÓN — stack local levantado, dump v1 restaurado y auditoría inicial hecha |
 | **Tamaño** | Mediano-grande (8-10h) |
 | **Dependencias** | 26-E (dump v1 restaurado), 26-D (Compose/Nginx), 17/18 (RAG) |
 | **Bloquea** | 26-F (staging), 26-I (corte) |
@@ -153,7 +153,7 @@ al v1. No se toca producción.
 
 ## 11. Cierre
 
-- **Estado:** DRAFT / pendiente de ejecución.
+- **Estado:** EN EJECUCIÓN. Stack local levantado, dump v1 restaurado y auditoría inicial ejecutada. Pendiente: capas faltantes, RAG/ingesta, decisión PostGIS y dump v2.
 - **Horas reales:** pendiente.
 - **Dump v2:** pendiente.
 - **Decisión PostGIS:** pendiente de auditoría.

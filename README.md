@@ -72,6 +72,7 @@ npm start                 # API Node sin watch (producción)
 npm run db:dump           # dump de Supabase (SOURCE_DATABASE_URL)
 npm run db:restore -- backups/woll-....dump  # restore local (TARGET_DATABASE_URL)
 npm run db:verify         # compara origen/destino (SOURCE_* y TARGET_*)
+npm run audit:db          # auditoría de estructura, RAG/ingest y cobertura de capas
 npm run db:extract-rpcs   # genera 039 con las RPCs heredadas
 npm run layer:load -- geojson/foo.geojson --table foo --dimension agua
 ```

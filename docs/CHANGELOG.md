@@ -90,6 +90,23 @@
 - Documentación: `ARCHITECTURE.md` §3 (capas satelitales), `DEV_GUIDE.md` §3.8 (agregar indicador), `README.md`, `AGENTS.md`, `ROADMAP.md` (Sprint 44) y `docs/specs/44-indicadores-copernicus.md`.
 - ROADMAP: 25-A/C/D/E cerrados; 22-A/E cerrados; 09-A semi-resuelto (Copernicus cubre indicadores; NASA WMS 30 m y lectura raster pendientes); 09-C redefinido como implementación de capas meteorológicas dinámicas; 09-D pasa a optimización; 37 diferido; eliminado el duplicado de Sprint 37.
 
+## [Sprint 26-K] — 2026-11-12
+
+### Added
+- `scripts/audit-db.mjs` y `npm run audit:db`: estructura, extensiones/PostGIS, tablas, geometrías, RLS, roles, RAG/ingest y cobertura de capas.
+- Stack local PostgreSQL 17.11 + API + Nginx con el dump v1 restaurado.
+
+### Audit (v1)
+- PostgreSQL 17.11; PostGIS 3.7 en `public`; pgvector 0.8.7 y unaccent en `extensions`.
+- 90 tablas, 71 capas, 69 tablas con geometría, 37 inválidas, 0 SRID distinto.
+- 1.425.842 valores de ingest, 7 fuentes, 4 endpoints, 523 estaciones.
+- RAG vacío (0 documentos/chunks).
+- 68 capas de config con tabla/catálogo; 49 capas dinámicas; 2 GeoJSON huérfanos.
+- Decisión PostGIS: se mantiene `public` por ahora; mover a `extensions` requiere migración/re-dump.
+
+### Pending
+- Cargar capas faltantes, probar RAG/ingesta y generar dump v2.
+
 ## [Sprint 26-E] — 2026-11-11
 
 ### Added
