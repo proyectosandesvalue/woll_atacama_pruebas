@@ -239,6 +239,19 @@ Para embeddings Vertex falta el driver `vertex-ai`; por ahora el RAG local usa
 el endpoint OpenAI-compatible de Google AI Studio o un servidor de embeddings
 compatible con OpenAI.
 
+Si ya tenés un `.env` local con un proveedor OpenAI-compatible (por ejemplo
+Gemini API), podés cargarlo sin copiar claves:
+
+```bash
+podman-compose -p woll_local --env-file /tmp/woll-local.env \
+  -f docker-compose.yml -f docker-compose.dev.yml \
+  -f docker-compose.local-llm.yml up -d --force-recreate api
+```
+
+Si el chat responde `402 RESOURCE_EXHAUSTED` o `prepayment credits are
+depleted`, la clave es válida pero el proyecto de Google AI Studio no tiene
+créditos: cargá billing en AI Studio o usá Vertex AI.
+
 Después de editar `.env.local`, recrear el contenedor API (no alcanza con
 `restart`, porque `env_file` se lee al crear):
 

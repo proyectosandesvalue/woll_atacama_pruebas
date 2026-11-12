@@ -1,0 +1,15 @@
+# Overlay local para cargar el proveedor LLM de `.env` en el contenedor API.
+#
+# Uso:
+#   podman-compose -p woll_local --env-file /tmp/woll-local.env \
+#     -f docker-compose.yml -f docker-compose.dev.yml \
+#     -f docker-compose.local-llm.yml up -d --force-recreate api
+#
+# `.env` ya contiene LLM_* (Gemini API / OpenAI-compatible) y las claves de
+# Copernicus. No se versiona y no se hornea en la imagen.
+
+services:
+  api:
+    env_file:
+      - .env.local
+      - .env
