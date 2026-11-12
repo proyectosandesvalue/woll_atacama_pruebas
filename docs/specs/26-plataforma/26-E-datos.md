@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 26-E |
-| **Estado de la spec** | CERRADA — dump real restaurado; `db:verify` contra el Supabase vivo queda como gate de staging |
+| **Estado de la spec** | CERRADA v1 — dump restaurado; completitud local, RAG/ingesta y dump v2 en 26-K |
 | **Tamaño** | Mediano (5h) |
 | **Dependencias** | 26-C (imagen/migraciones), 26-B (driver), 26-A (API) |
 | **Última revisión** | 2026-11-11 |
@@ -170,14 +170,14 @@ destino y se repite el dump. El baseline/038-039 solo toca la base nueva.
 
 ## 8. Cierre
 
-- **Estado:** CERRADA. Dump real de Supabase restaurado en PostgreSQL 17.11;
-  baseline 000-035, migraciones 036-040 y `check:rpcs` 48/48. El `db:verify`
-  contra el Supabase vivo queda como gate de staging (26-F).
+- **Estado:** CERRADA v1. Dump real de Supabase restaurado en PostgreSQL 17.11;
+  baseline 000-035, migraciones 036-040 y `check:rpcs` 48/48. La completitud
+  local (capas faltantes, RAG, ingesta) y el dump v2 pasan a 26-K.
 - **Validado localmente (PostgreSQL 17.11):** dump real de Supabase, restore con
   90 tablas/71 capas/1.425.842 valores, baseline 000-035, migraciones 036-040,
   `check:rpcs` 48/48, `load-layer` con GeoJSON y `build_catalog` PostgreSQL.
   `verify-migration` local: 86 tablas, 69 geometrías y 72 secuencias comparadas,
   extensiones/roles/RPCs OK.
-- **Pendiente:** comparar el Supabase vivo contra el destino con `db:verify` al
-  promover staging; el dump y el restore ya están verificados.
+- **Pendiente (26-K):** capas faltantes, RAG/ingesta, decisión de schema PostGIS,
+  dump v2 y `db:verify` contra el Supabase vivo como gate de staging.
 - **Horas reales:** pendiente de registrar por el dev.

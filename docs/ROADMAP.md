@@ -83,7 +83,7 @@
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
-| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E ✅; 26-F siguiente) | alta | 42-46h | 23, 24 |
+| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-E v1 ✅; 26-K siguiente; 26-F después) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
@@ -540,7 +540,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 26 — Plataforma propia (épica)
 
-**Estado**: 🔶 en ejecución (26-C ✅; 26-B ✅; 26-A ✅; 26-D ✅; 26-E ✅; 26-F siguiente) · **Prioridad:** alta · **Duración**: 42-46h · **Dependencias**: 23, 24
+**Estado**: 🔶 en ejecución (26-E v1 ✅; 26-K siguiente; 26-F después) · **Prioridad:** alta · **Duración**: 42-46h · **Dependencias**: 23, 24
 **Spec**: `docs/specs/26-plataforma/00-spec-madre.md` (APROBADA 2026-11-10) y una spec por tramo.
 
 **Decisión 2026-11-10 (ADR 005)**: VPS propio para producción; Vercel + Supabase quedan como demo/staging. Supabase está en el límite de almacenamiento (~913 MB) y Vercel Hobby no es comercial ni suficiente. No se agrega infraestructura específica de Vercel que no sea portable.
@@ -563,7 +563,8 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 | 26-B | **Driver Postgres y roles de mínimo privilegio (H17, G3).** `server/db/drivers/postgres.js` con `pg.Pool`, `statement_timeout`, registro de firmas de RPC con tipos (`jsonb`, `text[]`), llamada con parámetros nombrados y lista cerrada de funciones; roles `woll_api`/`woll_ingest`; tests de integración contra Postgres en contenedor | 5 |
 | 26-C | **Imagen Postgres y migraciones portables (G2).** `000_compat_roles.sql` idempotente (roles `service_role`/`anon`/`authenticated` sin login, PostGIS en `public`, `pgvector`/`unaccent` en `extensions`); runner `scripts/migrate.mjs` con tabla de control y checksum; imagen PostgreSQL 17 + PostGIS + pgvector; probar 000-040 sobre BD vacía dos veces | 5 |
 | 26-D | **Compose, Nginx y proxy.** Servicios `postgres`, `api`, `nginx`, `ingest`; TLS, compresión, caché de estáticos/GeoJSON y de `/api/proxy`, `limit_req` sobre `/api/chat`; red interna, Postgres sin puerto publicado; healthchecks; `.dockerignore`; `.env.example` actualizado | 6 |
-| 26-E | **Datos.** Dump desde Supabase y restauración; `scripts/load-layer` (shp/GeoJSON → PostGIS con SRID, índice GIST, alta en catálogo y refresh de stats); `comunas_poligonos`; `build_catalog` contra la nueva BD; verificación de conteos por capa | 5 |
+| 26-E | **Datos v1.** Dump desde Supabase y restauración; `scripts/load-layer` (shp/GeoJSON → PostGIS con SRID, índice GIST, alta en catálogo y refresh de stats); `comunas_poligonos`; `build_catalog` contra la nueva BD; verificación de conteos por capa | 5 |
+| 26-K | **Completitud local y dump v2.** Stack local completo, auditoría de estructura/PostGIS, capas faltantes, RAG/ingesta de prueba y dump v2 candidato | 8-10 |
 | 26-J | **Ingestas programadas.** Reemplazar los 4 workflows de GitHub Actions por systemd timers sobre `docker compose run --rm ingest`; `flock`, logs y verificación de no duplicar datos | 3 |
 | 26-F | **Staging idéntico a producción (G1).** Segundo entorno con el mismo compose, datos de prueba y variables propias | 3 |
 | 26-G | **Backups y restauración (G4).** `pg_dump` diario comprimido y cifrado, retención, copia fuera del servidor, alerta si falla, simulacro de restauración con RPO/RTO medidos | 4 |
@@ -578,7 +579,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 **26-D cerrado (2026-11-11):** imagen API, Compose dev/prod, Nginx con TLS, estáticos, caché de `/api/proxy`, `limit_req` y denegación de rutas internas. Validado con Podman: stack healthy, caché servida con API detenida, 40 requests a chat → 400/429 y `nginx -t` con TLS autofirmado.
 
-**26-E cerrado (2026-11-11):** dump real de Supabase restaurado en PostgreSQL 17.11 (90 tablas, 71 capas, 1.425.842 valores), baseline 000-035, migraciones 036-040, `check:rpcs` 48/48 y `db:verify` local OK. El `db:verify` contra el Supabase vivo queda como gate de staging.
+**26-E v1 restaurado (2026-11-11):** dump real de Supabase en PostgreSQL 17.11 (90 tablas, 71 capas, 1.425.842 valores), baseline 000-035, migraciones 036-040, `check:rpcs` 48/48 y `db:verify` local OK. **No es el cierre definitivo:** 26-K completa capas faltantes, RAG/ingesta, auditoría de schema y dump v2; 26-F queda bloqueado por 26-K.
 
 **Criterios de aceptación del sprint**:
 - **CA-1** Dada una BD vacía, cuando se aplica el runner dos veces, entonces termina sin errores y las 71 capas cargan con el mismo conteo que en Supabase.
