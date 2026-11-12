@@ -3,25 +3,29 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 08 |
-| **Estado de la spec** | APROBADA (2026-11-10; M1, M2 y M7 aprobadas como decisión inicial a validar en el spike) |
+| **Estado de la spec** | APROBADA, revisión 2026-11-12 (modelo de tiles pregenerados) |
 | **Tamaño** | Grande (> 15h) |
-| **Duración estimada** | 48-58h |
+| **Duración estimada** | 52-60h |
 | **Dependencias** | Sprint 07 (`/api/config` + snapshot) y Sprint 26 (imagen Docker PostgreSQL/PostGIS, Node persistente, Compose) |
-| **Última revisión** | 2026-11-10 |
+| **Última revisión** | 2026-11-12 |
 
 > **Corrección 2026-11-10.** El sprint ya estaba registrado en el ROADMAP, pero la
 > spec no hacía explícita la **paridad de opciones de capa** ni corregía el
 > supuesto de que "cargar desde la BD es más liviano". No lo es por sí solo:
 > servir `ST_AsGeoJSON` completo desde PostGIS puede pesar **más** que el
-> GeoJSON estático. El ahorro real viene de **MVT/vector tiles, endpoints
-> paginados, filtros en servidor y caché**. La sección 2 lo detalla.
+> GeoJSON estático. El ahorro real viene de **tiles, endpoints paginados,
+> filtros en servidor y caché**. La sección 2 lo detalla.
+>
+> **Revisión 2026-11-12.** Con el inventario real se cambia el camino principal:
+> **tiles MVT pregenerados y versionados servidos por Nginx** para capas
+> estáticas o por edición (catastro 2024/2026, incendios anuales, derechos 2025).
+> El MVT **on-demand** queda reservado para capas/valores dinámicos y filtros
+> arbitrarios. Esto hace viable el VPS de 4 vCPU/8 GB y mantiene liviano al
+> navegador. Los detalles están en las secciones 3, 9 y 10.
 
 > Elaborada a partir de ROADMAP (Sprint 08), CONTRACT, ARCHITECTURE, AGENTS.md y
 > CHANGELOG. Esta spec fija el marco; el detalle de cada tramo se escribe al
 > empezarlo (`08-A-*.md`, `08-B-*.md`...).
->
-> **Aprobada 2026-11-10.** La ejecución queda bloqueada hasta cerrar el Sprint
-> 26 (imagen Docker PostgreSQL/PostGIS, Node persistente y Compose).
 
 ---
 
@@ -33,8 +37,8 @@ completos y recibe solo lo que necesita ver: tiles del viewport, páginas de la
 tabla, agregados de cluster/heatmap y exportaciones bajo demanda.
 
 El sprint se ejecuta **después del Sprint 26**: la imagen Docker de PostgreSQL
-(PostGIS + pgvector), el servidor Node persistente y Nginx/Caddy son la base. No
-se implementa sobre Vercel ni Supabase, que quedan congelados como demo.
+(PostGIS + pgvector), el servidor Node persistente y Nginx son la base. No se
+implementa sobre Vercel ni Supabase, que quedan congelados como demo.
 
 Además del cambio de fuente, este sprint debe garantizar que **todas las
 opciones de capa del menú actual sigan disponibles**: tabla de atributos, zoom a
@@ -47,39 +51,42 @@ paridad de opciones no se considera migrada.
 |---|---|---|---|
 | GeoJSON estático (hoy) | El archivo completo, comprimido por el borde | Parsea y retiene todas las features y atributos | Casi nulo: es un archivo en disco/CDN |
 | `ST_AsGeoJSON` completo desde PostGIS | El mismo peso o más (sin gzip ni caché de archivo) | Igual que hoy | Alto: consulta, serialización, transferencia desde la BD |
-| **MVT + endpoints paginados + agregados** | Solo los tiles del viewport, una página de tabla o un agregado | Baja: no retiene el dataset completo | Medio-alto: CPU de tiles/consultas y caché |
+| **MVT pregenerado + endpoints paginados** | Solo los tiles del viewport, una página de tabla o un agregado | Baja: no retiene el dataset completo | Casi nulo en runtime: Nginx sirve archivos; la generación es offline |
+| MVT on-demand + caché | Solo los tiles pedidos | Baja | Alto en miss: `ST_AsMVT` y CPU de PostgreSQL |
 
-**Conclusión:** el ahorro es para el **cliente y la red**, no necesariamente
-para el servidor. El VPS se dimensiona para generar tiles y servir consultas;
-Nginx cachea tiles y respuestas, y PostgreSQL necesita índices GIST y
-`statement_timeout`. Servir el GeoJSON completo desde la base sería un
-retroceso: más latencia, más CPU y el mismo peso en el navegador.
-
-Con 20-50 usuarios concurrentes, el diseño debe incluir:
-
-- caché de tiles en Nginx (y ETag),
-- pool de conexiones acotado,
-- endpoints paginados con límites duros,
-- agregados de cluster/heatmap en servidor,
-- timeout y degradación a GeoJSON por capa.
+**Conclusión:** el ahorro es para el **cliente y la red**; el servidor puede
+quedar barato si los tiles se generan offline. Servir el GeoJSON completo desde
+la base sería un retroceso: más latencia, más CPU y el mismo peso en el
+navegador.
 
 ## 3. Alcance
 
 **Dentro del alcance**
 
-- Servir capas desde PostGIS: MVT para polígonos y líneas; puntos según M1.
-- Endpoints paginados para tabla de atributos, búsqueda, orden y conteo.
-- Filtros de usuario (`dataFilter`) y categorías ocultas por leyenda
-  (`hiddenAttributes`) aplicados de forma consistente en mapa, tabla, cluster,
-  heatmap y descarga.
-- Zoom a la capa y zoom a un feature desde la tabla, sin cargar todo el dataset.
-- Cluster y heatmap con agregación en servidor para capas PostGIS.
+- Modelo de dos modos de tiles por capa:
+  - **Estático/pregenerado:** MVT por zoom, generado offline desde PostGIS y
+    servido por Nginx. Es el modo por defecto para capas estáticas o por
+    edición.
+  - **On-demand:** `ST_AsMVT` en el servidor Node, solo para capas/valores
+    dinámicos o filtros arbitrarios; con caché y límites de concurrencia.
+- Versionado de tiles por capa y edición:
+  - `catastro_fruticola/2024`, `catastro_fruticola/2026`;
+  - `incendios_forestales/2025`, `incendios_forestales/2026`;
+  - `derechos_agua/2025`.
+  - La versión anterior no se sobrescribe; la config apunta a la activa.
+- Manifest por versión con bbox, zooms, checksum, fecha y conteo de features.
+- Endpoints paginados para tabla, búsqueda, orden, conteo y filtros.
+- Geometría de estaciones estática (tiles o GeoJSON) y **valores por API**
+  (`/api/stations-map`, series y detalles); los valores no se congelan en tiles.
+- Cluster/heatmap:
+  - cliente para capas de puntos ≤ 5.000;
+  - agregación server-side para > 5.000 o valores muy dinámicos;
+  - TTL de caché para valores actuales.
 - Descarga GeoJSON/CSV en streaming, con el mismo filtro y **todas** las
   features filtradas, no solo el viewport.
 - Estilos, popups y leyenda equivalentes a los actuales.
-- Modelo de doble fuente por capa, con `fallback` automático a GeoJSON.
-- Migración de las ~70 capas, por dimensión, con paridad verificada.
-- Pruebas de concurrencia (25 y 50 usuarios) y de latencia de tiles.
+- Migración de las ~71 capas, por dimensión y por edición.
+- Pruebas de concurrencia (25 y 50 usuarios) y de disco/tiles.
 
 **Fuera del alcance**
 
@@ -102,20 +109,34 @@ disponible"; las capas WMS conservan su comportamiento actual.
 
 | Opción | Hoy (GeoJSON en memoria) | Con PostGIS | Verificación |
 |---|---|---|---|
-| **Zoom a la capa** | Calcula bbox con Turf sobre las features cargadas; exige capa activa | `GET /api/layers/:id/extent` con `ST_Extent` cacheado; fallback al bbox de features cargadas | CA-4 |
+| **Zoom a la capa** | Calcula bbox con Turf sobre las features cargadas; exige capa activa | `GET /api/layers/:id/extent` con `ST_Extent` cacheado; fallback al bbox del manifest de tiles | CA-4 |
 | **Zoom a un feature** | La tabla hace `fitBounds` con la geometría en memoria | `GET /api/layers/:id/features/:fid` devuelve la geometría del feature o su bbox | CA-4 |
 | **Tabla de atributos** | `openAttributeTable()` usa todas las features/atributos cargados | `GET /api/layers/:id/features?limit=&offset=&search=&sort=&filter=`; conteo con `COUNT(*)`; búsqueda, orden y paginación en servidor | CA-3 |
-| **Filtrar datos** | `openFilterModal()` arma `dataFilter`; `hiddenAttributes` oculta categorías de la leyenda y reconstruye la capa en cliente | El filtro viaja como especificación validada al servidor y se aplica en tiles, tabla, cluster, heatmap y exportación; `dataFilter` y `hiddenAttributes` se siguen aplicando en cliente para los renderers que lo necesitan | CA-5, CA-9 |
-| **Cluster** | `markerCluster` con todos los puntos en memoria | `GET /api/layers/:id/clusters?bbox=&zoom=&filter=` devuelve celdas `{lat, lng, count}`; clic expande; se recalcula al hacer zoom | CA-6 |
-| **Mapa de calor** | `WebGLHeatMap` con todos los puntos | `GET /api/layers/:id/heatmap?bbox=&zoom=&filter=` devuelve celdas ponderadas; el render usa la misma intensidad y radio equivalentes | CA-7 |
+| **Filtrar datos** | `openFilterModal()` arma `dataFilter`; `hiddenAttributes` oculta categorías de la leyenda y reconstruye la capa en cliente | El filtro viaja como especificación validada al servidor y se aplica en tabla, agregados y exportación; en tiles estáticos se aplica en cliente sobre las propiedades del tile; para filtros que cambian la geometría se usa on-demand | CA-5, CA-9 |
+| **Cluster** | `markerCluster` con todos los puntos en memoria | Cliente si la capa tiene ≤ 5.000 puntos; `GET /api/layers/:id/clusters?bbox=&zoom=&filter=` para capas mayores o valores dinámicos | CA-6 |
+| **Mapa de calor** | `WebGLHeatMap` con todos los puntos | Cliente si ≤ 5.000 puntos y valores estáticos; `GET /api/layers/:id/heatmap?bbox=&zoom=&filter=` para valores dinámicos o capas mayores | CA-7 |
 | **Descargar capa** | `downloadUtils.js` genera GeoJSON/CSV desde memoria o desde el archivo | `GET /api/layers/:id/export?format=geojson\|csv&filter=` en streaming; dataset completo filtrado, no el viewport | CA-8 |
 | **Estilos, popups y leyenda** | Config + atributos del feature | Mismos estilos/popups; los atributos llegan como `properties` del tile o de la página | CA-1 |
 
-**Umbral de carga completa.** Para capas pequeñas (a definir en M7, propuesta:
-≤ 5.000 puntos) se permite cargar todas las features (paginación interna con
-un tope de 5.000) y usar `markerCluster`/`WebGLHeatMap` en cliente. Sobre ese
-umbral, cluster y heatmap son obligatoriamente server-side y el render base de
-puntos usa bbox + clusters. El umbral se documenta en `AGENTS.md`.
+### 4.1. Cadencia de datos y modo de tiles
+
+| Capa / dato | Cadencia | Modo |
+|---|---|---|
+| `borde_costero`, `macrozonificacion_borde_costero` | Casi nunca | Estático |
+| `humedales`, `hidrografia`, `energia_*`, `prc_*` | Casi nunca | Estático |
+| `comunas_poligonos` | Fijo | Estático |
+| `catastro_especies_frutales`, `catastro_variedades_frutales` | Por edición (2024/2026) | Estático versionado |
+| `incendios_forestales` | Anual | Estático versionado |
+| `derechos_agua_2025` | Por edición | Estático versionado |
+| `estaciones` (ubicaciones) | Fijo, salvo alta/baja | Estático |
+| Valores meteorológicos de estaciones | Hora/día | API on-demand |
+| `ingest.indicator_values` | Hora/día | API/agregados on-demand |
+| Cluster/heatmap de valores actuales | Cambia con datos | On-demand con TTL |
+
+**Umbral de puntos.** Para capas de puntos ≤ 5.000 se permite cargar todas las
+features del viewport (o del layer si es pequeño) y usar
+`markerCluster`/`WebGLHeatMap` en cliente. Sobre ese umbral, cluster y heatmap
+son server-side. El umbral se documenta en `AGENTS.md`.
 
 **Filtros consistentes.** Un mismo filtro debe producir el mismo conjunto en
 mapa, tabla, agregados y descarga. Se define una especificación única
@@ -135,15 +156,19 @@ mapa, tabla, agregados y descarga. Se define una especificación única
 | INV-7 | **Paridad de opciones:** toda capa PostGIS conserva tabla, zoom, filtro, cluster, heatmap y descarga | CA-3 a CA-9 por capa migrada |
 | INV-8 | Un mismo filtro devuelve el mismo conjunto en mapa, tabla, cluster, heatmap y descarga | Comparación de conteos (CA-5) |
 | INV-9 | El cliente no descarga el GeoJSON completo de una capa PostGIS para operaciones normales | DevTools → Network: no aparece el `.geojson` de la capa |
+| INV-10 | Un tile estático no consulta PostgreSQL en runtime | Prueba con PostgreSQL detenido: Nginx sigue sirviendo tiles |
+| INV-11 | Una versión de tiles publicada no se sobrescribe | Manifest/checksum y directorio de versión |
+| INV-12 | Los valores dinámicos de estaciones no se congelan en tiles estáticos | El popup/heatmap consulta la API de valores |
 
 ## 6. Decisiones arquitectónicas
 
 | Decisión | ADR | Estado |
 |---|---|---|
-| Cómo se sirven los tiles vectoriales (M2) | `012-servicio-de-tiles.md` | Pendiente: la resuelve el spike |
-| Cómo se cargan los puntos, cluster y heatmap (M1) | `013-capas-de-puntos.md` | Pendiente: la resuelve el spike |
+| Cómo se sirven los tiles vectoriales (M2) | `012-servicio-de-tiles.md` | Pendiente: el spike mide pregenerado vs on-demand vs PMTiles |
+| Cómo se cargan los puntos, cluster y heatmap (M1) | `013-capas-de-puntos.md` | Pendiente: el spike mide cliente vs agregados |
 | Modelo de doble fuente (`source`) | `014-doble-fuente.md` | Propuesto (sección 10) |
 | Librería cliente para tiles vectoriales y convivencia con glify (M4) | `015-cliente-de-tiles.md` | Pendiente |
+| Versionado de tiles por edición/año | `012-servicio-de-tiles.md` | Incluido en la decisión de tiles |
 
 ADR 005 ya está ocupada por la decisión de hosting/VPS. Los ADR 006 y 007 están
 reservados por el ROADMAP para PostgreSQL propio y autenticación de admin.
@@ -154,58 +179,65 @@ reservados por el ROADMAP para PostgreSQL propio y autenticación de admin.
   `source` viaja ahí.
 - **Sprint 26** entrega la imagen Docker de PostgreSQL (PostGIS + pgvector), el
   Compose, el servidor Node persistente (`server/index.js`), el driver
-  `pg.Pool` y Nginx/Caddy.
+  `pg.Pool` y Nginx.
 - **Este sprint no empieza antes de la imagen Docker.** Desde ese commit el
   entorno de referencia es Docker Compose/VPS; Vercel + Supabase quedan
   congelados (ADR 005).
 - Los datos de las capas deben existir en PostGIS con SRID, índice GIST y
   columnas de atributos. El inventario del spike mide cuántas capas ya están.
-- **Concurrencia objetivo:** 20-50 usuarios. Los criterios de latencia y las
-  pruebas de carga se definen en la sección 11 y en el tramo 08-A.
+- **Concurrencia objetivo:** 20-50 usuarios. La generación de tiles es offline;
+  el runtime no debe consultar PostGIS para capas estáticas.
+- **Disco:** los tiles pregenerados y sus versiones se suman al disco del VPS.
+  El spike mide tamaño por capa/zoom antes de fijar el plan.
 
 ## 8. Spike (fase 0, máximo 4h)
 
 **Entregable:** ADR 012, ADR 013 y ADR 015 con una recomendación respaldada
-por mediciones, más la línea base y el inventario.
+por mediciones, más la línea base, el inventario y el tamaño estimado de tiles.
 
 | Tarea | Salida |
 |---|---|
 | Medir línea base: bytes y tiempo de carga de 3 capas de referencia (puntos, líneas, polígonos pesados), sin caché y con caché | Tabla de bytes y tiempos |
-| Inventario de las ~70 capas: ¿tabla física existe?, tipo de geometría, SRID, nº de features, peso, índice GIST, columnas filtrables | Planilla (alimenta M3 y el orden de los tramos) |
-| Prototipo descartable del endpoint `ST_AsMVT` para 1 capa de polígonos, dentro de Docker | Latencia en frío, con caché y bajo 10 consultas concurrentes |
+| Inventario de las ~71 capas: ¿tabla física existe?, tipo, SRID, nº de features, peso, GIST, columnas filtrables, cadencia (estática/edición/anual/dinámica) | Planilla (alimenta M3 y el orden de los tramos) |
+| Prototipo de pregeneración `ST_AsMVT` para 1 capa pesada (`borde_costero` o `humedales`), z0-z14 | Tamaño total, cantidad de tiles, tiempo de generación, CPU |
+| Prototipo de MVT on-demand para 1 capa dinámica y medición con 10 consultas concurrentes | Latencia frío/caché, CPU |
 | Prueba de cliente de tiles dentro del visor, con una capa | Compatibilidad con glify, `dataFilter`, popups y z-index |
-| Prueba de agregación de puntos (cluster/heatmap) para una capa mediana | Comparación de conteos y aspecto contra `markerCluster`/`WebGLHeatMap` |
+| Prueba de cluster/heatmap cliente con 523 estaciones y 920 derechos | Memoria, tiempo de render, paridad visual |
+| Estimación de disco para todas las versiones (2024/2026, incendios por año) | GB necesarios y política de retención |
 
 | Pregunta | Opciones | Criterios de decisión |
 |---|---|---|
-| ¿Cómo se sirven los tiles? (M2) | **(a)** ruta Node con `ST_AsMVT` + caché Nginx · **(b)** Martin o pg_tileserv como sidecar · **(c)** tiles pregenerados | Latencia, CPU/RAM del VPS, complejidad de operar, caché, portabilidad |
-| ¿Cómo se cargan los puntos? (M1) | **(a)** MVT también para puntos + agregados server-side · **(b)** GeoJSON por bbox + clusters/heatmap server-side · **(c)** GeoJSON completo bajo umbral | Paridad de iconos/popups, peso real de las capas de puntos, memoria del cliente |
+| ¿Cómo se sirven los tiles? (M2) | **(a)** MVT pregenerado en directorios `z/x/y.mvt` + Nginx · **(b)** PMTiles pregenerado + Nginx · **(c)** MVT on-demand con `ST_AsMVT` + caché · **(d)** Martin/pg_tileserv | CPU runtime, disco, cantidad de archivos, caché, actualización, portabilidad |
+| ¿Cómo se cargan los puntos? (M1) | **(a)** geometría estática en tiles/GeoJSON + valores por API + cluster/heatmap cliente ≤5k · **(b)** agregados server-side para >5k · **(c)** MVT también para puntos | Paridad de iconos/popups, memoria del cliente, valores dinámicos |
+| ¿Cómo se filtran los tiles estáticos? (M9) | **(a)** cliente sobre `properties` del tile · **(b)** MVT on-demand filtrado · **(c)** precargar combinaciones comunes | Consistencia, CPU, UX |
 
 ## 9. Mapa de tramos
 
-Tramos de máximo 8h. El tramo C del ROADMAP se parte por dimensión; cada
-dimensión es un tramo de 2-3h con su puerta.
+Tramos de máximo 8h. El tramo C del ROADMAP se parte por dimensión y edición;
+cada dimensión es un tramo de 2-3h con su puerta.
 
 | Tramo | Nombre | Horas | Depende de | Reversión | Spec | Estado |
 |---|---|---|---|---|---|---|
-| 08-0 | Spike: línea base, inventario y ADRs 012, 013 y 015 | 4 | Sprint 07 + 26 | Nada que revertir (descartable) | esta spec | pendiente |
-| 08-A | Infraestructura de tiles y endpoints (Node + PostGIS + caché Nginx) | 8 | 08-0 | Apagar las rutas; ninguna capa las usa aún | 08-A-*.md | pendiente |
-| 08-B | Piloto: 3 capas chicas con doble fuente, tabla básica paginada y zoom | 4 | 08-A | Cambiar `source.type` de las 3 capas | 08-B-*.md | pendiente |
+| 08-0 | Spike: línea base, inventario, tamaños de tiles y ADRs 012/013/015 | 4 | Sprint 07 + 26 | Nada que revertir (descartable) | esta spec | pendiente |
+| 08-A | Pipeline de tiles pregenerados, manifest/versionado, Nginx y esqueleto on-demand | 10 | 08-0 | Apagar las rutas; ninguna capa las usa aún | 08-A-*.md | pendiente |
+| 08-B | Piloto: 1 capa pesada pregenerada, 1 capa de puntos con API y 1 capa dinámica | 6 | 08-A | Cambiar `source.type` de las 3 capas | 08-B-*.md | pendiente |
 | 08-D | Estilos, popups, leyenda, tabla completa (búsqueda, orden, filtros y conteo) | 6 | 08-B | Igual que 08-B | 08-D-*.md | pendiente |
-| 08-F | Zoom a capa/feature, cluster y heatmap sobre PostGIS | 6 | 08-D | Volver al renderer en cliente para esas capas | 08-F-*.md | pendiente |
-| 08-C1 … C9 | Migración por dimensión (agua, agricultura, clima, energía, minería, otros, planificación, riesgos, suelo) | 2-3 c/u (16-26 total) | 08-F | Por capa (`source.type`) | 08-C*.md | pendiente |
+| 08-F | Zoom a capa/feature, cluster/heatmap cliente y agregados server-side >5k | 8 | 08-D | Volver al renderer en cliente para esas capas | 08-F-*.md | pendiente |
+| 08-C1 … C9 | Migración por dimensión y edición (agua, agricultura, clima, energía, minería, otros, planificación, riesgos, suelo) | 2-3 c/u (16-24 total) | 08-F | Por capa (`source.type`) | 08-C*.md | pendiente |
 | 08-E | Exportación/descarga en streaming desde PostGIS | 4 | 08-D | Quitar la opción de la UI | 08-E-*.md | pendiente |
 
-**Total:** 48-58h.
+**Total:** 52-60h.
 
-**Por qué D y F antes de C:** migrar 70 capas sin que tabla, zoom, filtros,
+**Por qué D y F antes de C:** migrar las capas sin que tabla, zoom, filtros,
 cluster, heatmap y descarga funcionen sobre la nueva fuente multiplica el
-trabajo de corrección. El piloto (B) valida tiles + tabla + zoom; D completa
-estilos y filtros; F completa cluster/heatmap; C escala por dimensión. El orden
-del ROADMAP (A, B, C, D, E) se altera a propósito.
+trabajo de corrección. El piloto (B) valida los tres modos (estático, puntos con
+API y dinámico); D completa estilos/filtros; F completa cluster/heatmap; C
+escala por dimensión/edición. El orden del ROADMAP (A, B, C, D, E) se altera a
+propósito.
 
 **El orden de las dimensiones en C se decide con el inventario del spike**,
-empezando por las de menor riesgo (capas chicas, ya con tabla física).
+empezando por las capas pesadas y estáticas (mayor ahorro de bytes) y siguiendo
+por las de menor riesgo.
 
 ## 10. Modelo de doble fuente y contrato de API
 
@@ -215,44 +247,98 @@ empezando por las de menor riesgo (capas chicas, ya con tabla física).
 {
   "source": {
     "type": "postgis",
-    "table": "public.lagunas_embalses",
+    "table": "public.borde_costero",
     "id_column": "gid",
     "geometry_column": "geom",
     "srid": 4326,
     "geometry_type": "polygon",
     "columns": ["nombre", "tipo", "comuna"],
     "filterable": ["tipo", "comuna"],
+    "tiles": {
+      "mode": "static",
+      "version": "2026",
+      "url_template": "/tiles/borde_costero/2026/{z}/{x}/{y}.mvt",
+      "manifest": "/tiles/borde_costero/2026/manifest.json",
+      "minzoom": 0,
+      "maxzoom": 14
+    },
     "capabilities": {
       "table": true,
       "zoom": true,
       "filter": true,
-      "cluster": true,
-      "heatmap": true,
+      "cluster": false,
+      "heatmap": false,
       "download": true
     },
     "fallback": {
       "type": "geojson",
-      "url": "geojson/lagunas_embalses.geojson"
+      "url": "geojson/borde_costero.geojson"
     }
   }
 }
 ```
 
-La capa decide su fuente; el código no tiene "capas especiales". Mientras exista
-el fallback, volver atrás es cambiar un valor (INV-2). Al estar este modelo en
-`/api/config` (Sprint 07), el cambio de fuente no requiere deploy de frontend
-cuando la config pase a la BD (Sprint 14).
+Para puntos con valores dinámicos:
 
-### 10.2. Endpoints (a crear en el servidor Node del Sprint 26)
+```json
+{
+  "tiles": {
+    "mode": "static",
+    "version": "2026",
+    "url_template": "/tiles/estaciones/2026/{z}/{x}/{y}.mvt"
+  },
+  "values_api": "/api/stations-map",
+  "cluster": { "mode": "client", "max_points": 5000 },
+  "heatmap": { "mode": "client", "max_points": 5000 }
+}
+```
+
+Para una capa dinámica/filtrada:
+
+```json
+{
+  "tiles": {
+    "mode": "on-demand",
+    "url_template": "/api/layers/:id/tiles/{z}/{x}/{y}.mvt",
+    "max_zoom": 16
+  }
+}
+```
+
+### 10.2. Tiles estáticos
+
+- Directorio: `/srv/woll/tiles/<layer_id>/<version>/<z>/<x>/<y>.mvt`.
+- Manifest: `manifest.json` con `layer_id`, `version`, `bbox`, `minzoom`,
+  `maxzoom`, `feature_count`, `generated_at`, `checksum`.
+- Nginx sirve `/tiles/...` con `Cache-Control: public, max-age=31536000,
+  immutable` (la versión es inmutable).
+- Generación: `scripts/build-tiles.mjs` (a crear) con:
+  - `ST_TileEnvelope(z,x,y)`,
+  - `ST_Transform(geom, 3857)`,
+  - `ST_AsMVTGeom(..., 4096, 256, true)`,
+  - `ST_AsMVT(...)`,
+  - simplificación por zoom y `maxzoom` de la capa.
+- La generación puede correr en el VPS con poca carga o en una máquina de
+  desarrollo/CI; se suben los tiles y el manifest.
+- Una versión publicada no se sobrescribe. Si se actualiza la edición, se crea
+  una versión nueva y se cambia la config.
+
+### 10.3. Tiles on-demand
+
+- `GET /api/layers/:id/tiles/:z/:x/:y.mvt` solo para `tiles.mode: "on-demand"`.
+- Nginx cachea por URL (incluye `filter`), con TTL corto y `proxy_cache_lock`.
+- Límites: `z` 0-18, tamaño de tile, timeout 5 s, concurrencia acotada.
+- Si el tile no existe o la capa es estática, la ruta devuelve 404.
+
+### 10.4. Endpoints de datos
 
 | Endpoint | Devuelve | Límites |
 |---|---|---|
-| `GET /api/layers/:id/tiles/:z/:x/:y.mvt` | Tile MVT del viewport | `z` 0-18; `filter` opcional; 204 si vacío |
 | `GET /api/layers/:id/features` | Página de features (`rows`, `total`, `limit`, `offset`) | `limit` ≤ 500, default 100; `bbox`, `search`, `sort`, `filter` |
 | `GET /api/layers/:id/features/:fid` | Feature puntual con geometría/bbox | `fid` validado |
 | `GET /api/layers/:id/extent` | `{ bbox: [minx,miny,maxx,maxy] }` | cacheado por capa |
-| `GET /api/layers/:id/clusters` | Celdas `{lat, lng, count}` | `bbox`, `zoom`, `filter`; máx. celdas |
-| `GET /api/layers/:id/heatmap` | Celdas ponderadas `{lat, lng, weight}` | `bbox`, `zoom`, `filter`; máx. celdas |
+| `GET /api/layers/:id/clusters` | Celdas `{lat, lng, count}` | solo >5k o valores dinámicos; `bbox`, `zoom`, `filter` |
+| `GET /api/layers/:id/heatmap` | Celdas ponderadas `{lat, lng, weight}` | solo >5k o valores dinámicos; `bbox`, `zoom`, `filter` |
 | `GET /api/layers/:id/export` | GeoJSON/CSV en streaming | `format`, `filter`; sin límite de viewport |
 
 Todos responden con el sobre del CONTRACT §5.3:
@@ -279,9 +365,9 @@ Columnas y operadores se validan contra una allowlist; los valores se pasan
 como parámetros (`$1`, `$2`...). Nunca se concatena SQL del cliente.
 
 **Seguridad.** Rol de mínimo privilegio de solo lectura (a definir/crear en el
-Sprint 26-B), sin `SELECT *`,
-sin acceso a tablas `admin.*`/`rag.*`, `statement_timeout`, límite de celdas y
-de filas, y validación de `z/x/y` y `bbox`.
+Sprint 26-B), sin `SELECT *`, sin acceso a tablas `admin.*`/`rag.*`,
+`statement_timeout`, límite de celdas y de filas, y validación de `z/x/y` y
+`bbox`.
 
 ## 11. Criterios de aceptación del sprint completo
 
@@ -292,28 +378,33 @@ de filas, y validación de `z/x/y` y `bbox`.
 | CA-3 | una capa migrada | se abre la tabla de atributos, se busca, se ordena y se pagina | funciona con datos del servidor; el total coincide con el conteo de la BD | test de integración + manual |
 | CA-4 | una capa migrada | se usa "Zoom a la capa" o se hace zoom a un feature desde la tabla | el mapa encuadra la extensión correcta sin descargar todo el dataset | manual + Network |
 | CA-5 | una capa migrada | se aplica un filtro | mapa, tabla, cluster, heatmap y conteo devuelven el mismo conjunto | comparación de conteos |
-| CA-6 | una capa de puntos migrada | se activa cluster y se navega entre zooms | los clusters se recalculan en servidor y el total agregado coincide con el filtro | manual + comparación con `markerCluster` |
-| CA-7 | una capa de puntos migrada | se activa mapa de calor | la intensidad y distribución son equivalentes a la versión GeoJSON | manual (captura comparada) |
+| CA-6 | una capa de puntos ≤5k | se activa cluster y se navega entre zooms | los clusters se calculan en cliente y el total coincide con el filtro | manual + comparación con `markerCluster` |
+| CA-7 | una capa de puntos ≤5k con valores | se activa mapa de calor | la intensidad y distribución son equivalentes a la versión GeoJSON | manual (captura comparada) |
 | CA-8 | una capa migrada | se descarga en GeoJSON o CSV | el archivo contiene todas las features filtradas, no solo el viewport, con el mismo conteo que la tabla | comparación de conteos |
 | CA-9 | una capa migrada con `dataFilter` o `hiddenAttributes` activos | se renderiza | el filtro y las categorías ocultas se respetan en el mapa (INV-5) | manual |
 | CA-10 | una capa PostGIS | se activa y se usan sus opciones | el navegador no descarga su `.geojson` completo | DevTools → Network (INV-9) |
 | CA-11 | una capa mediana | se activa en 4G | transfiere ≥ 70 % menos bytes que el GeoJSON completo y la primera carga sigue < 3 s | Lighthouse + Network |
-| CA-12 | el VPS de staging | 25 y 50 usuarios concurrentes ejecutan tiles, tabla y agregados | sin 5xx; p95 de tile < 300 ms con caché y < 800 ms en frío; tabla < 500 ms | prueba de carga (k6/autocannon) |
+| CA-12 | el VPS de staging | 25 y 50 usuarios concurrentes ejecutan tiles estáticos, tabla y agregados | sin 5xx; p95 de tile estático < 100 ms; tabla < 500 ms; CPU estable | prueba de carga (k6/autocannon) |
 | CA-13 | una capa migrada | se cambia su `source.type` a `geojson` | vuelve a cargar desde GeoJSON sin tocar código | manual (INV-2) |
 | CA-14 | el chat IA | se hace una pregunta cualquiera | responde igual que antes (INV-4) | smoke del orquestador |
-| CA-15 | las 9 dimensiones | terminan los tramos C1-C9 | 70 de 70 capas con `source.type: "postgis"` o excepción documentada y aprobada | inventario final |
+| CA-15 | las 9 dimensiones | terminan los tramos C1-C9 | 71 capas resueltas: 69 con `source.type: "postgis"` y 2 WMS documentadas como excepción | inventario final |
 | CA-16 | una capa de puntos | se activan cluster y heatmap | ambas opciones siguen visibles en el menú y funcionan (INV-7) | manual |
+| CA-17 | un tile estático | se sirve con PostgreSQL detenido | Nginx responde 200 y el visor sigue mostrando la capa | prueba de corte (INV-10) |
+| CA-18 | una capa versionada | se publica 2026 y se conserva 2024 | ambas versiones tienen manifest y tiles; la config usa la activa | inspección de directorios/manifest |
+| CA-19 | estaciones | se cambia el valor de una estación | el popup/heatmap muestra el valor actual de la API, no el tile estático | prueba con dato actualizado |
+| CA-20 | una capa >5k | se activa cluster/heatmap | la API devuelve celdas y el cliente las pinta | test de integración + manual |
 
 ## 12. Puertas entre tramos
 
 Un tramo no se cierra hasta cumplir todo:
 
 - [ ] `npm test` y `npm run lint` limpios.
-- [ ] INV-1 a INV-9 comprobados.
+- [ ] INV-1 a INV-12 comprobados.
 - [ ] Verificado en el entorno Docker local, incluida la prueba de corte del
-      endpoint (INV-3) en los tramos que lo afecten.
+      endpoint (INV-3) y de PostgreSQL detenido para tiles estáticos (INV-10).
 - [ ] Reversión probada al menos una vez (INV-2).
 - [ ] Paridad de opciones verificada en las capas del tramo (INV-7).
+- [ ] Manifest/checksum y versión de tiles revisados.
 - [ ] Docs y CHANGELOG actualizados; ARCHITECTURE si cambia algo estructural.
 - [ ] Re-estimación del resto. Si un tramo tomó el doble, se detiene el sprint y
       se revisa esta spec.
@@ -322,11 +413,12 @@ Un tramo no se cierra hasta cumplir todo:
 
 | Nivel | Qué se prueba |
 |---|---|
-| Unitario (`node:test`) | Compilador de filtros (columnas/operadores allowlist, valores parametrizados), resolución de `source`, paginación y topes, envelope `{ ok, data, error }`, fallback |
-| Integración (Docker + `DATABASE_URL`) | Tile MVT válido y no vacío, conteo de tabla, búsqueda/orden, extent, agregados de cluster/heatmap, export GeoJSON/CSV completo |
-| Regresión | Capa sin `source` sigue usando GeoJSON; WMS no se ve afectada; `dataFilter` sigue aplicándose |
-| Manual | Paridad visual por capa, popups, leyenda, zoom, cluster, heatmap, descarga |
-| Carga | 25 y 50 usuarios concurrentes; p95 de tile/tabla; sin 5xx |
+| Unitario (`node:test`) | Compilador de filtros (columnas/operadores allowlist, valores parametrizados), resolución de `source`, paginación y topes, envelope `{ ok, data, error }`, fallback, generación de URLs de tiles/manifest |
+| Integración (Docker + `DATABASE_URL`) | Tile MVT válido y no vacío, manifest/checksum, versión, conteo de tabla, búsqueda/orden, extent, agregados de cluster/heatmap, export GeoJSON/CSV completo |
+| Regresión | Capa sin `source` sigue usando GeoJSON; WMS no se ve afectada; `dataFilter` sigue aplicándose; estaciones siguen usando la API de valores |
+| Manual | Paridad visual por capa, popups, leyenda, zoom, cluster, heatmap, descarga, selector de edición |
+| Carga | 25 y 50 usuarios concurrentes; p95 de tile estático y on-demand; CPU/RAM; disco |
+| Operación | Regenerar una versión de tiles, publicar, rollback a la versión anterior |
 
 Toda feature nueva de este sprint trae al menos un test. Los tests de
 integración corren contra la imagen PostgreSQL del Sprint 26, no contra
@@ -340,6 +432,8 @@ Supabase.
 - Límites duros de filas, celdas y tamaño de tile; `statement_timeout`.
 - La BD no publica puertos fuera de la red de Compose; solo Nginx/Node exponen
   HTTP/TLS.
+- Los tiles estáticos se sirven solo desde el directorio versionado; no se
+  permite path traversal.
 - Los atributos de las capas se tratan como datos no confiables al renderizar
   popups/tabla (DOMPurify donde corresponda).
 
@@ -347,37 +441,42 @@ Supabase.
 
 | Riesgo | Prob. | Impacto | Mitigación | Señal de alarma |
 |---|---|---|---|---|
-| El costo de CPU de tiles/consultas satura el VPS con 50 usuarios | Media | Alto | Caché Nginx, índices GIST, `statement_timeout`, prueba de carga temprana | p95 de tile > 800 ms o CPU > 80 % |
-| Cluster/heatmap server-side no logran paridad visual | Alta | Alto | M1 en el spike; umbral de carga completa para capas chicas; comparación de capturas | CA-6/CA-7 fallan en el piloto |
-| Filtros inconsistentes entre mapa, tabla y descarga | Alta | Alto | Una sola especificación de filtro reutilizada por todos los endpoints (INV-8) | Conteos distintos en CA-5 |
-| La tabla de atributos se implementa solo en cliente y vuelve a cargar todo | Media | Alto | Paginación y búsqueda server-side desde el piloto (CA-3) | Aparece el `.geojson` en Network |
-| Pocas capas tienen tabla física con SRID/índice | Media | Alto | Inventario en el spike; carga de datos con `ogr2ogr` en el tramo C | 08-C se duplica |
+| El disco se llena por tiles pregenerados y versiones | Alta | Medio | Medir en el spike, PMTiles, retención de versiones y 80/160 GB | `df` > 80 % |
+| Los tiles pregenerados quedan obsoletos tras una actualización | Media | Alto | Manifest/versionado y regeneración por edición | Conteo distinto entre tiles y tabla |
+| La generación de tiles tarda demasiado en capas pesadas | Media | Medio | Generación offline, simplificación, límites de zoom | Script > 8h por capa |
+| Cluster/heatmap cliente no rinden con capas grandes | Media | Medio | Umbral 5k; agregados server-side >5k | Memoria del navegador o FPS |
+| Filtros sobre tiles estáticos no excluyen geometrías | Alta | Medio | Filtro cliente sobre properties; on-demand para filtros geométricos | Features visibles que no deberían |
+| El VPS 4/8 no alcanza para valores dinámicos concurrentes | Media | Alto | TTL corto, caché, límites; upgrade a 8/16 si la medición lo pide | CPU > 80 % o p95 > 1s |
 | Glify (WebGL) y la librería de tiles compiten por z-index/contexto | Media | Medio | Prueba en el spike (M4); pane propio | Capas se tapan o parpadean |
-| El sprint crece por "ya que estamos" (estilos nuevos, mejoras de UI) | Alta | Medio | Fuera de alcance explícito; solo se corrige paridad | Tramo supera 8h |
-| Dependencia del Sprint 26 retrasa el inicio | Alta | Medio | No empezar hasta la imagen Docker; el spike usa esa imagen | Sprint 26 sin cerrar |
+| El sprint crece por "ya que estamos" | Alta | Medio | Fuera de alcance; solo paridad | Tramo supera 8h |
+| Dependencia del Sprint 26 retrasa el inicio | Alta | Medio | No empezar hasta la imagen Docker | Sprint 26 sin cerrar |
 
 ## 16. Decisiones aprobadas y preguntas abiertas
 
-M1, M2 y M7 quedaron **aprobadas el 2026-11-10** como decisión inicial. El
-spike las **valida con mediciones**; si las contradicen, se actualiza el ADR
-correspondiente y esta spec antes de empezar 08-A, sin cambiar el alcance en
-silencio.
+M1, M2 y M7 quedaron **aprobadas** como decisión inicial y se **revisaron el
+2026-11-12** con el inventario real. El spike las valida con mediciones; si las
+contradicen, se actualiza el ADR y esta spec antes de empezar 08-A.
 
 | # | Pregunta | Decisión | Impacto si cambia | ¿Bloquea? |
 |---|---|---|---|---|
-| M1 | ¿Cómo se manejan los puntos (cluster y heatmap)? | **Aprobada:** puntos por GeoJSON filtrado por bbox (conserva iconos y popups); en zooms bajos se muestran clusters server-side; heatmap por agregados; carga completa solo bajo umbral. MVT solo para polígonos y líneas | Si se usa MVT para puntos, hay que reimplementar iconos/popups; si no hay agregados, cluster/heatmap cargan todo | no (el spike valida) |
-| M2 | ¿Cómo se sirven los tiles? | **Aprobada:** ruta Node con `ST_AsMVT` + caché Nginx; Martin/pg_tileserv solo si las mediciones lo justifican | Cambia la infraestructura del tramo A | no (el spike valida) |
-| M3 | ¿Cuántas de las ~70 capas ya tienen tabla física con geometría, SRID e índice GIST? | Las del catálogo del chat; el resto, por verificar | Si son pocas, el tramo C crece (carga desde QGIS/ogr2ogr) | no (lo mide el spike) |
+| M1 | ¿Cómo se manejan los puntos (cluster y heatmap)? | **Geometría estática** (tiles/GeoJSON) + valores por API; cluster/heatmap cliente ≤5k; agregados server-side >5k | Si se usa MVT para puntos, hay que reimplementar iconos/popups; si no hay agregados, las capas grandes cargan todo | no (el spike valida) |
+| M2 | ¿Cómo se sirven los tiles? | **Pregenerado** en directorios `z/x/y.mvt` + Nginx para capas estáticas/edición; **on-demand** solo para dinámicas/filtros; PMTiles como alternativa si el disco/archivos lo justifican | Cambia el pipeline de 08-A y el storage | no (el spike valida) |
+| M3 | ¿Cuántas capas tienen tabla física con geometría, SRID e índice GIST? | **71 capas en el catálogo** (69 tablas con geometría + 2 WMS) en el dump v1; las faltantes se cargan con `load-layer` | Si faltan, el tramo C crece | no |
 | M4 | ¿Qué librería cliente se usa para tiles vectoriales en Leaflet? | La más simple que conviva con glify (evaluar `leaflet.vectorgrid`); decidir con la prueba del spike | Si exige otro mapa, el alcance toca el Sprint 10 | no (spike) |
-| M5 | ¿Orden de las dimensiones en el tramo C? | De menor a mayor riesgo según el inventario | Solo reordena los tramos | no |
-| M6 | ¿Los filtros se aplican en cliente o en servidor? | En servidor para capas PostGIS; `dataFilter` se mantiene en cliente para los renderers legacy | Afecta el diseño del tramo D y de AGENTS.md | no |
-| M7 | ¿Umbral de puntos para cargar todo en cliente vs. agregación server-side? | **Aprobada:** 5.000 puntos por capa | Cambia qué capas usan cluster/heatmap server-side | no (el spike valida) |
+| M5 | ¿Orden de las dimensiones en el tramo C? | Primero capas pesadas/estáticas (mayor ahorro), luego el resto | Solo reordena los tramos | no |
+| M6 | ¿Los filtros se aplican en cliente o en servidor? | En cliente sobre `properties` del tile estático; en servidor para tabla/agregados/export; on-demand para filtros geométricos | Afecta el diseño del tramo D | no |
+| M7 | ¿Umbral de puntos para cargar todo en cliente vs. agregación server-side? | 5.000 puntos por capa | Cambia qué capas usan cluster/heatmap server-side | no (el spike valida) |
+| M8 | ¿Versionado de tiles? | `<layer_id>/<version>/...` con manifest y checksum; la versión anterior se conserva | Cambia el storage y la config | no |
+| M9 | ¿Filtros sobre tiles estáticos? | Cliente sobre properties; on-demand si el filtro cambia la geometría | Cambia la UX de filtros | no |
 
 ## 17. Reversión global y promoción
 
 - **Reversión global:** cambiar `source.type` de todas las capas a `geojson` (un
   valor por capa; la config puede hacerlo en lote). El fallback GeoJSON
   permanece en el repo durante todo el sprint y después de él.
+- **Reversión de tiles:** la config apunta a una versión; volver a la versión
+  anterior es cambiar el `version` de la capa. Las versiones publicadas no se
+  borran durante el sprint.
 - **Promoción:** el corte inicial a VPS es el Sprint 26. Dentro de este sprint,
   cada tramo se valida en el Compose local y se replica en el VPS de staging;
   la promoción a producción sigue el ADR 004 y se hace por tramo, nunca directo
@@ -388,18 +487,20 @@ silencio.
 
 ROADMAP (estado por tramo, duración y dependencias), CHANGELOG, ARCHITECTURE
 (§4 backend, §5 BD, §6 frontend, §7 caché), AGENTS.md (peculiaridades nuevas de
-renderers, filtros, umbral de puntos y paridad de opciones), CONTRACT (si el
-modelo `source` agrega reglas), `.env.example`, ADRs 012-015.
+renderers, filtros, umbral de puntos, pregeneración y paridad de opciones),
+CONTRACT (si el modelo `source` agrega reglas), `.env.example`, ADRs 012-015.
 
 ## 19. Puntos de integración
 
-- **Sprint 07:** `/api/config` y snapshot; el `source` de cada capa viaja ahí.
+- **Sprint 07:** `/api/config` y snapshot; el `source` y el `tiles` de cada capa
+  viajan ahí.
 - **Sprint 26:** imagen PostgreSQL, Compose, Node persistente, Nginx, driver
   `pg.Pool` y migraciones.
 - **Sprint 09:** las capas raster/WMS no pasan por este modelo; conviven.
 - **Sprint 11 (AOI):** reutiliza los endpoints paginados y de agregados.
 - **Sprint 14/15:** la config de capas pasa a la BD y el admin valida `source`.
-- **Sprint 16:** la carga de capas usa el mismo contrato de `source`.
+- **Sprint 16:** la carga de capas usa el mismo contrato de `source` y dispara
+  la regeneración de tiles.
 - **Chat IA:** sigue consultando las tablas físicas; no depende de MVT.
 
 ## 20. Cierre

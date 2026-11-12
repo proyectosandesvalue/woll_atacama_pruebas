@@ -61,7 +61,7 @@
 | 06 | Respuesta geoespacial (GeoJSON en mapa) | ✅ done | alta | 4-6h | — |
 | 06-B.7 | Pintado multi-capa del chat | ✅ done | alta | 3-4h | 06-B.2 |
 | 07 | `/api/config` + snapshot | ⏳ pending | alta | 3-4h | — |
-| 08 | Migración a PostGIS (fuente principal) | ⏳ pending (bloqueado por 26) | alta | 48-58h | 07, 26 |
+| 08 | Migración a PostGIS (fuente principal) | ⏳ pending (bloqueado por 26-K/26) | alta | 52-60h | 07, 26 |
 | 09 | Rasters y capas meteorológicas dinámicas | 🔶 parcial (Copernicus cubre indicadores; NASA/raster pendientes) | media-alta | ~30-50h | decisión técnica |
 | 09-A | Spike/ADR de rasters (semi-resuelto) | 🔶 semi-resuelto | media | 4-6h | — |
 | 09-B | Implementación de rasters (NASA + lectura IMG/TIFF/COG + variables derivadas) | ⏳ pending (bloqueado por 09-A) | media | 12-20h | 09-A |
@@ -249,22 +249,24 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 08 — Migración a PostGIS (fuente principal)
 
-**Estado**: ⏳ pending (bloqueado por 26) · **Prioridad**: alta · **Duración**: 48-58h · **Dependencias**: 07, 26
-**Spec**: `docs/specs/08-postgis-fuente-principal/00-spec-madre.md` (APROBADA 2026-11-10)
+**Estado**: ⏳ pending (bloqueado por 26-K/26) · **Prioridad**: alta · **Duración**: 52-60h · **Dependencias**: 07, 26
+**Spec**: `docs/specs/08-postgis-fuente-principal/00-spec-madre.md` (APROBADA, revisión 2026-11-12)
 
 **Objetivo**: PostGIS como fuente principal de capas, con GeoJSON como fallback. El navegador deja de descargar archivos completos y recibe tiles del viewport, páginas de tabla, agregados de cluster/heatmap y exportaciones bajo demanda. **Todas las opciones de capa deben seguir disponibles**: tabla de atributos, zoom a la capa/feature, filtros, cluster, mapa de calor y descarga.
 
-**Corrección del modelo de carga (2026-11-10)**: "cargar desde la BD" no es más liviano por sí solo. Servir `ST_AsGeoJSON` completo desde PostGIS puede pesar más que el GeoJSON estático (consulta + serialización + transferencia + parse en cliente). El ahorro real viene de **MVT/vector tiles, endpoints paginados, filtros server-side, agregados y caché Nginx**; el VPS se dimensiona para generar tiles y servir consultas. Ver §2 de la spec.
+**Corrección del modelo de carga (2026-11-10)**: "cargar desde la BD" no es más liviano por sí solo. Servir `ST_AsGeoJSON` completo desde PostGIS puede pesar más que el GeoJSON estático (consulta + serialización + transferencia + parse en cliente). El ahorro real viene de **tiles, endpoints paginados, filtros server-side, agregados y caché Nginx**. Ver §2 de la spec.
+
+**Revisión 2026-11-12 (pregeneración)**: con el inventario real, el camino principal pasa a ser **MVT pregenerado y versionado servido por Nginx** para capas estáticas o por edición (catastro 2024/2026, incendios anuales, derechos 2025). El **MVT on-demand** queda solo para capas/valores dinámicos y filtros arbitrarios. Estaciones: geometría estática + valores por API; cluster/heatmap cliente ≤5.000 puntos y server-side solo por encima. Esto hace viable el VPS 4 vCPU/8 GB; el disco es el recurso a medir.
 
 **Entorno**: se ejecuta sobre la imagen Docker PostgreSQL (PostGIS + pgvector), Node persistente y Nginx/Caddy del Sprint 26. Vercel + Supabase quedan congelados (ADR 005). Los ADR de este sprint son 012-015.
 
 **Sub-sprints**:
-- [ ] **0** — Spike: línea base, inventario y ADR 012, 013 y 015 (4h)
-- [ ] **A** — Infraestructura de tiles MVT y endpoints (8h)
-- [ ] **B** — Piloto: 3 capas chicas con doble fuente, tabla paginada y zoom (4h)
+- [ ] **0** — Spike: línea base, inventario, tamaños de tiles y ADR 012, 013 y 015 (4h)
+- [ ] **A** — Pipeline de tiles pregenerados, manifest/versionado, Nginx y esqueleto on-demand (10h)
+- [ ] **B** — Piloto: 1 capa pesada pregenerada, 1 capa de puntos con API y 1 capa dinámica (6h)
 - [ ] **D** — Estilos, popups, leyenda, tabla de atributos paginada y filtros (6h)
-- [ ] **F** — Zoom a capa/feature, cluster y heatmap sobre PostGIS (6h)
-- [ ] **C** — Migración completa: 70 capas por dimensión (16-26h)
+- [ ] **F** — Zoom a capa/feature, cluster/heatmap cliente y agregados server-side >5k (8h)
+- [ ] **C** — Migración completa: 70 capas por dimensión/edición (16-24h)
 - [ ] **E** — Exportación/descarga en streaming desde PostGIS (4h)
 
 ### Sprint 09 — Rasters y capas meteorológicas dinámicas

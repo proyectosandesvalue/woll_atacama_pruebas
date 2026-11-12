@@ -76,6 +76,7 @@
 - Lint: resueltos los 9 errores preexistentes (`flatpickr` global, `while (true)` en el orquestador, escapes innecesarios en adapters). `npm run lint` queda en 0 errores.
 
 ### Changed
+- **Spec 08 revisada (2026-11-12):** con el inventario real, el camino principal pasa a **MVT pregenerado y versionado servido por Nginx** para capas estáticas/edición; **on-demand** solo para valores dinámicos y filtros arbitrarios. Estaciones con geometría estática y valores por API; cluster/heatmap cliente ≤5.000 puntos y server-side >5.000. Duración 52-60h. Hace viable el VPS 4 vCPU/8 GB; el disco es el recurso a medir.
 - **Decisión de infraestructura (ADR 005):** el destino final es un VPS propio; Vercel + Supabase quedan como demo/staging. Supabase en límite (~913 MB) y Vercel Hobby insuficiente. No se invierte en infraestructura específica de Vercel no portable.
 - **Disparador de migración:** la imagen Docker de PostgreSQL (PostGIS + pgvector) inicia la migración. Desde ese commit, Docker/VPS es el entorno de desarrollo, Vercel + Supabase quedan congelados y la imagen local se replica en el servidor.
 - **Spec 08 revisada:** corrige el supuesto de que "la BD es más liviana" (el ahorro real viene de MVT, paginación, filtros server-side y caché; el VPS se dimensiona para tiles/DB) y exige paridad de opciones de capa: tabla de atributos, zoom a capa/feature, filtros, cluster, heatmap y descarga. Se agrega el tramo 08-F, la dependencia del Sprint 26 y la duración 48-58h.
