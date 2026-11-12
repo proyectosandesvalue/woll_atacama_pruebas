@@ -200,6 +200,45 @@ GOOGLE_APPLICATION_CREDENTIALS_JSON='{"type":"service_account",...}'
 El módulo de embeddings actual solo soporta `openai-compatible`; para Vertex
 habría que agregar un driver `vertex-ai`.
 
+### 2.9.1. Vertex AI en el VPS (imagen + secreto)
+
+La imagen no lleva credenciales. En el VPS se monta el JSON de service account
+como secreto de solo lectura con el overlay `docker-compose.vertex.yml`:
+
+```bash
+# En el VPS
+export GCP_SA_FILE=/etc/woll/gcp-sa.json
+docker compose --env-file .env \
+  -f docker-compose.yml \
+  -f docker-compose.prod.yml \
+  -f docker-compose.vertex.yml up -d
+```
+
+El `.env` del VPS debe tener:
+
+```bash
+LLM_PROVIDER=vertex-ai
+GOOGLE_CLOUD_PROJECT=woll-atacama-staging
+GOOGLE_CLOUD_LOCATION=global
+LLM_MODEL=gemini-3.1-flash-lite
+```
+
+El JSON debe ser legible por el usuario `node` del contenedor (UID 1000):
+
+```bash
+sudo install -m 0400 -o 1000 -g 1000 gcp-sa.json /etc/woll/gcp-sa.json
+```
+
+**WIF en el VPS:** la rama WIF actual usa `getVercelOidcToken()` y es exclusiva
+de Vercel. Para WIF fuera de Vercel hace falta un proveedor de identidad
+externo (GitHub/Keycloak/etc.) y un subject token; no se configura solo con
+`GCP_PROJECT_NUMBER`. Si el VPS es una VM de GCE, se puede usar la service
+account adjunta a la VM y ADC por metadata, sin JSON.
+
+Para embeddings Vertex falta el driver `vertex-ai`; por ahora el RAG local usa
+el endpoint OpenAI-compatible de Google AI Studio o un servidor de embeddings
+compatible con OpenAI.
+
 Después de editar `.env.local`, recrear el contenedor API (no alcanza con
 `restart`, porque `env_file` se lee al crear):
 

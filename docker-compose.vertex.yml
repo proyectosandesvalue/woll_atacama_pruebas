@@ -1,0 +1,28 @@
+# Overlay de Vertex AI para Docker/VPS.
+#
+# No mete credenciales en la imagen: monta el JSON de service account como
+# secreto de solo lectura en /run/secrets/gcp-sa.json.
+#
+# Uso en el VPS:
+#   export GCP_SA_FILE=/etc/woll/gcp-sa.json
+#   docker compose --env-file .env \
+#     -f docker-compose.yml \
+#     -f docker-compose.prod.yml \
+#     -f docker-compose.vertex.yml up -d
+#
+# El .env debe tener:
+#   LLM_PROVIDER=vertex-ai
+#   GOOGLE_CLOUD_PROJECT=...
+#   GOOGLE_CLOUD_LOCATION=global
+#   LLM_MODEL=...
+#
+# Para WIF genérica en el VPS hace falta un proveedor de identidad externo
+# (GitHub/Keycloak/etc.) y un token de subject; el código actual solo trae la
+# rama WIF específica de Vercel. La service account es la vía portable.
+
+services:
+  api:
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/gcp-sa.json
+    volumes:
+      - ${GCP_SA_FILE:?Define GCP_SA_FILE con la ruta absoluta al JSON de service account}:/run/secrets/gcp-sa.json:ro,Z

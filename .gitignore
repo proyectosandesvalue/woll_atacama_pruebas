@@ -46,3 +46,8 @@ rag/**/*.pdf
 backups/
 *.dump
 *.dump.sha256
+
+# Credenciales locales (service accounts, claves)
+secrets/
+*gcp*.json
+*service-account*.json

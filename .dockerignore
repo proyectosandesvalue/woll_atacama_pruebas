@@ -24,3 +24,8 @@ help.html
 backups
 *.dump
 *.dump.sha256
+
+# Credenciales locales
+secrets/
+*gcp*.json
+*service-account*.json
