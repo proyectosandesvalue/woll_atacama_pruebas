@@ -156,7 +156,68 @@ El servicio `certbot` del perfil `tls` renueva por webroot; Nginx sirve
 `/.well-known/acme-challenge/`. El certificado se monta en
 `/etc/letsencrypt/live/woll/`.
 
-### 2.9. Migración de datos desde Supabase (Sprint 26-E)
+### 2.9. LLM y embeddings en local (26-K)
+
+El contenedor `api` no hereda las credenciales de Vercel. Si el chat falla con
+`Variable de entorno requerida no configurada: LLM_BASE_URL`, faltan las
+variables del proveedor en `.env.local`.
+
+**Opción A — Gemini API key (recomendada para local).** No requiere ADC ni
+Vertex. Usa el endpoint OpenAI-compatible de Google:
+
+```bash
+# .env.local
+LLM_PROVIDER=openai-compatible
+LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+LLM_MODEL=gemini-3.1-flash-lite
+LLM_API_KEY=TU_GEMINI_API_KEY
+```
+
+Para embeddings, el mismo endpoint:
+
+```bash
+EMBEDDINGS_PROVIDER=openai-compatible
+EMBEDDINGS_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+EMBEDDINGS_MODEL=gemini-embedding-2
+EMBEDDINGS_API_KEY=TU_GEMINI_API_KEY
+EMBEDDINGS_DIM=1024
+EMBEDDINGS_SEND_DIMENSIONS=1
+RAG_DATABASE_URL=postgres://rag_ingest:...@127.0.0.1:5432/woll
+```
+
+**Opción B — Vertex AI (igual que Vercel).** Necesita credenciales dentro del
+contenedor: `GOOGLE_APPLICATION_CREDENTIALS_JSON` en `.env.local` o un archivo
+ADC montado. No alcanza con tener `gcloud` en el host.
+
+```bash
+LLM_PROVIDER=vertex-ai
+GOOGLE_CLOUD_PROJECT=woll-atacama-staging
+GOOGLE_CLOUD_LOCATION=global
+LLM_MODEL=gemini-3.1-flash-lite
+GOOGLE_APPLICATION_CREDENTIALS_JSON='{"type":"service_account",...}'
+```
+
+El módulo de embeddings actual solo soporta `openai-compatible`; para Vertex
+habría que agregar un driver `vertex-ai`.
+
+Después de editar `.env.local`, recrear el contenedor API (no alcanza con
+`restart`, porque `env_file` se lee al crear):
+
+```bash
+podman-compose -p woll_local --env-file /tmp/woll-local.env \
+  -f docker-compose.yml -f docker-compose.dev.yml \
+  up -d --force-recreate api
+```
+
+Probar:
+
+```bash
+curl -X POST http://localhost:8090/api/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"¿Cuántas capas hay?","history":[]}'
+```
+
+### 2.10. Migración de datos desde Supabase (Sprint 26-E)
 
 La conexión directa a Supabase (DBeaver o `supabase db dump`) **no se guarda en
 el repo**. Exportá `SOURCE_DATABASE_URL` solo en la sesión.
