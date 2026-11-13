@@ -126,6 +126,21 @@ const planificacionConfig = {
     },
     plan_regulador_intercomunal_costero_norte: {
       url: "plan_regulador_intercomunal_costero_norte.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "plan_regulador_intercomunal_costero_norte",
+          urlTemplate: "/tiles/plan_regulador_intercomunal_costero_norte/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/plan_regulador_intercomunal_costero_norte/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "plan_regulador_intercomunal_costero_norte.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Intercomunal Costero - Zona Norte", // Nombre personalizado de la Capa
@@ -186,6 +201,21 @@ const planificacionConfig = {
     },
     plan_regulador_intercomunal_costero_sur: {
       url: "plan_regulador_intercomunal_costero_sur.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "plan_regulador_intercomunal_costero_sur",
+          urlTemplate: "/tiles/plan_regulador_intercomunal_costero_sur/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/plan_regulador_intercomunal_costero_sur/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "plan_regulador_intercomunal_costero_sur.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Intercomunal Costero - Zona Sur", // Nombre personalizado de la Capa

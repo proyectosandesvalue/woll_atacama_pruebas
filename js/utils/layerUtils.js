@@ -130,7 +130,7 @@ export async function ensureLayerData(capaNombre, configCapa) {
     try {
       const url =
         `/api/layer-features?layer_id=${encodeURIComponent(capaNombre)}` +
-        "&limit=1000";
+        "&limit=5000";
       const res = await fetch(url, { headers: { Accept: "application/json" } });
       if (res.ok) {
         const data = await res.json();

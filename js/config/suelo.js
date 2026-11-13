@@ -22,6 +22,21 @@ const sueloConfig = {
   estilo: {
     unidades_geomorfologicas: {
       url: "unidades_geomorfologicas.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "unidades_geomorfologicas",
+          urlTemplate: "/tiles/unidades_geomorfologicas/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/unidades_geomorfologicas/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 13,
+        },
+        fallback: { type: "geojson", url: "unidades_geomorfologicas.geojson" },
+      },
       type: "line",
       nombrePersonalizado: "Unidades Geomorfologicas",
       atributo: "Codigo",

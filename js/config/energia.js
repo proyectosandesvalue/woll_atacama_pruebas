@@ -67,6 +67,21 @@ const energiaConfig = {
   estilo: {
     energia_linea_transmision: {
       url: "energia_linea_transmision.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "id",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "energia_linea_transmision",
+          urlTemplate: "/tiles/energia_linea_transmision/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/energia_linea_transmision/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "energia_linea_transmision.geojson" },
+      },
       type: "line",
       nombrePersonalizado: "Linea de Transmision Media-Alta Tension",
       atributo: "TENSION_KV", // Asegúrate de que este atributo exista en tu GeoJSON
@@ -445,6 +460,21 @@ const energiaConfig = {
     },
     energia_potencial_fotovoltaico: {
       url: "energia_potencial_fotovoltaico.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "id",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "energia_potencial_fotovoltaico",
+          urlTemplate: "/tiles/energia_potencial_fotovoltaico/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/energia_potencial_fotovoltaico/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 13,
+        },
+        fallback: { type: "geojson", url: "energia_potencial_fotovoltaico.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Generacion Potencial Energia Fotovoltaica 2021",
       atributo: "REGION",

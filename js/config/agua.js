@@ -117,6 +117,21 @@ const aguaConfig = {
     hidrografia: {
       url: "hidrografia.geojson",
       type: "line",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "hidrografia",
+          urlTemplate: "/tiles/hidrografia/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/hidrografia/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "hidrografia.geojson" },
+      },
       nombrePersonalizado: "Red Hidrografica",
       atributo: "tipo_bcn",
       colores: {
@@ -139,7 +154,7 @@ const aguaConfig = {
         "direccion",
         "Descripcion",
         "Origen Data",
-        "Ultima Actualizacion",
+        "Ultima Actualizacion Dato",
       ],
       alias: {
         nom_cuen: "Nombre Cuenca",
@@ -150,7 +165,7 @@ const aguaConfig = {
         direccion: "Direccion del Cauce",
         Descripcion: "Descripcion",
         "Origen Data": "Origen del Dato",
-        "Ultima Actualizacion": "Ultima Actualizacion del Dato",
+        "Ultima Actualizacion Dato": "Ultima Actualizacion del Dato",
       },
     },
     apr_rural: {
@@ -537,6 +552,21 @@ const aguaConfig = {
     humedales: {
       url: "humedales.geojson",
       type: "polygon",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "id",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "humedales",
+          urlTemplate: "/tiles/humedales/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/humedales/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "humedales.geojson" },
+      },
       nombrePersonalizado: "Humedales",
       atributo: "Region",
       colores: {
@@ -610,6 +640,21 @@ const aguaConfig = {
     },
     cuencas_dga: {
       url: "cuencas_dga.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "cuencas_dga",
+          urlTemplate: "/tiles/cuencas_dga/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/cuencas_dga/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 13,
+        },
+        fallback: { type: "geojson", url: "cuencas_dga.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Cuencas DGA",
       atributo: "NOM_CUEN",
@@ -671,6 +716,21 @@ const aguaConfig = {
     },
     decrero_escasez_2021: {
       url: "decrero_escasez_2021.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "id",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "decrero_escasez_2021",
+          urlTemplate: "/tiles/decrero_escasez_2021/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/decrero_escasez_2021/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "decrero_escasez_2021.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Zona Decreto de escasez Hidrica 2021",
       atributo: "REGION",
@@ -705,6 +765,21 @@ const aguaConfig = {
     },
     decrero_escasez_2022: {
       url: "decrero_escasez_2022.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "id",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "decrero_escasez_2022",
+          urlTemplate: "/tiles/decrero_escasez_2022/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/decrero_escasez_2022/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "decrero_escasez_2022.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Zona Decreto de escasez Hidrica 2022",
       atributo: "REGION",
@@ -739,6 +814,21 @@ const aguaConfig = {
     },
     decrero_escasez_2023: {
       url: "decrero_escasez_2023.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "id",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "decrero_escasez_2023",
+          urlTemplate: "/tiles/decrero_escasez_2023/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/decrero_escasez_2023/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "decrero_escasez_2023.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Zona Decreto de escasez Hidrica 2023",
       atributo: "REGION",

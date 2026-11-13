@@ -622,6 +622,21 @@ const climaConfig = {
   estilo: {
     zonas_climaticas: {
       url: "zonas_climaticas.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "zonas_climaticas",
+          urlTemplate: "/tiles/zonas_climaticas/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/zonas_climaticas/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 13,
+        },
+        fallback: { type: "geojson", url: "zonas_climaticas.geojson" },
+      },
       type: "line",
       nombrePersonalizado: "Zonas Climaticas (Koppen-Geiger)",
       atributo: "KOPPEN_FIN",

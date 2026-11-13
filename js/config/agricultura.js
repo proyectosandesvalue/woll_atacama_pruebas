@@ -332,6 +332,21 @@ const agriculturaConfig = {
     },
     capacidad_uso_suelo: {
       url: "capacidad_uso_suelo.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "capacidad_uso_suelo",
+          urlTemplate: "/tiles/capacidad_uso_suelo/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/capacidad_uso_suelo/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "capacidad_uso_suelo.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Capacidad de Uso de los Suelos",
       atributo: "textcaus",

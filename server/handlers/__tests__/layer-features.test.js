@@ -47,7 +47,7 @@ test("layer-features devuelve propiedades sin geometría por defecto", async () 
     [{ f_geometry_column: "geom" }],
     (sql, params) => {
       featureSql = sql;
-      assert.deepEqual(params, [1000, 0]);
+      assert.deepEqual(params, [5000, 0]);
       return [
         {
           collection: {
@@ -68,7 +68,7 @@ test("layer-features devuelve propiedades sin geometría por defecto", async () 
   assert.equal(body.type, "FeatureCollection");
   assert.equal(body.features.length, 1);
   assert.equal(body.include_geometry, false);
-  assert.equal(body.limit, 1000);
+  assert.equal(body.limit, 5000);
   assert.match(featureSql, /NULL::jsonb/);
   assert.doesNotMatch(featureSql, /ST_AsGeoJSON/);
 });

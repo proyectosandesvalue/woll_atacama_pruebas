@@ -9,7 +9,7 @@
  *
  * Limitaciones del piloto 08-B:
  *  - Sin búsqueda, orden ni filtros server-side (se agregan en 08-D).
- *  - Máximo 1.000 features por request; las capas más grandes se paginan en 08-D.
+ *  - Máximo 5.000 features por request; las capas más grandes se paginan en 08-D.
  *  - Solo lectura sobre tablas del catálogo habilitadas.
  */
 
@@ -17,7 +17,7 @@ import { getDB as defaultGetDB } from "../db/pool.js";
 
 const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/;
 const LAYER_RE = /^[\p{L}\p{N}_-]+$/u;
-const MAX_LIMIT = 1000;
+const MAX_LIMIT = 5000;
 const DEFAULT_LIMIT = 500;
 
 function quoteIdent(name) {
