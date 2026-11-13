@@ -21,11 +21,11 @@ const MAX_CONDITIONS = 20;
 const MAX_COLUMNS = 100;
 const ALLOWED_OPERATORS = new Set(["=", "!=", ">", ">=", "<", "<=", "in", "contains"]);
 
-function quoteIdent(name) {
+export function quoteIdent(name) {
   return `"${String(name).replace(/"/g, '""')}"`;
 }
 
-function quoteLiteral(value) {
+export function quoteLiteral(value) {
   return `'${String(value).replace(/'/g, "''")}'`;
 }
 
@@ -153,14 +153,14 @@ export function escapeCSV(value) {
   return `"${str.replace(/"/g, '""')}"`;
 }
 
-function pickOrderColumn(columns) {
+export function pickOrderColumn(columns) {
   for (const candidate of ["fid", "gid", "id"]) {
     if (columns.includes(candidate)) return candidate;
   }
   return null;
 }
 
-async function resolveLayer(db, layerId) {
+export async function resolveLayer(db, layerId) {
   const catalog = await db.query(
     `SELECT physical_table
        FROM chat.chat_catalog

@@ -27,9 +27,10 @@ const manifestCache = new Map();
  */
 export function isVectorTileLayer(configCapa) {
   const source = configCapa?.source;
+  const mode = source?.tiles?.mode;
   return (
     source?.type === "postgis" &&
-    source.tiles?.mode === "static" &&
+    (mode === "static" || mode === "on-demand") &&
     Boolean(source.tiles.urlTemplate)
   );
 }
@@ -102,13 +103,16 @@ function styleForProperties(properties, capaNombre, configCapa, geometryType) {
   );
 }
 
-function boundsFromManifest(manifest) {
-  const bbox = manifest?.bbox;
+function boundsFromBbox(bbox) {
   if (!bbox) return undefined;
   return L.latLngBounds(
     [bbox.miny, bbox.minx],
     [bbox.maxy, bbox.maxx]
   );
+}
+
+function boundsFromManifest(manifest) {
+  return boundsFromBbox(manifest?.bbox);
 }
 
 /**
@@ -132,13 +136,17 @@ export async function createVectorTileLayer(capaNombre, configCapa) {
   }
 
   const tiles = configCapa.source.tiles;
-  const manifest = tiles.manifest ? await getTileManifest(tiles.manifest) : null;
+  const isStatic = tiles.mode === "static";
+  const manifest = isStatic && tiles.manifest
+    ? await getTileManifest(tiles.manifest)
+    : null;
   const layerName =
     manifest?.tile_slug || tiles.layerName || capaNombre;
   const geometryType = geometryTypeForStyle(configCapa.type);
   const maxNativeZoom =
     manifest?.maxzoom ?? tiles.maxZoom ?? configCapa.source.maxZoom ?? 14;
   const minZoom = manifest?.minzoom ?? tiles.minZoom ?? 0;
+  const bounds = boundsFromManifest(manifest) || boundsFromBbox(tiles.bbox);
   const maxZoom = appState.map?.getMaxZoom ? appState.map.getMaxZoom() : 18;
   const idColumn = configCapa.source.idColumn || "fid";
 
@@ -149,7 +157,7 @@ export async function createVectorTileLayer(capaNombre, configCapa) {
     minZoom,
     maxZoom,
     maxNativeZoom,
-    bounds: boundsFromManifest(manifest),
+    bounds,
     interactive: true,
     rendererFactory: L.canvas.tile,
     getFeatureId: (feature) => {
@@ -170,7 +178,6 @@ export async function createVectorTileLayer(capaNombre, configCapa) {
   layer._capaNombre = capaNombre;
   layer._tileManifest = manifest;
 
-  const bounds = boundsFromManifest(manifest);
   if (bounds) {
     layer.getBounds = () => bounds;
   }
@@ -193,8 +200,8 @@ export async function createVectorTileLayer(capaNombre, configCapa) {
   });
 
   log.log(
-    `Capa ${capaNombre} creada con tiles ${tiles.version || ""} ` +
-      `(z${minZoom}-${maxNativeZoom}, ${manifest?.tiles ?? "?"} tiles)`
+    `Capa ${capaNombre} creada con tiles ${tiles.mode} ${tiles.version || ""} ` +
+      `(z${minZoom}-${maxNativeZoom}, ${manifest?.tiles ?? "on-demand"} tiles)`
   );
 
   return layer;

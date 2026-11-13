@@ -4,6 +4,7 @@
 
 import { handleLayerExport } from "../handlers/layer-export.js";
 import { handleLayerFeature, handleLayerFeatures } from "../handlers/layer-features.js";
+import { handleLayerTiles } from "../handlers/layer-tiles.js";
 
 export const layerRoutes = [
   {
@@ -17,6 +18,12 @@ export const layerRoutes = [
     path: "/api/layer-feature",
     cors: { headers: "Content-Type" },
     handler: async (ctx) => handleLayerFeature(ctx.query, { getDB: ctx.getDB }),
+  },
+  {
+    method: "GET",
+    path: "/api/layer-tiles",
+    cors: { headers: "Content-Type" },
+    handler: async (ctx) => handleLayerTiles(ctx.query, { getDB: ctx.getDB }),
   },
   {
     method: "GET",
