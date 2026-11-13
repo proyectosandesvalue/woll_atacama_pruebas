@@ -282,7 +282,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - [x] **F** — Zoom a capa/feature ✅ (08-D); cluster/heatmap cliente ✅; máximo 2.946 puntos <5.000, no se requieren agregados server-side (8h)
 - [x] **C** — Migración por dimensión: 40/40 capas visibles no-punto con `source`; `comunas_poligonos` no está en la config; puntos quedan GeoJSON/API (16-24h)
 - [x] **E** — Exportación/descarga en streaming desde PostGIS: GeoJSON/CSV con filtro, alias y lotes (4h)
-- [~] **G** — Ciclo de vida de capas nuevas: sync, índice, verificación y retención (4h)
+- [x] **G** — Ciclo de vida de capas nuevas: sync, índice, verificación y retención ✅ (panel admin en Sprint 16) (4h)
 
 ### Sprint 09 — Rasters y capas meteorológicas dinámicas
 

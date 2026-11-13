@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 08-A |
-| **Estado de la spec** | EN EJECUCIÓN (pipeline y Nginx ✅; esqueleto on-demand pendiente) |
+| **Estado de la spec** | CERRADA (pipeline, Nginx y esqueleto on-demand en 08-A.5) |
 | **Tamaño** | Grande |
 | **Duración estimada** | 10 h |
 | **Dependencias** | 08-0, Sprint 26 (PostgreSQL/PostGIS, Nginx) |
@@ -188,7 +188,7 @@ publicación y se sirve con `Cache-Control: no-cache` (`expires -1`).
 | 08-A.2 | Optimización por zoom con geometría materializada y candidatos por cobertura | 2 | ✅ |
 | 08-A.3 | Nginx `/tiles/`, gzip, `.gitignore`/`.dockerignore` | 1 | ✅ |
 | 08-A.4 | Tests unitarios y de integración | 1 | ✅ |
-| 08-A.5 | Esqueleto on-demand y caché (solo contrato) | 2 | ⏳ |
+| 08-A.5 | On-demand: `ST_AsMVT`, caché Nginx y cliente (`08-A.5-on-demand.md`) | 2 | ✅ |
 
 ## 7. Tests requeridos
 
@@ -241,7 +241,7 @@ publicación y se sirve con `Cache-Control: no-cache` (`expires -1`).
 
 ## 12. Cierre
 
-- Horas reales: 7 de 10 (falta on-demand).
+- Horas reales: 9 de 10.
 - Desvíos: la optimización por zoom y el maxzoom adaptativo no estaban en el
   plan original; agregaron ~2 h y evitaron abortar capas regionales.
 - Lecciones: el generador debe medir cobertura real, no bbox; el límite de tiles

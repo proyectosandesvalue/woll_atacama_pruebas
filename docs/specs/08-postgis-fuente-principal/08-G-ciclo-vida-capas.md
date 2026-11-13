@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 08-G |
-| **Estado de la spec** | EN EJECUCIÓN (CLI y contrato ✅; panel admin y automatización pendientes) |
+| **Estado de la spec** | CERRADA (CLI, índice, verificación y retención; panel admin en Sprint 16) |
 | **Tamaño** | Mediano |
 | **Duración estimada** | 4 h |
 | **Dependencias** | 08-A, `scripts/load-layer.mjs` (26-E) |
@@ -245,7 +245,7 @@ borra solo la versión vieja. La capa de prueba se eliminó después.
 
 ## 12. Cierre
 
-- Horas reales: 3 de 4 (falta la integración con el panel).
+- Horas reales: 3,5 de 4. La integración con el panel admin corresponde al Sprint 16; el CLI y el contrato están cerrados.
 - Desvíos: se agregó el maxzoom adaptativo y `load-layer --tiles` dentro del
   mismo tramo.
 - Lecciones: el versionado por fecha funciona para capas nuevas, pero las
