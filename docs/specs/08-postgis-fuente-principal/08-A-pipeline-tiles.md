@@ -158,7 +158,8 @@ location ^~ /tiles/ {
 
 `gzip_types` incluye `application/vnd.mapbox-vector-tile` en dev y producción.
 La ruta se sirve desde el bind mount `/srv/woll` (dev y VPS). No hay proxy a la
-API ni a PostgreSQL.
+API ni a PostgreSQL. `tiles/index.json` es la excepción: cambia con cada
+publicación y se sirve con `Cache-Control: no-cache` (`expires -1`).
 
 ## 5. Criterios de aceptación
 
