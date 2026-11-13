@@ -381,13 +381,15 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 14 — Migrar config a Supabase (`admin.*`)
 
-**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 4-6h · **Dependencias**: 07
+**Estado**: ⏳ pending (spec DRAFT) · **Prioridad**: alta · **Duración**: 4-6h · **Dependencias**: 07
+**Spec**: `docs/specs/14-15-panel-admin.md` (DRAFT; bloqueada por R1/R2)
 
-**Nota de ajuste**: tablas `admin.*` en la misma instancia, bajo el runner de migraciones del Sprint 26-C.
+**Nota de ajuste**: tablas `admin.*` en la misma instancia, bajo el runner de migraciones del Sprint 26-C. El runtime lee un snapshot versionado por `/api/config`; el fallback es `allTemasConfig` (INV-5).
 
 ### Sprint 15 — Panel admin: solo lectura
 
-**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 6-8h · **Dependencias**: 14
+**Estado**: ⏳ pending (spec DRAFT) · **Prioridad**: alta · **Duración**: 6-8h · **Dependencias**: 14, ADR 007
+**Spec**: `docs/specs/14-15-panel-admin.md` (DRAFT; R1 bloquea la auth)
 
 **Nota de ajuste**: autenticación de admin según ADR 007 (OIDC institucional o TOTP local), MFA y registro de auditoría desde el inicio.
 

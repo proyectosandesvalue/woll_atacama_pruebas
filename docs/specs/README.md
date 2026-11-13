@@ -24,8 +24,11 @@
 |---|---|---|---|
 | [06-respuesta-geoespacial](06-respuesta-geoespacial.md) | 06 | Pequeño | APROBADA |
 | [08-postgis-fuente-principal](08-postgis-fuente-principal/00-spec-madre.md) | 08 | Grande | APROBADA |
-| [26-plataforma](26-plataforma/00-spec-madre.md) | 26 | Grande | EN EJECUCIÓN |
+| [14-15-panel-admin](14-15-panel-admin.md) | 14-15 | Mediano | DRAFT |
 | [17-ingesta-rag](17-ingesta-rag.md) | 17 | Mediano | EN EJECUCIÓN |
+| [26-plataforma](26-plataforma/00-spec-madre.md) | 26 | Grande | EN EJECUCIÓN |
+| [28-seguridad-frontend](28-seguridad-frontend.md) | 28 | Mediano | PARCIAL CERRADA |
+| [30-aceptacion](30-aceptacion.md) | 30 | Grande | EN EJECUCIÓN |
 | [44-indicadores-copernicus](44-indicadores-copernicus.md) | 44 | Mediano | CERRADA |
 | 22-alineacion-documentacion | 22 | Pequeño | por escribir |
 
