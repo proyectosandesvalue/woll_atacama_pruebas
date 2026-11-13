@@ -36,6 +36,7 @@ import {
   buildTiles,
   defaultMaxzoomFor,
   parseArgs as parseBuildArgs,
+  tileSlug,
 } from "./build-tiles.mjs";
 
 const { Pool } = pg;
@@ -210,7 +211,8 @@ async function listLayers(pool, opts) {
 }
 
 async function buildLayer(pool, layer, opts) {
-  const root = path.resolve(opts.out, layer.layer_id);
+  const slug = tileSlug(layer.layer_id);
+  const root = path.resolve(opts.out, slug);
   const versions = await listVersions(root);
   const stale = isStale(versions, layer.updated_at);
   const active = versions[0] || null;
@@ -244,6 +246,10 @@ async function buildLayer(pool, layer, opts) {
 
   const maxzoom = opts.maxzoom ?? defaultMaxzoomFor(layer.geometry_type);
   const { log, warn } = logFor(layer.layer_id);
+
+  if (slug !== layer.layer_id) {
+    log(`slug de tiles: ${slug}`);
+  }
 
   if (opts.dryRun) {
     log(
@@ -286,8 +292,10 @@ async function readAllManifests(out) {
     if (!layer.isDirectory()) continue;
     const versions = await listVersions(path.join(out, layer.name));
     if (versions.length === 0) continue;
+    const manifestLayerId = versions[0].manifest.layer_id || layer.name;
     result.push({
-      layer_id: layer.name,
+      layer_id: manifestLayerId,
+      tile_slug: layer.name,
       active_version: versions[0].version,
       versions: versions.map(({ version, manifest }) => ({
         version,
@@ -350,9 +358,9 @@ async function walkTiles(root, current = root, records = []) {
   return records;
 }
 
-async function verifyLayer(pool, out, layerId, entry) {
+async function verifyLayer(pool, out, slug, entry) {
   const errors = [];
-  const records = await walkTiles(path.join(out, layerId, entry.version));
+  const records = await walkTiles(path.join(out, slug, entry.version));
   const manifest = entry.manifestData;
   const rebuilt = buildManifest(
     {
@@ -397,9 +405,9 @@ async function checkAll(pool, out) {
 
   for (const layer of layers) {
     for (const entry of layer.versions) {
-      const manifestPath = path.join(out, layer.layer_id, entry.version, MANIFEST);
+      const manifestPath = path.join(out, layer.tile_slug, entry.version, MANIFEST);
       const manifestData = JSON.parse(await readFile(manifestPath, "utf8"));
-      const errors = await verifyLayer(pool, out, layer.layer_id, {
+      const errors = await verifyLayer(pool, out, layer.tile_slug, {
         ...entry,
         manifestData,
       });
@@ -427,9 +435,9 @@ async function pruneAll(out, keep, dryRun) {
   let removed = 0;
 
   for (const layer of layers) {
-    const versions = await listVersions(path.join(out, layer.layer_id));
+    const versions = await listVersions(path.join(out, layer.tile_slug));
     for (const entry of versions.slice(keep)) {
-      const target = path.join(out, layer.layer_id, entry.version);
+      const target = path.join(out, layer.tile_slug, entry.version);
       console.log(`[tiles-sync] prune ${layer.layer_id}/${entry.version}`);
       if (!dryRun) await rm(target, { recursive: true, force: true });
       removed += 1;

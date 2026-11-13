@@ -37,6 +37,19 @@ const { Pool } = pg;
 const MAX_TILES_DEFAULT = 20000;
 const ID_PRIORITY = ["fid", "gid", "id"];
 
+/**
+ * Slug ASCII para directorios y URLs de tiles. El `layer_id` del catálogo
+ * puede tener tildes o `ñ` (p. ej. `prc_chañaral`); la URL no.
+ */
+export function tileSlug(value) {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "") || "layer";
+}
+
 export function parseArgs(argv) {
   const opts = {
     layer: null,
@@ -76,8 +89,8 @@ export function parseArgs(argv) {
 
   if (opts.help) return opts;
   if (!opts.layer) throw new Error("Falta --layer.");
-  if (!/^[a-z0-9_]+$/.test(opts.layer)) {
-    throw new Error("--layer solo admite minúsculas, números y guion bajo.");
+  if (!/^[\p{L}\p{N}_-]+$/u.test(opts.layer)) {
+    throw new Error("--layer solo admite letras, números, guion y guion bajo.");
   }
   if (!/^[A-Za-z0-9._-]+$/.test(opts.version)) {
     throw new Error("--version solo admite letras, números, punto, guion y guion bajo.");
@@ -381,6 +394,7 @@ async function manifestExists(root) {
 
 export async function buildTiles(pool, opts, { log = console.log, warn = console.warn } = {}) {
   const { layerId, physicalTable } = await resolveLayer(pool, opts.layer, opts.table);
+  const slug = tileSlug(layerId);
   const { geomColumn, srid, geometryType } = await resolveGeometry(pool, physicalTable);
   if (srid !== 4326) {
     throw new Error(`${physicalTable}: SRID ${srid}, se esperaba 4326.`);
@@ -393,6 +407,7 @@ export async function buildTiles(pool, opts, { log = console.log, warn = console
   const plan = {
     event: "plan",
     layer: layerId,
+    tile_slug: slug,
     table: physicalTable,
     geometry_type: geometryType,
     features: featureCount,
@@ -419,17 +434,17 @@ export async function buildTiles(pool, opts, { log = console.log, warn = console
     return { plan, dryRun: true };
   }
 
-  const root = path.resolve(opts.out, layerId, opts.version);
+  const root = path.resolve(opts.out, slug, opts.version);
   if (!opts.overwrite && (await manifestExists(root))) {
     throw new Error(
-      `La versión ${layerId}/${opts.version} ya tiene manifest. ` +
+      `La versión ${slug}/${opts.version} ya tiene manifest. ` +
         "Una versión publicada no se sobrescribe: usá otra --version o --overwrite."
     );
   }
   await mkdir(root, { recursive: true });
 
   const columns = columnRows.map((row) => ({ column_name: row.column_name }));
-  const sql = buildTileSql({ columns, layerId, featureId });
+  const sql = buildTileSql({ columns, layerId: slug, featureId });
   const tileRecords = [];
   let processed = 0;
   let totalCandidates = 0;
@@ -485,7 +500,7 @@ export async function buildTiles(pool, opts, { log = console.log, warn = console
         while (cursor < zoomTasks.length) {
           const task = zoomTasks[cursor];
           cursor += 1;
-          const { rows } = await client.query(sql, [z, task.x, task.y, layerId]);
+          const { rows } = await client.query(sql, [z, task.x, task.y, slug]);
           const tile = rows[0]?.tile;
           processed += 1;
 
@@ -517,6 +532,7 @@ export async function buildTiles(pool, opts, { log = console.log, warn = console
   const manifest = buildManifest(
     {
       layer_id: layerId,
+      tile_slug: slug,
       version: opts.version,
       physical_table: physicalTable,
       geometry_type: geometryType,
@@ -530,7 +546,7 @@ export async function buildTiles(pool, opts, { log = console.log, warn = console
       feature_id: featureId,
       simplified: opts.simplify,
       generated_at: new Date().toISOString(),
-      tile_url_template: `/tiles/${layerId}/${opts.version}/{z}/{x}/{y}.mvt`,
+      tile_url_template: `/tiles/${slug}/${opts.version}/{z}/{x}/{y}.mvt`,
     },
     tileRecords
   );
@@ -544,6 +560,7 @@ export async function buildTiles(pool, opts, { log = console.log, warn = console
       {
         event: "done",
         layer: layerId,
+        tile_slug: slug,
         version: opts.version,
         maxzoom: manifest.maxzoom,
         wrote: manifest.tiles,
@@ -570,7 +587,7 @@ export async function buildTiles(pool, opts, { log = console.log, warn = console
               mode: "static",
               version: opts.version,
               url_template: manifest.tile_url_template,
-              manifest: `/tiles/${layerId}/${opts.version}/manifest.json`,
+              manifest: `/tiles/${slug}/${opts.version}/manifest.json`,
               minzoom: opts.minzoom,
               maxzoom: opts.maxzoom,
             },

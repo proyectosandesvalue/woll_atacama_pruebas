@@ -64,7 +64,10 @@ tiles/
       <z>/<x>/<y>.mvt
 ```
 
-- `layer_id` y `version` solo admiten `[A-Za-z0-9._-]` / `[a-z0-9_]`.
+- `version` solo admite `[A-Za-z0-9._-]`.
+- El directorio usa un **slug ASCII** del `layer_id` (`prc_chañaral` →
+  `prc_chanaral`) para no depender del percent-encoding en URLs. El manifest
+  conserva el `layer_id` original y agrega `tile_slug`.
 - Una versión con `manifest.json` **no se sobrescribe** salvo `--overwrite` /
   `--force`.
 - La versión anterior se conserva hasta aplicar retención (`--prune`).
@@ -74,6 +77,7 @@ tiles/
 ```json
 {
   "layer_id": "borde_costero",
+  "tile_slug": "borde_costero",
   "version": "2026",
   "physical_table": "public.borde_costero",
   "geometry_type": "MULTIPOLYGON",

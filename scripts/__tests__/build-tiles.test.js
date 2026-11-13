@@ -13,6 +13,7 @@ import {
   lonToTile,
   parseArgs,
   simplifyTolerance,
+  tileSlug,
   tileTasks,
 } from "../build-tiles.mjs";
 import { dateVersion } from "../tiles-sync.mjs";
@@ -99,6 +100,14 @@ test("parseArgs valida argumentos y rechaza rutas inseguras", () => {
   assert.throws(() => parseArgs(["--layer", "x", "--version", "a/b"]), /--version/);
   assert.throws(() => parseArgs(["--layer", "x", "--maxzoom", "19"]), /--maxzoom/);
   assert.throws(() => parseArgs(["--layer", "x", "--minzoom", "5", "--maxzoom", "4"]), /--maxzoom/);
+});
+
+test("tileSlug produce un slug ASCII para directorios y URLs", () => {
+  assert.equal(tileSlug("borde_costero"), "borde_costero");
+  assert.equal(tileSlug("prc_chañaral"), "prc_chanaral");
+  assert.equal(tileSlug("PRC Chañaral El Salado"), "prc_chanaral_el_salado");
+  assert.equal(tileSlug("capa.con/puntos"), "capa_con_puntos");
+  assert.equal(tileSlug("..."), "layer");
 });
 
 test("dateVersion usa YYYYMMDD en UTC", () => {
