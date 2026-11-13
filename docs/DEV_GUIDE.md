@@ -935,6 +935,34 @@ usuarios reales y evita el rate limit por IP de on-demand (20 r/s). La tabla
 `/api/layer-features` está cacheada 10 s en Nginx; una edición puede tardar ese
 tiempo en reflejarse.
 
+**Configuración en BD y panel admin (14-15)**
+
+```bash
+# Validar la config sin escribir
+npm run config:snapshot -- --dry-run
+
+# Publicar un snapshot nuevo y activarlo
+npm run config:snapshot -- --publish --notes "capa nueva X"
+
+# Verificar que el snapshot activo coincide con js/config
+npm run config:snapshot -- --check
+
+# Alta/rotación del usuario admin (password + TOTP)
+npm run admin:user -- --username admin --password '...'
+npm run admin:user -- --new-totp
+```
+
+- `/api/config` devuelve el snapshot activo; si falla, el visor usa
+  `allTemasConfig` (INV-5). No editar el snapshot a mano: publicar con el CLI.
+- `admin.config_layers` es un índice derivado para el panel; no es la fuente
+  de verdad.
+- El panel vive en `/admin.html` (noindex) y es solo lectura. Requiere
+  `DB_DRIVER=postgres`, `ADMIN_SESSION_SECRET` (32+ caracteres) y
+  `ADMIN_TOTP_SECRET`.
+- Si se pierde el TOTP, generar uno nuevo con `--new-totp`, actualizar el
+  entorno y reiniciar la API.
+- La demo Vercel/Supabase no expone el panel: usa el fallback local.
+
 **Seguridad del frontend (28)**
 
 - No agregar `<script>` ni `<link rel="stylesheet">` externos sin versión fija,

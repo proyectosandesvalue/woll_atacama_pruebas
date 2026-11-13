@@ -158,11 +158,11 @@ Limitaciones de esta etapa:
   `BYPASSRLS` ni DDL. `woll_ingest` escribe en `ingest.*`.
 - **Driver (26-B):** `server/db/drivers/postgres.js` con `pg.Pool`,
   `statement_timeout`/`query_timeout` y un registro cerrado de 48 RPCs en
-  `server/db/rpc-signatures.js`. `npm run check:rpcs` verifica que existan.
+  `server/db/rpc-signatures.js` (50 RPCs). `npm run check:rpcs` verifica que existan.
 - **Migraciones:** runner `scripts/migrate.mjs` con checksum y
-  `db/migrations/000-037`; `000_compat_roles.sql` crea extensiones, roles y
+  `db/migrations/000-042`; `000_compat_roles.sql` crea extensiones, roles y
   `search_path`.
-- **Schema `admin.*`**: configuración editable (prompts, settings, mensajes, datos no disponibles). PostgREST no lo expone; solo se accede vía RPCs `SECURITY DEFINER`.
+- **Schema `admin.*`**: configuración editable (prompts, settings, mensajes, datos no disponibles), snapshots de config, índice de capas, usuarios admin y auditoría. PostgREST no lo expone; se accede por RPCs `SECURITY DEFINER` o por el servidor con el rol `woll_api`.
 
 ### LLM
 
@@ -372,7 +372,29 @@ rate-limiter.js	Límite por IP (no distribuido en Vercel; Redis/Nginx en el VPS)
 
 El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consume `/api/proxy?source=...` mediante `js/utils/externalServices.js`; nunca ve el INSTANCE_ID ni el client secret. Detalle en `docs/integrations/proxy-servicios-externos.md`. En local, `scripts/dev-proxy.mjs` reutiliza `handleProxy()` en el puerto 3001 y el frontend lo detecta con `js/config/proxy.js`.
 
-### 4.2. Tiles MVT pregenerados (Sprint 08)
+### 4.2. Configuración del visor y panel admin (Sprints 14-15)
+
+- **Snapshot:** `admin.config_snapshots` guarda la config completa como JSON
+  versionado con checksum SHA-256 y una sola fila activa. Las versiones son
+  inmutables; publicar crea una nueva y activa la nueva (ADR 024).
+- **Índice:** `admin.config_layers` deriva dimensión, grupo, subgrupo, capa,
+  tipo, fuente, tiles y config de cada capa. Lo usa el panel para listar y
+  buscar; no es la fuente de verdad.
+- **CLI:** `npm run config:snapshot -- --dry-run|--publish|--check` importa
+  `allTemasConfig`, valida con `configValidator` y publica.
+- **API:** `GET /api/config` devuelve el snapshot activo con `ETag`,
+  `Cache-Control: public, max-age=300` y `304` si no cambió. Si no hay
+  snapshot o la BD falla, responde `503` y el visor usa `allTemasConfig`
+  (INV-5). `js/config/loader.js` hace el fetch y el fallback.
+- **Panel:** `admin.html` + `js/admin/*` sin framework. Solo lectura:
+  configuración, prompts/settings/mensajes/datos no disponibles y auditoría.
+- **Auth (ADR 007):** password scrypt + TOTP local, cookie `woll_admin`
+  HttpOnly/SameSite=Strict firmada con HMAC, CSRF y rate limit. El secreto
+  TOTP vive en `ADMIN_TOTP_SECRET`; nunca en la BD.
+- **Auditoría:** `admin.audit_log` registra login/logout, actor, resultado, IP
+  hasheada y detalle. El panel requiere `DB_DRIVER=postgres`.
+
+### 4.3. Tiles MVT pregenerados (Sprint 08)
 
 Las capas estáticas o por edición no se sirven desde PostgreSQL en runtime.
 El flujo es offline:
@@ -615,17 +637,13 @@ No hay alertas configuradas (a futuro).
 
 9. Roadmap técnico
 Corto plazo
-Migrar js/config/*.js (dimensiones, capas, alias) a admin.* (Sprint 14).
+Panel admin con CRUD de capas y publicación de snapshots (Sprint 16).
 
-Panel admin (solo lectura primero, Sprint 15).
+Validar 14/15 en el VPS y rotar secretos (Sprint 26).
 
 CI/CD y entrega versionada (Sprint 27).
 
-Seguridad del frontend y dependencias (Sprint 28).
-
 Mediano plazo
-/api/config — el visor lee config desde un snapshot JSON.
-
 Ingesta RAG (PDFs + pgvector) — Sprint 17 y 18.
 
 Recetas de análisis (Sprint 41).

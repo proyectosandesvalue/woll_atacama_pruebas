@@ -71,8 +71,8 @@
 | 11 | Análisis por Área de Interés (AOI) | ⏳ pending | alta | 15-28h | 08 |
 | 12 | Registro y visualización de indicadores | ⏳ pending | media | 20-33h | 08, 11, 14 |
 | 13 | Generación de reportes con IA | ⏳ pending | media | 20-32h | 08, 11, 12 |
-| 14 | Migrar config a Supabase (`admin.*`) | ⏳ pending | alta | 4-6h | 07 |
-| 15 | Panel admin — solo lectura | ⏳ pending | alta | 6-8h | 14 |
+| 14 | Migrar config a Supabase (`admin.*`) | 🔶 local (snapshot + `/api/config` ✅; VPS pendiente) | alta | 4-6h | 07 |
+| 15 | Panel admin — solo lectura | 🔶 local (TOTP, config, chat y auditoría ✅; VPS pendiente) | alta | 6-8h | 14 |
 | 16 | Panel admin — CRUD de capas | ⏳ pending | alta | 8-12h | 08, 14, 15 |
 | 17 | Ingesta RAG (PDFs → chunks → embeddings) | 🔶 parcial | media | 8-12h | — (CLI); 15 solo para el panel |
 | 18 | Retrieval RAG + tool en chat | ⏳ pending | media | 8-12h | 17 |
@@ -381,23 +381,23 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 14 — Migrar config a Supabase (`admin.*`)
 
-**Estado**: ⏳ pending (spec DRAFT) · **Prioridad**: alta · **Duración**: 4-6h · **Dependencias**: 07
-**Spec**: `docs/specs/14-15-panel-admin.md` (DRAFT; bloqueada por R1/R2)
+**Estado**: 🔶 parcial (implementado y validado local; falta VPS) · **Prioridad**: alta · **Duración**: 4-6h · **Dependencias**: 07
+**Spec**: `docs/specs/14-15-panel-admin.md` (EN EJECUCIÓN)
 
-**Nota de ajuste**: tablas `admin.*` en la misma instancia, bajo el runner de migraciones del Sprint 26-C. El runtime lee un snapshot versionado por `/api/config`; el fallback es `allTemasConfig` (INV-5).
+**Implementado:** migración 041 (`admin.config_snapshots` + `admin.config_layers`), CLI `npm run config:snapshot`, `GET /api/config` con ETag/304/503 y loader con fallback. Snapshot v1: 9 dimensiones, 158 capas maestras, 315 filas. ADR 024.
 
 ### Sprint 15 — Panel admin: solo lectura
 
-**Estado**: ⏳ pending (spec DRAFT) · **Prioridad**: alta · **Duración**: 6-8h · **Dependencias**: 14, ADR 007
-**Spec**: `docs/specs/14-15-panel-admin.md` (DRAFT; R1 bloquea la auth)
+**Estado**: 🔶 parcial (implementado y validado local; falta VPS) · **Prioridad**: alta · **Duración**: 6-8h · **Dependencias**: 14, ADR 007
+**Spec**: `docs/specs/14-15-panel-admin.md` (EN EJECUCIÓN)
 
-**Nota de ajuste**: autenticación de admin según ADR 007 (OIDC institucional o TOTP local), MFA y registro de auditoría desde el inicio.
+**Implementado:** `admin.html` de solo lectura, login password+TOTP, sesión HttpOnly, CSRF, rate limit, `admin.audit_log`, vistas de configuración/chat/auditoría. ADR 007. Falta validar en el VPS y rotar secretos en 26-H.
 
 ### Sprint 16 — Panel admin: CRUD de capas
 
 **Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 8-12h · **Dependencias**: 08, 14, 15
 
-**Nota de ajuste**: carga de capas con límite de tamaño, validación de formato y geometría, procesamiento aislado (`ogr2ogr` en proceso separado), vista previa y reversión.
+**Nota de ajuste**: carga de capas con límite de tamaño, validación de formato y geometría, procesamiento aislado (`ogr2ogr` en proceso separado), vista previa y reversión. Reutiliza `admin.config_layers`, `admin.config_snapshots`, auth/auditoría y `/api/config` de 14/15.
 
 ### Sprint 17 — Ingesta RAG (PDFs → chunks → embeddings)
 
@@ -585,7 +585,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 | 26-C | **Imagen Postgres y migraciones portables (G2).** `000_compat_roles.sql` idempotente (roles `service_role`/`anon`/`authenticated` sin login, PostGIS en `public`, `pgvector`/`unaccent` en `extensions`); runner `scripts/migrate.mjs` con tabla de control y checksum; imagen PostgreSQL 17 + PostGIS + pgvector; probar 000-040 sobre BD vacía dos veces | 5 |
 | 26-D | **Compose, Nginx y proxy.** Servicios `postgres`, `api`, `nginx`, `ingest`; TLS, compresión, caché de estáticos/GeoJSON y de `/api/proxy`, `limit_req` sobre `/api/chat`; red interna, Postgres sin puerto publicado; healthchecks; `.dockerignore`; `.env.example` actualizado | 6 |
 | 26-E | **Datos v1.** Dump desde Supabase y restauración; `scripts/load-layer` (shp/GeoJSON → PostGIS con SRID, índice GIST, alta en catálogo y refresh de stats); `comunas_poligonos`; `build_catalog` contra la nueva BD; verificación de conteos por capa | 5 |
-| 26-K | **Completitud local y dump v2 (parcial).** Stack local completo y auditoría ✅; capas faltantes, RAG/ingesta de prueba y dump v2 se harán cuando exista el panel admin (Sprints 15/16) | 8-10 (3 hechos) |
+| 26-K | **Completitud local y dump v2 (parcial).** Stack local completo y auditoría ✅; capas faltantes, RAG/ingesta de prueba y dump v2 se harán cuando exista el CRUD del panel admin (Sprint 16) | 8-10 (3 hechos) |
 | 26-J | **Ingestas programadas.** Reemplazar los 4 workflows de GitHub Actions por systemd timers sobre `docker compose run --rm ingest`; `flock`, logs y verificación de no duplicar datos | 3 |
 | 26-F | **Staging idéntico a producción (G1).** Segundo entorno con el mismo compose, datos de prueba y variables propias | 3 |
 | 26-G | **Backups y restauración (G4).** `pg_dump` diario comprimido y cifrado, retención, copia fuera del servidor, alerta si falla, simulacro de restauración con RPO/RTO medidos | 4 |
@@ -608,7 +608,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 **26-G cerrado (2026-11-13):** backup diario cifrado (GPG AES256 o recipient), checksum, retención, copia externa, alerta y timer systemd. Simulacro local: 69 MB en 38 s, restore de 94 s con 71/382/1.425.842. Ver `docs/specs/26-plataforma/26-G-backups.md`.
 
-**Decisión 2026-11-13:** las capas faltantes, la ingesta RAG y el dump v2 **no bloquean el Sprint 08**. Se harán contra el panel admin (Sprints 15/16) para probar el alta de capas geográficas y la ingesta como flujo real. 26-K queda parcial y 26-F sigue esperando el panel.
+**Decisión 2026-11-13:** las capas faltantes, la ingesta RAG y el dump v2 **no bloquean el Sprint 08**. Se harán contra el CRUD del panel admin (Sprint 16) para probar el alta de capas geográficas y la ingesta como flujo real. 26-K queda parcial y 26-F sigue esperando el panel.
 
 **Criterios de aceptación del sprint**:
 - **CA-1** Dada una BD vacía, cuando se aplica el runner dos veces, entonces termina sin errores y las 71 capas cargan con el mismo conteo que en Supabase.
@@ -1013,8 +1013,8 @@ y eliminación.
 | **06** | Depende de 23-A; reemplazar `include_geometry` por `get_layer_features` en la spec y actualizar CA-9/CA-10. |
 | **07** | Ejecutar después de la plataforma (26): `/api/config` corre en el servidor propio. |
 | **08** | Quitar referencias a Supabase; MVT con Martin o pg_tileserv; migraciones con el runner del 26-C. ADRs renumerados a 012-015. |
-| **14** | Tablas `admin.*` bajo el runner del 26-C. |
-| **15** | Auth de admin según ADR 007, MFA y auditoría desde el inicio. |
+| **14** | ✅ Tablas `admin.*` bajo el runner del 26-C; snapshot + `/api/config` implementados. |
+| **15** | ✅ Auth TOTP local (ADR 007), panel de solo lectura y auditoría implementados. |
 | **16** | Carga de capas con límites, validación, `ogr2ogr` aislado, preview y reversión. |
 | **17** | `pgvector` en la imagen Postgres; versión de embeddings; documentos como fuente no confiable; procedencia; ingesta asíncrona. |
 | **18** | Prompt delimita documentos recuperados y exige citarlos. |
@@ -1155,7 +1155,7 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   - `ROADMAP.md`: sprints 06 y 23 marcados como cerrados, 06-B.7 cerrado, índice reparado (sprints 34-36 agregados, fila del 42 corregida), anexos de instrucciones eliminados.
   - `README.md`: bloques de código y encabezados reparados.
   - `.gitignore`: reglas de `.env*` limpias, con excepción para `.env.example`.
-- 📝 Próximo: **Sprint 15** (panel admin), **Sprint 26** (plataforma propia) o **40-D.3** (casos nuevos del golden set).
+- 📝 Próximo: **Sprint 16** (CRUD de capas en el panel admin), **Sprint 26** (plataforma propia) o **40-D.3** (casos nuevos del golden set).
 
 ### 2026-11-04
 - ✅ **Integración masiva de ARClim completada (Sprint 42)**.
@@ -1177,7 +1177,7 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   - 23-F (`07dfc95`): tests desactualizados corregidos. 134/134 tests pasan.
   - 23-G: `chat_aggregate` verificado, funciona correctamente.
   - `chore` (`b7c1e3c`): eliminado `021_admin_config.sql` (renombrado a 024).
-- 📝 Próximo: **40-C.4** (retirar reglas 13, 19, 20 del prompt y parches, bloqueado por ADR 019), o **Sprint 15** (panel admin), o **Sprint 26** (plataforma propia).
+- 📝 Próximo: **40-C.4** (retirar reglas 13, 19, 20 del prompt y parches, bloqueado por ADR 019), o **Sprint 16** (CRUD del panel admin), o **Sprint 26** (plataforma propia).
 
 ### 2026-10-22
 - ✅ **40-D.2 completado: configuración del chat en BD (`admin.*`)**.
@@ -1348,11 +1348,10 @@ Deudas técnicas y bugs conocidos, sin sprint asignado. Se revisan al inicio de 
 - [X] **Sprint 39: capas del chat en el sidebar izquierdo.**
 - [X] **Optimizar `count_near_layer` (proximidad).** Resuelto en `037_proximity_geography.sql` y aplicado en Supabase: GIST funcional, funciones con `geog` y `statement_timeout=5s`. RPC: count 1.799 ms, aggregate 785 ms. Caso remoto: 19.743 ms → **11.211 ms**. El cuello restante es LLM/orquestación.
 
-- [ ] **Panel admin para config del chat (Sprint 15).** La migración 024
-      agregó 4 tablas (`admin.unavailable_data`, `admin.prompt_templates`,
-      `admin.settings`, `admin.messages`) y 6 RPCs. Falta la UI en el panel
-      admin (Sprint 15) para que el admin pueda editar prompts, settings,
-      mensajes y datos no disponibles sin tocar SQL.
+- [X] **Panel admin para config del chat (Sprint 15, solo lectura).** La
+      migración 024 agregó 4 tablas y 6 RPCs. El panel `/admin.html` ya muestra
+      prompts, settings, mensajes y datos no disponibles. La edición sin SQL
+      queda para el Sprint 16.
 
 - [ ] **Confirmar las bandas del evalscript de `SWIR`.**
       La capa de la instancia declara `bands 12,11,4`; el texto de referencia

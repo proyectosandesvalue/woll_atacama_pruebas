@@ -36,7 +36,7 @@
 
 **Estado actual (2026-10-22)**:
 - **Plano 1 (estructura)**: sigue en código.
-- **Plano 2 (datos)**: parcialmente en BD. Las tablas `admin.unavailable_data`, `admin.prompt_templates`, `admin.settings` y `admin.messages` viven en Supabase (migración 021). Los prompts del chat (`chat.system`, `chat.classifier`) se leen de la BD. El resto (dimensiones, capas, alias) sigue en `js/config/*.js` hasta el Sprint 14.
+- **Plano 2 (datos)**: en BD. Las tablas `admin.unavailable_data`, `admin.prompt_templates`, `admin.settings`, `admin.messages`, `admin.config_snapshots` y `admin.config_layers` viven en PostgreSQL (migraciones 024/041/042). Los prompts del chat se leen de la BD y el visor lee el snapshot activo por `GET /api/config`. La autoría de la config sigue en `js/config/*.js` hasta el Sprint 16; el fallback es `allTemasConfig` (INV-5).
 - **Plano 3 (secretos)**: sigue en env vars.
 
 **Reglas de gobierno de la configuración en BD**:
@@ -314,9 +314,9 @@ estructurada > API oficial > RAG > conocimiento del LLM (ADR 016).
 7. Reglas del frontend
 7.1. Consumo de configuración
 
-El visor no lee archivos JS de config en runtime. (Estado actual: sí los lee; se migrará a /api/config.)
+El visor no lee archivos JS de config en runtime. Lee `GET /api/config`, que devuelve el snapshot activo de `admin.config_snapshots`; si la API o la BD fallan, usa `js/config/allTemasConfig.js` como fallback (INV-5).
 
-Los archivos js/config/*.js son la fuente de verdad hoy. Se migrarán a BD cuando exista el panel admin.
+Los archivos `js/config/*.js` siguen siendo la fuente de autoría hasta el Sprint 16; publicar un cambio requiere `npm run config:snapshot -- --publish`. El panel admin (`/admin.html`) es de solo lectura hasta el Sprint 16.
 
 7.2. Rendering
 

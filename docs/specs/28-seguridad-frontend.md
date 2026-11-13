@@ -123,8 +123,8 @@ Se escapea todo dato que provenga de API o GeoJSON antes de `innerHTML`:
 ## 8. Resultados (2026-11-13)
 
 - `npm audit`: **0 vulnerabilidades**.
-- `npm test`: **344 pasan, 12 omitidos, 0 fallos** (incluye 3 tests de
-  `geoUtils` y 3 de seguridad frontend).
+- `npm test`: **371 pasan, 12 omitidos, 0 fallos** (incluye `geoUtils`,
+  seguridad frontend y los tests de config/admin de 14-15).
 - `npm run lint`: **0 errores**, 33 warnings preexistentes.
 - Navegador con CSP: mapa, estaciones, sidebar, modal de series y `help.html`
   sin violaciones. Se detectó y corrigió el bloqueo del proxy Copernicus en

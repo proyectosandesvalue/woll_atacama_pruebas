@@ -95,7 +95,7 @@ El entorno de referencia desde 26-C es PostgreSQL propio en Docker/Podman:
 ```bash
 cp .env.example .env.local   # completar POSTGRES_PASSWORD, DATABASE_* y WOLL_*_PASSWORD
 npm run db:up                # docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d postgres
-npm run migrate              # aplica db/migrations/000-037
+npm run migrate              # aplica db/migrations/000-042
 npm run migrate:status       # pendientes / aplicadas / cambiadas
 npm run db:down
 ```
@@ -118,7 +118,7 @@ woll_atacama_pruebas/
 ├── server/
 │   ├── index.js, app.js        # servidor Node persistente y app HTTP
 │   ├── http/                   # router, body, response y adapter Vercel
-│   ├── routes/                 # chat, proxy, ARClim, estaciones y health
+│   ├── routes/                 # chat, config, admin, proxy, ARClim, estaciones y health
 │   ├── handlers/chat.js        # pipeline completo (handleChat)
 │   ├── handlers/arclim.js      # ARClim compartido Vercel/VPS
 │   ├── handlers/stations.js    # estaciones compartido Vercel/VPS
@@ -148,6 +148,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | Archivo / carpeta | Para qué sirve | Cuándo tocarlo |
 |---|---|---|
 | `index.html`, `help.html` | Entry point de la SPA y manual de ayuda | Cambios de shell, carga de scripts o UI global |
+| `admin.html`, `css/admin.css`, `js/admin/` | Panel admin de solo lectura (Sprint 15) | Configuración, chat, auditoría o login |
 | `api/chat.js` | Vercel Function del chat (adapter delgado) | Cambios de CORS/método del endpoint, no de lógica |
 | `api/proxy.js` | Proxy cerrado de servicios externos | Agregar un servicio o ajustar CORS/timeout |
 | `api/arclim-geojson.js`, `api/stations-*.js`, `api/variable-*.js` | Adapters Vercel de datos climáticos/estaciones | Cambios de CORS/método, no de lógica |
@@ -156,9 +157,11 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `deploy/nginx/` | TLS, estáticos, caché de proxy y `limit_req` | Cambios de borde, rutas o headers |
 | `server/index.js`, `server/app.js` | Servidor Node persistente y app HTTP (VPS) | Cambios de arranque, timeouts o router |
 | `server/http/` | Router, body, respuestas, errores y adapter Vercel | Cambios transversales de HTTP |
-| `server/routes/` | Rutas Node de chat, proxy, ARClim, estaciones y health | Agregar o cambiar una ruta |
+| `server/routes/` | Rutas Node de chat, config, admin, proxy, ARClim, estaciones y health | Agregar o cambiar una ruta |
 | `server/handlers/chat.js` | Pipeline completo de `handleChat()` | Cambios de flujo del chat |
 | `server/handlers/arclim.js`, `server/handlers/stations.js` | Lógica compartida Vercel/VPS | Cambios de contrato o consultas |
+| `server/handlers/config.js`, `server/handlers/admin.js` | Snapshot `/api/config` y endpoints del panel admin | Cambios de contrato o de auth |
+| `server/admin/auth.js` | Password scrypt, TOTP, sesión, CSRF y auditoría | Cambios de autenticación (ADR 007) |
 | `server/db/drivers/postgres.js`, `server/db/rpc-signatures.js` | Driver `pg.Pool` y registro de RPCs | Cambiar transporte o agregar una RPC |
 | `server/db/drivers/supabase.js` | Driver REST de Supabase (solo demo) | No agregar features; congelado |
 | `server/chat/` | Orquestador, router, clasificador, tools, filtros | Cambios de comportamiento del chat |
@@ -182,6 +185,8 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `scripts/backup-postgres.sh` | Dump cifrado, checksum, retención y copia externa | Backup diario del VPS (26-G) |
 | `scripts/restore-drill.sh` | Restaura un backup en una base descartable y mide RTO | Simulacro de restauración |
 | `scripts/run-ingest-timer.sh`, `deploy/systemd/woll-ingest*` | Ingestas programadas con lock y journald | Timers del VPS (26-J) |
+| `scripts/config-snapshot.mjs` | Publica/valida el snapshot de config en `admin.*` | Cambios de config o versiones (Sprint 14) |
+| `scripts/admin-user.mjs` | Alta/rotación del usuario admin y secreto TOTP | Bootstrap o recuperación (Sprint 15) |
 | `scripts/acceptance-sprint08.mjs` | Gate de aceptación del Sprint 08 | Validar tiles, tabla, filtros y export |
 | `scripts/load-test-sprint30.mjs` | Carga 25/50: static, table, mixed y on-demand | Aceptación de performance (30) |
 | `scripts/build_catalog.mjs` | Reconstruye `chat.chat_catalog` (Supabase o PostgreSQL) | Nuevas capas o cambios de config |
@@ -313,6 +318,8 @@ npm run lint            # objetivo: 0 errores
 npm test                # tests con node:test
 npm run migrate         # migraciones al PostgreSQL local
 npm run migrate:status  # estado de migraciones
+npm run config:snapshot # valida/publica la config del visor
+npm run admin:user      # alta/rotación del usuario admin
 npm run check:rpcs      # RPCs registradas vs. BD
 npm run db:up / db:down # PostgreSQL local en Docker/Podman
 ```

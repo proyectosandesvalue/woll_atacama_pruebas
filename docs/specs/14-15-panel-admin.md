@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprints (ROADMAP)** | 14 (config a `admin.*`) y 15 (panel de solo lectura) |
-| **Estado de la spec** | DRAFT — bloqueada por ADR 007 (autenticación de admin) y por definir el alcance de la migración |
+| **Estado de la spec** | EN EJECUCIÓN — 14 y 15 implementados y validados localmente; falta cierre formal en el VPS |
 | **Tamaño** | Mediano (14 h) |
 | **Duración estimada** | 14 (4-6 h) + 15 (6-8 h) |
 | **Dependencias** | 07 (implícita: `/api/config`), 08 (`tiles/index.json`), 24-C (ADR 007, pendiente) |
@@ -20,9 +20,10 @@ leer esos archivos en runtime, pero todavía lo hace. Los datos del chat
 Este tramo hace dos cosas:
 
 1. **14:** publicar la configuración del visor como un **snapshot JSON
-   versionado** en `admin.config_snapshots` y servirlo por `GET /api/config`.
-   El frontend lo consume con fallback al código (INV-5). La autoría sigue en
-   `js/config/*.js`; la edición desde el panel llega en el Sprint 16.
+   versionado** en `admin.config_snapshots` + índice `admin.config_layers`, y
+   servirlo por `GET /api/config`. El frontend lo consume con fallback al
+   código (INV-5). La autoría sigue en `js/config/*.js`; la edición desde el
+   panel llega en el Sprint 16. Ver ADR 024.
 2. **15:** construir un **panel admin de solo lectura** para ver el snapshot
    activo, las capas indexadas, los prompts/settings/mensajes del chat y los
    datos no disponibles. Sin formularios de escritura. La autenticación y la
@@ -32,28 +33,29 @@ Este tramo hace dos cosas:
 
 **Dentro**
 
-- Migración `041_admin_config_snapshots.sql` (a crear): tabla de snapshots,
-  checksum, versión, autor y una sola versión activa.
-- `scripts/config-snapshot.mjs` (a crear): importa `allTemasConfig`, valida con
+- Migración `041_admin_config_snapshots.sql`: tabla de snapshots,
+  checksum, versión, autor, una sola versión activa e índice
+  `admin.config_layers`.
+- `scripts/config-snapshot.mjs`: importa `allTemasConfig`, valida con
   `configValidator`, calcula SHA-256, hace `--dry-run`, `--publish` y
   `--check`; imprime resumen de dimensiones/capas.
-- `GET /api/config` (a crear): devuelve el snapshot activo con `version`,
+- `GET /api/config`: devuelve el snapshot activo con `version`,
   `checksum`, `generatedAt`, `config`; `ETag`, `Cache-Control: public,
   max-age=300`; fallback 503 si la BD no responde.
-- `js/config/loader.js` (a crear): `initTemasConfig()` + `getTemasConfig()`;
+- `js/config/loader.js`: `initTemasConfig()` + `getTemasConfig()`;
   fetch a `/api/config`, validación mínima y fallback a `allTemasConfig`.
 - Adaptar `js/app.js`, `js/search/index.js` y `js/ui/themeUI.js` para usar el
   loader en vez de importar `allTemasConfig` directo.
-- Panel `admin.html` (a crear) + `css/admin.css` + `js/admin/*.js`:
+- Panel `admin.html` + `css/admin.css` + `js/admin/*.js`:
   - login, logout y sesión;
   - vista “Configuración” con snapshot activo y árbol dimensión → grupo → capa;
   - vista “Chat” con prompts versionados (contenido y metadatos), settings,
     mensajes y datos no disponibles;
   - vista “Auditoría” con los últimos eventos (solo lectura);
   - `noindex`, sin enlaces desde el visor público.
-- Endpoints de lectura `GET /api/admin/*` (a crear) protegidos por sesión.
-- Migración `042_admin_auth_audit.sql` (a crear): `admin.audit_log` y
-  `admin.admin_users` (o la tabla que defina ADR 007).
+- Endpoints de lectura `GET /api/admin/*` protegidos por sesión.
+- Migración `042_admin_auth_audit.sql`: `admin.audit_log` y
+  `admin.admin_users` (ADR 007).
 - Tests de snapshot, loader, auth y endpoints.
 
 **Fuera**
@@ -132,8 +134,9 @@ configuración en este tramo.
 
 Propuesta por defecto si no hay IdP institucional:
 
-- **Usuario único admin** en `admin.admin_users` (`id`, `username`,
-  `password_hash` scrypt, `totp_secret_ciphertext`, `activo`, `last_login_at`).
+- **Usuario admin** en `admin.admin_users` (`username`, `password_hash`
+  scrypt, `activo`, `last_login_at`). El secreto TOTP **no** se guarda en la
+  BD: vive en `ADMIN_TOTP_SECRET`.
 - **Factor 1:** password verificada con `crypto.scrypt` (sal única).
 - **Factor 2:** TOTP de 6 dígitos, ventana ±1 paso.
 - **Sesión:** cookie `woll_admin` `HttpOnly`, `Secure` en producción,
@@ -141,8 +144,9 @@ Propuesta por defecto si no hay IdP institucional:
 - **CSRF:** token en `sessionStorage` + header `X-CSRF-Token` en POST.
 - **Rate limit:** 5 intentos/minuto por IP+usuario; bloqueo 15 min tras 5
   fallos.
-- **Secretos:** `ADMIN_SESSION_SECRET`, `ADMIN_BOOTSTRAP_PASSWORD` y
-  `ADMIN_TOTP_KEY` solo en env; nunca en el repo ni en la BD en claro.
+- **Secretos:** `ADMIN_SESSION_SECRET` y `ADMIN_TOTP_SECRET` solo en env;
+  nunca en el repo ni en la BD en claro. El alta usa
+  `npm run admin:user -- --username admin --password '…'`.
 - **Auditoría:** cada login, logout, fallo y lectura sensible en
   `admin.audit_log` (`at`, `actor`, `action`, `target`, `ip_hash`, `result`).
 
@@ -170,14 +174,14 @@ OIDC y se mantiene la misma sesión/cookie y auditoría.
 
 | Tramo | Contenido | Horas | Estado |
 |---|---|---|---|
-| 14-A | Migración 041, `config-snapshot.mjs`, validación y CLI | 2 | ⏳ |
-| 14-B | `GET /api/config`, caché/ETag, tests de handler | 1.5 | ⏳ |
-| 14-C | `js/config/loader.js`, adaptar `app.js`/search/theme, fallback | 1.5 | ⏳ |
-| 15-A | ADR 007 + migración 042 (`admin_users`, `audit_log`), hash/TOTP | 2 | ⏳ |
-| 15-B | Endpoints de login/sesión/logout, CSRF, rate limit, auditoría | 2 | ⏳ |
-| 15-C | `admin.html` + login + layout + navegación | 1.5 | ⏳ |
-| 15-D | Vistas Configuración/Chat/Auditoría (solo lectura) | 2 | ⏳ |
-| 15-E | Tests, revisión de seguridad y documentación | 1.5 | ⏳ |
+| 14-A | Migración 041, `config-snapshot.mjs`, validación y CLI | 2 | ✅ |
+| 14-B | `GET /api/config`, caché/ETag, tests de handler | 1.5 | ✅ |
+| 14-C | `js/config/loader.js`, adaptar `app.js`/search/theme, fallback | 1.5 | ✅ |
+| 15-A | ADR 007 + migración 042 (`admin_users`, `audit_log`), hash/TOTP | 2 | ✅ |
+| 15-B | Endpoints de login/sesión/logout, CSRF, rate limit, auditoría | 2 | ✅ |
+| 15-C | `admin.html` + login + layout + navegación | 1.5 | ✅ |
+| 15-D | Vistas Configuración/Chat/Auditoría (solo lectura) | 2 | ✅ |
+| 15-E | Tests, revisión de seguridad y documentación | 1.5 | ✅ |
 
 ## 7. Tests requeridos
 
@@ -210,16 +214,16 @@ OIDC y se mantiene la misma sesión/cookie y auditoría.
 
 | # | Pregunta | Default | ¿Bloquea? |
 |---|---|---|---|
-| R1 | ¿ADR 007 usa TOTP local, OIDC institucional o ambos? | TOTP local + interfaz para OIDC | **sí** (15) |
-| R2 | ¿El snapshot reemplaza toda la config o solo nombres/alias/colores? | snapshot completo (runtime lee BD) | **sí** (14) |
+| R1 | ¿ADR 007 usa TOTP local, OIDC institucional o ambos? | **TOTP local + interfaz para OIDC** (decidido 2026-11-13, ADR 007) | no (resuelto) |
+| R2 | ¿El snapshot reemplaza toda la config o solo nombres/alias/colores? | **snapshot completo + `admin.config_layers`** (decidido 2026-11-13, ADR 024) | no (resuelto) |
 | R3 | ¿El panel vive en `/admin.html` del mismo sitio o en un subdominio aparte? | `/admin.html` con noindex | no |
 | R4 | ¿El panel debe funcionar en la demo Vercel o solo en VPS/local? | solo VPS/local; demo usa fallback | no |
 | R5 | ¿La autoría de la config sigue en JS hasta el Sprint 16? | sí; 16 agrega edición | no |
 | R6 | ¿Retención de auditoría? | 12 meses | no |
 | R7 | ¿Quién es el usuario admin inicial y cómo recibe el secreto TOTP? | bootstrap por env + enrolamiento en primer login | no |
 
-La spec queda en **DRAFT** hasta responder R1 y R2. R3-R7 tienen default y no
-bloquean.
+R1 y R2 quedaron resueltas el 2026-11-13. R3-R7 tienen default y no bloquean
+el cierre local; la validación en el VPS queda para el Sprint 26.
 
 ## 10. Riesgos, reversión y documentación
 
@@ -263,8 +267,23 @@ bloquean.
   noindex y cache.
 - **Sprint 28:** el panel cumple CSP, escape de datos y cookies seguras.
 
-## 12. Cierre
+## 12. Resultados (2026-11-13)
 
-- Horas reales: —
-- Desvíos: —
-- Lecciones: —
+- `041` y `042` aplicadas y reaplicadas dos veces sin error en PostgreSQL local.
+- Snapshot v1: **9 dimensiones, 158 capas maestras, 315 filas** de índice.
+- `GET /api/config`: 200 con ETag, 304 con `If-None-Match`, 503 con
+  `Retry-After` si no hay snapshot.
+- Visor: carga `/api/config` y mantiene mapa, sidebar y estaciones; el
+  fallback está cubierto por tests.
+- Panel: login TOTP, config, chat (prompts/settings/messages/unavailable) y
+  auditoría validados en navegador; sin violaciones CSP.
+- Tests: **383 tests, 371 pasan, 12 omitidos, 0 fallos**; lint 0 errores.
+- Prompts locales sembrados con `scripts/migrate_prompts.mjs` (2 prompts).
+
+## 13. Cierre
+
+- Horas reales: 7,5 (14: 3 h; 15: 4,5 h).
+- Desvíos: el panel se implementó sin framework y con DOM API para cumplir
+  CSP; la validación en VPS queda pendiente.
+- Lecciones: el snapshot + índice desacopla el panel de la estructura JS; el
+  TOTP local evita bloquear el Sprint 16 por el IdP institucional.
