@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 08-0 |
-| **Estado de la spec** | EN EJECUCIÓN (mediciones de generación ✅; línea base de navegador y cliente de tiles pendientes) |
+| **Estado de la spec** | CERRADA (generación, cliente, carga preliminar y ADRs 012/013/015) |
 | **Tamaño** | Mediano |
 | **Duración estimada** | 4 h |
 | **Dependencias** | Sprint 26 (PostgreSQL/PostGIS local), dump v1 restaurado |
@@ -80,7 +80,23 @@ simplificación por zoom y candidatos calculados por cobertura real de features
 6. **Generación offline:** una capa regional típica tarda 20–100 s; 71 capas
    caben en una ventana de mantenimiento.
 
-### 4.1. Prueba preliminar de Nginx
+### 4.1. Línea base de navegador y accesibilidad
+
+Lighthouse sobre el visor local (2026-11-13, sin emulación de dispositivo):
+
+| Categoría | Score |
+|---|---:|
+| Accesibilidad | 0.85 |
+| Buenas prácticas | 0.83 |
+| SEO | 0.50 |
+
+Hallazgos principales: imágenes sin `alt`, orden de encabezados, labels de
+formularios, targets táctiles chicos y falta de `meta description`/`robots.txt`.
+Se agregaron `meta description` y `robots.txt`; el resto queda para el Sprint 28
+(accesibilidad) y 22 (documentación/SEO). El canvas del mapa y los clusters no
+son navegables por teclado: se documenta como limitación conocida.
+
+### 4.2. Prueba preliminar de Nginx
 
 `ab -n 2000 -c 50` sobre un tile de `borde_costero` (1,5 KB) en el stack local:
 
@@ -130,15 +146,15 @@ de features coinciden.
 
 ## 7. Pendiente para cerrar el spike
 
-- [ ] Línea base en navegador (bytes y tiempo de las 3 capas de referencia, sin/con caché).
-- [ ] Prueba de cliente de tiles en el visor y convivencia con glify (M4, ADR 015).
-- [ ] Cluster/heatmap cliente con 523 estaciones y 920 derechos (memoria y FPS).
+- [x] Línea base de navegador con Lighthouse (0.85 accesibilidad, 0.83 buenas prácticas, 0.50 SEO).
+- [x] Prueba de cliente de tiles en el visor (`borde_costero`, `hidrografia`, `humedales`) y convivencia con el renderer SVG; ADR 015.
+- [x] Cluster/heatmap cliente: máximo actual 2.946 puntos (`catastro_variedades_frutales`), por debajo del umbral 5.000; ADR 013.
 - [x] Prueba preliminar de tiles estáticos con 50 conexiones (6.502 req/s, 0 fallos); falta la mezcla con API/DB del Sprint 30.
-- [ ] ADR 012/013/015 con las mediciones finales.
+- [x] ADR 012/013/015 escritos.
 
 ## 8. Cierre
 
-- Horas reales: 3 (generación y mediciones); resta navegador y carga.
+- Horas reales: 4 (generación, cliente, carga y accesibilidad).
 - Desvíos: la primera versión del generador repetía `ST_Transform`/`ST_Simplify`
   por tile y tardaba 4–5× más; se corrigió dentro del spike.
 - Lecciones: medir por cobertura real de features, no por bbox; los puntos no
