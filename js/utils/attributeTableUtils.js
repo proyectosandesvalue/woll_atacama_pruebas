@@ -70,8 +70,45 @@ const normalizeKey = (s) => {
   return result;
 };
 
+/**
+ * Pide a PostGIS la geometría de un feature puntual (08-D). La tabla trae
+ * solo propiedades para no transferir decenas de MB.
+ * @param {string} capaNombre
+ * @param {object} feature
+ * @returns {Promise<object|null>}
+ */
+async function fetchFeatureGeometry(capaNombre, feature) {
+  if (!capaNombre || !feature?.properties) return null;
+  const temaKey = encontrarTemaParaCapa(capaNombre, currentTemasConfig);
+  const configCapa = getCapaConfig(capaNombre, temaKey, currentTemasConfig);
+  const idColumn =
+    configCapa?.source?.idColumn ||
+    ["fid", "gid", "id"].find(
+      (key) => feature.properties[key] !== undefined && feature.properties[key] !== null
+    );
+  if (!idColumn) return null;
+  const id = feature.properties[idColumn];
+  if (id === undefined || id === null) return null;
+
+  try {
+    const params = new URLSearchParams({
+      layer_id: capaNombre,
+      id: String(id),
+      id_column: idColumn,
+    });
+    const res = await fetch(`/api/layer-feature?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    log.warn(`No se pudo obtener la geometría del feature en ${capaNombre}`, err);
+    return null;
+  }
+}
+
 // Delegación de eventos para la tabla de atributos
-bodyEl.addEventListener("click", (e) => {
+bodyEl.addEventListener("click", async (e) => {
   const tr = e.target.closest("tr");
   if (!tr || !tr.dataset.featureIndex) return;
 
@@ -84,19 +121,20 @@ bodyEl.addEventListener("click", (e) => {
 
   if (!feature) return;
 
-  // El endpoint de 08-B devuelve propiedades sin geometría para no transferir
-  // 30 MB. El zoom al feature con geometría llega en 08-D.
-  if (!feature.geometry) {
+  const featureGeometry = feature.geometry
+    ? feature
+    : await fetchFeatureGeometry(currentCapaNombre, feature);
+
+  if (!featureGeometry) {
     log.warn(
-      `La capa ${currentCapaNombre} no incluye geometría en la tabla; ` +
-        "el zoom al feature estará disponible con los endpoints de 08-D."
+      `No hay geometría disponible para el feature seleccionado en ${currentCapaNombre}.`
     );
     return;
   }
 
   if (window.turf && appState.map) {
     try {
-      const bbox = turf.bbox(feature);
+      const bbox = turf.bbox(featureGeometry);
       const bounds = [
         [bbox[1], bbox[0]],
         [bbox[3], bbox[2]],
@@ -107,7 +145,7 @@ bodyEl.addEventListener("click", (e) => {
         appState.map.removeLayer(highlightLayer);
       }
 
-      highlightLayer = L.geoJSON(feature, {
+      highlightLayer = L.geoJSON(featureGeometry, {
         pointToLayer: function (f, latlng) {
           return L.circleMarker(latlng, {
             radius: 12,

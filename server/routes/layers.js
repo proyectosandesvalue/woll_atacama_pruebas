@@ -3,7 +3,7 @@
  */
 
 import { handleLayerExport } from "../handlers/layer-export.js";
-import { handleLayerFeatures } from "../handlers/layer-features.js";
+import { handleLayerFeature, handleLayerFeatures } from "../handlers/layer-features.js";
 
 export const layerRoutes = [
   {
@@ -11,6 +11,12 @@ export const layerRoutes = [
     path: "/api/layer-features",
     cors: { headers: "Content-Type" },
     handler: async (ctx) => handleLayerFeatures(ctx.query, { getDB: ctx.getDB }),
+  },
+  {
+    method: "GET",
+    path: "/api/layer-feature",
+    cors: { headers: "Content-Type" },
+    handler: async (ctx) => handleLayerFeature(ctx.query, { getDB: ctx.getDB }),
   },
   {
     method: "GET",
