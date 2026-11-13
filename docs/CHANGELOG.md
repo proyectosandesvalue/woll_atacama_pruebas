@@ -48,6 +48,7 @@
 ## [Unreleased]
 
 ### Added
+- **On-demand (08-A.5):** `/api/layer-tiles` genera MVT por tile con `ST_AsMVT` y Nginx lo cachea por URL (MISS/HIT). 204 para tiles vacíos, 400 para z/x/y inválidos. El cliente acepta `tiles.mode: "on-demand"` con `bbox` opcional; probado con `borde_costero` y revertido a static.
 - **08-0 cerrado:** baseline Lighthouse (0.85 accesibilidad, 0.83 buenas prácticas, 0.50 SEO), ADR 013 de capas de puntos y `robots.txt`. Se agregó `meta description` al visor. El canvas/clústeres quedan sin navegación por teclado para el Sprint 28.
 - **Sprint 08-D parcial:** `GET /api/layer-features` agrega `search`, `search_field`, `sort`, `order`, `filter` y `total`; `GET /api/layer-feature` devuelve una feature con geometría. La tabla usa el detalle al hacer clic en una fila para zoom/highlight, sin descargar la geometría de toda la capa.
 - **Sprint 08-E: exportación en streaming desde PostGIS.** `GET /api/layer-export` transmite GeoJSON (con geometría) y CSV (columnas/alias visibles), aplica el mismo `dataFilter` de la tabla y usa lotes de 40/200 para no superar el `statement_timeout`. El frontend usa el endpoint en capas con tiles y cae al archivo estático/cliente en Vercel.

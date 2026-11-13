@@ -158,7 +158,10 @@ No hay build step. Los scripts que tocan Supabase o el LLM leen `.env.staging` v
 
 **Tiles pregenerados (Sprint 08).** Las capas estáticas/edición se sirven como
 MVT desde `tiles/<layer>/<version>/<z>/<x>/<y>.mvt`; Nginx no consulta
-PostgreSQL. Una versión publicada es inmutable: actualizar = generar una
+PostgreSQL. Las capas dinámicas pueden usar `tiles.mode: "on-demand"` contra
+`/api/layer-tiles` (ST_AsMVT + caché Nginx); no hay ninguna en producción aún.
+
+Una versión publicada es inmutable: actualizar = generar una
 versión nueva (`tiles:sync --changed`) y cambiar la config. Los tiles de puntos
 no se generan por defecto (GeoJSON + API pesa menos que MVT). El generador baja
 un zoom si la capa supera 20.000 tiles. Ver `docs/DEV_GUIDE.md` §2.11.

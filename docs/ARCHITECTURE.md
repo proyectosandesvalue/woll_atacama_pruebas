@@ -399,6 +399,9 @@ Navegador (cliente de tiles, Sprint 08-B)
   `filter` y devuelve `total`; `/api/layer-feature` entrega una feature con
   geometría para el zoom/highlight desde la tabla. La paginación visual sigue
   en cliente (las capas actuales caben en 5.000).
+- **On-demand:** `/api/layer-tiles?layer_id=&z=&x=&y=` genera MVT con
+  `ST_AsMVT` para capas dinámicas; Nginx cachea por URL 5 min. No hay una capa
+  dinámica en producción todavía; el cliente acepta `mode: "on-demand"`.
 - Capas migradas (08-B/08-C): 40 capas no-punto visibles con `source.type: "postgis"`; `comunas_poligonos` no está en la config. Los puntos quedan en GeoJSON + API.
 - Detalle: `docs/specs/08-postgis-fuente-principal/08-A-pipeline-tiles.md`,
   `08-B-piloto.md` y `08-G-ciclo-vida-capas.md`.
