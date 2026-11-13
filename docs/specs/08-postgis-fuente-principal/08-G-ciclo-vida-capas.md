@@ -171,6 +171,12 @@ comando y muestra el manifest resultante.
 | CA-9 | el índice | se publica una versión | `active_version` apunta a la nueva | inspección |
 | CA-10 | PostgreSQL caído | se piden tiles publicados | el visor sigue funcionando | manual |
 
+**Verificación local 2026-11-13.** Con una capa temporal (`test_camaras_frio`,
+65 tiles) se probó el ciclo completo: `load-layer --tiles` → manifest → índice;
+republicar la misma versión falla con código 1; borrar un tile hace que
+`--check` detecte tiles/bytes/checksum y salga con código 1; `--prune --keep 1`
+borra solo la versión vieja. La capa de prueba se eliminó después.
+
 ## 6. Plan por sub-tramo
 
 | Sub-tramo | Contenido | Horas | Estado |
