@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 08-B |
-| **Estado de la spec** | EN EJECUCIÓN (piloto poligonal con `borde_costero` ✅; faltan capa de puntos con API y capa dinámica) |
+| **Estado de la spec** | PARCIAL CERRADA: estático ✅ y puntos con valores dinámicos ✅; on-demand poligonal/línea queda pendiente sin dataset |
 | **Tamaño** | Mediano-grande |
 | **Duración estimada** | 6 h |
 | **Dependencias** | 08-A (pipeline y Nginx), 26 (Node/PostGIS) |
@@ -19,6 +19,22 @@ de la tabla antes de migrar el resto de las capas (08-C).
 
 El piloto inicial usa solo `borde_costero`; 08-C agrega después otras
 39 capas con el mismo patrón (ver `08-C-migracion.md`).
+
+### Estaciones meteorológicas: valores dinámicos, no tiles
+
+Las estaciones no se migran a MVT aunque sus valores cambien:
+
+- `js/config/clima.js` define las capas `estacion_*` (en vivo e históricas).
+- `dimensionBuilder.attachStationLayer()` usa
+  `stationsMapUtils.loadLayer()`, que consulta
+  `/api/stations-map?variable=&date=&estado=` y arma un `L.geoJSON` de
+  `circleMarker` con tooltip, sidebar, leyenda y selector de fecha.
+- La geometría son ~523 puntos fijos; los valores son el dato dinámico.
+- Un tile de puntos repetiría atributos por zoom y obligaría a reimplementar
+  tooltips, fechas, leyenda y múltiples variables simultáneas. No aporta.
+- Por eso las estaciones validan el modo **"valores dinámicos por API"** del
+  piloto. El modo **on-demand poligonal/línea** sigue pendiente hasta que exista
+  un dataset con esa forma (por ejemplo, indicadores comunales en un polígono).
 
 ## 2. Alcance
 
@@ -188,9 +204,11 @@ borde_costero: {
 
 ## 12. Cierre
 
-- Horas reales: 5 de 6 (falta la capa de puntos y la dinámica).
+- Horas reales: 5,5 de 6.
 - Desvíos: el bug del botón “Ver tabla” sin listener y la incompatibilidad
-  `fakeStop`/Leaflet 1.9 no estaban previstos.
+  `fakeStop`/Leaflet 1.9 no estaban previstos. La capa dinámica se reinterpretó:
+  las estaciones cubren los valores dinámicos por API; el on-demand poligonal
+  queda como capacidad futura.
 - Lecciones: el pane y el `bounds` del manifest son obligatorios; la tabla debe
   leer de PostGIS para no mostrar conteos distintos; sin geometría el endpoint
-  es 50× más liviano.
+  es 50× más liviano; los puntos no van a tiles.

@@ -21,6 +21,10 @@ tabla desde PostGIS.
 
 ## 2. Alcance
 
+> **GeoJSON (ADR 016):** se conservan los 71 archivos como fallback, fuente de
+> puntos y respaldo de análisis (`comunas_poligonos`). No se eliminan en este
+> sprint.
+
 **Dentro**
 - Agregar `source` a cada capa no-punto con manifest publicado.
 - Verificar versión, `maxzoom`, `layerName` y `idColumn`.

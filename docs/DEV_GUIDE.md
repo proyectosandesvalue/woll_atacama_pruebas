@@ -866,9 +866,44 @@ curl 'http://localhost:8090/api/layer-features?layer_id=borde_costero&limit=2'
 # filtrar ZONA_1 = ZP (11 registros, coincide con SQL) y descargar CSV.
 ```
 
-El endpoint es una versión mínima de 08-D: no pagina ni busca todavía; el
-límite es 1.000 features. Para una capa nueva, copiá el bloque `source` y
-verificá popup, zoom, tabla, filtro y CSV.
+**Cómo se maneja la config con tiles**
+
+Las configs siguen siendo archivos JS (`js/config/<dimension>.js`). Una capa
+migrada conserva su `url`, `type`, estilo, `popupCampos`, `alias`, `colores` y
+leyenda; se le agrega un bloque `source`:
+
+```js
+source: {
+  type: "postgis",
+  idColumn: "fid",
+  tiles: {
+    mode: "static",              // o "on-demand"
+    version: "20261005",         // versión inmutable publicada
+    layerName: "humedales",      // nombre de la capa MVT
+    urlTemplate: "/tiles/humedales/20261005/{z}/{x}/{y}.mvt",
+    manifest: "/tiles/humedales/20261005/manifest.json",
+    minZoom: 0,
+    maxZoom: 14,
+  },
+  fallback: { type: "geojson", url: "humedales.geojson" },
+}
+```
+
+- `url` y `fallback.url` siguen siendo el GeoJSON de respaldo.
+- El loader resuelve en este orden: WMS → tiles (`source.tiles`) → GeoJSON.
+- Si el manifest o el tile fallan, cae al GeoJSON.
+- La versión activa es la del `version` de la config; `tiles/index.json` lista
+  las versiones publicadas. Actualizar datos = nueva versión + cambiar
+  `version` (o resolverla desde `/api/config` en el Sprint 07).
+- `layerName` debe coincidir con el `tile_slug` del manifest.
+- Las capas de puntos no llevan `source`; usan GeoJSON + API de valores.
+- `comunas_poligonos` no está en la config del visor (se usa para análisis).
+- `npm run tiles:build -- --layer X --version V --publish` imprime el snippet.
+- La tabla y la descarga usan `/api/layer-features` y `/api/layer-export`
+  cuando la capa es PostGIS; si la API no existe (Vercel), usan GeoJSON.
+
+Para una capa nueva, copiá el bloque `source` y verificá popup, zoom, tabla,
+filtro y CSV con `npm run acceptance:08` como referencia.
 
 **Exportación (08-E)**
 

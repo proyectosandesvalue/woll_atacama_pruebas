@@ -169,6 +169,15 @@ versión nueva (`tiles:sync --changed`) y cambiar la config. Los tiles de puntos
 no se generan por defecto (GeoJSON + API pesa menos que MVT). El generador baja
 un zoom si la capa supera 20.000 tiles. Ver `docs/DEV_GUIDE.md` §2.11.
 
+**Estaciones meteorológicas.** No usan tiles: `stationsMapUtils.loadLayer()`
+consulta `/api/stations-map?variable=&date=&estado=` y dibuja `circleMarker`
+con tooltip/sidebar/leyenda. Son valores dinámicos por API sobre puntos fijos;
+el on-demand MVT es para polígonos/líneas dinámicos. Ver ADR 013 y 016.
+
+**GeoJSON.** Se conservan los 71 archivos como fallback, fuente de puntos y
+respaldo de análisis (`comunas_poligonos`). No borrar sin ADR 016 y sin VPS
+validado.
+
 **Cliente de tiles.** `leaflet.vectorgrid@1.3.0` está vendorizado y parcheado
 para Leaflet 1.9 (`fakeStop`). La capa va en `pane: "overlayPane"` (no
 `tilePane`) y usa `bounds`/`maxNativeZoom` del manifest. La tabla, los filtros y

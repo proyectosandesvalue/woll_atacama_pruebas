@@ -48,6 +48,8 @@
 ## [Unreleased]
 
 ### Added
+- **Decisión GeoJSON (ADR 016):** se conservan los 71 GeoJSON (269 MB) como fallback, fuente de puntos y respaldo de análisis. `comunas_poligonos` se usa para análisis geoespaciales/estadísticas comunales; `estaciones_metereologicas_atacama` y `macrozonificacion_borde_costero` (norte/sur) quedan como respaldo. No se eliminan.
+- **08-B estaciones:** análisis confirmado: `stationsMapUtils.loadLayer()` consulta `/api/stations-map` por variable/fecha/estado y dibuja `circleMarker`; son valores dinámicos por API, no candidatos a tiles MVT (puntos). El on-demand poligonal/línea queda pendiente sin dataset.
 - **Gate de aceptación 08:** `npm run acceptance:08` valida manifests/configs, tiles estáticos y on-demand, features/paginación, filtro, búsqueda, orden, detalle y export (13/13 PASS en local).
 - **27 CI base:** `.github/workflows/ci.yml` ejecuta lint, tests, `node --check` de scripts, `bash -n` y build de la imagen de la API en push/PR. El deploy y el rollback por tag quedan pendientes del VPS.
 - **26-J ingestas:** `scripts/run-ingest-timer.sh` y timers systemd `woll-ingest-agromet/realtime/redmeteo/daily` sobre el contenedor `ingest`, con `flock`, dry-run y logs en journald. Reemplazan los 4 cron de GitHub/Supabase en el VPS.
