@@ -905,6 +905,21 @@ const planificacionConfig = {
     },
     prc_huasco: {
       url: "prc_huasco.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "prc_huasco",
+          urlTemplate: "/tiles/prc_huasco/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/prc_huasco/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "prc_huasco.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Comunal - Huasco", // Nombre personalizado de la Capa
@@ -939,12 +954,12 @@ const planificacionConfig = {
       },
       popupCampos: [
         "ZONA",
-        "NOMBRE",
+        "NOM",
         "LOC",
         "UPERM",
         "UPROH",
-        "Nº Decreto",
-        "Fecha Publicacion",
+        "N_DOC",
+        "P_DO",
         "Link Decreto",
         "Ordenanza PRC",
         "Link LGUC",
@@ -958,8 +973,8 @@ const planificacionConfig = {
         LOC: "Sector",
         UPERM: "Usos Permitidos",
         UPROH: "Uso Prohibido",
-        "Nº Decreto": "Numero Documento",
-        "Fecha Publicacion": "Fecha Publicacion",
+        "N_DOC": "Numero Documento",
+        "P_DO": "P_DO",
         "Link Decreto": "Link Decreto",
         "Ordenanza PRC": "Ordenanza Plan Regulador",
         "Link LGUC": "Ley General Urbanismo y Construccion",
