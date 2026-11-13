@@ -246,10 +246,10 @@ function renderLegend() {
 
     section.innerHTML = `
       <div class="chat-legend-section-header">
-        <h6 class="fw-bold text-primary mb-2 legend-title chat-legend-title">
+        <h2 class="fw-bold text-primary mb-2 legend-title chat-legend-title">
           <span class="material-symbols-outlined chat-legend-title-icon">auto_awesome</span>
           ${escapeHtml(titleText)}${attributeLabel}
-        </h6>
+        </h2>
         <button class="chat-legend-remove" type="button" title="Quitar esta capa" data-layer-id="${escapeHtml(layer.layerId || "")}">
           <span class="material-symbols-outlined">close</span>
         </button>

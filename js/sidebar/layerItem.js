@@ -145,6 +145,7 @@ export function crearElementoCapa(
             type="range" 
             class="layer-opacity-slider" 
             data-capa="${capaNombre}"
+            aria-label="Opacidad de ${escapeHtml(displayCapaName)}"
             min="0" 
             max="100" 
             value="${initialOpacity}"

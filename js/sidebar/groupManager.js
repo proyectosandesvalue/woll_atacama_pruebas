@@ -60,6 +60,7 @@ export function actualizarCapasBase(contenedorId, capasBaseConfig) {
               type="range" 
               class="layer-opacity-slider base-opacity-slider" 
               data-capa="${capaKey}"
+              aria-label="Opacidad de ${config.nombre}"
               min="0" 
               max="100" 
               value="100"

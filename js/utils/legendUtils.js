@@ -167,7 +167,7 @@ function generarLeyendaAutomatica(tema, temasConfig, container) {
     legendContainer.classList.add("legend-container", "mb-3");
 
     // Título de la capa
-    const titulo = document.createElement("h6");
+    const titulo = document.createElement("h2");
     titulo.classList.add("fw-bold", "text-primary", "mb-2", "legend-title");
     titulo.textContent = capaConfig.nombrePersonalizado || capaNombre;
     legendContainer.appendChild(titulo);
@@ -370,7 +370,7 @@ function crearItemLeyenda(color, label, iconFile = null) {  const itemLeyenda = 
     icon.style.width = "100%";
     icon.style.height = "100%";
     icon.style.objectFit = "contain";
-    icon.alt = label;
+    icon.alt = String(label || "").trim() ? String(label) : "";
 
     icon.onerror = function () {
       log.warn(`No se pudo cargar el icono: ${safeIconFile}`);
