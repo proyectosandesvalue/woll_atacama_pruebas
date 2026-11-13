@@ -62,6 +62,10 @@ services:
       GEO_PROVIDER: none
       TRUST_PROXY_HOPS: "1"
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080}
+      # Panel admin (Sprint 15). Vacío = panel no configurado (503).
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-}
+      ADMIN_TOTP_SECRET: ${ADMIN_TOTP_SECRET:-}
+      CONFIG_API_MAX_AGE: ${CONFIG_API_MAX_AGE:-300}
     expose:
       - "3000"
     healthcheck:

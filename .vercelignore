@@ -1,0 +1,5 @@
+# El panel admin solo corre en el VPS/local (requiere PostgreSQL y auth).
+# No se publica en la demo Vercel.
+admin.html
+css/admin.css
+js/admin/

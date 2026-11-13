@@ -10,7 +10,7 @@ import { actualizarCapasSidebar, activarCapasDeDimension } from "./sidebar/dimen
 import { actualizarCapasBase, sincronizarEstadoCapas } from "./sidebar/groupManager.js";
 import { actualizarLeyenda } from "./utils/legendUtils.js";
 import { limpiarMapa } from "./utils/layerUtils.js";
-import allTemasConfig from "./config/allTemasConfig.js";
+import { initTemasConfig } from "./config/loader.js";
 import { obtenerCapasParaCargaInicial } from "./utils/configUtils.js";
 import { logger } from "./utils/logger.js";
 import { appState, initializeMap, setCurrentBaseLayer, setActiveTema } from "./store/appState.js";
@@ -18,10 +18,14 @@ import { buildSearchIndex } from "./search/index.js";
 import { validarConfiguracionGlobal } from "./utils/configValidator.js";
 import { initChartModal } from "./utils/chartModal.js";
 
-document.addEventListener("DOMContentLoaded", () => {
+// Se resuelve en DOMContentLoaded (API o fallback local).
+let allTemasConfig = null;
+
+document.addEventListener("DOMContentLoaded", async () => {
   logger.log("Inicializando aplicación...");
 
   try {
+    allTemasConfig = await initTemasConfig();
     validarConfiguracionGlobal(allTemasConfig);
 
     const map = initMap("map", [-27.69812, -70.35645], 7);

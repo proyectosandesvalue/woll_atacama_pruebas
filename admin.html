@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Panel admin · Woll Atacama</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+
+<body>
+  <a class="skip-link" href="#adminMain">Saltar al contenido</a>
+
+  <!-- LOGIN -->
+  <main id="loginView" class="login-shell">
+    <section class="login-brand" aria-label="Plataforma Woll Atacama">
+      <p class="eyebrow">Water Oriented Living Lab · Atacama</p>
+      <h1>Panel de<br /><span>operación</span></h1>
+      <p class="login-lead">
+        Configuración del visor, prompts del asistente y trazabilidad de cambios.
+        Acceso restringido al equipo responsable.
+      </p>
+      <div class="login-coords" aria-hidden="true">
+        <span>27°41′S</span><span>70°21′W</span><span>ATACAMA · CL</span>
+      </div>
+    </section>
+
+    <section class="login-card" aria-labelledby="loginTitle">
+      <div class="login-card-head">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span>Acceso administrativo</span>
+      </div>
+      <h2 id="loginTitle">Ingresar</h2>
+      <p class="muted">Password + código TOTP de 6 dígitos.</p>
+
+      <form id="loginForm" novalidate>
+        <label for="adminUsername">Usuario</label>
+        <input id="adminUsername" name="username" type="text" autocomplete="username"
+               maxlength="80" required autofocus />
+
+        <label for="adminPassword">Password</label>
+        <input id="adminPassword" name="password" type="password"
+               autocomplete="current-password" maxlength="256" required />
+
+        <label for="adminTotp">Código TOTP</label>
+        <input id="adminTotp" name="totp" type="text" inputmode="numeric"
+               autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required />
+
+        <button id="loginSubmit" class="btn btn-primary" type="submit">
+          Verificar identidad
+        </button>
+        <p id="loginError" class="form-error" role="alert" hidden></p>
+      </form>
+
+      <p class="login-foot">
+        Sesión de 8 horas · Cookie HttpOnly · Intentos auditados
+      </p>
+    </section>
+  </main>
+
+  <!-- APP -->
+  <div id="adminView" class="admin-shell" hidden>
+    <aside class="rail">
+      <div class="rail-brand">
+        <span class="rail-mark" aria-hidden="true">W</span>
+        <div>
+          <strong>Woll Atacama</strong>
+          <small>Panel admin</small>
+        </div>
+      </div>
+
+      <nav class="rail-nav" aria-label="Secciones del panel">
+        <button class="nav-item is-active" type="button" data-view="config">
+          <span class="nav-index">01</span>
+          <span>Configuración</span>
+        </button>
+        <button class="nav-item" type="button" data-view="chat">
+          <span class="nav-index">02</span>
+          <span>Chat IA</span>
+        </button>
+        <button class="nav-item" type="button" data-view="audit">
+          <span class="nav-index">03</span>
+          <span>Auditoría</span>
+        </button>
+      </nav>
+
+      <div class="rail-foot">
+        <div class="session-box">
+          <span class="session-label">Sesión</span>
+          <strong id="sessionUser">—</strong>
+          <small id="sessionExpiry">—</small>
+        </div>
+        <button id="logoutBtn" class="btn btn-ghost" type="button">Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main id="adminMain" class="content" tabindex="-1">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="viewEyebrow">Operación / Configuración</p>
+          <h1 id="viewTitle">Configuración del visor</h1>
+        </div>
+        <div class="topbar-meta">
+          <span id="snapshotChip" class="chip chip-neutral">Snapshot —</span>
+          <span class="chip chip-live"><span class="status-dot"></span> solo lectura</span>
+        </div>
+      </header>
+
+      <p id="globalStatus" class="status-line" role="status" aria-live="polite" hidden></p>
+
+      <!-- CONFIG -->
+      <section id="view-config" class="view" aria-labelledby="viewTitle">
+        <div class="metrics" id="configMetrics">
+          <article class="metric">
+            <span class="metric-label">Snapshot activo</span>
+            <strong class="metric-value" id="metricVersion">—</strong>
+            <small id="metricDate">—</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Capas maestras</span>
+            <strong class="metric-value" id="metricLayers">—</strong>
+            <small>índice del visor</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Filas indexadas</span>
+            <strong class="metric-value" id="metricRows">—</strong>
+            <small>incluye grupos y subgrupos</small>
+          </article>
+          <article class="metric metric-wide">
+            <span class="metric-label">Checksum</span>
+            <strong class="metric-hash" id="metricChecksum">—</strong>
+            <small>SHA-256 del JSON canónico</small>
+          </article>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Capas del snapshot</h2>
+              <p class="muted">Dimensión → grupo → subgrupo. Sin edición en esta versión.</p>
+            </div>
+            <div class="field-inline">
+              <label class="sr-only" for="layerSearch">Buscar capa</label>
+              <input id="layerSearch" type="search" placeholder="Buscar por capa, nombre o dimensión…" />
+              <select id="dimensionFilter" aria-label="Filtrar por dimensión">
+                <option value="">Todas las dimensiones</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Dimensión</th>
+                  <th scope="col">Ubicación</th>
+                  <th scope="col">Capa</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Fuente</th>
+                </tr>
+              </thead>
+              <tbody id="layersBody"></tbody>
+            </table>
+          </div>
+          <p id="layersEmpty" class="empty" hidden>No hay capas que coincidan con el filtro.</p>
+        </div>
+      </section>
+
+      <!-- CHAT -->
+      <section id="view-chat" class="view" aria-labelledby="viewTitle" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Prompts versionados</h2>
+              <p class="muted">Cada cambio crea una versión. Solo lectura.</p>
+            </div>
+          </div>
+          <div id="promptsList" class="stack"></div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><h2>Settings</h2></div>
+            <div id="settingsList" class="stack"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Mensajes estándar</h2></div>
+            <div id="messagesList" class="stack"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Datos no disponibles</h2>
+              <p class="muted">Inventario que usa el chat para responder con honestidad.</p>
+            </div>
+          </div>
+          <div id="unavailableList" class="stack"></div>
+        </div>
+      </section>
+
+      <!-- AUDIT -->
+      <section id="view-audit" class="view" aria-labelledby="viewTitle" hidden>
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Últimos eventos</h2>
+              <p class="muted">Login, logout y accesos sensibles. IP hasheada.</p>
+            </div>
+            <button id="auditRefresh" class="btn btn-ghost" type="button">Actualizar</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Actor</th>
+                  <th scope="col">Acción</th>
+                  <th scope="col">Objetivo</th>
+                  <th scope="col">Resultado</th>
+                  <th scope="col">IP</th>
+                </tr>
+              </thead>
+              <tbody id="auditBody"></tbody>
+            </table>
+          </div>
+          <p id="auditEmpty" class="empty" hidden>Sin eventos registrados.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="js/admin/main.js"></script>
+</body>
+
+</html>

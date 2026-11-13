@@ -197,6 +197,16 @@ export const RPC_SIGNATURES = Object.freeze({
     params: {},
     returns: "value",
   },
+  chat_get_config_snapshot: {
+    schema: "public",
+    params: {},
+    returns: "value",
+  },
+  chat_list_config_layers: {
+    schema: "public",
+    params: {},
+    returns: "value",
+  },
   chat_log_unanswered: {
     schema: "public",
     params: {

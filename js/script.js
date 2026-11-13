@@ -11,6 +11,7 @@ const log = createContextLogger('UI-Shell');
 
 // Importar submódulos de UI
 import { initThemeUI } from './ui/themeUI.js';
+import { initTemasConfig } from './config/loader.js';
 import { initSidebarUI } from './ui/sidebarUI.js';
 import { initMapUI, initModalUI } from './ui/mapUI.js';
 import { initSearchUI } from './ui/searchUI.js';
@@ -20,6 +21,7 @@ import { initWmsFeatureInfo } from './utils/wmsFeatureInfo.js';
 
 // ── Módulo principal de UI (se ejecuta cuando el DOM y el mapa están listos) ──
 async function initUI() {
+  await initTemasConfig();
   let map;
   try {
     map = await appState.mapReady;

@@ -1,6 +1,6 @@
 import { appState, isLayerLoaded } from "../store/appState.js";
 import { logger } from "../utils/logger.js";
-import allTemasConfig from "../config/allTemasConfig.js";
+import { getTemasConfig } from "../config/loader.js";
 import { fetchLayerData } from "../utils/layerUtils.js";
 import { getBbox } from "../utils/geoUtils.js";
 
@@ -106,13 +106,13 @@ export function getCapaConfig(capaName, temaName) {
         return configCache.get(cacheKey);
     }
     let result = null;
-    if (temaName && allTemasConfig[temaName]?.estilo?.[capaName]) {
-        result = allTemasConfig[temaName].estilo[capaName];
+    if (temaName && getTemasConfig()[temaName]?.estilo?.[capaName]) {
+        result = getTemasConfig()[temaName].estilo[capaName];
     }
     if (!result) {
-        for (const key of Object.keys(allTemasConfig)) {
-            if (allTemasConfig[key]?.estilo?.[capaName]) {
-                result = allTemasConfig[key].estilo[capaName];
+        for (const key of Object.keys(getTemasConfig())) {
+            if (getTemasConfig()[key]?.estilo?.[capaName]) {
+                result = getTemasConfig()[key].estilo[capaName];
                 break;
             }
         }
@@ -126,7 +126,7 @@ export function getLayerTheme(capaName) {
         return themeCache.get(capaName);
     }
     let result = null;
-    for (const [temaKey, temaConfig] of Object.entries(allTemasConfig)) {
+    for (const [temaKey, temaConfig] of Object.entries(getTemasConfig())) {
         if (temaConfig.estilo && temaConfig.estilo[capaName]) {
             result = temaKey;
             break;
@@ -204,7 +204,7 @@ export async function buildSearchIndex() {
 
 function indexAllLayersMetadata() {
     const metadataIds = new Set();
-    for (const [temaKey, temaConfig] of Object.entries(allTemasConfig)) {
+    for (const [temaKey, temaConfig] of Object.entries(getTemasConfig())) {
         if (!temaConfig.estilo) continue;
         for (const [capaName, config] of Object.entries(temaConfig.estilo)) {
             const nombrePersonalizado = config.nombrePersonalizado || capaName;
@@ -248,7 +248,7 @@ async function indexPriorityLayersBackground(signal) {
   logger.log("[SearchControl] Iniciando indexación prioritaria en background");
   const capasAIndexar = [];
 
-  for (const [temaKey, temaConfig] of Object.entries(allTemasConfig)) {
+  for (const [temaKey, temaConfig] of Object.entries(getTemasConfig())) {
     if (!temaConfig.estilo) continue;
     for (const [capaName, config] of Object.entries(temaConfig.estilo)) {
       if (

@@ -43,3 +43,17 @@ test("Nginx define una CSP sin unsafe-eval ni unsafe-inline en scripts", () => {
     );
   }
 });
+
+test("admin.html no usa handlers inline y no es indexable", () => {
+  const html = read("admin.html");
+  assert.equal(/\son[a-z]+\s*=/.test(html), false);
+  assert.match(html, /<meta name="robots" content="noindex, nofollow"/);
+});
+
+test("el panel admin no usa innerHTML para datos dinámicos", () => {
+  for (const file of ["js/admin/main.js", "js/admin/api.js"]) {
+    const source = read(file);
+    assert.equal(/\.innerHTML\s*=/.test(source), false, `${file} no debe usar innerHTML`);
+    assert.equal(source.includes("insertAdjacentHTML"), false);
+  }
+});

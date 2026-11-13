@@ -1,6 +1,6 @@
 import { appState } from "../store/appState.js";
 import { createContextLogger } from "../utils/logger.js";
-import allTemasConfig from "../config/allTemasConfig.js";
+import { getTemasConfig } from "../config/loader.js";
 
 const log = createContextLogger("ThemeUI");
 
@@ -10,7 +10,7 @@ export function initThemeUI() {
     const themeButtonsGroup = document.getElementById("themeButtonsGroup");
     if (!themeButtonsGroup) return;
 
-    const temasConfig = allTemasConfig;
+    const temasConfig = getTemasConfig();
     if (!temasConfig) return;
 
     themeButtonsGroup.innerHTML = "";

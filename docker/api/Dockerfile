@@ -14,6 +14,9 @@ RUN npm ci --omit=dev \
 COPY server ./server
 COPY scripts ./scripts
 COPY db ./db
+# Solo lo que necesita `npm run config:snapshot` (config + validador).
+COPY js/config ./js/config
+COPY js/utils/configValidator.js js/utils/logger.js ./js/utils/
 
 USER node
 EXPOSE 3000
