@@ -11,6 +11,9 @@ services:
       - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
 
   api:
+    userns_mode: keep-id
+    security_opt:
+      - label=disable
     env_file:
       - .env.local
     environment:
@@ -21,6 +24,13 @@ services:
       - ./server:/app/server:ro,Z
     ports:
       - "127.0.0.1:${API_PORT:-3000}:3000"
+
+  rag-worker:
+    userns_mode: keep-id
+    security_opt:
+      - label=disable
+    env_file:
+      - .env.local
 
   nginx:
     volumes:

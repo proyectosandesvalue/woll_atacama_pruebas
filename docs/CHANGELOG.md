@@ -59,6 +59,7 @@
 - **Panel admin alineado al geoportal:** `admin.html` y `css/admin.css` usan el design system de `css/base.css` (Noche Atacama, glass, azul de marca y ámbar), header con logo, tabs y tema claro/oscuro persistido en `woll-theme`. Se mantienen los IDs y el comportamiento de las secciones.
 
 ### Added
+- **Sprint 45-A (panel RAG):** sección RAG en `/admin.html` con upload de PDFs, edición del manifiesto, dry-run, ingesta, documentos, chunks, trabajos y heartbeat. Migración `043_admin_rag_jobs.sql`; API `server/handlers/admin-rag.js`; worker `scripts/rag-worker.mjs` + `docker/rag-worker/Dockerfile`; Nginx acepta 30 MB solo en el upload. El API no importa `pdfjs-dist`.
 - **Sprint 14:** `admin.config_snapshots` + `admin.config_layers`, CLI `npm run config:snapshot` (`--dry-run`, `--publish`, `--check`) y `GET /api/config` con ETag/304/503. El visor carga la config por `js/config/loader.js` con fallback a `allTemasConfig`. Snapshot v1: 9 dimensiones, 158 capas maestras, 315 filas. ADR 024.
 - **Sprint 15:** panel `admin.html` de solo lectura con login password + TOTP (ADR 007), sesión HttpOnly, CSRF, rate limit, `admin.audit_log` y vistas de configuración, chat y auditoría. Migración 042 (`admin_users`, `audit_log`). `npm run admin:user` para alta/rotación.
 - **30 carga y aceptación:** `scripts/load-test-sprint30.mjs` (static/table/filtered/on-demand/on-demand-cold/mixed, percentiles, RPS, HTTP y umbrales) y spec 30. Local: 8/8 escenarios OK; static p95 55 ms, table p95 94 ms y mixed p95 61 ms a 50 conexiones; on-demand cold p95 200-248 ms.

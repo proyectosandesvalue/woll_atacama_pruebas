@@ -66,6 +66,8 @@ services:
       ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-}
       ADMIN_TOTP_SECRET: ${ADMIN_TOTP_SECRET:-}
       CONFIG_API_MAX_AGE: ${CONFIG_API_MAX_AGE:-300}
+    volumes:
+      - ./rag:/app/rag:z
     expose:
       - "3000"
     healthcheck:
@@ -88,6 +90,36 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+
+  rag-worker:
+    build:
+      context: .
+      dockerfile: docker/rag-worker/Dockerfile
+    image: woll/rag-worker:latest
+    restart: unless-stopped
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Define DATABASE_URL_DOCKER en .env}
+      RAG_DATABASE_URL: ${RAG_DATABASE_URL_DOCKER:-${DATABASE_URL_DOCKER}}
+      RAG_MANIFEST_PATH: rag/manifest.json
+      EMBEDDINGS_PROVIDER: ${EMBEDDINGS_PROVIDER:-openai-compatible}
+      EMBEDDINGS_BASE_URL: ${EMBEDDINGS_BASE_URL:-}
+      EMBEDDINGS_MODEL: ${EMBEDDINGS_MODEL:-}
+      EMBEDDINGS_API_KEY: ${EMBEDDINGS_API_KEY:-}
+      EMBEDDINGS_DIM: ${EMBEDDINGS_DIM:-1024}
+      EMBEDDINGS_SEND_DIMENSIONS: ${EMBEDDINGS_SEND_DIMENSIONS:-0}
+      EMBEDDINGS_PRICE_PER_MTOK: ${EMBEDDINGS_PRICE_PER_MTOK:-0}
+      RAG_EMBED_BATCH: ${RAG_EMBED_BATCH:-32}
+    volumes:
+      - ./rag:/app/rag:z
+    networks:
+      - internal
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
 
   nginx:
     image: docker.io/library/nginx:1.27.5-alpine

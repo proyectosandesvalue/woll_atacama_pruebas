@@ -45,7 +45,8 @@
     "acceptance:08": "node scripts/acceptance-sprint08.mjs",
     "load:30": "node scripts/load-test-sprint30.mjs",
     "config:snapshot": "node scripts/config-snapshot.mjs",
-    "admin:user": "node scripts/admin-user.mjs"
+    "admin:user": "node scripts/admin-user.mjs",
+    "rag:worker": "node scripts/rag-worker.mjs"
   },
   "devDependencies": {
     "eslint": "^8.57.0",

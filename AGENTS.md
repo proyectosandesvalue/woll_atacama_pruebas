@@ -93,7 +93,8 @@ Reglas:
 - **Secretos:** solo en variables de entorno. `.env.staging` está en `.gitignore`.
 - **Seguridad frontend:** CSP en Nginx sin `unsafe-eval`; CDN con SRI + versión fija; datos de API/GeoJSON escapados antes de `innerHTML`; `npm audit --omit=dev --audit-level=high` en CI. Ver `docs/specs/28-seguridad-frontend.md`.
 - **Tests:** toda feature nueva trae al menos un test (`node:test`).
-- **Configuración del visor**: el runtime lee el snapshot activo por `GET /api/config`; publicar con `npm run config:snapshot -- --publish` y verificar con `--check`. El fallback es `allTemasConfig` (INV-5). Panel admin en `/admin.html` (solo lectura, TOTP local, ADR 007).
+- **Configuración del visor**: el runtime lee el snapshot activo por `GET /api/config`; publicar con `npm run config:snapshot -- --publish` y verificar con `--check`. El fallback es `allTemasConfig` (INV-5). Panel admin en `/admin.html` (TOTP local, ADR 007).
+- **Panel RAG (45-A)**: la UI sube PDFs a `rag/inbox/`, edita `rag/manifest.json` y encola en `admin.rag_jobs`. El worker `npm run rag:worker` (imagen `docker/rag-worker`) extrae, embebe y escribe `rag.*`. El API nunca importa `pdfjs-dist`.
 - **Configuración del chat**: los prompts y settings viven en `admin.*` (migración 024). Antes de activar un cambio, correr el golden set. Ver "Gobierno de la configuración del chat".
 - **Migraciones**: la `024_admin_config.sql` y la `025_admin_rollback.sql` son las del 40-D.2. No renumerar. La `021_fix_filters_robust.sql` y la `022_fix_match_semantics.sql` son del 40-A (pre-existentes).
 - **Nombres de archivo:** no renombrar archivos existentes (`layerUtils.js`, `appState.js`, etc.) para ajustarlos al CONTRACT hasta que se cierre la decisión de naming (Sprint 22-E).
@@ -118,6 +119,7 @@ npm run ingest      # Ingesta RAG real (requiere RAG_DATABASE_URL + EMBEDDINGS_*
 npm run migrate     # Aplica migraciones al PostgreSQL local
 npm run config:snapshot # Valida/publica la config del visor en admin.* (--dry-run/--publish/--check)
 npm run admin:user  # Alta/rotación del usuario admin y TOTP (--new-totp)
+npm run rag:worker  # Worker de ingesta RAG (--once para una pasada)
 npm run migrate:status # Estado de migraciones
 npm run check:rpcs  # Verifica que las RPCs registradas existan en la BD
 npm run db:dump     # Dump de Supabase (SOURCE_DATABASE_URL)

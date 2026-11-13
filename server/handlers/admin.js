@@ -35,11 +35,11 @@ function baseHeaders() {
   };
 }
 
-function json(status, body, headers = {}) {
+export function json(status, body, headers = {}) {
   return { status, body, headers: { ...baseHeaders(), ...headers } };
 }
 
-function isPostgres(db) {
+export function isPostgres(db) {
   return Boolean(db && db.pool && typeof db.pool.query === "function");
 }
 
@@ -54,7 +54,7 @@ function cookieOptions(env) {
  * @param {object} ctx
  * @returns {{session: object, secret: string}|{error: object}}
  */
-function requireSession(ctx) {
+export function requireSession(ctx) {
   let secret;
   try {
     secret = getSessionSecret(ctx.env);
@@ -70,7 +70,7 @@ function requireSession(ctx) {
   return { session, secret };
 }
 
-function requireCsrf(ctx, session) {
+export function requireCsrf(ctx, session) {
   const header = ctx.req?.headers?.["x-csrf-token"];
   return typeof header === "string" && header === session.csrf;
 }

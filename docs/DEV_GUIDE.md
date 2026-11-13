@@ -963,6 +963,35 @@ npm run admin:user -- --new-totp
   entorno y reiniciar la API.
 - La demo Vercel/Supabase no expone el panel: usa el fallback local.
 
+**Ingesta RAG desde el panel (45-A)**
+
+- Entrar a `/admin.html` → pestaña **RAG**.
+- Subir el PDF, completar slug, título, URL https, licencia y declarar
+  `copyright_cleared`; guardar metadatos.
+- **Estimar** encola un `dry_run` (no escribe en `rag.*` ni llama al
+  proveedor). **Ingestar** encola la ingesta real.
+- El worker procesa `admin.rag_jobs`; sin worker los jobs quedan en cola:
+
+```bash
+npm run rag:worker            # loop local
+npm run rag:worker -- --once  # una pasada (cron/tests)
+```
+
+- El worker necesita `DATABASE_URL` (cola), `RAG_DATABASE_URL` (escritura
+  `rag.*`) y `EMBEDDINGS_*`. La imagen es `docker/rag-worker/Dockerfile` y
+  comparte el volumen `./rag`.
+- Nginx permite 30 MB solo en `/api/admin/rag/upload`; el API valida además
+  firma `%PDF-` y 25 MB.
+- El API nunca importa `pdfjs-dist`; la extracción ocurre en el worker.
+- Revisar chunks desde la tabla de documentos. El contenido es
+  `trust_level=untrusted` hasta revisión humana.
+- Si un job queda `running` sin heartbeat por más de 10 min, se puede
+  reintentar; no hay cancelación de jobs en ejecución.
+- En Podman rootless, el compose de desarrollo usa `keep-id` y
+  `label=disable` para que API y worker compartan `./rag`. En Docker/Linux
+  normal no hace falta; en el VPS el volumen debe pertenecer al usuario del
+  contenedor.
+
 **Seguridad del frontend (28)**
 
 - No agregar `<script>` ni `<link rel="stylesheet">` externos sin versión fija,

@@ -9,6 +9,7 @@ import { api, setCsrfToken } from "./api.js";
 
 const VIEW_META = {
   config: { eyebrow: "Operación / Configuración", title: "Configuración del visor" },
+  rag: { eyebrow: "Operación / Documentos", title: "Ingesta RAG" },
   chat: { eyebrow: "Operación / Chat IA", title: "Prompts y mensajes" },
   audit: { eyebrow: "Operación / Trazabilidad", title: "Auditoría" },
 };
@@ -16,7 +17,14 @@ const VIEW_META = {
 const state = {
   view: "config",
   layers: [],
-  loaded: { config: false, chat: false, audit: false },
+  loaded: { config: false, rag: false, chat: false, audit: false },
+  rag: {
+    data: null,
+    loading: false,
+    pollTimer: null,
+    editingSlug: null,
+    chunksDocumentId: null,
+  },
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -133,8 +141,10 @@ function selectView(view) {
   setStatus("");
 
   if (view === "config" && !state.loaded.config) loadConfig();
+  if (view === "rag") loadRag();
   if (view === "chat" && !state.loaded.chat) loadChat();
   if (view === "audit") loadAudit();
+  if (view !== "rag") stopRagPolling();
 }
 
 async function withAuth(promise) {
@@ -243,6 +253,386 @@ function renderLayers() {
 
   body.replaceChildren(fragment);
   empty.hidden = rows.length > 0;
+}
+
+// ── RAG ───────────────────────────────────────────────────
+
+const RAG_STATUS = {
+  queued: { label: "En cola", className: "badge" },
+  running: { label: "Ejecutando", className: "badge badge-warn" },
+  succeeded: { label: "Listo", className: "badge badge-ok" },
+  skipped: { label: "Sin cambios", className: "badge" },
+  needs_ocr: { label: "Necesita OCR", className: "badge badge-warn" },
+  rejected: { label: "Rechazado", className: "badge badge-fail" },
+  failed: { label: "Falló", className: "badge badge-fail" },
+  cancelled: { label: "Cancelado", className: "badge" },
+  ready: { label: "Ready", className: "badge badge-ok" },
+  superseded: { label: "Reemplazado", className: "badge" },
+};
+
+function ragBadge(status) {
+  return RAG_STATUS[status] || { label: status || "—", className: "badge" };
+}
+
+function ragValue(id) {
+  return document.getElementById(id)?.value?.trim() || "";
+}
+
+function ragSetStatus(message, kind = "ok") {
+  const node = $("#ragFormStatus");
+  if (!node) return;
+  node.textContent = message || "";
+  node.hidden = !message;
+  node.classList.toggle("is-error", kind === "error");
+}
+
+function relativeAge(iso) {
+  if (!iso) return "sin heartbeat";
+  const diff = Date.now() - new Date(iso).getTime();
+  if (!Number.isFinite(diff)) return "sin heartbeat";
+  if (diff < 60_000) return "hace menos de 1 min";
+  const minutes = Math.round(diff / 60_000);
+  if (minutes < 60) return `hace ${minutes} min`;
+  const hours = Math.round(minutes / 60);
+  return `hace ${hours} h`;
+}
+
+function collectRagEntry() {
+  const slug = ragValue("ragSlug").toLowerCase();
+  if (!/^[a-z0-9][a-z0-9-]{1,80}$/.test(slug)) {
+    throw new Error("Slug inválido: usá minúsculas, números y guiones.");
+  }
+  const title = ragValue("ragTitle");
+  const sourceUrl = ragValue("ragSourceUrl");
+  const license = ragValue("ragLicense");
+  if (!title || !sourceUrl || !license) {
+    throw new Error("Completá título, URL de origen y licencia.");
+  }
+  if (!/^https:\/\//i.test(sourceUrl)) {
+    throw new Error("La URL de origen debe empezar con https://.");
+  }
+  if (!$("#ragCopyright")?.checked) {
+    throw new Error("Tenés que declarar que la licencia permite indexar el documento.");
+  }
+  const tags = ragValue("ragTags")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+
+  return {
+    slug,
+    title,
+    source_url: sourceUrl,
+    publisher: ragValue("ragPublisher") || null,
+    license,
+    language: ragValue("ragLanguage") || "es",
+    published_at: ragValue("ragPublishedAt") || null,
+    copyright_cleared: true,
+    tags,
+  };
+}
+
+function fillRagForm(entry) {
+  if (!entry) return;
+  $("#ragSlug").value = entry.slug || "";
+  $("#ragSlug").readOnly = true;
+  $("#ragTitle").value = entry.title || "";
+  $("#ragSourceUrl").value = entry.source_url || "";
+  $("#ragPublisher").value = entry.publisher || "";
+  $("#ragPublishedAt").value = entry.published_at || "";
+  $("#ragLicense").value = entry.license || "";
+  $("#ragLanguage").value = entry.language || "es";
+  $("#ragTags").value = Array.isArray(entry.tags) ? entry.tags.join(", ") : "";
+  $("#ragCopyright").checked = entry.copyright_cleared === true;
+  state.rag.editingSlug = entry.slug || null;
+  $("#ragForm")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  ragSetStatus(`Editando ${entry.slug}. El PDF existente no se reemplaza salvo que subas uno nuevo.`);
+}
+
+function resetRagForm() {
+  $("#ragForm")?.reset();
+  $("#ragSlug").readOnly = false;
+  $("#ragCopyright").checked = false;
+  $("#ragLanguage").value = "es";
+  state.rag.editingSlug = null;
+  ragSetStatus("");
+}
+
+function ragFileSelected() {
+  return $("#ragFile")?.files?.[0] || null;
+}
+
+function ragEntryExistsWithFile(slug) {
+  const entry = state.rag.data?.manifest?.find((item) => item.slug === slug);
+  return Boolean(entry?.file_info?.exists);
+}
+
+async function saveRagManifest() {
+  const entry = collectRagEntry();
+  await api.ragSaveManifest(entry);
+  state.rag.editingSlug = entry.slug;
+  return entry;
+}
+
+async function uploadRagPdf() {
+  const entry = collectRagEntry();
+  const file = ragFileSelected();
+  if (!file) throw new Error("Seleccioná un PDF para subir.");
+  await api.ragUpload(entry.slug, file);
+  $("#ragFile").value = "";
+  return entry;
+}
+
+async function prepareRagDocument({ requireFile = false } = {}) {
+  const entry = collectRagEntry();
+  const file = ragFileSelected();
+  if (requireFile && !file && !ragEntryExistsWithFile(entry.slug)) {
+    throw new Error("El documento no tiene PDF. Subí uno antes de encolar la ingesta.");
+  }
+  await api.ragSaveManifest(entry);
+  if (file) await api.ragUpload(entry.slug, file);
+  state.rag.editingSlug = entry.slug;
+  return entry;
+}
+
+async function runRagAction(action) {
+  const buttons = [
+    "#ragSaveBtn",
+    "#ragUploadBtn",
+    "#ragDryRunBtn",
+    "#ragIngestBtn",
+    "#ragNewBtn",
+  ].map((selector) => $(selector)).filter(Boolean);
+  buttons.forEach((button) => { button.disabled = true; });
+
+  try {
+    if (action === "save") {
+      const entry = await saveRagManifest();
+      ragSetStatus(`Metadatos de ${entry.slug} guardados.`);
+    } else if (action === "upload") {
+      await saveRagManifest();
+      const entry = await uploadRagPdf();
+      ragSetStatus(`PDF de ${entry.slug} subido a rag/inbox/.`);
+    } else if (action === "dry_run" || action === "ingest") {
+      const entry = await prepareRagDocument({ requireFile: true });
+      const result = await api.ragQueue(entry.slug, action, false);
+      ragSetStatus(
+        `Trabajo #${result.job.id} encolado para ${entry.slug} (${action === "dry_run" ? "estimación" : "ingesta"}).`
+      );
+    } else if (action === "new") {
+      resetRagForm();
+      return;
+    }
+
+    await loadRag({ silent: true });
+  } catch (err) {
+    ragSetStatus(err.message, "error");
+  } finally {
+    buttons.forEach((button) => { button.disabled = false; });
+  }
+}
+
+async function loadRag({ silent = false } = {}) {
+  if (state.rag.loading) return;
+  state.rag.loading = true;
+  if (!silent) setStatus("Cargando estado del RAG…");
+
+  try {
+    const data = await withAuth(api.ragOverview());
+    if (!data) return;
+    state.rag.data = data;
+    state.loaded.rag = true;
+    renderRag(data);
+    setStatus("");
+  } catch (err) {
+    setStatus(`No se pudo cargar el RAG: ${err.message}`, "error");
+  } finally {
+    state.rag.loading = false;
+  }
+}
+
+function renderRag(data) {
+  const documents = Array.isArray(data.documents) ? data.documents : [];
+  const manifest = Array.isArray(data.manifest) ? data.manifest : [];
+  const jobs = Array.isArray(data.jobs) ? data.jobs : [];
+
+  $("#ragMetricDocs").textContent = String(documents.length);
+  $("#ragMetricChunks").textContent = String(
+    documents.reduce((sum, doc) => sum + Number(doc.chunk_count || 0), 0)
+  );
+  const activeJobs = jobs.filter((job) => job.status === "queued" || job.status === "running");
+  $("#ragMetricJobs").textContent = String(activeJobs.length);
+
+  const worker = data.worker;
+  $("#ragMetricWorker").textContent = worker ? "Activo" : "Sin heartbeat";
+  $("#ragWorkerSeen").textContent = worker
+    ? `última señal ${relativeAge(worker.last_seen_at)}`
+    : "iniciá rag-worker para procesar la cola";
+
+  renderRagDocuments(manifest, documents);
+  renderRagJobs(jobs);
+
+  if (activeJobs.length > 0) ensureRagPolling();
+  else stopRagPolling();
+}
+
+function ragActionButton(label, action, slug, documentId = "") {
+  return el("button", {
+    className: "btn btn-secondary btn-mini",
+    text: label,
+    attrs: {
+      type: "button",
+      "data-rag-action": action,
+      "data-slug": slug,
+      "data-document-id": documentId,
+    },
+  });
+}
+
+function renderRagDocuments(manifest, documents) {
+  const body = $("#ragDocsBody");
+  const empty = $("#ragDocsEmpty");
+  if (!body || !empty) return;
+
+  const docsBySlug = new Map(documents.map((doc) => [doc.slug, doc]));
+  const rows = [];
+  const seen = new Set();
+
+  for (const entry of manifest) {
+    rows.push({ entry, doc: docsBySlug.get(entry.slug) || null });
+    seen.add(entry.slug);
+  }
+  for (const doc of documents) {
+    if (!seen.has(doc.slug)) rows.push({ entry: null, doc });
+  }
+
+  const fragment = document.createDocumentFragment();
+  for (const { entry, doc } of rows) {
+    const slug = entry?.slug || doc?.slug || "—";
+    const title = entry?.title || doc?.title || slug;
+    const fileOk = entry?.file_info?.exists !== false;
+    const status = doc?.status || (fileOk ? "sin ingestar" : "sin archivo");
+    const badge = ragBadge(status);
+    const actions = [];
+
+    if (entry) {
+      actions.push(ragActionButton("Editar", "edit", slug));
+      actions.push(ragActionButton("Estimar", "dry_run", slug));
+      actions.push(ragActionButton("Ingestar", "ingest", slug));
+      actions.push(ragActionButton("Quitar", "delete", slug));
+    }
+    if (doc?.document_id) {
+      actions.push(ragActionButton("Chunks", "chunks", slug, doc.document_id));
+    }
+
+    const actionWrap = el("div", { className: "row-actions" }, actions);
+    fragment.appendChild(
+      el("tr", {}, [
+        el("td", {}, [
+          el("strong", { className: "layer-name", text: title }),
+          el("small", { className: "item-meta", text: ` ${slug}` }),
+          entry?.publisher ? el("small", { className: "item-meta", text: ` · ${entry.publisher}` }) : null,
+        ]),
+        el("td", {}, [el("span", { className: badge.className, text: badge.label })]),
+        el("td", { text: doc?.version ? `v${doc.version}` : "—" }),
+        el("td", { text: doc?.page_count ?? "—" }),
+        el("td", { text: doc?.chunk_count ?? "—" }),
+        el("td", {}, [actionWrap]),
+      ])
+    );
+  }
+
+  body.replaceChildren(fragment);
+  empty.hidden = rows.length > 0;
+}
+
+function renderRagJobs(jobs) {
+  const body = $("#ragJobsBody");
+  const empty = $("#ragJobsEmpty");
+  if (!body || !empty) return;
+
+  const fragment = document.createDocumentFragment();
+  for (const job of jobs) {
+    const badge = ragBadge(job.status);
+    const result = job.result || {};
+    let summary = "";
+    if (result.chunks !== undefined) summary = `${result.chunks} chunks`;
+    else if (result.pageCount) summary = `${result.pageCount} páginas`;
+    else if (job.error_code) summary = job.error_code;
+    else if (job.status === "skipped") summary = result.reason || "sin cambios";
+
+    const action = job.status === "queued"
+      ? el("button", {
+          className: "btn btn-secondary btn-mini",
+          text: "Cancelar",
+          attrs: { type: "button", "data-rag-cancel": job.id },
+        })
+      : null;
+
+    fragment.appendChild(
+      el("tr", {}, [
+        el("td", { text: `#${job.id}` }),
+        el("td", {}, [el("code", { text: job.slug })]),
+        el("td", { text: job.action }),
+        el("td", {}, [el("span", { className: badge.className, text: badge.label })]),
+        el("td", { text: formatDate(job.started_at || job.created_at) }),
+        el("td", { className: "dim", text: summary || "—" }),
+        el("td", {}, action ? [action] : []),
+      ])
+    );
+  }
+
+  body.replaceChildren(fragment);
+  empty.hidden = jobs.length > 0;
+}
+
+async function showRagChunks(documentId, slug) {
+  const panel = $("#ragChunksPanel");
+  if (!panel) return;
+  panel.hidden = false;
+  $("#ragChunksTitle").textContent = `Chunks · ${slug}`;
+  $("#ragChunksMeta").textContent = "Cargando…";
+  $("#ragChunksBody").replaceChildren();
+
+  try {
+    const data = await withAuth(api.ragChunks(documentId, 50, 0));
+    if (!data) return;
+    $("#ragChunksMeta").textContent = `${data.total} fragmentos · mostrando ${data.items.length}`;
+    const fragment = document.createDocumentFragment();
+    for (const chunk of data.items) {
+      const content = el("details", {}, [
+        el("summary", { text: "Ver contenido" }),
+        el("pre", { className: "chunk-body", text: chunk.content }),
+      ]);
+      fragment.appendChild(
+        el("tr", {}, [
+          el("td", { text: chunk.ordinal + 1 }),
+          el("td", { text: `${chunk.page_start}–${chunk.page_end}` }),
+          el("td", { text: chunk.section || "—" }),
+          el("td", { text: chunk.token_estimate }),
+          el("td", {}, [content]),
+        ])
+      );
+    }
+    $("#ragChunksBody").replaceChildren(fragment);
+    panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (err) {
+    $("#ragChunksMeta").textContent = err.message;
+  }
+}
+
+function stopRagPolling() {
+  if (state.rag.pollTimer) {
+    clearInterval(state.rag.pollTimer);
+    state.rag.pollTimer = null;
+  }
+}
+
+function ensureRagPolling() {
+  if (state.rag.pollTimer) return;
+  state.rag.pollTimer = setInterval(() => {
+    if (state.view === "rag" && !state.rag.loading) loadRag({ silent: true });
+  }, 3000);
 }
 
 // ── Chat ──────────────────────────────────────────────────
@@ -476,6 +866,77 @@ function bindEvents() {
   $("#layerSearch")?.addEventListener("input", renderLayers);
   $("#dimensionFilter")?.addEventListener("change", renderLayers);
   $("#auditRefresh")?.addEventListener("click", loadAudit);
+
+  // RAG
+  $("#ragForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    runRagAction("save");
+  });
+  for (const [selector, action] of [
+    ["#ragSaveBtn", "save"],
+    ["#ragUploadBtn", "upload"],
+    ["#ragDryRunBtn", "dry_run"],
+    ["#ragIngestBtn", "ingest"],
+    ["#ragNewBtn", "new"],
+  ]) {
+    $(selector)?.addEventListener("click", () => runRagAction(action));
+  }
+  $("#ragRefresh")?.addEventListener("click", () => loadRag());
+  $("#ragChunksClose")?.addEventListener("click", () => {
+    const panel = $("#ragChunksPanel");
+    if (panel) panel.hidden = true;
+  });
+
+  $("#ragDocsBody")?.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-rag-action]");
+    if (!button) return;
+    const action = button.dataset.ragAction;
+    const slug = button.dataset.slug;
+    const documentId = button.dataset.documentId;
+
+    try {
+      if (action === "edit") {
+        const entry = state.rag.data?.manifest?.find((item) => item.slug === slug);
+        if (entry) fillRagForm(entry);
+        return;
+      }
+      if (action === "delete") {
+        if (!window.confirm(`¿Quitar ${slug} del manifiesto? No se borran las versiones ya ingeridas.`)) {
+          return;
+        }
+        await api.ragDeleteManifest(slug, false);
+        if (state.rag.editingSlug === slug) resetRagForm();
+        await loadRag({ silent: true });
+        return;
+      }
+      if (action === "chunks") {
+        if (documentId) await showRagChunks(documentId, slug);
+        return;
+      }
+      if (action === "dry_run" || action === "ingest") {
+        const entry = state.rag.data?.manifest?.find((item) => item.slug === slug);
+        if (!entry?.file_info?.exists) {
+          throw new Error("El documento no tiene PDF en rag/inbox/.");
+        }
+        const result = await api.ragQueue(slug, action, false);
+        ragSetStatus(`Trabajo #${result.job.id} encolado para ${slug}.`);
+        await loadRag({ silent: true });
+      }
+    } catch (err) {
+      ragSetStatus(err.message, "error");
+    }
+  });
+
+  $("#ragJobsBody")?.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-rag-cancel]");
+    if (!button) return;
+    try {
+      await api.ragCancel(Number(button.dataset.ragCancel));
+      await loadRag({ silent: true });
+    } catch (err) {
+      ragSetStatus(err.message, "error");
+    }
+  });
 }
 
 async function boot() {

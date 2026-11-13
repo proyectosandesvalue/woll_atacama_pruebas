@@ -39,6 +39,18 @@ async function request(path, { method = "GET", body, headers = {} } = {}) {
   return data;
 }
 
+async function parseResponse(res) {
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(data.error || `HTTP ${res.status}`);
+    error.status = res.status;
+    error.code = data.code;
+    error.retryAfter = res.headers.get("Retry-After");
+    throw error;
+  }
+  return data;
+}
+
 export const api = {
   login: (username, password, totp) =>
     request("/api/admin/login", {
@@ -53,4 +65,44 @@ export const api = {
   messages: () => request("/api/admin/messages"),
   unavailable: () => request("/api/admin/unavailable"),
   audit: (limit = 50) => request(`/api/admin/audit?limit=${limit}`),
+
+  ragOverview: () => request("/api/admin/rag/overview"),
+  ragSaveManifest: (entry) =>
+    request("/api/admin/rag/manifest", { method: "POST", body: entry }),
+  ragDeleteManifest: (slug, file = false) =>
+    request(
+      `/api/admin/rag/manifest?slug=${encodeURIComponent(slug)}${file ? "&file=1" : ""}`,
+      { method: "DELETE" }
+    ),
+  ragQueue: (slug, action, force = false) =>
+    request("/api/admin/rag/jobs", {
+      method: "POST",
+      body: { slug, action, force },
+    }),
+  ragJobs: (id) =>
+    request(`/api/admin/rag/jobs${id ? `?id=${encodeURIComponent(id)}` : ""}`),
+  ragCancel: (id) =>
+    request("/api/admin/rag/jobs/cancel", { method: "POST", body: { id } }),
+  ragChunks: (documentId, limit = 20, offset = 0) =>
+    request(
+      `/api/admin/rag/chunks?document_id=${encodeURIComponent(documentId)}` +
+        `&limit=${limit}&offset=${offset}`
+    ),
+  ragUpload: async (slug, file) => {
+    const headers = {
+      Accept: "application/json",
+      "Content-Type": "application/pdf",
+    };
+    if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+    const res = await fetch(
+      `/api/admin/rag/upload?slug=${encodeURIComponent(slug)}`,
+      {
+        method: "POST",
+        credentials: "same-origin",
+        headers,
+        body: file,
+      }
+    );
+    return parseResponse(res);
+  },
 };

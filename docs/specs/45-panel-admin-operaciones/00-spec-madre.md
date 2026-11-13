@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprints (ROADMAP)** | 45 (RAG y APIs), 46 (taxonomía normalizada), 47 (capas) |
-| **Estado de la spec** | DRAFT — pendiente de revisión del dev |
+| **Estado de la spec** | EN EJECUCIÓN — 45-A implementado y validado localmente; 45-B/46/47 pendientes |
 | **Tamaño** | Grande (épica) |
 | **Duración estimada** | 56-72 h |
 | **Dependencias** | 08-G (tiles), 14/15 (panel/auth), 17 (RAG), 19 (APIs), 26 (VPS) |
@@ -264,7 +264,7 @@ La migración es aditiva. Las tablas se siembran desde el snapshot v1
 
 | Fase | Contenido | Horas | Estado |
 |---|---|---|---|
-| 45-A | RAG: migración, manifest, upload, cola, worker, UI y tests | 18-22 | ⏳ |
+| 45-A | RAG: migración, manifest, upload, cola, worker, UI y tests | 18-22 | ✅ |
 | 45-B | APIs: inventario, test y edición no secreta | 6-8 | ⏳ |
 | 46-A | Migración y seed de taxonomía; compilador de snapshot | 6-8 | ⏳ |
 | 46-B | CRUD de dimensiones/grupos/subgrupos y assignments | 8-10 | ⏳ |
@@ -288,13 +288,13 @@ Cada fase es un commit y actualiza ROADMAP/CHANGELOG.
 
 | # | Pregunta | Default | ¿Bloquea? |
 |---|---|---|---|
-| R1 | ¿Sprint 45 = RAG + APIs y Sprint 46 = taxonomía + sidebar? | sí | sí |
-| R2 | ¿El sidebar sigue leyendo el snapshot compilado o pasa a `/api/taxonomy`? | snapshot en 46-A; nativo con flag en 46-C | sí |
+| R1 | ¿Sprint 45 = RAG + APIs y Sprint 46 = taxonomía + sidebar? | **aprobado 2026-11-13** | no (resuelto) |
+| R2 | ¿El sidebar sigue leyendo el snapshot compilado o pasa a `/api/taxonomy`? | snapshot en 46-A; nativo con flag en 46-C | no para 45-A; sí para 46 |
 | R3 | ¿El manifiesto RAG se versiona en git y se edita desde el panel? | sí, escritura atómica | no |
 | R4 | ¿Capas arranca con GeoJSON y Shapefile queda para fase 2? | sí | no |
 | R5 | ¿El gestor de APIs solo edita conexiones existentes? | sí; nuevas requieren deploy | no |
 
-La spec queda en **DRAFT** hasta revisar R1/R2 y aprobar el orden.
+R1 quedó aprobada y 45-A está implementado. R2 se decide al iniciar el Sprint 46 (recomendado: snapshot en 46-A y nativo con flag en 46-C).
 
 ## 11. Riesgos y reversión
 
@@ -317,8 +317,22 @@ La spec queda en **DRAFT** hasta revisar R1/R2 y aprobar el orden.
 - Sprint 28: uploads, CSP y sesión.
 - Sprint 31: alertas de worker caído/jobs fallidos.
 
-## 13. Cierre
+## 13. Resultados 45-A (2026-11-13)
 
-- Horas reales: —
-- Desvíos: —
-- Lecciones: —
+- Migración `043_admin_rag_jobs.sql` aplicada y reaplicable.
+- Flujo validado: upload de PDF → manifiesto → dry-run → ingesta con worker →
+  documento `ready`, 1 chunk, overview y preview de chunks.
+- Worker con `pdfjs-dist` en imagen propia; API sin la dependencia.
+- Tests: 392 tests, 380 pasan, 12 omitidos, 0 fallos; lint 0 errores.
+- Prueba local con embeddings fake de 1024 dims; los datos de prueba se
+  eliminaron al terminar.
+- Pendiente: configurar `EMBEDDINGS_*` reales en staging/VPS y validar PDFs
+  con licencia (17-E).
+
+## 14. Cierre
+
+- Horas reales: 6 (45-A).
+- Desvíos: hubo que separar `validateEntry` en `server/rag/manifest.js` para
+  que el API no importe `pdfjs-dist`; el worker necesita `npm ci --include=dev`.
+- Lecciones: el worker debe ser una imagen separada; el volumen `rag/` necesita
+  permisos SELinux compartidos (`:z` + dev `label=disable`).

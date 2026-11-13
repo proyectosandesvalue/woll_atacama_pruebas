@@ -160,7 +160,7 @@ Limitaciones de esta etapa:
   `statement_timeout`/`query_timeout` y un registro cerrado de 48 RPCs en
   `server/db/rpc-signatures.js` (50 RPCs). `npm run check:rpcs` verifica que existan.
 - **Migraciones:** runner `scripts/migrate.mjs` con checksum y
-  `db/migrations/000-042`; `000_compat_roles.sql` crea extensiones, roles y
+  `db/migrations/000-043`; `000_compat_roles.sql` crea extensiones, roles y
   `search_path`.
 - **Schema `admin.*`**: configuración editable (prompts, settings, mensajes, datos no disponibles), snapshots de config, índice de capas, usuarios admin y auditoría. PostgREST no lo expone; se accede por RPCs `SECURITY DEFINER` o por el servidor con el rol `woll_api`.
 
@@ -394,7 +394,29 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
 - **Auditoría:** `admin.audit_log` registra login/logout, actor, resultado, IP
   hasheada y detalle. El panel requiere `DB_DRIVER=postgres`.
 
-### 4.3. Tiles MVT pregenerados (Sprint 08)
+### 4.3. Panel RAG: manifiesto, uploads y cola (Sprint 45-A)
+
+- **Manifiesto:** `rag/manifest.json` sigue siendo la fuente versionada. El
+  panel lo edita con escritura atómica (`server/admin/rag-manifest.js`).
+- **Uploads:** `POST /api/admin/rag/upload` recibe el PDF binario, valida
+  `%PDF-` y 25 MB, y escribe `rag/inbox/<slug>.pdf`. Nginx solo permite 30 MB
+  en esa ruta.
+- **Cola:** `admin.rag_jobs` guarda `dry_run|ingest|reingest`, estado, actor y
+  resultado. Un solo job activo por slug (índice parcial).
+- **Worker:** `scripts/rag-worker.mjs` (imagen `docker/rag-worker`, con
+  `pdfjs-dist`) reclama con `FOR UPDATE SKIP LOCKED`, ejecuta
+  `server/rag/pipeline.js`, actualiza heartbeat (`admin.worker_heartbeats`) y
+  termina el job. El API no importa `pdfjs-dist`.
+- **Panel:** `/admin.html` → RAG muestra manifiesto, documentos, chunks,
+  corridas y jobs; permite subir, estimar (dry-run), ingestar, cancelar jobs
+  `queued` y editar metadatos.
+- **Límites:** el worker usa `RAG_DATABASE_URL` para `rag.*` y
+  `DATABASE_URL` para la cola. Jamás corre como superusuario en producción.
+- **Fallback:** si el worker o embeddings no están configurados, el visor y el
+  chat siguen funcionando; los jobs quedan en cola o fallan con un mensaje
+  claro.
+
+### 4.4. Tiles MVT pregenerados (Sprint 08)
 
 Las capas estáticas o por edición no se sirven desde PostgreSQL en runtime.
 El flujo es offline:

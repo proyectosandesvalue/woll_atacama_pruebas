@@ -98,6 +98,10 @@
           <span class="material-symbols-outlined">tune</span>
           <span>Configuración</span>
         </button>
+        <button class="nav-item" type="button" data-view="rag">
+          <span class="material-symbols-outlined">library_books</span>
+          <span>RAG</span>
+        </button>
         <button class="nav-item" type="button" data-view="chat">
           <span class="material-symbols-outlined">forum</span>
           <span>Chat IA</span>
@@ -190,6 +194,175 @@
             </table>
           </div>
           <p id="layersEmpty" class="empty" hidden>No hay capas que coincidan con el filtro.</p>
+        </div>
+      </section>
+
+      <!-- RAG -->
+      <section id="view-rag" class="view" aria-labelledby="viewTitle" hidden>
+        <div class="metrics">
+          <article class="metric">
+            <span class="metric-label">Documentos</span>
+            <strong class="metric-value" id="ragMetricDocs">—</strong>
+            <small>última versión por slug</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Chunks</span>
+            <strong class="metric-value" id="ragMetricChunks">—</strong>
+            <small>fragmentos indexados</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Trabajos activos</span>
+            <strong class="metric-value" id="ragMetricJobs">—</strong>
+            <small>en cola o ejecutando</small>
+          </article>
+          <article class="metric metric-wide">
+            <span class="metric-label">Worker</span>
+            <strong class="metric-value metric-value-sm" id="ragMetricWorker">—</strong>
+            <small id="ragWorkerSeen">sin heartbeat</small>
+          </article>
+        </div>
+
+        <div class="rag-layout">
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Nuevo documento</h2>
+                <p class="muted">Subí el PDF, completá la procedencia y encolá la ingesta.</p>
+              </div>
+            </div>
+            <form id="ragForm" class="rag-form" novalidate>
+              <div class="field-grid">
+                <div>
+                  <label for="ragSlug">Slug</label>
+                  <input id="ragSlug" name="slug" maxlength="80" placeholder="ley-glaciares" required />
+                </div>
+                <div>
+                  <label for="ragLanguage">Idioma</label>
+                  <input id="ragLanguage" name="language" maxlength="10" value="es" />
+                </div>
+              </div>
+
+              <label for="ragTitle">Título</label>
+              <input id="ragTitle" name="title" maxlength="240" required />
+
+              <label for="ragSourceUrl">URL de origen</label>
+              <input id="ragSourceUrl" name="source_url" type="url" placeholder="https://…" required />
+
+              <div class="field-grid">
+                <div>
+                  <label for="ragPublisher">Editor</label>
+                  <input id="ragPublisher" name="publisher" maxlength="120" />
+                </div>
+                <div>
+                  <label for="ragPublishedAt">Publicado</label>
+                  <input id="ragPublishedAt" name="published_at" type="date" />
+                </div>
+              </div>
+
+              <label for="ragLicense">Licencia</label>
+              <input id="ragLicense" name="license" maxlength="160" required />
+
+              <label for="ragTags">Tags</label>
+              <input id="ragTags" name="tags" placeholder="agua, normativa, glaciares" />
+
+              <label for="ragFile">PDF</label>
+              <input id="ragFile" name="file" type="file" accept="application/pdf,.pdf" />
+              <p class="field-hint">Máximo 25 MB. El archivo se guarda en <code>rag/inbox/</code>.</p>
+
+              <label class="checkbox-row">
+                <input id="ragCopyright" type="checkbox" />
+                <span>Declaro que la licencia permite el uso institucional y la indexación.</span>
+              </label>
+
+              <div class="rag-actions">
+                <button id="ragNewBtn" class="btn btn-secondary" type="button">Nuevo</button>
+                <button id="ragSaveBtn" class="btn btn-secondary" type="button">Guardar metadatos</button>
+                <button id="ragUploadBtn" class="btn btn-secondary" type="button">Subir PDF</button>
+                <button id="ragDryRunBtn" class="btn btn-secondary" type="button">Estimar</button>
+                <button id="ragIngestBtn" class="btn btn-primary" type="button">Guardar e ingestar</button>
+              </div>
+              <p id="ragFormStatus" class="status-line" role="status" aria-live="polite" hidden></p>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <div>
+                <h2>Documentos</h2>
+                <p class="muted">Manifiesto y estado en <code>rag.documents</code>.</p>
+              </div>
+              <button id="ragRefresh" class="btn btn-secondary" type="button">
+                <span class="material-symbols-outlined">refresh</span>
+                Actualizar
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Documento</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Versión</th>
+                    <th scope="col">Páginas</th>
+                    <th scope="col">Chunks</th>
+                    <th scope="col">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="ragDocsBody"></tbody>
+              </table>
+            </div>
+            <p id="ragDocsEmpty" class="empty" hidden>No hay documentos en el manifiesto.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Trabajos de ingesta</h2>
+              <p class="muted">La cola la procesa <code>rag-worker</code>.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">ID</th>
+                  <th scope="col">Documento</th>
+                  <th scope="col">Acción</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Inicio</th>
+                  <th scope="col">Resultado</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="ragJobsBody"></tbody>
+            </table>
+          </div>
+          <p id="ragJobsEmpty" class="empty" hidden>Sin trabajos registrados.</p>
+        </div>
+
+        <div id="ragChunksPanel" class="panel" hidden>
+          <div class="panel-head">
+            <div>
+              <h2 id="ragChunksTitle">Chunks</h2>
+              <p class="muted" id="ragChunksMeta">—</p>
+            </div>
+            <button id="ragChunksClose" class="btn btn-secondary" type="button">Cerrar</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Páginas</th>
+                  <th scope="col">Sección</th>
+                  <th scope="col">Tokens</th>
+                  <th scope="col">Contenido</th>
+                </tr>
+              </thead>
+              <tbody id="ragChunksBody"></tbody>
+            </table>
+          </div>
         </div>
       </section>
 

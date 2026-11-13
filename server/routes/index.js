@@ -5,6 +5,7 @@
  */
 
 import { adminRoutes } from "./admin.js";
+import { adminRagRoutes } from "./admin-rag.js";
 import { arclimRoute } from "./arclim.js";
 import { chatRoute } from "./chat.js";
 import { configRoutes } from "./config.js";
@@ -17,6 +18,7 @@ export const routes = [
   chatRoute,
   ...configRoutes,
   ...adminRoutes,
+  ...adminRagRoutes,
   proxyRoute,
   arclimRoute,
   ...layerRoutes,
