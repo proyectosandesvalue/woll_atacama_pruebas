@@ -271,6 +271,21 @@ const agriculturaConfig = {
     },
     catastro_especies_frutales: {
       url: "catastro_especies_frutales.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "id",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "catastro_especies_frutales",
+          urlTemplate: "/tiles/catastro_especies_frutales/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/catastro_especies_frutales/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "catastro_especies_frutales.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Catastro Fruticola - Especies Frutales",
       atributo: "especie",
@@ -389,6 +404,21 @@ const agriculturaConfig = {
     },
     red_canales: {
       url: "red_canales.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "red_canales",
+          urlTemplate: "/tiles/red_canales/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/red_canales/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "red_canales.geojson" },
+      },
       type: "line",
       nombrePersonalizado: "Red de Canalales - CNR",
       atributo: "F_ORIGN_FH", // Asegúrate de que este atributo exista en tu GeoJSON
@@ -464,6 +494,21 @@ const agriculturaConfig = {
     },
     limite_comunal_linea: {
       url: "limite_comunal_linea.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "limite_comunal_linea",
+          urlTemplate: "/tiles/limite_comunal_linea/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/limite_comunal_linea/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 13,
+        },
+        fallback: { type: "geojson", url: "limite_comunal_linea.geojson" },
+      },
       type: "line",
       nombrePersonalizado: "Limite Comunal",
       atributo: "REGION",

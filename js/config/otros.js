@@ -41,6 +41,21 @@ const otrosConfig = {
     },
     bienes_nacionales_protegidos: {
       url: "bienes_nacionales_protegidos.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "bienes_nacionales_protegidos",
+          urlTemplate: "/tiles/bienes_nacionales_protegidos/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/bienes_nacionales_protegidos/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "bienes_nacionales_protegidos.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "REGION", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Bienes Nacionales Protegidos", // Nombre personalizado de la Capa
@@ -77,6 +92,21 @@ const otrosConfig = {
     },
     sistema_areas_protegidas: {
       url: "sistema_areas_protegidas.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "sistema_areas_protegidas",
+          urlTemplate: "/tiles/sistema_areas_protegidas/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/sistema_areas_protegidas/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "sistema_areas_protegidas.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "TERRITORIO", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Sistema Nacional de Areas Protegidas", // Nombre personalizado de la Capa

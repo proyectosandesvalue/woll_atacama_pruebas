@@ -276,6 +276,21 @@ const planificacionConfig = {
     },
     prc_caldera: {
       url: "prc_caldera.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "prc_caldera",
+          urlTemplate: "/tiles/prc_caldera/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/prc_caldera/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "prc_caldera.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Comunal - Caldera", // Nombre personalizado de la Capa

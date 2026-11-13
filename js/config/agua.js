@@ -254,6 +254,21 @@ const aguaConfig = {
     },
     desaladoras_acueductos: {
       url: "desaladoras_acueductos.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "desaladoras_acueductos",
+          urlTemplate: "/tiles/desaladoras_acueductos/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/desaladoras_acueductos/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "desaladoras_acueductos.geojson" },
+      },
       type: "line",
       nombrePersonalizado: "Plantas Desaladoras - Acueductos",
       atributo: "Obra",
@@ -457,6 +472,21 @@ const aguaConfig = {
     },
     territorios_operacionales: {
       url: "territorios_operacionales.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "territorios_operacionales",
+          urlTemplate: "/tiles/territorios_operacionales/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/territorios_operacionales/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "territorios_operacionales.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Territorios Operacionales Agua Potable",
       atributo: "EMPRESA",
@@ -487,6 +517,21 @@ const aguaConfig = {
     },
     lagunas_embalses: {
       url: "lagunas_embalses.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "id",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "lagunas_embalses",
+          urlTemplate: "/tiles/lagunas_embalses/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/lagunas_embalses/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "lagunas_embalses.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Lagunas, Tranques y Embalses",
       atributo: "REGION",
@@ -519,6 +564,21 @@ const aguaConfig = {
     },
     salares: {
       url: "salares.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "salares",
+          urlTemplate: "/tiles/salares/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/salares/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "salares.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Salares",
       atributo: "Descripcio",
@@ -602,6 +662,21 @@ const aguaConfig = {
     },
     glaciares: {
       url: "glaciares.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "id",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "glaciares",
+          urlTemplate: "/tiles/glaciares/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/glaciares/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "glaciares.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Glaciares",
       atributo: "COD_REG",
@@ -686,6 +761,21 @@ const aguaConfig = {
     },
     acuiferos: {
       url: "acuiferos.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "acuiferos",
+          urlTemplate: "/tiles/acuiferos/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/acuiferos/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 13,
+        },
+        fallback: { type: "geojson", url: "acuiferos.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Acuiferos SHAC",
       atributo: "COD_REG",

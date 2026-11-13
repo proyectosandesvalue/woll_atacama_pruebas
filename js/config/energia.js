@@ -505,6 +505,21 @@ const energiaConfig = {
     },
     energia_potencial_solar_csp: {
       url: "energia_potencial_solar_csp.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "id",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "energia_potencial_solar_csp",
+          urlTemplate: "/tiles/energia_potencial_solar_csp/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/energia_potencial_solar_csp/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "energia_potencial_solar_csp.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Generacion Potencial Energia Solar CSP 2021",
       atributo: "REGION",
@@ -535,6 +550,21 @@ const energiaConfig = {
     },
     energia_potencial_eolico: {
       url: "energia_potencial_eolico.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "id",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "energia_potencial_eolico",
+          urlTemplate: "/tiles/energia_potencial_eolico/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/energia_potencial_eolico/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "energia_potencial_eolico.geojson" },
+      },
       type: "polygon",
       nombrePersonalizado: "Generacion Potencial Energia Eolica 2021",
       atributo: "REGION",
