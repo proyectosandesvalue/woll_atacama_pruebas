@@ -80,6 +80,19 @@ simplificación por zoom y candidatos calculados por cobertura real de features
 6. **Generación offline:** una capa regional típica tarda 20–100 s; 71 capas
    caben en una ventana de mantenimiento.
 
+### 4.1. Prueba preliminar de Nginx
+
+`ab -n 2000 -c 50` sobre un tile de `borde_costero` (1,5 KB) en el stack local:
+
+| Métrica | Valor |
+|---|---:|
+| Requests/segundo | 6.502 |
+| Tiempo medio por request | 7,7 ms (concurrente) |
+| Fallos | 0 |
+
+No reemplaza la prueba de carga del Sprint 30 (mezcla API + DB + chat), pero
+confirma que servir tiles estáticos no es el cuello de botella.
+
 ## 5. Estimación de disco
 
 Al cierre de la corrida completa se registra el total en `08-G` y en el
@@ -110,7 +123,7 @@ tiempo de generación. Nginx sirve archivos estáticos sin tocar PostgreSQL.
 - [ ] Línea base en navegador (bytes y tiempo de las 3 capas de referencia, sin/con caché).
 - [ ] Prueba de cliente de tiles en el visor y convivencia con glify (M4, ADR 015).
 - [ ] Cluster/heatmap cliente con 523 estaciones y 920 derechos (memoria y FPS).
-- [ ] Prueba de carga de tiles estáticos con 25/50 usuarios.
+- [x] Prueba preliminar de tiles estáticos con 50 conexiones (6.502 req/s, 0 fallos); falta la mezcla con API/DB del Sprint 30.
 - [ ] ADR 012/013/015 con las mediciones finales.
 
 ## 8. Cierre
