@@ -84,17 +84,17 @@ simplificación por zoom y candidatos calculados por cobertura real de features
 
 Lighthouse sobre el visor local (2026-11-13, sin emulación de dispositivo):
 
-| Categoría | Score |
-|---|---:|
-| Accesibilidad | 0.85 |
-| Buenas prácticas | 0.83 |
-| SEO | 0.50 |
+| Categoría | Score inicial | Score tras fixes |
+|---|---:|---:|
+| Accesibilidad | 0.85 | **0.97** |
+| Buenas prácticas | 0.83 | 0.83 |
+| SEO | 0.50 | **1.00** |
 
-Hallazgos principales: imágenes sin `alt`, orden de encabezados, labels de
-formularios, targets táctiles chicos y falta de `meta description`/`robots.txt`.
-Se agregaron `meta description` y `robots.txt`; el resto queda para el Sprint 28
-(accesibilidad) y 22 (documentación/SEO). El canvas del mapa y los clusters no
-son navegables por teclado: se documenta como limitación conocida.
+Se corrigieron encabezados de leyenda (h6 → h2), `aria-label` de los sliders de
+opacidad, `alt` de iconos de leyenda, `meta description` y `robots.txt`. Quedan
+`image-aspect-ratio` y `target-size` en los marcadores del mapa (Leaflet los
+redimensiona/overlapan): se abordan en el Sprint 28. El canvas del mapa y los
+clusters no son navegables por teclado; también queda para 28.
 
 ### 4.2. Prueba preliminar de Nginx
 

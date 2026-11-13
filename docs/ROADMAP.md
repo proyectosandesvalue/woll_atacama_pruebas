@@ -85,7 +85,7 @@
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
 | 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 parcial (26-E v1 ✅, 26-G ✅, 26-J ✅, 26-K diferido; 26-F/H/I pendientes) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | 🔶 parcial (CI base ✅; deploy/rollback pendientes) | alta | 7-8h | 26-D |
-| 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
+| 28 | Seguridad del frontend y dependencias | 🔶 parcial (accesibilidad 0.97/SEO 1.00; CSP y dependencias pendientes) | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
 | 30 | Pruebas de aceptación técnica | 🔶 parcial (gate 08 automatizado ✅; resto pendiente) | alta | 16h | 26, 27 |
 | 31 | Observabilidad y operación | ⏳ pending | alta | 7-8h | 26 |

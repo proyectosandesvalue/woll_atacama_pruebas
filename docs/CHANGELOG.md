@@ -92,6 +92,7 @@
 - Sprint 25 cerrado (25-A/B/C/D/E/F); baseline de latencia y decisión de streaming documentadas.
 
 ### Fixed
+- **Accesibilidad del visor:** leyendas con `h2` (antes h6 fuera de orden), `aria-label` en sliders de opacidad, `alt` de iconos de leyenda, `meta description` y `robots.txt`. Lighthouse: accesibilidad 0.85 → 0.97, SEO 0.50 → 1.00. Quedan aspect-ratio/target-size de marcadores del mapa para el Sprint 28.
 - **“Ver tabla de Atributos” no abría la tabla:** el botón existía en el menú de capa pero `layerItem.js` no le había asociado el listener. Se agregó.
 - **`leaflet.vectorgrid` con Leaflet 1.9:** la librería llamaba a `L.DomEvent.fakeStop` (eliminado en 1.9), lo que lanzaba `TypeError` y cerraba el sidebar al hacer clic en un feature. Se parcheó el bundle y se agregó un shim.
 - **Popup de `borde_costero`:** el campo `"Origen Data"` no coincidía con la propiedad real `"Origen Dato"`; se corrigió en la config.
