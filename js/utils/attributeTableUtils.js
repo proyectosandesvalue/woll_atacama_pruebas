@@ -25,6 +25,8 @@ import {
   obtenerNombrePersonalizado,
   getCapaConfig,
 } from "./configUtils.js";
+import { buildFeatureFilter, hasLayerApi } from "./layerApiUtils.js";
+import { createServerTable } from "./serverTable.js";
 
 const log = createContextLogger("AttributeTable");
 
@@ -52,6 +54,7 @@ let searchQuery = "";
 let searchField = null;
 let preSearchFeatures = [];
 let columnasBusqueda = [];
+let serverTableController = null;
 
 const normalizedKeysCache = new Map();
 const uniqueValuesCache = new Map();
@@ -283,6 +286,10 @@ function renderSearchBar() {
 }
 
 function performSearch() {
+  if (serverTableController) {
+    serverTableController.search(searchQuery, searchField || "");
+    return;
+  }
   if (!searchQuery.trim()) {
     if (preSearchFeatures.length > 0) {
       currentFeatures = preSearchFeatures;
@@ -326,6 +333,19 @@ function performSearch() {
 function clearSearch() {
   searchQuery = "";
   searchField = null;
+  if (serverTableController) {
+    serverTableController.clearSearch();
+    const input = document.querySelector(".search-input");
+    const select = document.querySelector(".search-field-select");
+    if (input) input.value = "";
+    if (select) select.value = "";
+    searchActive = false;
+    const existingBar = document.getElementById("attribute-table-search-bar");
+    if (existingBar) existingBar.remove();
+    const searchBtn = document.getElementById("searchAttributeTableBtn");
+    if (searchBtn) searchBtn.style.color = "";
+    return;
+  }
   if (preSearchFeatures.length > 0) {
     currentFeatures = preSearchFeatures;
     preSearchFeatures = [];
@@ -411,6 +431,10 @@ function initPanelResize() {
 
 export async function openAttributeTable(capaNombre, temasConfig) {
   initAttributeTable();
+  if (serverTableController) {
+    serverTableController.destroy();
+    serverTableController = null;
+  }
 
   currentCapaNombre = capaNombre;
   currentTemasConfig = temasConfig;
@@ -461,6 +485,27 @@ export async function openAttributeTable(capaNombre, temasConfig) {
 
   if (loadingEl) loadingEl.style.display = "flex";
   if (panel) panel.classList.add("show");
+
+  // Capa con tiles + API: tabla paginada/buscada en el servidor.
+  if (configCapa?.source?.type === "postgis" && (await hasLayerApi(capaNombre))) {
+    currentFeatures = [];
+    serverTableController = createServerTable({
+      capaNombre,
+      configCapa,
+      elements: { headEl, bodyEl, countEl, loadingEl },
+      getFilter: () => buildFeatureFilter(capaNombre),
+      onFeatures: (features) => {
+        currentFeatures = features;
+      },
+      onColumns: (columns, labels) => {
+        columnasBusqueda = columns.map((key, index) => ({
+          key,
+          label: labels[index] || key,
+        }));
+      },
+    });
+    return;
+  }
 
   try {
     let geojson = getLayerData(capaNombre);
@@ -694,6 +739,10 @@ export async function openAttributeTable(capaNombre, temasConfig) {
 }
 
 export function closeAttributeTable() {
+  if (serverTableController) {
+    serverTableController.destroy();
+    serverTableController = null;
+  }
   if (panel) panel.classList.remove("show");
 
   if (sidebarRight && sidebarRightWasVisible) {
@@ -1095,6 +1144,11 @@ function refreshAttributeTableIfOpen(capaNombre) {
   if (!panel || !panel.classList.contains("show")) return;
   if (capaNombre && currentCapaNombre !== capaNombre) return;
   if (!currentCapaNombre || !currentTemasConfig) return;
+
+  if (serverTableController) {
+    serverTableController.refresh();
+    return;
+  }
 
   // Preservar scroll (vertical y horizontal) de la tabla.
   const tableResponsive = panel.querySelector(".table-responsive");

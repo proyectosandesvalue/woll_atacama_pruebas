@@ -7,6 +7,7 @@ import { appState, getDataFilter } from "../store/appState.js";
 import { ensureLayerData } from "./layerUtils.js";
 import { createContextLogger } from "./logger.js";
 import { encontrarTemaParaCapa, obtenerNombrePersonalizado, getCapaConfig } from "./configUtils.js";
+import { buildFeatureFilter, hasLayerApi } from "./layerApiUtils.js";
 
 const log = createContextLogger('DownloadUtils');
 const modal = document.getElementById('downloadModal');
@@ -97,25 +98,6 @@ export function closeDownloadModal() {
 }
 
 /**
- * Convierte el `dataFilter` del visor a la especificación del endpoint.
- * @param {string} capaNombre
- * @returns {string|null}
- */
-function buildExportFilter(capaNombre) {
-    const dataFilter = getDataFilter(capaNombre);
-    if (!dataFilter || dataFilter.size === 0) return null;
-    const conditions = [];
-    dataFilter.forEach((values, column) => {
-        if (values && values.size > 0) {
-            conditions.push({ column, operator: "in", value: [...values] });
-        }
-    });
-    return conditions.length > 0
-        ? JSON.stringify({ op: "and", conditions })
-        : null;
-}
-
-/**
  * Columnas y encabezados visibles de la tabla para el CSV.
  * @param {object} configCapa
  * @returns {{columns: string[]|null, labels: string[]|null}}
@@ -137,28 +119,6 @@ function getExportColumns(configCapa) {
     };
 }
 
-const layerApiCache = new Map();
-
-/**
- * ¿El servidor Node expone el endpoint de capas? En Vercel no existe.
- * @param {string} capaNombre
- * @returns {Promise<boolean>}
- */
-async function hasLayerApi(capaNombre) {
-    if (!layerApiCache.has(capaNombre)) {
-        try {
-            const res = await fetch(
-                `/api/layer-features?layer_id=${encodeURIComponent(capaNombre)}&limit=1`,
-                { headers: { Accept: "application/json" } }
-            );
-            layerApiCache.set(capaNombre, res.ok);
-        } catch {
-            layerApiCache.set(capaNombre, false);
-        }
-    }
-    return layerApiCache.get(capaNombre);
-}
-
 /**
  * URL de exportación desde PostGIS, con filtro y columnas visibles.
  * @param {string} capaNombre
@@ -168,8 +128,8 @@ async function hasLayerApi(capaNombre) {
  */
 function buildExportUrl(capaNombre, format, configCapa) {
     const params = new URLSearchParams({ layer_id: capaNombre, format });
-    const filter = buildExportFilter(capaNombre);
-    if (filter) params.set("filter", filter);
+    const filter = buildFeatureFilter(capaNombre);
+    if (filter) params.set("filter", JSON.stringify(filter));
 
     if (format === "csv") {
         const { columns, labels } = getExportColumns(configCapa);
