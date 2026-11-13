@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 08-C |
-| **Estado de la spec** | EN EJECUCIÓN (14 de 41 capas no-punto con `source`) |
+| **Estado de la spec** | EN EJECUCIÓN (29 de 40 capas no-punto configuradas; `comunas_poligonos` sin estilo) |
 | **Tamaño** | Grande (16-24 h) |
 | **Dependencias** | 08-B (cliente y endpoint), 08-A/08-G (tiles publicados) |
 | **Última revisión** | 2026-11-13 |
@@ -84,8 +84,31 @@ Reglas:
 | Energía | `energia_linea_transmision` | 20261005 | 14 | 107 | 2.912 |
 | Energía | `energia_potencial_fotovoltaico` | 20261005 | 13 | 9 | 3.222 |
 
-**Total:** 14 capas, 62.053 tiles, ~90 MB lógicos. Faltan 27 capas no-punto
-(polígonos/líneas) y las 27 capas de puntos quedan en GeoJSON/API.
+**Segundo lote (2026-11-13):**
+
+| Dimensión | Capa | Features | Tiles |
+|---|---|---:|---:|
+| Agua | `acuiferos` | 57 | 5.230 |
+| Agua | `glaciares` | 863 | 832 |
+| Agua | `lagunas_embalses` | 66 | 345 |
+| Agua | `salares` | 14 | 597 |
+| Agua | `territorios_operacionales` | 10 | 166 |
+| Agua | `desaladoras_acueductos` | 8 | 375 |
+| Otros | `bienes_nacionales_protegidos` | 6 | 286 |
+| Otros | `sistema_areas_protegidas` | 5 | 963 |
+| Agricultura | `catastro_especies_frutales` | 2.662 | 479 |
+| Agricultura | `red_canales` | 501 | 648 |
+| Agricultura | `limite_comunal_linea` | 9 | 1.672 |
+| Energía | `energia_potencial_eolico` | 5 | 152 |
+| Energía | `energia_potencial_solar_csp` | 6 | 3.061 |
+| Planificación | `prc_caldera` | 62 | 238 |
+| Minería | `red_ferroviaria` | 132 | 818 |
+
+**Total:** 29 capas no-punto con `source`, 79.912 tiles y 141 MB lógicos
+(suma de manifests). Quedan 12 capas fuera: 9 PRC y `limites_urbanos` (sus
+`popupCampos` usan nombres viejos que no coinciden con PostGIS),
+`distritos_mineros` (un campo) y `comunas_poligonos` (sin bloque de estilo).
+Las 27 capas de puntos quedan en GeoJSON/API.
 
 ## 5. Criterios de aceptación por capa
 
@@ -101,13 +124,14 @@ Reglas:
 | CA-8 | Quitar `source` devuelve la capa al GeoJSON sin tocar código |
 | CA-9 | Sin errores de consola (los 404 de tiles vacíos son esperados) |
 
-## 6. Orden recomendado
+## 6. Pendiente
 
-1. **Agua** (resto): `lagunas_embalses`, `salares`, `glaciares`, `acuiferos`.
-2. **Planificación**: `comunas_poligonos`, `limites_urbanos`, PRC.
-3. **Energía**: líneas y potenciales restantes.
-4. **Riesgos/otros**: incendios, bienes nacionales, áreas protegidas.
-5. **Puntos**: no se migran a tiles; solo se valida la API de valores.
+1. **PRC y límites urbanos**: alinear `popupCampos` con las columnas PostGIS
+   (`Nº Decreto`, `Fecha Decreto`, `Link Decreto`, etc.) y recién migrar.
+2. **`distritos_mineros`**: corregir `Superficie en KM` y migrar.
+3. **`comunas_poligonos`**: no tiene bloque de estilo; definir uno o cargarla
+   como capa base.
+4. **Puntos**: no se migran a tiles; solo se valida la API de valores.
 
 ## 7. Riesgos
 
@@ -126,6 +150,6 @@ quedan en disco y el endpoint no se usa. No hay migración de datos.
 
 ## 9. Cierre
 
-- Capas migradas: 14/41.
-- Horas reales: 2 (piloto + lote inicial).
-- Pendiente: 27 capas no-punto y la validación manual de cada una.
+- Capas migradas: 29/40 configuradas.
+- Horas reales: 3 (piloto + dos lotes).
+- Pendiente: 11 capas con popup desalineado + `comunas_poligonos`; validación visual de las 15 del segundo lote.
