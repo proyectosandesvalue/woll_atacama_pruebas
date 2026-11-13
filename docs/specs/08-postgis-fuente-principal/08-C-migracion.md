@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 08-C |
-| **Estado de la spec** | EN EJECUCIÓN (29 de 40 capas no-punto configuradas; `comunas_poligonos` sin estilo) |
+| **Estado de la spec** | EN EJECUCIÓN (39 de 40 capas no-punto configuradas; `comunas_poligonos` sin estilo) |
 | **Tamaño** | Grande (16-24 h) |
 | **Dependencias** | 08-B (cliente y endpoint), 08-A/08-G (tiles publicados) |
 | **Última revisión** | 2026-11-13 |
@@ -103,12 +103,14 @@ Reglas:
 | Energía | `energia_potencial_solar_csp` | 6 | 3.061 |
 | Planificación | `prc_caldera` | 62 | 238 |
 | Minería | `red_ferroviaria` | 132 | 818 |
+| Planificación | 8 PRC (Chañaral, El Salado, Flamenco, Portofino, Copiapó, Diego de Almagro, Freirina, Vallenar) | 214 | 212 |
+| Planificación | `limites_urbanos` | 13 | 399 |
+| Minería | `distritos_mineros` | 3 | 1.763 |
 
-**Total:** 29 capas no-punto con `source`, 79.912 tiles y 141 MB lógicos
-(suma de manifests). Quedan 12 capas fuera: 9 PRC y `limites_urbanos` (sus
-`popupCampos` usan nombres viejos que no coinciden con PostGIS),
-`distritos_mineros` (un campo) y `comunas_poligonos` (sin bloque de estilo).
-Las 27 capas de puntos quedan en GeoJSON/API.
+**Total:** 39 capas no-punto con `source`, 82.286 tiles y 143,8 MB lógicos
+(suma de manifests). Quedan 2 capas fuera: `prc_huasco` (columnas ambiguas
+`P_DO`/`N_DOC`/`T_DO`) y `comunas_poligonos` (sin bloque de estilo). Las 27
+capas de puntos quedan en GeoJSON/API.
 
 ## 5. Criterios de aceptación por capa
 
@@ -126,12 +128,11 @@ Las 27 capas de puntos quedan en GeoJSON/API.
 
 ## 6. Pendiente
 
-1. **PRC y límites urbanos**: alinear `popupCampos` con las columnas PostGIS
-   (`Nº Decreto`, `Fecha Decreto`, `Link Decreto`, etc.) y recién migrar.
-2. **`distritos_mineros`**: corregir `Superficie en KM` y migrar.
-3. **`comunas_poligonos`**: no tiene bloque de estilo; definir uno o cargarla
+1. **`prc_huasco`**: definir el mapeo de `P_DO`/`N_DOC`/`T_DO` (fecha, número y
+   tipo de documento) antes de migrar.
+2. **`comunas_poligonos`**: no tiene bloque de estilo; definir uno o cargarla
    como capa base.
-4. **Puntos**: no se migran a tiles; solo se valida la API de valores.
+3. **Puntos**: no se migran a tiles; solo se valida la API de valores.
 
 ## 7. Riesgos
 
@@ -150,6 +151,6 @@ quedan en disco y el endpoint no se usa. No hay migración de datos.
 
 ## 9. Cierre
 
-- Capas migradas: 29/40 configuradas.
-- Horas reales: 3 (piloto + dos lotes).
-- Pendiente: 11 capas con popup desalineado + `comunas_poligonos`; validación visual de las 15 del segundo lote.
+- Capas migradas: 39/40 configuradas.
+- Horas reales: 3,5 (piloto + tres lotes).
+- Pendiente: `prc_huasco` (columnas ambiguas) y `comunas_poligonos` (sin estilo); validación visual de las capas del segundo/tercer lote.

@@ -392,7 +392,7 @@ Navegador (cliente de tiles, Sprint 08-B)
   devuelve propiedades desde PostGIS sin geometría. Si la API no responde, el
   visor cae al GeoJSON de respaldo. La paginación y la búsqueda server-side
   llegan en 08-D.
-- Capas migradas (08-B/08-C): 29 capas no-punto con `source.type: "postgis"`; el resto sigue en GeoJSON. Los puntos quedan en GeoJSON + API.
+- Capas migradas (08-B/08-C): 39 capas no-punto con `source.type: "postgis"`; quedan `prc_huasco` y `comunas_poligonos`. Los puntos quedan en GeoJSON + API.
 - Detalle: `docs/specs/08-postgis-fuente-principal/08-A-pipeline-tiles.md`,
   `08-B-piloto.md` y `08-G-ciclo-vida-capas.md`.
 
