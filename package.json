@@ -41,7 +41,8 @@
     "dev:proxy": "node --env-file=.env.staging scripts/dev-proxy.mjs",
     "dev:api": "node --env-file=.env.local --watch server/index.js",
     "start": "node server/index.js",
-    "dev": "bash scripts/dev.sh"
+    "dev": "bash scripts/dev.sh",
+    "acceptance:08": "node scripts/acceptance-sprint08.mjs"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
