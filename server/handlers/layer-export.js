@@ -153,6 +153,13 @@ export function escapeCSV(value) {
   return `"${str.replace(/"/g, '""')}"`;
 }
 
+export function jsonProperties(columns) {
+  if (columns.length === 0) return "'{}'::jsonb";
+  return `jsonb_build_object(${columns
+    .map((column) => `${quoteLiteral(column)}, t.${quoteIdent(column)}`)
+    .join(", ")})`;
+}
+
 export function pickOrderColumn(columns) {
   for (const candidate of ["fid", "gid", "id"]) {
     if (columns.includes(candidate)) return candidate;
@@ -227,7 +234,7 @@ function geojsonBatches(db, meta, filter) {
         `SELECT jsonb_build_object(
                   'type', 'Feature',
                   'geometry', ST_AsGeoJSON(t.${quoteIdent(meta.geomColumn)})::jsonb,
-                  'properties', to_jsonb(t) - ${quoteLiteral(meta.geomColumn)}
+                  'properties', ${jsonProperties(meta.columns)}
                 ) AS feature
            FROM ${table} t
            ${filter.where}

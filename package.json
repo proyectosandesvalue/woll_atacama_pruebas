@@ -42,7 +42,8 @@
     "dev:api": "node --env-file=.env.local --watch server/index.js",
     "start": "node server/index.js",
     "dev": "bash scripts/dev.sh",
-    "acceptance:08": "node scripts/acceptance-sprint08.mjs"
+    "acceptance:08": "node scripts/acceptance-sprint08.mjs",
+    "load:30": "node scripts/load-test-sprint30.mjs"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
