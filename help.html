@@ -70,62 +70,62 @@
         <!-- SIDEBAR NAV -->
         <nav class="help-nav" id="helpNav">
             <div class="help-nav-section-title">Introducción</div>
-            <div class="help-nav-link active" data-target="intro" onclick="scrollToSection('intro', this)">
+            <div class="help-nav-link active" data-target="intro">
                 <span class="material-symbols-outlined">info</span>
                 Introducción y Visión General
             </div>
-            <div class="help-nav-link" data-target="interfaz" onclick="scrollToSection('interfaz', this)">
+            <div class="help-nav-link" data-target="interfaz">
                 <span class="material-symbols-outlined">dashboard</span>
                 Interfaz Principal
             </div>
             <div class="help-nav-section-title">Funciones</div>
-            <div class="help-nav-link" data-target="dimensiones" onclick="scrollToSection('dimensiones', this)">
+            <div class="help-nav-link" data-target="dimensiones">
                 <span class="material-symbols-outlined">layers</span>
                 Dimensiones y Capas
             </div>
-            <div class="help-nav-link" data-target="navegacion" onclick="scrollToSection('navegacion', this)">
+            <div class="help-nav-link" data-target="navegacion">
                 <span class="material-symbols-outlined">near_me</span>
                 Navegación en el Mapa
             </div>
-            <div class="help-nav-link" data-target="capas-base" onclick="scrollToSection('capas-base', this)">
+            <div class="help-nav-link" data-target="capas-base">
                 <span class="material-symbols-outlined">map</span>
                 Capas Base
             </div>
-            <div class="help-nav-link" data-target="leyenda" onclick="scrollToSection('leyenda', this)">
+            <div class="help-nav-link" data-target="leyenda">
                 <span class="material-symbols-outlined">legend_toggle</span>
                 Leyenda
             </div>
-            <div class="help-nav-link" data-target="buscador" onclick="scrollToSection('buscador', this)">
+            <div class="help-nav-link" data-target="buscador">
                 <span class="material-symbols-outlined">manage_search</span>
                 Buscador Geoespacial
             </div>
-            <div class="help-nav-link" data-target="popups" onclick="scrollToSection('popups', this)">
+            <div class="help-nav-link" data-target="popups">
                 <span class="material-symbols-outlined">info</span>
                 Popups e Información
             </div>
-            <div class="help-nav-link" data-target="tabla-atributos" onclick="scrollToSection('tabla-atributos', this)">
+            <div class="help-nav-link" data-target="tabla-atributos">
                 <span class="material-symbols-outlined">table_chart</span>
                 Tabla de Atributos
             </div>
-            <div class="help-nav-link" data-target="descargas" onclick="scrollToSection('descargas', this)">
+            <div class="help-nav-link" data-target="descargas">
                 <span class="material-symbols-outlined">download</span>
                 Descarga de Capas
             </div>
-            <div class="help-nav-link" data-target="cluster-heatmap" onclick="scrollToSection('cluster-heatmap', this)">
+            <div class="help-nav-link" data-target="cluster-heatmap">
                 <span class="material-symbols-outlined">grid_view</span>
                 Modos Cluster y Mapa de Calor
             </div>
             <div class="help-nav-section-title">Personalización</div>
-            <div class="help-nav-link" data-target="personalizacion" onclick="scrollToSection('personalizacion', this)">
+            <div class="help-nav-link" data-target="personalizacion">
                 <span class="material-symbols-outlined">tune</span>
                 Personalización
             </div>
-            <div class="help-nav-link" data-target="mobile" onclick="scrollToSection('mobile', this)">
+            <div class="help-nav-link" data-target="mobile">
                 <span class="material-symbols-outlined">smartphone</span>
                 Uso en Móvil
             </div>
             <div class="help-nav-section-title">Soporte</div>
-            <div class="help-nav-link" data-target="faq" onclick="scrollToSection('faq', this)">
+            <div class="help-nav-link" data-target="faq">
                 <span class="material-symbols-outlined">quiz</span>
                 Preguntas Frecuentes
             </div>
@@ -147,20 +147,17 @@
                         funcionalidades avanzadas.
                     </p>
                     <div class="quick-links">
-                        <div class="quick-link-card"
-                            onclick="scrollToSection('dimensiones', document.querySelector('[data-target=dimensiones]'))">
+                        <div class="quick-link-card" data-target="dimensiones">
                             <span class="material-symbols-outlined">layers</span>
                             <strong>Activar capas</strong>
                             <span class="desc">Aprende a activar dimensiones y capas temáticas</span>
                         </div>
-                        <div class="quick-link-card"
-                            onclick="scrollToSection('buscador', document.querySelector('[data-target=buscador]'))">
+                        <div class="quick-link-card" data-target="buscador">
                             <span class="material-symbols-outlined">manage_search</span>
                             <strong>Buscar elementos</strong>
                             <span class="desc">Localiza empresas, localidades y más con operadores avanzados</span>
                         </div>
-                        <div class="quick-link-card"
-                            onclick="scrollToSection('faq', document.querySelector('[data-target=faq]'))">
+                        <div class="quick-link-card" data-target="faq">
                             <span class="material-symbols-outlined">quiz</span>
                             <strong>Preguntas frecuentes</strong>
                             <span class="desc">Soluciones a los problemas más comunes</span>
@@ -1269,7 +1266,7 @@
                         <div class="help-section-icon"><span class="material-symbols-outlined">quiz</span></div>
                         <h2>Preguntas Frecuentes (FAQ)</h2>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">hourglass_empty</span>
                             <span class="faq-q-text">¿Por qué algunas capas tardan en cargarse?</span>
@@ -1285,7 +1282,7 @@
                             una conexión estándar.
                         </div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">touch_app</span>
                             <span class="faq-q-text">¿Por qué no veo información al hacer clic en el mapa?</span>
@@ -1306,7 +1303,7 @@
                             </ol>
                         </div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">schedule</span>
                             <span class="faq-q-text">¿Los datos del visor son en tiempo real?</span>
@@ -1320,7 +1317,7 @@
                             actualizada, consulte las fuentes institucionales originales indicadas en cada capa.
                         </div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">grid_view</span>
                             <span class="faq-q-text">¿Cómo cambio entre cluster y mapa de calor en una capa de
@@ -1334,7 +1331,7 @@
                             puede estar activo a la vez.
                         </div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">download</span>
                             <span class="faq-q-text">¿Puedo descargar los datos que veo en el mapa?</span>
@@ -1346,7 +1343,7 @@
                             (solo atributos, compatible con Excel).
                         </div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">table_chart</span>
                             <span class="faq-q-text">La tabla de atributos no muestra datos o se ve vacía</span>
@@ -1358,7 +1355,7 @@
                             el problema persiste, recarga la página y vuelve a intentarlo.
                         </div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">my_location</span>
                             <span class="faq-q-text">¿Por qué el visor me pide permiso de ubicación?</span>
@@ -1371,7 +1368,7 @@
                             El visor <strong>no almacena ni transmite</strong> su información de ubicación.
                         </div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">wifi_off</span>
                             <span class="faq-q-text">¿El visor funciona sin internet?</span>
@@ -1385,7 +1382,7 @@
                             cargada en una sesión, permanece disponible mientras no se recargue la página.
                         </div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">bug_report</span>
                             <span class="faq-q-text">¿Cómo reportar un error en la información del visor?</span>
@@ -1397,7 +1394,7 @@
                             bienvenida (botón ? en el encabezado del visor).
                         </div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">language</span>
                             <span class="faq-q-text">¿El visor funciona en todos los navegadores?</span>
@@ -1416,7 +1413,7 @@
                             No se garantiza el correcto funcionamiento en Internet Explorer o versiones muy antiguas.
                         </div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">code</span>
                             <span class="faq-q-text">¿Por qué veo capas en inglés o con códigos técnicos?</span>
@@ -1431,7 +1428,7 @@
                             indica en la pregunta anterior.
                         </div>
                     </div>
-                    <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-item">
                         <div class="faq-question">
                             <span class="material-symbols-outlined">share</span>
                             <span class="faq-q-text">¿Puedo compartir la vista actual del mapa con otra persona?</span>
@@ -1452,7 +1449,7 @@
     </div>
 
     <!-- Back to top -->
-    <button class="back-to-top" id="backToTop" onclick="scrollToTop()" title="Volver arriba">
+    <button class="back-to-top" id="backToTop" title="Volver arriba">
         <span class="material-symbols-outlined">arrow_upward</span>
     </button>
 

@@ -5,6 +5,7 @@ import { createContextLogger } from "../utils/logger.js";
 import { openAttributeTable, openFilterModal } from "../utils/attributeTableUtils.js";
 import { openDownloadModal } from "../utils/downloadUtils.js";
 import { escapeHtml } from "../utils/helpers.js";
+import { getBbox } from "../utils/geoUtils.js";
 import {
   cargarCapaIndividual,
   mostrarCapa,
@@ -397,16 +398,17 @@ export function crearElementoCapa(
           });
         } else {
           const geojsonData = appState.layers.geojsonData.get(capaNombre);
-          if (geojsonData && window.turf) {
+          if (geojsonData) {
             try {
-              const bbox = turf.bbox(geojsonData);
+              const bbox = getBbox(geojsonData);
+              if (!bbox) throw new Error("La capa no tiene coordenadas válidas.");
               const bounds = [
                 [bbox[1], bbox[0]],
                 [bbox[3], bbox[2]],
               ];
               appState.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
             } catch (err) {
-              log.error("Error calculando bbox con Turf:", err);
+              log.error("Error calculando el bbox de la capa:", err);
               alert("No se pudo calcular la extensión de la capa.");
             }
           } else {

@@ -32,6 +32,7 @@ import {
   getDataFilter,
 } from "../store/appState.js";
 import { createContextLogger } from "./logger.js";
+import { escapeHtml } from "./helpers.js";
 import { LayerLoadError, handleError } from "./errorHandler.js";
 import { shouldUseGlify, createGlifyLayer } from "./glifyAdapter.js";
 import { runWorkerTask } from "../workers/workerPool.js";
@@ -508,12 +509,12 @@ export async function cargarCapaIndividual(capaNombre, temaKey, temasConfig, isI
                 const content = document.getElementById("sidebarInfoContent");
 
                 if (sidebar && title && content) {
-                  title.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">info</span> ${nombre}`;
+                  title.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">info</span> ${escapeHtml(nombre)}`;
                   
                   content.innerHTML = `
                     <div class="custom-popup" style="padding: 4px;">
                       <p style="margin: 0 0 16px 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
-                        ${configCapa.descripcion}
+                        ${escapeHtml(configCapa.descripcion || "")}
                       </p>
                       <p style="margin: 0 0 12px 0; font-size: 0.75rem; color: var(--text-tertiary); line-height: 1.4; font-style: italic;">
                         Los índices cuantifican la ocurrencia de condiciones meteorológicas potencialmente adversas, calculadas a partir de la distribución diaria de variables atmosféricas.
@@ -521,10 +522,10 @@ export async function cargarCapaIndividual(capaNombre, temaKey, temasConfig, isI
                       
                       <div style="background: var(--bg-surface-2); padding: 16px; border-radius: 8px; border-left: 4px solid var(--color-brand-text); margin-bottom: 16px;">
                         <span style="display: block; font-size: 0.75rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">
-                          ${scenario ? scenario.label : scenarioKey}${seasonOpt && seasonOpt.value !== "annual" ? ` · ${seasonOpt.label}` : ""}
+                          ${escapeHtml(scenario ? scenario.label : scenarioKey)}${seasonOpt && seasonOpt.value !== "annual" ? ` · ${escapeHtml(seasonOpt.label)}` : ""}
                         </span>
                         <span style="font-size: 1.6rem; font-weight: 800; color: var(--color-brand-text);">
-                          ${isDelta && val > 0 ? "+" : ""}${Number(val).toFixed(2)} <span style="font-size: 1rem; font-weight: 600;">${displayUnit}</span>
+                          ${isDelta && val > 0 ? "+" : ""}${Number(val).toFixed(2)} <span style="font-size: 1rem; font-weight: 600;">${escapeHtml(displayUnit || "")}</span>
                         </span>
                       </div>
 
@@ -548,7 +549,7 @@ export async function cargarCapaIndividual(capaNombre, temaKey, temasConfig, isI
 
                       <div style="margin-top: 16px; padding: 12px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px;">
                         <span style="display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px;">Sobre el escenario</span>
-                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;">${scenarioDesc}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;">${escapeHtml(scenarioDesc)}</span>
                       </div>
                       <p style="margin-top: 20px; font-size: 0.7rem; color: var(--text-tertiary); text-align: center; line-height: 1.4;">
                         Fuente: <a href="https://arclim.mma.gob.cl/" target="_blank" style="color: var(--color-brand-text); text-decoration: none; font-weight: 600;">ARClim (MMA)</a><br>

@@ -2,6 +2,7 @@ import { appState, isLayerLoaded } from "../store/appState.js";
 import { logger } from "../utils/logger.js";
 import allTemasConfig from "../config/allTemasConfig.js";
 import { fetchLayerData } from "../utils/layerUtils.js";
+import { getBbox } from "../utils/geoUtils.js";
 
 export const CONFIG = {
     MAX_VISIBLE_RESULTS: 20,
@@ -314,8 +315,8 @@ export function addToIndex(feature, capaName, layerInstance = null, temaKey = nu
         center = bounds.getCenter();
     } else if (feature.geometry) {
         try {
-            if (window.turf) {
-                const bbox = window.turf.bbox(feature);
+            const bbox = getBbox(feature);
+            if (bbox) {
                 bounds = L.latLngBounds([bbox[1], bbox[0]], [bbox[3], bbox[2]]);
                 center = bounds.getCenter();
             }

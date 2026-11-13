@@ -26,6 +26,7 @@ import {
   getCapaConfig,
 } from "./configUtils.js";
 import { buildFeatureFilter, hasLayerApi } from "./layerApiUtils.js";
+import { getBbox } from "./geoUtils.js";
 import { createServerTable } from "./serverTable.js";
 
 const log = createContextLogger("AttributeTable");
@@ -135,9 +136,10 @@ bodyEl.addEventListener("click", async (e) => {
     return;
   }
 
-  if (window.turf && appState.map) {
+  if (appState.map) {
     try {
-      const bbox = turf.bbox(featureGeometry);
+      const bbox = getBbox(featureGeometry);
+      if (!bbox) throw new Error("La geometría no tiene coordenadas válidas.");
       const bounds = [
         [bbox[1], bbox[0]],
         [bbox[3], bbox[2]],
@@ -170,7 +172,7 @@ bodyEl.addEventListener("click", async (e) => {
         },
       }).addTo(appState.map);
     } catch (err) {
-      log.error("Error calculando bbox con Turf:", err);
+      log.error("Error calculando el bbox del feature:", err);
     }
   }
 });

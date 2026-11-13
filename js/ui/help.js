@@ -32,8 +32,15 @@ function scrollToSection(id, el) {
     document.getElementById('helpNav')?.classList.remove('mobile-open');
 }
 
-// Exponer para los onclick inline del HTML
-window.scrollToSection = scrollToSection;
+// Navegación por data-target (sin onclick inline, compatible con CSP)
+document.querySelectorAll('.help-nav-link, .quick-link-card').forEach((el) => {
+    const target = el.dataset.target;
+    if (!target) return;
+    el.addEventListener('click', () => {
+        const navEl = el.classList.contains('help-nav-link') ? el : null;
+        scrollToSection(target, navEl);
+    });
+});
 
 // ── Active section on scroll ──
 const contentWrapper = document.getElementById('helpContentWrapper');
@@ -70,13 +77,12 @@ function scrollToTop() {
     const contentWrapper = document.getElementById('helpContentWrapper');
     if (contentWrapper) contentWrapper.scrollTo({ top: 0, behavior: 'smooth' });
 }
-window.scrollToTop = scrollToTop;
+document.getElementById('backToTop')?.addEventListener('click', scrollToTop);
 
 // ── FAQ toggle ──
-function toggleFaq(item) {
-    item.classList.toggle('open');
-}
-window.toggleFaq = toggleFaq;
+document.querySelectorAll('.faq-item').forEach((item) => {
+    item.addEventListener('click', () => item.classList.toggle('open'));
+});
 
 // ── Search within help ──
 const searchInput = document.getElementById('helpSearch');

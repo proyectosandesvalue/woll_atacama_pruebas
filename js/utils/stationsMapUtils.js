@@ -1,3 +1,5 @@
+import { escapeHtml } from "./helpers.js";
+
 /**
  * Utilidades para el mapa dinámico de estaciones.
  *
@@ -199,7 +201,7 @@ export async function loadLayer(layerId, variable, map, options = {}) {
           tooltipText += ` (hace ${s.dias_diferencia}d)`;
         }
 
-        marker.bindTooltip(tooltipText, {
+        marker.bindTooltip(escapeHtml(tooltipText), {
           permanent: true,
           direction: "top",
           className: "station-label",
@@ -273,7 +275,7 @@ export function updateLegend() {
     const layerBlock = document.createElement("div");
 
     if (!config.scale || config.scale.length === 0) {
-      layerBlock.innerHTML = `<div class="legend-title">${config.label}${date ? ` · ${date}` : ""}</div>`;
+      layerBlock.innerHTML = `<div class="legend-title">${escapeHtml(config.label)}${date ? ` · ${escapeHtml(date)}` : ""}</div>`;
     } else {
       const min = config.scale[0][0];
       const max = config.scale[config.scale.length - 1][0];
@@ -284,7 +286,7 @@ export function updateLegend() {
       }).join(", ");
       const labels = config.scale.map((s) => `<span>${s[0]}</span>`).join("");
       layerBlock.innerHTML = `
-        <div class="legend-title">${config.label}${date ? ` · ${date}` : ""}</div>
+        <div class="legend-title">${escapeHtml(config.label)}${date ? ` · ${escapeHtml(date)}` : ""}</div>
         <div class="legend-gradient-bar" style="background: linear-gradient(to right, ${gradientStops});"></div>
         <div class="bar-label">${labels}</div>
       `;
@@ -304,7 +306,7 @@ async function openStationSidebar(station) {
 
   if (!sidebar || !title || !content) return;
 
-  title.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">info</span> ${station.nombre_estacion}`;
+  title.innerHTML = `<span class="material-symbols-outlined" style="font-size: 18px;">info</span> ${escapeHtml(station.nombre_estacion)}`;
   content.innerHTML = `<div class="custom-popup"><em>Cargando datos...</em></div>`;
   sidebar.classList.add("active");
 
@@ -346,7 +348,7 @@ async function openStationSidebar(station) {
     if (!displayValues || displayValues.length === 0) {
       content.innerHTML = `
         <div class="custom-popup">
-          <p><strong>${station.comuna} · ${tipoTexto}</strong></p>
+          <p><strong>${escapeHtml(station.comuna)} · ${escapeHtml(tipoTexto)}</strong></p>
           <p style="margin-top: 15px; padding: 10px; background: var(--bg-surface-2); border-left: 3px solid var(--color-warning); border-radius: 4px;">
             <em>No hay datos disponibles para esta capa en esta estación.</em>
           </p>
@@ -387,7 +389,7 @@ async function openStationSidebar(station) {
 
     // 4. Construir tabla (solo con los últimos valores)
     let html = `<div class="custom-popup">
-      <p><strong>${station.comuna} · ${tipoTexto}</strong></p>
+      <p><strong>${escapeHtml(station.comuna)} · ${escapeHtml(tipoTexto)}</strong></p>
       <table style="width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 10px;">
         <thead>
           <tr style="border-bottom: 1px solid var(--border-subtle); text-align: left; color: var(--text-secondary);">
@@ -411,11 +413,11 @@ async function openStationSidebar(station) {
       const tooltip = getTooltip(v.indicator_id);
 
       html += `<tr style="border-bottom: 1px solid var(--border-subtle);">
-        <td style="padding: 8px 0; color: var(--text-secondary);" title="${tooltip}">${conf.label}</td>
+        <td style="padding: 8px 0; color: var(--text-secondary);" title="${escapeHtml(tooltip)}">${escapeHtml(conf.label)}</td>
         <td style="padding: 8px 0; text-align: right; font-weight: 600; color: var(--text-primary);">
-          ${val} <span style="font-weight: normal; color: var(--text-tertiary);">${displayUnit}</span>
+          ${escapeHtml(val)} <span style="font-weight: normal; color: var(--text-tertiary);">${escapeHtml(displayUnit)}</span>
         </td>
-        <td style="padding: 8px 0; text-align: right; color: var(--text-tertiary); font-size: 0.9em;">${periodo}</td>
+        <td style="padding: 8px 0; text-align: right; color: var(--text-tertiary); font-size: 0.9em;">${escapeHtml(periodo)}</td>
       </tr>`;
     });
     html += `</tbody></table></div>`;

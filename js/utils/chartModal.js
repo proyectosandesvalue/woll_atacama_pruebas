@@ -1,3 +1,5 @@
+import { escapeHtml } from "./helpers.js";
+
 // ─────────────────────────────────────────────────────────────
 // chartModal.js — versión final (dashboard con tabla y calendario)
 // ─────────────────────────────────────────────────────────────
@@ -119,7 +121,7 @@ export async function openChartModal(station, data, layerContext = null) {
     }
 
     const options = availableStations.map(s => 
-      `<option value="${s.codigo_nacional}" ${station && station.codigo_nacional === s.codigo_nacional ? 'selected' : ''}>${s.nombre_estacion}</option>`
+      `<option value="${escapeHtml(s.codigo_nacional)}" ${station && station.codigo_nacional === s.codigo_nacional ? 'selected' : ''}>${escapeHtml(s.nombre_estacion)}</option>`
     ).join("");
 
         stationSelectorHtml = `
@@ -196,10 +198,10 @@ export async function openChartModal(station, data, layerContext = null) {
 
       latestValues.forEach(v => {
         html += `
-          <tr class="param-row" data-id="${v.indicator_id}" style="border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: background 0.2s;">
-            <td style="padding: 12px; font-weight: 600;">${formatLabel(v.indicator_id)}</td>
-            <td style="padding: 12px; text-align: right; font-weight: 700; color: var(--color-brand-text);">${Number(v.value).toFixed(4)} ${v.unit || ""}</td>
-            <td style="padding: 12px; text-align: right; color: var(--text-tertiary);">${formatDateLabel(v.period_start, 'day')}</td>
+          <tr class="param-row" data-id="${escapeHtml(v.indicator_id)}" style="border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: background 0.2s;">
+            <td style="padding: 12px; font-weight: 600;">${escapeHtml(formatLabel(v.indicator_id))}</td>
+            <td style="padding: 12px; text-align: right; font-weight: 700; color: var(--color-brand-text);">${Number(v.value).toFixed(4)} ${escapeHtml(v.unit || "")}</td>
+            <td style="padding: 12px; text-align: right; color: var(--text-tertiary);">${escapeHtml(formatDateLabel(v.period_start, 'day'))}</td>
           </tr>
         `;
       });
@@ -724,8 +726,8 @@ async function renderSingleChart(card) {
       empty.innerHTML = `
         <div>
           <span style="display: block; font-size: 0.9rem; margin-bottom: 8px;">Último registro:</span>
-          <strong style="font-size: 1.4rem; color: var(--text-primary);">${points[0].value} ${data.unit || ""}</strong>
-          <span style="display: block; margin-top: 8px; font-size: 0.8rem;">${formatDateLabel(points[0].date, currentState.granularity)}</span>
+          <strong style="font-size: 1.4rem; color: var(--text-primary);">${escapeHtml(String(points[0].value ?? ""))} ${escapeHtml(data.unit || "")}</strong>
+          <span style="display: block; margin-top: 8px; font-size: 0.8rem;">${escapeHtml(formatDateLabel(points[0].date, currentState.granularity))}</span>
         </div>
       `;
       if (state.chart) { try { state.chart.destroy(); } catch (_) {} state.chart = null; }

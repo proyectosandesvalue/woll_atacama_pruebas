@@ -14,6 +14,7 @@
  */
 
 import { createContextLogger } from "./logger.js";
+import { escapeHtml } from "./helpers.js";
 
 const log = createContextLogger("ServerTable");
 const PAGE_SIZE = 100;
@@ -280,7 +281,7 @@ export function createServerTable({
     } catch (err) {
       log.error(`Error cargando la tabla de ${capaNombre}`, err);
       countEl.textContent = "Error";
-      bodyEl.innerHTML = `<tr><td colspan="${Math.max(columns.length, 1)}" style="text-align:center; color:var(--color-danger); padding:16px;">Error: ${String(err.message || err)}</td></tr>`;
+      bodyEl.innerHTML = `<tr><td colspan="${Math.max(columns.length, 1)}" style="text-align:center; color:var(--color-danger); padding:16px;">Error: ${escapeHtml(String(err.message || err))}</td></tr>`;
     } finally {
       loading = false;
       if (loadingEl) loadingEl.style.display = "none";
