@@ -1,0 +1,17 @@
+[Unit]
+Description=Backup diario de PostgreSQL (WOLL Atacama)
+Documentation=file:/srv/woll/docs/specs/26-plataforma/26-G-backups.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=woll
+Group=woll
+WorkingDirectory=/srv/woll
+EnvironmentFile=/srv/woll/.env.backup
+ExecStart=/srv/woll/scripts/backup-postgres.sh
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec=2h

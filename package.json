@@ -26,6 +26,8 @@
     "db:dump": "./scripts/dump-supabase.sh",
     "db:restore": "./scripts/restore-local.sh",
     "db:verify": "node scripts/verify-migration.mjs",
+    "backup:db": "bash scripts/backup-postgres.sh",
+    "backup:drill": "bash scripts/restore-drill.sh",
     "db:extract-rpcs": "node scripts/extract-legacy-rpcs.mjs",
     "layer:load": "node --env-file=.env.local scripts/load-layer.mjs",
     "tiles:build": "node --env-file=.env.local scripts/build-tiles.mjs",

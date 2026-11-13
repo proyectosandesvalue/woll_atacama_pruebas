@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+!.env.backup.example
 
 # Vercel
 .vercel/
@@ -54,3 +55,6 @@ secrets/
 
 # Tiles MVT pregenerados (se generan con npm run tiles:build; no se versionan)
 tiles/
+
+# Configuración de backups (26-G)
+.env.backup
