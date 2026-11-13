@@ -163,6 +163,14 @@ versión nueva (`tiles:sync --changed`) y cambiar la config. Los tiles de puntos
 no se generan por defecto (GeoJSON + API pesa menos que MVT). El generador baja
 un zoom si la capa supera 20.000 tiles. Ver `docs/DEV_GUIDE.md` §2.11.
 
+**Cliente de tiles.** `leaflet.vectorgrid@1.3.0` está vendorizado y parcheado
+para Leaflet 1.9 (`fakeStop`). La capa va en `pane: "overlayPane"` (no
+`tilePane`) y usa `bounds`/`maxNativeZoom` del manifest. La tabla, los filtros y
+el CSV piden `GET /api/layer-features` (propiedades sin geometría) y caen al
+GeoJSON si la API falla. Si agregás una capa con `source.tiles`, verificá
+popup, zoom, tabla, filtro y CSV; el total de la tabla debe coincidir con
+PostGIS, no con el GeoJSON.
+
 **Capas WMS.** El servicio se declara en `wms_services.js`; en la dimensión, la capa usa `tipo: 'wms'` + `servicio: '<clave>'` (sin `url`). `cargarCapaIndividual` las detecta con `isWMSLayer()` y crea `L.tileLayer.wms` con `createWMSLayer()`. Los filtros por atributo no aplican en cliente (los gestiona el servidor).
 
 **Selector de fecha Copernicus.** La disponibilidad se consulta por mes al abrir el calendario (WFS), no al activar la capa; el historial llega a 2017-01-01 y las marcas son azules (las DGA siguen rojas).

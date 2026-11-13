@@ -48,6 +48,11 @@
 ## [Unreleased]
 
 ### Added
+- **Sprint 08-B: piloto de tiles en el visor.** `borde_costero` se sirve con `leaflet.vectorgrid@1.3.0` vendorizado (`js/lib/Leaflet.VectorGrid-1.3.0.min.js`) desde `/tiles/borde_costero/2026/...`, con popup, zoom por manifest, categorías ocultas, filtros y opacidad. No descarga el GeoJSON al activarse.
+- **Endpoint `GET /api/layer-features`:** devuelve una FeatureCollection desde la tabla física del catálogo (`layer_id`, `limit`, `offset`, `include_geometry`). Sin geometría por defecto: la tabla de `borde_costero` pasa de 32 MB a ~560 KB. La tabla, los filtros y el CSV lo usan con fallback al GeoJSON.
+- Tests del handler de features (validación, 404, límites, geometría opcional).
+- Nginx dev sirve JS/CSS con `no-cache` para ver cambios sin hard reload (producción mantiene 7 días).
+
 - **Sprint 08-0/08-A: tiles MVT pregenerados.** `scripts/build-tiles.mjs` genera `tiles/<layer>/<version>/<z>/<x>/<y>.mvt` desde PostGIS con simplificación por zoom, feature ids, manifest/checksum y maxzoom adaptativo (20.000 tiles). Materializa la geometría 3857 una vez por zoom y calcula la cobertura real por feature: ~8-11 ms/tile (antes ~40 ms) y sin consultar tiles vacíos.
 - **Sprint 08-G: ciclo de vida de tiles.** `scripts/tiles-sync.mjs` publica por lote, detecta capas nuevas/editadas con `chat_catalog.updated_at`, mantiene `tiles/index.json`, verifica manifests contra archivos y BD (`--check`) y aplica retención (`--prune --keep`). `load-layer --tiles` encadena alta + generación.
 - **Nginx `/tiles/`:** MIME `application/vnd.mapbox-vector-tile`, `Cache-Control: immutable`, gzip y `try_files` (404 real, sin fallback a la SPA). `tiles/` queda fuera de git y de la imagen de la API.
@@ -77,6 +82,9 @@
 - Sprint 25 cerrado (25-A/B/C/D/E/F); baseline de latencia y decisión de streaming documentadas.
 
 ### Fixed
+- **“Ver tabla de Atributos” no abría la tabla:** el botón existía en el menú de capa pero `layerItem.js` no le había asociado el listener. Se agregó.
+- **`leaflet.vectorgrid` con Leaflet 1.9:** la librería llamaba a `L.DomEvent.fakeStop` (eliminado en 1.9), lo que lanzaba `TypeError` y cerraba el sidebar al hacer clic en un feature. Se parcheó el bundle y se agregó un shim.
+- **Popup de `borde_costero`:** el campo `"Origen Data"` no coincidía con la propiedad real `"Origen Dato"`; se corrigió en la config.
 - **Portabilidad de migraciones (26-C):** `021_fix_filters_robust.sql` usaba `sql :=` sin declarar `sql text;` en `chat_layer_features`; no compilaba en una base nueva. Se agregó la declaración para permitir reproducir `000-037`. En Supabase ya estaba aplicada y no se re-ejecuta.
 - `server/chat/tools/list-climate-stations.js`: faltaba el `import { getDB }`; la tool fallaba en runtime con `ReferenceError`.
 - `scripts/build_catalog.mjs`: excluye las capas WMS (`tipo/type === "wms"`) para que no se registren como tablas PostGIS inexistentes en `chat_catalog`.

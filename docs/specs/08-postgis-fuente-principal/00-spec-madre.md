@@ -224,8 +224,8 @@ cada dimensión es un tramo de 2-3h con su puerta.
 |---|---|---|---|---|---|---|
 | 08-0 | Spike: línea base, inventario, tamaños de tiles y ADRs 012/013/015 | 4 | Sprint 07 + 26 | Nada que revertir (descartable) | 08-0-spike.md | parcial: mediciones ✅, navegador/cliente pendientes |
 | 08-A | Pipeline de tiles pregenerados, manifest/versionado, Nginx y esqueleto on-demand | 10 | 08-0 | Apagar las rutas; ninguna capa las usa aún | 08-A-pipeline-tiles.md | parcial: pipeline/Nginx ✅, on-demand pendiente |
-| 08-B | Piloto: 1 capa pesada pregenerada, 1 capa de puntos con API y 1 capa dinámica | 6 | 08-A | Cambiar `source.type` de las 3 capas | 08-B-*.md | pendiente |
-| 08-D | Estilos, popups, leyenda, tabla completa (búsqueda, orden, filtros y conteo) | 6 | 08-B | Igual que 08-B | 08-D-*.md | pendiente |
+| 08-B | Piloto: 1 capa pesada pregenerada, 1 capa de puntos con API y 1 capa dinámica | 6 | 08-A | Cambiar `source.type` de las 3 capas | 08-B-piloto.md | parcial: `borde_costero` ✅; puntos/dinámica pendientes |
+| 08-D | Estilos, popups, leyenda, tabla completa (búsqueda, orden, filtros y conteo) | 6 | 08-B | Igual que 08-B | 08-D-*.md | parcial: endpoint de properties ✅; paginación/búsqueda pendientes |
 | 08-F | Zoom a capa/feature, cluster/heatmap cliente y agregados server-side >5k | 8 | 08-D | Volver al renderer en cliente para esas capas | 08-F-*.md | pendiente |
 | 08-C1 … C9 | Migración por dimensión y edición (agua, agricultura, clima, energía, minería, otros, planificación, riesgos, suelo) | 2-3 c/u (16-24 total) | 08-F | Por capa (`source.type`) | 08-C*.md | pendiente |
 | 08-E | Exportación/descarga en streaming desde PostGIS | 4 | 08-D | Quitar la opción de la UI | 08-E-*.md | pendiente |
@@ -470,7 +470,7 @@ contradicen, se actualiza el ADR y esta spec antes de empezar 08-A.
 | M1 | ¿Cómo se manejan los puntos (cluster y heatmap)? | **Geometría estática** (tiles/GeoJSON) + valores por API; cluster/heatmap cliente ≤5k; agregados server-side >5k | Si se usa MVT para puntos, hay que reimplementar iconos/popups; si no hay agregados, las capas grandes cargan todo | no (el spike valida) |
 | M2 | ¿Cómo se sirven los tiles? | **Aprobado por medición:** pregenerado en directorios `z/x/y.mvt` + Nginx (gzip, caché inmutable); on-demand solo para dinámicas/filtros; PMTiles descartado por ahora | Cambia el pipeline de 08-A y el storage | no |
 | M3 | ¿Cuántas capas tienen tabla física con geometría, SRID e índice GIST? | **71 capas en el catálogo** (69 tablas con geometría + 2 WMS) en el dump v1; las faltantes se cargan con `load-layer` | Si faltan, el tramo C crece | no |
-| M4 | ¿Qué librería cliente se usa para tiles vectoriales en Leaflet? | La más simple que conviva con glify (evaluar `leaflet.vectorgrid`); decidir con la prueba del spike | Si exige otro mapa, el alcance toca el Sprint 10 | no (spike) |
+| M4 | ¿Qué librería cliente se usa para tiles vectoriales en Leaflet? | **Aprobada:** `leaflet.vectorgrid@1.3.0` vendorizado, con shim de `fakeStop` y `pane: overlayPane`; validado con `borde_costero` | Si exige otro mapa, el alcance toca el Sprint 10 | no |
 | M5 | ¿Orden de las dimensiones en el tramo C? | Primero capas pesadas/estáticas (mayor ahorro), luego el resto | Solo reordena los tramos | no |
 | M6 | ¿Los filtros se aplican en cliente o en servidor? | En cliente sobre `properties` del tile estático; en servidor para tabla/agregados/export; on-demand para filtros geométricos | Afecta el diseño del tramo D | no |
 | M7 | ¿Umbral de puntos para cargar todo en cliente vs. agregación server-side? | 5.000 puntos por capa | Cambia qué capas usan cluster/heatmap server-side | no (el spike valida) |

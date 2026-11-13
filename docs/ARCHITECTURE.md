@@ -385,8 +385,16 @@ Navegador (cliente de tiles, Sprint 08-B)
   anterior y se registra en el manifest (`maxzoom` vs `maxzoom_requested`).
 - Alta de capa: `load-layer --tiles` encadena tabla + catálogo + tiles + índice.
 - Comandos: `npm run tiles:build`, `npm run tiles:sync`, `npm run tiles:check`.
-- Detalle: `docs/specs/08-postgis-fuente-principal/08-A-pipeline-tiles.md` y
-  `08-G-ciclo-vida-capas.md`.
+- **Cliente:** `leaflet.vectorgrid@1.3.0` vendorizado en `js/lib`. Se usa en
+  `pane: overlayPane` (comparte orden z con las capas SVG) y con `bounds` del
+  manifest. El bundle está parcheado para `L.DomEvent.fakeStop` (Leaflet 1.9).
+- **Datos para tabla/filtros/CSV:** `GET /api/layer-features?layer_id=...`
+  devuelve propiedades desde PostGIS sin geometría. Si la API no responde, el
+  visor cae al GeoJSON de respaldo. La paginación y la búsqueda server-side
+  llegan en 08-D.
+- Piloto actual: solo `borde_costero` tiene `source.type: "postgis"`.
+- Detalle: `docs/specs/08-postgis-fuente-principal/08-A-pipeline-tiles.md`,
+  `08-B-piloto.md` y `08-G-ciclo-vida-capas.md`.
 
 
 5. Base de datos — schemas chat, admin y rag

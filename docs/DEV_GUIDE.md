@@ -850,6 +850,26 @@ DATABASE_ADMIN_URL=postgres://postgres:CLAVE@127.0.0.1:5432/woll \
 No uses `docker compose run api ...` sin montar `tiles/`: la imagen no incluye
 ese directorio y los tiles quedarían dentro del contenedor.
 
+**Cliente en el visor (08-B)**
+
+La capa `borde_costero` tiene un bloque `source` en
+`js/config/planificacion.js` y se pinta con `leaflet.vectorgrid` desde
+`/tiles/...`; no descarga el GeoJSON. La tabla, los filtros y el CSV usan
+`GET /api/layer-features?layer_id=borde_costero`, que devuelve las propiedades
+de PostGIS sin geometría. Si la API no responde, el visor cae al GeoJSON.
+
+Para probar:
+
+```bash
+curl 'http://localhost:8090/api/layer-features?layer_id=borde_costero&limit=2'
+# En el visor: activar la capa, abrir Opciones → Ver tabla (382 registros),
+# filtrar ZONA_1 = ZP (11 registros, coincide con SQL) y descargar CSV.
+```
+
+El endpoint es una versión mínima de 08-D: no pagina ni busca todavía; el
+límite es 1.000 features. Para una capa nueva, copiá el bloque `source` y
+verificá popup, zoom, tabla, filtro y CSV.
+
 **Reglas de versionado**
 
 - Ediciones y años usan versión explícita: `2024`, `2026`, `2025`.
