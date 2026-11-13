@@ -30,6 +30,7 @@
 | [28-seguridad-frontend](28-seguridad-frontend.md) | 28 | Mediano | PARCIAL CERRADA |
 | [30-aceptacion](30-aceptacion.md) | 30 | Grande | EN EJECUCIÓN |
 | [44-indicadores-copernicus](44-indicadores-copernicus.md) | 44 | Mediano | CERRADA |
+| [45-panel-admin-operaciones](45-panel-admin-operaciones/00-spec-madre.md) | 45-47 | Grande | DRAFT |
 | 22-alineacion-documentacion | 22 | Pequeño | por escribir |
 
 ## Reglas

@@ -100,6 +100,9 @@
 | 42 | Ingesta de fuentes externas (DGAC, ArClim) | 🔄 parcial (42-A y 42-C completados) | media | 18-28h | 24-A, 24-B |
 | 43 | Normativa urbana: BCN + planes reguladores | ⏳ pending | media | 20-32h | 17, 18, 41-A |
 | 44 | Catálogo de indicadores satelitales Copernicus | ✅ done | media | 8-10h | proxy (2026-11-06) |
+| 45 | Panel admin: ingesta RAG + gestor de APIs | 📝 DRAFT (spec) | alta | 24-30h | 14/15, 17, 19 |
+| 46 | Taxonomía normalizada + sidebar | 📝 DRAFT (spec) | alta | 20-26h | 14/15, 45 |
+| 47 | Gestor de capas geográficas | 📝 DRAFT (spec) | alta | 18-24h | 08-G, 46 |
 
 **Leyenda de estados:**
 - ✅ `done` — Completado y en producción.
@@ -1083,6 +1086,53 @@ y eliminación.
 - Comparador de dos fechas lado a lado (fuera de alcance).
 
 **Ver**: `docs/specs/44-indicadores-copernicus.md`.
+
+---
+
+### Sprint 45 — Panel admin: ingesta RAG + gestor de APIs
+
+**Estado**: 📝 DRAFT (spec escrita, pendiente de revisión) · **Prioridad**: alta · **Duración**: 24-30h · **Dependencias**: 14/15, 17, 19
+**Spec**: `docs/specs/45-panel-admin-operaciones/00-spec-madre.md`
+
+**Objetivo**: operar el RAG y las conexiones externas desde el panel, con
+worker/cola, uploads, manifiesto, dry-run y auditoría.
+
+**Fases**:
+- **45-A (18-22h)** — Ingesta RAG: upload de PDFs, manifiesto, dry-run, cola,
+  worker, documentos/chunks.
+- **45-B (6-8h)** — APIs: inventario, test y edición de conexiones existentes.
+
+**Decisión pendiente**: aprobar el orden y el modelo worker/cola.
+
+---
+
+### Sprint 46 — Taxonomía normalizada + sidebar
+
+**Estado**: 📝 DRAFT (spec escrita, pendiente de revisión) · **Prioridad**: alta · **Duración**: 20-26h · **Dependencias**: 14/15, 45
+**Spec**: `docs/specs/45-panel-admin-operaciones/00-spec-madre.md` §6
+
+**Objetivo**: mover dimensiones, grupos, subgrupos, capas y asignaciones a
+tablas normalizadas; compilar el snapshot para el visor y adaptar el sidebar.
+
+**Fases**:
+- **46-A** — Migración, seed desde snapshot v1 y compilador.
+- **46-B** — CRUD de dimensiones/grupos/subgrupos y assignments.
+- **46-C** — `/api/taxonomy` + adaptación del sidebar con flag.
+
+---
+
+### Sprint 47 — Gestor de capas geográficas
+
+**Estado**: 📝 DRAFT (spec escrita, pendiente de revisión) · **Prioridad**: alta · **Duración**: 18-24h · **Dependencias**: 08-G, 46
+**Spec**: `docs/specs/45-panel-admin-operaciones/00-spec-madre.md` §7
+
+**Objetivo**: CRUD de capas, upload GeoJSON, carga a PostGIS, generación de
+tiles, publicación y reversión.
+
+**Fase**:
+- **47-A** — Upload/validación GeoJSON y editor de metadatos.
+- **47-B** — Worker load-layer + tiles y publicación.
+- **47-C** — Vista previa y estado de capa.
 
 ---
 
