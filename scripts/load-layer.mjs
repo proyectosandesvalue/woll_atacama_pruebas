@@ -24,7 +24,7 @@
 import { readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const IDENT_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
@@ -200,6 +200,8 @@ function parseArgs(argv) {
     srid: 4326,
     force: false,
     skipStats: false,
+    tiles: false,
+    tilesVersion: null,
     dryRun: false,
     help: false,
   };
@@ -222,6 +224,10 @@ function parseArgs(argv) {
       opts.force = true;
     } else if (arg === "--skip-stats") {
       opts.skipStats = true;
+    } else if (arg === "--tiles") {
+      opts.tiles = true;
+    } else if (arg === "--tiles-version") {
+      opts.tilesVersion = argv[++i];
     } else if (arg === "--dry-run") {
       opts.dryRun = true;
     } else if (arg === "--help" || arg === "-h") {
@@ -262,6 +268,8 @@ Opciones:
   --srid <n>                SRID de las geometrías GeoJSON (default: 4326)
   --force                   Reemplaza la tabla si existe
   --skip-stats              No ejecuta chat_refresh_stats
+  --tiles                   Genera los tiles MVT después de cargar
+  --tiles-version <v>       Versión/edición de los tiles (default: YYYYMMDD)
   --dry-run                 Muestra el plan sin escribir
   --help                    Esta ayuda
 
@@ -475,6 +483,29 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
     if (!opts.skipStats && !opts.dryRun) {
       await db.rpc("chat_refresh_stats");
       console.log("Stats refrescadas.");
+    }
+
+    if (opts.tiles && !opts.dryRun) {
+      const version =
+        opts.tilesVersion || new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      console.log(`Generando tiles ${opts.layerId}/${version} (08-G)...`);
+      const result = spawnSync(
+        process.execPath,
+        [
+          path.join(path.dirname(fileURLToPath(import.meta.url)), "tiles-sync.mjs"),
+          "--layer", opts.layerId,
+          "--version", version,
+        ],
+        { env: process.env, stdio: "inherit" }
+      );
+      if (result.status !== 0) {
+        console.error(
+          "La capa quedó cargada, pero falló la generación de tiles. " +
+            "Reintentá con `npm run tiles:sync -- --layer " + opts.layerId +
+            " --version " + version + "`."
+        );
+        process.exitCode = 1;
+      }
     }
   } finally {
     await db.close();

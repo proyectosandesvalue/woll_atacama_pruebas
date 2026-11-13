@@ -51,3 +51,6 @@ backups/
 secrets/
 *gcp*.json
 *service-account*.json
+
+# Tiles MVT pregenerados (se generan con npm run tiles:build; no se versionan)
+tiles/

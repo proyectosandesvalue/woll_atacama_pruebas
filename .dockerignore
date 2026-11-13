@@ -8,6 +8,7 @@
 node_modules
 docs
 geojson
+tiles
 reports
 rag/inbox
 *.log

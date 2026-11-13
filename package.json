@@ -10,7 +10,7 @@
   "scripts": {
     "lint": "eslint js/ server/",
     "lint:fix": "eslint js/ server/ --fix",
-    "test": "bash -c 'shopt -s globstar && node --test server/**/*.test.js'",
+    "test": "bash -c 'shopt -s globstar && node --test server/**/*.test.js scripts/**/*.test.js'",
     "catalog": "node --env-file=.env.staging scripts/build_catalog.mjs",
     "smoke:db": "node --env-file=.env.staging scripts/smoke-db.mjs",
     "smoke:chat": "node --env-file=.env.staging scripts/smoke-orchestrator.mjs",
@@ -28,6 +28,9 @@
     "db:verify": "node scripts/verify-migration.mjs",
     "db:extract-rpcs": "node scripts/extract-legacy-rpcs.mjs",
     "layer:load": "node --env-file=.env.local scripts/load-layer.mjs",
+    "tiles:build": "node --env-file=.env.local scripts/build-tiles.mjs",
+    "tiles:sync": "node --env-file=.env.local scripts/tiles-sync.mjs",
+    "tiles:check": "node --env-file=.env.local scripts/tiles-sync.mjs --check",
     "db:up": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d postgres",
     "db:down": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml down",
     "stack:up": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d",
