@@ -105,11 +105,27 @@ Limitaciones de esta etapa:
 - **Leaflet.glify** — WebGL para polígonos pesados.
 - **Leaflet.markerCluster** — clustering.
 - **WebGL Heatmap** — heatmaps.
-- **Turf.js 6.5.0** — solo `bbox()` para zoom a features.
+- **`js/utils/geoUtils.js`** — `getBbox()` para zoom a features (reemplaza Turf.js).
 - **DOMPurify 3.0.3** — sanitización XSS.
 - **Chart.js 4.4.0** — gráficos del chat.
 - **Vanilla JS ES Modules** — sin framework.
 - **CSS custom properties** — theming.
+
+#### Seguridad del frontend (Sprint 28)
+
+- **SRI:** los 11 recursos CDN de `index.html` (Leaflet, markercluster,
+  flatpickr, DOMPurify, Chart.js) llevan `integrity="sha384-…"` y
+  `crossorigin="anonymous"`. Actualizar una versión exige recalcular el hash.
+- **CSP:** definida en `deploy/nginx/woll.conf` y `woll.dev.conf`; sin
+  `unsafe-eval` ni `unsafe-inline` en `script-src`. `style-src` conserva
+  `'unsafe-inline'` por los estilos de Leaflet/glify.
+- **Sin handlers inline:** `help.html` usa `data-target` y listeners en
+  `js/ui/help.js`.
+- **XSS:** todo dato de API/GeoJSON se escapa con `escapeHtml` antes de
+  `innerHTML` (estaciones, gráficos, tabla server-side, ARClim, popups/WMS).
+- **Dependencias:** `npm audit` en 0; CI ejecuta
+  `npm audit --omit=dev --audit-level=high`.
+- **Pendiente:** vendorizar CDN/tipografías, ZAP y `security.txt` (VPS).
 
 #### Capas satelitales Copernicus
 

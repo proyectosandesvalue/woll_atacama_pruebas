@@ -85,7 +85,7 @@
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
 | 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 parcial (26-E v1 ✅, 26-G ✅, 26-J ✅, 26-K diferido; 26-F/H/I pendientes) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | 🔶 parcial (CI base ✅; deploy/rollback pendientes) | alta | 7-8h | 26-D |
-| 28 | Seguridad del frontend y dependencias | 🔶 parcial (accesibilidad 0.97/SEO 1.00; CSP y dependencias pendientes) | alta | 9-10h | 26-D |
+| 28 | Seguridad del frontend y dependencias | 🔶 parcial (dependencias 0, SRI, CSP y XSS ✅; vendorización/ZAP/capa base pendientes) | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
 | 30 | Pruebas de aceptación técnica | 🔶 parcial (gate 08 ✅ y carga 25/50 local ✅; VPS/E2E pendientes) | alta | 16h | 26, 27 |
 | 31 | Observabilidad y operación | ⏳ pending | alta | 7-8h | 26 |
@@ -274,6 +274,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - **08-D cerrado (2026-11-13):** la tabla de capas PostGIS pagina 100/página con scroll infinito y usa `/api/layer-features` para búsqueda, orden, filtro y total; `/api/layer-feature` da la geometría para zoom/highlight. Las capas GeoJSON conservan el renderer local.
 - **08-E cerrado (2026-11-13):** `/api/layer-export` transmite GeoJSON (382 features) y CSV (382 filas; 11 con filtro ZP) con columnas/alias desde PostGIS. El frontend usa el endpoint si la API existe y cae al archivo estático en Vercel. Lotes de 40/200 para no superar el `statement_timeout`.
 - **08-0 cerrado (2026-11-13):** Lighthouse 0.85 accesibilidad / 0.83 buenas prácticas / 0.50 SEO; se agregaron `meta description` y `robots.txt`. El canvas y los clusters no son navegables por teclado (Sprint 28). ADRs 012/013/015 escritos.
+- **28 seguridad (2026-11-13):** `npm audit` en 0, SRI en 11 CDN, CSP sin `unsafe-eval`, Turf eliminado y datos de estaciones/gráficos/tabla/ARClim escapados. Vendorización, ZAP y capa base siguen pendientes.
 
 **Sub-sprints**:
 - [x] **0** — Spike: inventario, mediciones, cliente, carga y ADRs 012/013/015 ✅ (4h)
@@ -640,20 +641,23 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 28 — Seguridad del frontend y dependencias
 
-**Estado**: ⏳ pending · **Prioridad**: alta · **Duración**: 9-10h · **Dependencias**: 26-D
+**Estado**: 🔶 parcial · **Prioridad**: alta · **Duración**: 9-10h · **Dependencias**: 26-D, 30
 
 **Sub-sprints**:
-- [ ] **A (3h) — H14.** Vendorizar Leaflet, markercluster, Turf, Chart.js y DOMPurify en `js/vendor/` (versiones fijas y checksum); alojar localmente las tipografías (Montserrat, Open Sans, Material Symbols).
-- [ ] **B (2h) — H15.** CSP primero en modo solo reporte y luego en modo activo; HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`. Requiere retirar los `onclick` inline de `help.html`.
+- [x] **A (1h) — H14 (parcial).** Dependencias auditadas: `@vercel/functions@3.11.2`, `overrides.uuid@^11.1.1`, `npm audit` en 0. Vendorización de Leaflet/markercluster/Chart.js/DOMPurify y tipografías locales: pendiente.
+- [x] **B (2h) — H15.** CSP activa en Nginx de producción y desarrollo; HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`; `onclick` inline retirados de `help.html`.
 - [ ] **C (2h) — H5.** Capa base con licencia: elegir proveedor (ADR 010), reemplazar `mt1.google.com`, atribuciones, revisar la política de uso de OSM.
-- [ ] **D (1h).** Auditoría de `innerHTML` con `escapeHtml`.
-- [ ] **E (2h).** Análisis OWASP ZAP contra staging, correcciones, `security.txt`.
+- [x] **D (1h).** Auditoría de `innerHTML`: estaciones, gráficos, tabla de servidor y ARClim escapados; popups/WMS ya lo estaban.
+- [ ] **E (2h).** Análisis OWASP ZAP contra staging, correcciones, `security.txt` (requiere VPS y contacto institucional).
+- [x] **F (1h).** SRI + `crossorigin` en 11 recursos CDN; flatpickr fijado en 4.6.13; Turf eliminado (`getBbox` local, sin `unsafe-eval`); tests de seguridad en CI.
 
 **Criterios**:
-- **CA-1** Dado el visor, entonces no carga ningún script ni hoja de estilo desde dominios externos.
-- **CA-2** Dado el CSP activo, entonces no hay violaciones en el uso normal.
-- **CA-3** Dada la capa base por defecto, entonces su licencia permite uso institucional.
-- **CA-4** El informe ZAP no tiene hallazgos altos abiertos.
+- **CA-1** Dado el visor, entonces no carga ningún script ni hoja de estilo desde dominios externos. **Pendiente:** hoy los CDN externos llevan SRI y versión fija; la vendorización queda para el VPS.
+- **CA-2** Dado el CSP activo, entonces no hay violaciones en el uso normal. ✅
+- **CA-3** Dada la capa base por defecto, entonces su licencia permite uso institucional. **Pendiente (28-C).**
+- **CA-4** El informe ZAP no tiene hallazgos altos abiertos. **Pendiente (26-F).**
+- **CA-5** `npm audit` sin vulnerabilidades de producción y CI con gate de auditoría. ✅
+- **CA-6** Datos de API/GeoJSON escapados antes de `innerHTML`. ✅
 
 ### Sprint 29 — Datos y gobierno de capas
 

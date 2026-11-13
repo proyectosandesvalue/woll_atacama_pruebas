@@ -47,6 +47,14 @@
 
 ## [Unreleased]
 
+### Security
+- **Sprint 28:** `npm audit` en 0 (`@vercel/functions@3.11.2` y `overrides.uuid@^11.1.1`); gate de auditoría en CI.
+- **SRI:** 11 recursos CDN de `index.html` con `integrity` sha384 y `crossorigin`; flatpickr fijado en 4.6.13.
+- **CSP:** activa en Nginx de producción y desarrollo, sin `unsafe-eval` ni `unsafe-inline` en scripts; headers HSTS, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`.
+- **Turf.js eliminado:** `js/utils/geoUtils.js` implementa `getBbox`; ya no se necesita `unsafe-eval`.
+- **XSS:** escapados nombre/comuna/tipo/período/tooltips de estaciones, nombres y unidades del modal de gráficos, errores de la tabla server-side y datos ARClim. `help.html` sin `onclick` inline.
+- **Tests:** `scripts/__tests__/geo-utils.test.js` y `scripts/__tests__/security-frontend.test.js`.
+
 ### Added
 - **30 carga y aceptación:** `scripts/load-test-sprint30.mjs` (static/table/filtered/on-demand/on-demand-cold/mixed, percentiles, RPS, HTTP y umbrales) y spec 30. Local: 8/8 escenarios OK; static p95 55 ms, table p95 94 ms y mixed p95 61 ms a 50 conexiones; on-demand cold p95 200-248 ms.
 - **Optimización de tabla:** `layer-features`/`layer-feature`/export construyen `properties` solo con columnas no-geométricas (antes `to_jsonb(t) - geom` serializaba la geometría). Nginx cachea `/api/layer-features` 10 s por URL con `X-Cache-Status`.

@@ -264,7 +264,7 @@ No conviene instalar decenas de skills a la vez: la lista que ve el modelo crece
 
 ## Tecnologías
 
-Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGL Heatmap, Turf.js (solo `bbox`), DOMPurify, Chart.js; Vanilla JS ES Modules y CSS custom properties. **Demo/staging:** Vercel Functions + Supabase (PostGIS) + Vertex AI. **Producción final:** VPS con Node persistente, PostgreSQL/PostGIS/pgvector y Nginx (ADR 005/010). Versiones y detalle en `docs/ARCHITECTURE.md` §3.
+Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGL Heatmap, `geoUtils.getBbox` (sin Turf), DOMPurify, Chart.js; Vanilla JS ES Modules y CSS custom properties. **Demo/staging:** Vercel Functions + Supabase (PostGIS) + Vertex AI. **Producción final:** VPS con Node persistente, PostgreSQL/PostGIS/pgvector y Nginx (ADR 005/010). Versiones y detalle en `docs/ARCHITECTURE.md` §3.
 
 ## Configuración básica
 

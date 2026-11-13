@@ -935,6 +935,22 @@ usuarios reales y evita el rate limit por IP de on-demand (20 r/s). La tabla
 `/api/layer-features` está cacheada 10 s en Nginx; una edición puede tardar ese
 tiempo en reflejarse.
 
+**Seguridad del frontend (28)**
+
+- No agregar `<script>` ni `<link rel="stylesheet">` externos sin versión fija,
+  `integrity="sha384-…"` y `crossorigin="anonymous"`. Recalcular el hash si
+  cambia la versión.
+- No usar handlers inline (`onclick`, `onchange`, etc.) ni `eval`/`new Function`:
+  la CSP no los permite. Usar `addEventListener`.
+- Escapar con `escapeHtml` todo dato de API o GeoJSON antes de `innerHTML`.
+  Para valores numéricos que pueden ser `0`, usar `String(valor)`.
+- La CSP vive en `deploy/nginx/woll.conf` y `deploy/nginx/woll.dev.conf`. Si
+  aparece un dominio nuevo (tiles, WMS, proxy), agregarlo solo al `img-src`/
+  `connect-src` correspondiente y probar el visor con la consola abierta.
+- `npm audit --omit=dev --audit-level=high` corre en CI; no mergear con
+  vulnerabilidades altas de producción.
+- Tests: `node --test scripts/__tests__/security-frontend.test.js`.
+
 **Reglas de versionado**
 
 - Ediciones y años usan versión explícita: `2024`, `2026`, `2025`.

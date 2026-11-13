@@ -91,6 +91,7 @@ Reglas:
 - **RAG:** la ingesta corre en `scripts/` (nunca en `api/`); los PDFs viven en `rag/inbox/` fuera de git y todo fragmento se marca `untrusted`. El corpus se declara en `rag/manifest.json` con licencia y `copyright_cleared: true`.
 - **Proxy externo:** `/api/proxy` es cerrado (allowlist en `server/proxy/services.js`); `INSTANCE_ID` y `CLIENT_SECRET` viven solo en el servidor. Ver `docs/integrations/proxy-servicios-externos.md`.
 - **Secretos:** solo en variables de entorno. `.env.staging` está en `.gitignore`.
+- **Seguridad frontend:** CSP en Nginx sin `unsafe-eval`; CDN con SRI + versión fija; datos de API/GeoJSON escapados antes de `innerHTML`; `npm audit --omit=dev --audit-level=high` en CI. Ver `docs/specs/28-seguridad-frontend.md`.
 - **Tests:** toda feature nueva trae al menos un test (`node:test`).
 - **Configuración del chat**: los prompts y settings viven en `admin.*` (migración 024). Antes de activar un cambio, correr el golden set. Ver "Gobierno de la configuración del chat".
 - **Migraciones**: la `024_admin_config.sql` y la `025_admin_rollback.sql` son las del 40-D.2. No renumerar. La `021_fix_filters_robust.sql` y la `022_fix_match_semantics.sql` son del 40-A (pre-existentes).
@@ -99,7 +100,7 @@ Reglas:
 
 ## Stack
 
-Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGLHeatMap, Turf.js 6.5.0 (solo `bbox`), DOMPurify 3.0.3, Chart.js 4.4.0 (chat). Vanilla JS ES Modules, CSS custom properties (tema claro/oscuro). Backend demo/staging: Vercel Functions + Supabase + LLM OpenAI-compatible. Producción final: Node persistente + PostgreSQL/PostGIS/pgvector en VPS (ADR 005). Detalle en `docs/ARCHITECTURE.md` §3.
+Leaflet 1.9.4, Leaflet.glify, Leaflet.markerCluster, WebGLHeatMap, `geoUtils.getBbox` (sin Turf), DOMPurify 3.0.3, Chart.js 4.4.0 (chat). Vanilla JS ES Modules, CSS custom properties (tema claro/oscuro). Backend demo/staging: Vercel Functions + Supabase + LLM OpenAI-compatible. Producción final: Node persistente + PostgreSQL/PostGIS/pgvector en VPS (ADR 005). Detalle en `docs/ARCHITECTURE.md` §3.
 
 ## Comandos
 
@@ -197,7 +198,7 @@ PostGIS, no con el GeoJSON.
 
 **`capas` es el índice maestro del tema.** `grupos.<x>.capas` reutiliza subconjuntos por diseño; un duplicado entre `capas` y un grupo es legítimo. Solo es duplicado real dentro del mismo contenedor.
 
-**Turf.js solo para `bbox`** (`attributeTableUtils.js`, `sidebarUtils.js`, `layerItem.js`).
+**`getBbox` local** (`js/utils/geoUtils.js`) reemplaza Turf.js en `attributeTableUtils.js`, `layerItem.js` y `search/index.js`. Turf usaba `new Function` y la CSP no permite `unsafe-eval`.
 
 **Web Workers.** `layerProcessor.worker.js` procesa GeoJSON fuera del hilo principal; no bloquees el hilo con datos pesados. El pool se destruye en `beforeunload`; sin `Worker`, hay fallback a `fetch` en el hilo principal.
 
