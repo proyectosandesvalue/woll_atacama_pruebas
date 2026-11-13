@@ -48,6 +48,7 @@
 ## [Unreleased]
 
 ### Added
+- **27 CI base:** `.github/workflows/ci.yml` ejecuta lint, tests, `node --check` de scripts, `bash -n` y build de la imagen de la API en push/PR. El deploy y el rollback por tag quedan pendientes del VPS.
 - **26-J ingestas:** `scripts/run-ingest-timer.sh` y timers systemd `woll-ingest-agromet/realtime/redmeteo/daily` sobre el contenedor `ingest`, con `flock`, dry-run y logs en journald. Reemplazan los 4 cron de GitHub/Supabase en el VPS.
 - **26-G backups:** `scripts/backup-postgres.sh` (dump custom, GPG, checksum, retención, copia externa, lock y alerta), `scripts/restore-drill.sh` (base descartable + conteos + RTO), timer systemd 03:00 UTC y `.env.backup.example`. Simulacro local: 69 MB en 38 s, restore de 94 s con 71/382/1.425.842.
 - **08-D cerrado:** tabla de atributos server-side para capas PostGIS con páginas de 100, scroll infinito, búsqueda, orden por encabezado, filtro y total desde `/api/layer-features`. `/api/layer-feature` entrega la geometría para zoom/highlight. Las capas GeoJSON mantienen el renderer local.

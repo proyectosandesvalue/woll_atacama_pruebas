@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, tests y sintaxis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tests
+        run: npm test
+
+      - name: Sintaxis de scripts Node
+        run: |
+          find scripts -type f -name '*.mjs' -print0 \
+            | xargs -0 -r -n1 node --check
+
+      - name: Sintaxis de scripts Bash
+        run: |
+          find scripts -type f -name '*.sh' -print0 \
+            | xargs -0 -r -n1 bash -n
+
+  docker:
+    name: Imagen de la API
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build de la imagen
+        run: docker build -f docker/api/Dockerfile -t woll-api:ci .

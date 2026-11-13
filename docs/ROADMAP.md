@@ -84,7 +84,7 @@
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
 | 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 parcial (26-E v1 ✅, 26-G ✅, 26-J ✅, 26-K diferido; 26-F/H/I pendientes) | alta | 42-46h | 23, 24 |
-| 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
+| 27 | CI/CD y entrega versionada | 🔶 parcial (CI base ✅; deploy/rollback pendientes) | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
 | 30 | Pruebas de aceptación técnica | ⏳ pending | alta | 16h | 26, 27 |
