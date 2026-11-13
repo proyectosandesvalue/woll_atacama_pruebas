@@ -392,6 +392,9 @@ Navegador (cliente de tiles, Sprint 08-B)
   devuelve propiedades desde PostGIS sin geometría. Si la API no responde, el
   visor cae al GeoJSON de respaldo. La paginación y la búsqueda server-side
   llegan en 08-D.
+- **Exportación:** `GET /api/layer-export?layer_id=...&format=geojson|csv`
+  transmite por lotes desde PostGIS, aplica el mismo filtro y usa las columnas
+  visibles del CSV. En Vercel el visor cae al archivo estático/cliente.
 - Capas migradas (08-B/08-C): 40 capas no-punto visibles con `source.type: "postgis"`; `comunas_poligonos` no está en la config. Los puntos quedan en GeoJSON + API.
 - Detalle: `docs/specs/08-postgis-fuente-principal/08-A-pipeline-tiles.md`,
   `08-B-piloto.md` y `08-G-ciclo-vida-capas.md`.

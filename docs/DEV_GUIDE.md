@@ -870,6 +870,22 @@ El endpoint es una versión mínima de 08-D: no pagina ni busca todavía; el
 límite es 1.000 features. Para una capa nueva, copiá el bloque `source` y
 verificá popup, zoom, tabla, filtro y CSV.
 
+**Exportación (08-E)**
+
+Las capas con tiles descargan con `GET /api/layer-export` (GeoJSON o CSV) y el
+mismo filtro de la tabla:
+
+```bash
+curl -G 'http://localhost:8090/api/layer-export' \
+  --data-urlencode 'layer_id=borde_costero' \
+  --data-urlencode 'format=csv' \
+  --data-urlencode 'filter={"op":"and","conditions":[{"column":"ZONA_1","operator":"in","value":["ZP"]}]}'
+```
+
+En Vercel el endpoint no existe; el visor cae al GeoJSON estático o al CSV en
+cliente. El CSV acepta `columns` y `labels` (arrays JSON) para replicar la
+tabla.
+
 **Reglas de versionado**
 
 - Ediciones y años usan versión explícita: `2024`, `2026`, `2025`.
