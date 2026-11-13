@@ -396,9 +396,10 @@ Navegador (cliente de tiles, Sprint 08-B)
   transmite por lotes desde PostGIS, aplica el mismo filtro y usa las columnas
   visibles del CSV. En Vercel el visor cae al archivo estático/cliente.
 - **Tabla server-side:** `/api/layer-features` acepta `search`, `sort`, `order`,
-  `filter` y devuelve `total`; `/api/layer-feature` entrega una feature con
-  geometría para el zoom/highlight desde la tabla. La paginación visual sigue
-  en cliente (las capas actuales caben en 5.000).
+  `filter` y devuelve `total`; la tabla de capas PostGIS pagina 100 por página
+  con scroll infinito y busca/ordena en el servidor. `/api/layer-feature`
+  entrega una feature con geometría para el zoom/highlight. Las capas GeoJSON
+  conservan el renderer local.
 - **On-demand:** `/api/layer-tiles?layer_id=&z=&x=&y=` genera MVT con
   `ST_AsMVT` para capas dinámicas; Nginx cachea por URL 5 min. No hay una capa
   dinámica en producción todavía; el cliente acepta `mode: "on-demand"`.

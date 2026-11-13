@@ -225,7 +225,7 @@ cada dimensión es un tramo de 2-3h con su puerta.
 | 08-0 | Spike: línea base, inventario, tamaños de tiles y ADRs 012/013/015 | 4 | Sprint 07 + 26 | Nada que revertir (descartable) | 08-0-spike.md | cerrada |
 | 08-A | Pipeline de tiles pregenerados, manifest/versionado, Nginx y esqueleto on-demand | 10 | 08-0 | Apagar las rutas; ninguna capa las usa aún | 08-A-pipeline-tiles.md + 08-A.5-on-demand.md | cerrada |
 | 08-B | Piloto: 1 capa pesada pregenerada, 1 capa de puntos con API y 1 capa dinámica | 6 | 08-A | Cambiar `source.type` de las 3 capas | 08-B-piloto.md | parcial: estático ✅ y puntos con API ✅; capa dinámica pendiente (esqueleto on-demand listo) |
-| 08-D | Estilos, popups, leyenda, tabla completa (búsqueda, orden, filtros y conteo) | 6 | 08-B | Igual que 08-B | 08-D-tabla-y-features.md | parcial: búsqueda/orden/filtro/total y feature ✅; paginación UI pendiente |
+| 08-D | Estilos, popups, leyenda, tabla completa (búsqueda, orden, filtros y conteo) | 6 | 08-B | Igual que 08-B | 08-D-tabla-y-features.md | cerrada |
 | 08-F | Zoom a capa/feature, cluster/heatmap cliente y agregados server-side >5k | 8 | 08-D | Volver al renderer en cliente para esas capas | 08-D-tabla-y-features.md | cerrada por umbral: máximo 2.946 puntos, cliente suficiente |
 | 08-C1 … C9 | Migración por dimensión y edición (agua, agricultura, clima, energía, minería, otros, planificación, riesgos, suelo) | 2-3 c/u (16-24 total) | 08-F | Por capa (`source.type`) | 08-C-migracion.md | cerrada: 40/40 capas visibles no-punto |
 | 08-E | Exportación/descarga en streaming desde PostGIS | 4 | 08-D | Quitar la opción de la UI | 08-E-export.md | cerrada |

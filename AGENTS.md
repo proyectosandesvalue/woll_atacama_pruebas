@@ -172,7 +172,9 @@ para Leaflet 1.9 (`fakeStop`). La capa va en `pane: "overlayPane"` (no
 el CSV piden `GET /api/layer-features` (propiedades sin geometría) y caen al
 GeoJSON si la API falla. El clic en una fila de la tabla pide
 `GET /api/layer-feature` para obtener la geometría de ese feature y hacer
-zoom/highlight. Si agregás una capa con `source.tiles`, verificá
+zoom/highlight. La tabla de capas PostGIS pagina 100 por página con scroll
+infinito y busca/ordena en el servidor (`serverTable.js`); las capas GeoJSON
+siguen con la tabla local. Si agregás una capa con `source.tiles`, verificá
 popup, zoom, tabla, filtro y CSV; el total de la tabla debe coincidir con
 PostGIS, no con el GeoJSON.
 

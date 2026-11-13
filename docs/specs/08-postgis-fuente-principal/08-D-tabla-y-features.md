@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 08-D |
-| **Estado de la spec** | EN EJECUCIÓN (API de búsqueda/orden/filtro/total y feature puntual ✅; paginación en la UI pendiente) |
+| **Estado de la spec** | CERRADA (API y tabla server-side con paginación, búsqueda, orden, filtro y detalle) |
 | **Tamaño** | Mediano-grande |
 | **Duración estimada** | 6 h |
 | **Dependencias** | 08-B (tabla y endpoint base), 08-C (capas migradas) |
@@ -16,9 +16,9 @@ La tabla de atributos de una capa con tiles ya no descarga el GeoJSON: usa
 del endpoint (búsqueda, orden, filtro y total) y agrega el feature puntual con
 geometría para que el clic en una fila haga zoom y resalte.
 
-La UI actual sigue cargando hasta 5.000 propiedades y pagina en cliente; todas
-las capas actuales caben en ese límite. La paginación visual server-side queda
-para cuando exista una capa mayor (o para el cierre de 08-D).
+La tabla de capas PostGIS usa **paginación server-side** (100 features por
+página, scroll infinito), búsqueda y orden por API. Las capas GeoJSON conservan
+el renderer local.
 
 ## 2. Alcance
 
@@ -31,9 +31,8 @@ para cuando exista una capa mayor (o para el cierre de 08-D).
 - Tests unitarios del handler.
 
 **Fuera**
-- Paginación visual/infinita server-side (la tabla ya pagina en cliente).
-- Orden por clic en el encabezado (se puede agregar sin cambiar el contrato).
 - Filtro por bbox (08-F/11).
+- Redimensionar columnas en modo server-side (el modo local lo conserva).
 - Cluster/heatmap server-side (08-F).
 - Endpoint de extent (se usa el bbox del manifest).
 
@@ -87,6 +86,24 @@ La tabla lo usa al hacer clic en una fila cuando `geometry` es `null`:
 2. Pide `/api/layer-feature`.
 3. Hace `fitBounds` con Turf y dibuja el highlight.
 
+## 4.4. Tabla server-side
+
+`js/utils/serverTable.js`:
+
+- Para capas con `source.type: "postgis"` y API disponible, la tabla pide
+  páginas de **100** a `/api/layer-features` y hace scroll infinito.
+- La cabecera es clickeable para ordenar (`sort`/`order`); muestra ▲/▼.
+- La búsqueda usa el input existente y llama al endpoint con `search` y
+  `search_field`.
+- El filtro de la capa (`dataFilter`) se traduce a la especificación y se envía
+  como `filter`; al aplicar/cambiar un filtro, la tabla recarga desde offset 0.
+- `countEl` muestra el `total` del servidor.
+- `currentFeatures` acumula las páginas cargadas; el clic de fila sigue usando
+  `/api/layer-feature` para zoom/highlight.
+- Las capas sin `source` (GeoJSON) siguen con el renderer local existente.
+- El observador de scroll usa el contenedor `.table-responsive` como root y un
+  listener de `scroll` como respaldo.
+
 ## 5. Criterios de aceptación
 
 | # | Dado | Cuando | Entonces | Verificación |
@@ -99,7 +116,12 @@ La tabla lo usa al hacer clic en una fila cuando `geometry` es `null`:
 | CA-6 | una columna inválida | se consulta | 400, sin SQL del cliente | test |
 | CA-7 | tabla abierta | se hace clic en una fila | se pide el detalle y se resalta/zoomea | manual + Network |
 | CA-8 | tabla abierta | se busca/filtra | el conteo coincide con el endpoint | manual |
-| CA-9 | capa de 2.662 features | se abre la tabla | carga completa con `total=2662` | manual |
+| CA-9 | capa de 2.662 features | se abre la tabla | `total=2662`, primera página de 100 | manual |
+| CA-10 | tabla server-side | se hace scroll al final | pide `offset=100` y acumula 200 filas | Network |
+| CA-11 | tabla server-side | se busca `ZP` | `search=ZP`, `total=39`, 39 filas | Network |
+| CA-12 | tabla server-side | se filtra `ZP` | `filter=...`, `total=11`, 11 filas | Network |
+| CA-13 | tabla server-side | se clic en `Zona` | `sort=ZONA_1&order=asc`; ▲ y orden correcto | Network |
+| CA-14 | capa de puntos | se abre la tabla | usa el camino GeoJSON, sin API | Network |
 
 ## 6. Tests
 
@@ -119,16 +141,16 @@ La tabla lo usa al hacer clic en una fila cuando `geometry` es `null`:
 
 ## 8. Pendiente / próximos pasos
 
-1. Paginación visual server-side (si una capa supera 5.000 features).
-2. Orden por clic en encabezados.
-3. Filtro por bbox y endpoint de extent.
-4. Agregados de cluster/heatmap (08-F).
-5. `search` con índice trigram si el volumen crece.
+1. Filtro por bbox y endpoint de extent.
+2. Agregados de cluster/heatmap (08-F).
+3. `search` con índice trigram si el volumen crece.
+4. Redimensionar columnas en modo server-side y accesibilidad de la tabla
+   (Sprint 28).
 
 ## 9. Cierre
 
-- Horas reales: 3.
-- Desvíos: la tabla actual pagina en cliente; se priorizó el contrato y el
-  detalle puntual sobre reescribir la tabla completa.
-- Lecciones: el conteo del filtro debe venir del servidor para no mostrar el
-  total del GeoJSON; el detalle puntual evita traer 30 MB de geometría.
+- Horas reales: 5.
+- Desvíos: el scroll infinito necesitó un listener de `scroll` además del
+  `IntersectionObserver` con root del contenedor.
+- Lecciones: el conteo del filtro debe venir del servidor; el detalle puntual
+  evita traer la geometría de toda la capa.
