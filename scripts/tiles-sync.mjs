@@ -193,7 +193,8 @@ function isStale(versions, updatedAt) {
 async function listLayers(pool, opts) {
   if (opts.layer) {
     const { rows } = await pool.query(
-      `SELECT layer_id, physical_table, geometry_type, updated_at, enabled
+      `SELECT layer_id, physical_table, geometry_type, updated_at, enabled,
+              to_regclass(physical_table) IS NOT NULL AS has_table
          FROM chat.chat_catalog WHERE layer_id = $1`,
       [opts.layer]
     );
@@ -202,7 +203,8 @@ async function listLayers(pool, opts) {
   }
 
   const { rows } = await pool.query(
-    `SELECT layer_id, physical_table, geometry_type, updated_at, enabled
+    `SELECT layer_id, physical_table, geometry_type, updated_at, enabled,
+            to_regclass(physical_table) IS NOT NULL AS has_table
        FROM chat.chat_catalog
       WHERE enabled = true
       ORDER BY layer_id`
@@ -271,6 +273,9 @@ async function buildLayer(pool, layer, opts) {
   ]);
 
   const result = await buildTiles(pool, buildOpts, { log, warn });
+  if (result.skipped === "empty") {
+    return { skipped: "empty" };
+  }
   return {
     version,
     previous: active?.version || null,
@@ -306,6 +311,7 @@ async function readAllManifests(out) {
         checksum: manifest.checksum,
         minzoom: manifest.minzoom,
         maxzoom: manifest.maxzoom,
+        maxzoom_requested: manifest.maxzoom_requested ?? manifest.maxzoom,
         feature_count: manifest.feature_count,
         generated_at: manifest.generated_at,
       })),
@@ -484,12 +490,21 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
           console.log(`[tiles-sync] ${layer.layer_id}: deshabilitada, se omite.`);
           continue;
         }
+        if (!layer.has_table) {
+          console.log(
+            `[tiles-sync] ${layer.layer_id}: sin tabla física (WMS), se omite.`
+          );
+          continue;
+        }
         try {
           const result = await buildLayer(pool, layer, opts);
           if (result.skipped) {
-            console.log(
-              `[tiles-sync] ${layer.layer_id}: ${result.skipped === "point" ? "punto, sin tiles" : `al día (${result.version})`}`
-            );
+            const reason = {
+              point: "punto, sin tiles",
+              empty: "tabla vacía, sin tiles",
+              fresh: `al día (${result.version})`,
+            }[result.skipped];
+            console.log(`[tiles-sync] ${layer.layer_id}: ${reason}`);
           }
         } catch (err) {
           failures += 1;

@@ -142,7 +142,8 @@ function qi(name) {
 }
 
 function validTableName(name) {
-  if (!/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/.test(name)) {
+  const ident = "[\\p{L}_][\\p{L}\\p{N}_]*";
+  if (!new RegExp(`^${ident}(\\.${ident})?$`, "u").test(name)) {
     throw new Error(`Nombre de tabla inválido: ${name}`);
   }
   return name;
@@ -401,9 +402,21 @@ export async function buildTiles(pool, opts, { log = console.log, warn = console
   }
   const columnRows = await resolveColumns(pool, physicalTable, geomColumn);
   const featureId = pickFeatureId(columnRows);
+  const featureCount = await countFeatures(pool, physicalTable);
+
+  if (featureCount === 0) {
+    log(
+      JSON.stringify(
+        { event: "empty", layer: layerId, tile_slug: slug, table: physicalTable },
+        null,
+        2
+      )
+    );
+    return { skipped: "empty", plan: { layer: layerId, table: physicalTable } };
+  }
+
   const bbox = await resolveBbox(pool, physicalTable, geomColumn);
   const { tasks, counts } = tileTasks(bbox, opts.minzoom, opts.maxzoom);
-  const featureCount = await countFeatures(pool, physicalTable);
   const plan = {
     event: "plan",
     layer: layerId,

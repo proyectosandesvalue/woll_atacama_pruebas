@@ -93,20 +93,30 @@ simplificación por zoom y candidatos calculados por cobertura real de features
 No reemplaza la prueba de carga del Sprint 30 (mezcla API + DB + chat), pero
 confirma que servir tiles estáticos no es el cuello de botella.
 
-## 5. Estimación de disco
+## 5. Disco y cobertura (corrida completa)
 
-Al cierre de la corrida completa se registra el total en `08-G` y en el
-CHANGELOG. Con las capas medidas, la proyección es:
+Corrida `tiles:sync --changed` sobre el catálogo local (2026-11-13):
 
-| Concepto | Estimación |
-|---|---|
-| Tiles de las 44 capas no-punto | ~300–600 MB |
-| Versión adicional por edición (catastro, incendios, derechos) | +30–50 % |
-| Índice y manifests | < 5 MB |
-| **Total con 2 versiones** | **< 1,5 GB** |
+| Concepto | Valor |
+|---|---:|
+| Capas publicadas | 41 |
+| Tiles generados | 88.152 |
+| Bytes lógicos (suma de `.mvt`) | 146,6 MB |
+| Disco real (bloques de 4 KB + directorios) | 393 MB |
+| Capas degradadas a z13 por límite | 7 |
+| Capas omitidas | 27 puntos, 2 WMS, 1 tabla vacía |
 
-El disco de 80 GB no es el límite; el límite es la cantidad de archivos y el
-tiempo de generación. Nginx sirve archivos estáticos sin tocar PostgreSQL.
+Las 7 capas que bajan de z14 a z13 son regionales: `acuiferos`,
+`comunas_poligonos`, `cuencas_dga`, `energia_potencial_fotovoltaico`,
+`limite_comunal_linea`, `unidades_geomorfologicas` y `zonas_climaticas`.
+
+**Conclusión de disco:** el corpus completo ocupa **393 MB en disco** (146,6 MB
+de contenido). Con dos versiones de las capas por edición se queda por debajo de
+1 GB. El disco de 80 GB no es el límite; el límite es la cantidad de archivos
+(88 mil) y el tiempo de generación.
+
+`tiles:check` verificó las 41 versiones en 10 s: tiles, bytes, checksum y conteo
+de features coinciden.
 
 ## 6. Decisiones
 
