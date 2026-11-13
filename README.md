@@ -179,6 +179,8 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `js/utils/vectorTileUtils.js` | Crea la capa `leaflet.vectorgrid`, estilos/filtros y popup desde tiles | Capas con `source.tiles` (Sprint 08-B) |
 | `server/handlers/layer-features.js` | Features desde PostGIS para tabla/filtros/CSV | Capa con tiles sin descargar el GeoJSON |
 | `scripts/dev-proxy.mjs`, `js/config/proxy.js` | Proxy persistente para desarrollo local (3001) | Cambios del entorno local |
+| `scripts/backup-postgres.sh` | Dump cifrado, checksum, retención y copia externa | Backup diario del VPS (26-G) |
+| `scripts/restore-drill.sh` | Restaura un backup en una base descartable y mide RTO | Simulacro de restauración |
 | `scripts/build_catalog.mjs` | Reconstruye `chat.chat_catalog` (Supabase o PostgreSQL) | Nuevas capas o cambios de config |
 | `js/store/appState.js` | Única fuente de verdad del visor | Nuevo estado global o ciclo de capas |
 | `js/sidebar/` | Render de dimensiones, grupos, capas y leyenda | Cambios de sidebar o controles por capa |

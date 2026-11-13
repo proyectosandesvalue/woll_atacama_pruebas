@@ -290,7 +290,7 @@ tests no deben asumir corte inmediato.
 | 26-J | Ingestas programadas en el VPS (systemd timers) y retiro de los workflows de Supabase | 3 | 26-B, 26-E | Reactivar los workflows de GitHub Actions | `26-J-ingestas.md` | pendiente |
 | 26-K | Completitud local: auditoría, capas faltantes, RAG/ingesta y dump v2 | 8-10 | 26-E, 26-D | Volver al dump v1 | `26-K-completitud-datos.md` | siguiente |
 | 26-F | Staging idéntico a producción (misma imagen/Compose, datos y dominio) | 3 | 26-D, 26-E, 26-K | Apagar staging | `26-F-staging.md` | bloqueado por 26-K |
-| 26-G | Backups cifrados, retención, copia externa y simulacro de restauración | 4 | 26-C | Desactivar el timer de backup | `26-G-backups.md` | pendiente |
+| 26-G | Backups cifrados, retención, copia externa y simulacro de restauración | 4 | 26-C | Desactivar el timer de backup | `26-G-backups.md` | cerrada |
 | 26-H | Endurecimiento del VPS, ajuste de PostgreSQL, monitoreo básico y rotación de secretos | 4 | 26-D, 26-F | Revertir reglas de firewall/SSH | `26-H-hardening.md` | pendiente |
 | 26-I | Corte de DNS/TLS, smoke posterior y procedimiento de retorno | 3 | Todos | DNS de vuelta a Vercel | `26-I-corte.md` | pendiente |
 

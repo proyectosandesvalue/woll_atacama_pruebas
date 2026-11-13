@@ -119,6 +119,8 @@ npm run check:rpcs  # Verifica que las RPCs registradas existan en la BD
 npm run db:dump     # Dump de Supabase (SOURCE_DATABASE_URL)
 npm run db:restore  # Restore local (TARGET_DATABASE_URL)
 npm run db:verify   # Compara origen/destino
+npm run backup:db   # Dump cifrado + checksum + offsite (26-G)
+npm run backup:drill # Restaura un backup en base descartable y mide RTO
 npm run db:extract-rpcs # Genera 038 desde las RPCs heredadas
 npm run layer:load  # Carga GeoJSON/Shapefile a PostGIS (--tiles para generar tiles)
 npm run tiles:build # Genera tiles MVT de una capa/versión (offline)
