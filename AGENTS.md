@@ -126,6 +126,7 @@ npm run layer:load  # Carga GeoJSON/Shapefile a PostGIS (--tiles para generar ti
 npm run tiles:build # Genera tiles MVT de una capa/versión (offline)
 npm run tiles:sync  # Publica capas nuevas/editadas y actualiza tiles/index.json
 npm run tiles:check # Verifica manifests, tiles y conteo contra la BD
+npm run acceptance:08 # Gate del Sprint 08 (tiles, tabla, filtros, export)
 npm run db:up       # Levanta PostgreSQL local (Docker Compose)
 npm run db:down     # Baja PostgreSQL local
 npm run stack:up    # Stack completo dev: postgres + api + nginx (8080)
