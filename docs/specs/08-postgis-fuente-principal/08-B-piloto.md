@@ -18,7 +18,7 @@ El piloto valida la convivencia con Leaflet, la caída a GeoJSON y el costo real
 de la tabla antes de migrar el resto de las capas (08-C).
 
 El piloto inicial usa solo `borde_costero`; 08-C agrega después otras
-38 capas con el mismo patrón (ver `08-C-migracion.md`).
+39 capas con el mismo patrón (ver `08-C-migracion.md`).
 
 ## 2. Alcance
 

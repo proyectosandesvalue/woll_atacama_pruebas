@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 08-C |
-| **Estado de la spec** | EN EJECUCIÓN (39 de 40 capas no-punto configuradas; `comunas_poligonos` sin estilo) |
+| **Estado de la spec** | CERRADA (40/40 capas visibles no-punto con tiles; `comunas_poligonos` no está en la config del visor) |
 | **Tamaño** | Grande (16-24 h) |
 | **Dependencias** | 08-B (cliente y endpoint), 08-A/08-G (tiles publicados) |
 | **Última revisión** | 2026-11-13 |
@@ -106,11 +106,12 @@ Reglas:
 | Planificación | 8 PRC (Chañaral, El Salado, Flamenco, Portofino, Copiapó, Diego de Almagro, Freirina, Vallenar) | 214 | 212 |
 | Planificación | `limites_urbanos` | 13 | 399 |
 | Minería | `distritos_mineros` | 3 | 1.763 |
+| Planificación | `prc_huasco` (`NOM`/`N_DOC`/`P_DO`) | 501 | 28 |
 
-**Total:** 39 capas no-punto con `source`, 82.286 tiles y 143,8 MB lógicos
-(suma de manifests). Quedan 2 capas fuera: `prc_huasco` (columnas ambiguas
-`P_DO`/`N_DOC`/`T_DO`) y `comunas_poligonos` (sin bloque de estilo). Las 27
-capas de puntos quedan en GeoJSON/API.
+**Total:** 40 capas no-punto con `source`, 82.314 tiles y 144,4 MB lógicos
+(suma de manifests). `comunas_poligonos` tiene tabla y tiles pero no está en la
+config del visor, así que no se migra. Las 27 capas de puntos quedan en
+GeoJSON/API.
 
 ## 5. Criterios de aceptación por capa
 
@@ -128,11 +129,10 @@ capas de puntos quedan en GeoJSON/API.
 
 ## 6. Pendiente
 
-1. **`prc_huasco`**: definir el mapeo de `P_DO`/`N_DOC`/`T_DO` (fecha, número y
-   tipo de documento) antes de migrar.
-2. **`comunas_poligonos`**: no tiene bloque de estilo; definir uno o cargarla
-   como capa base.
-3. **Puntos**: no se migran a tiles; solo se valida la API de valores.
+1. **`comunas_poligonos`**: no está referenciada en `js/config/`; si se agrega
+   al visor, sumar su `source`.
+2. **Puntos**: no se migran a tiles; solo se valida la API de valores.
+3. **Paginación/búsqueda server-side**: 08-D.
 
 ## 7. Riesgos
 
@@ -151,6 +151,6 @@ quedan en disco y el endpoint no se usa. No hay migración de datos.
 
 ## 9. Cierre
 
-- Capas migradas: 39/40 configuradas.
+- Capas migradas: 40/40 visibles.
 - Horas reales: 3,5 (piloto + tres lotes).
-- Pendiente: `prc_huasco` (columnas ambiguas) y `comunas_poligonos` (sin estilo); validación visual de las capas del segundo/tercer lote.
+- Pendiente: paginación/búsqueda (08-D), export desde PostGIS (08-E), `comunas_poligonos` si se agrega al visor.
