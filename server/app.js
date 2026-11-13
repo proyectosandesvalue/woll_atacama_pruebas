@@ -82,7 +82,7 @@ export function createApp(opts = {}) {
       }
 
       const result = await route.handler(ctx);
-      writeResult(res, result);
+      writeResult(res, result, logger);
     } catch (err) {
       if (res.headersSent) {
         res.end();
@@ -103,13 +103,23 @@ export function createApp(opts = {}) {
   };
 }
 
-function writeResult(res, result) {
+function writeResult(res, result, logger = console) {
   if (!result) {
     sendEmpty(res, 204);
     return;
   }
 
   const { status = 200, body, headers = {} } = result;
+
+  if (result.stream) {
+    res.writeHead(status, headers);
+    result.stream.on("error", (err) => {
+      logger.error?.("[api] error en stream:", err?.message || err);
+      res.destroy(err);
+    });
+    result.stream.pipe(res);
+    return;
+  }
 
   if (Buffer.isBuffer(body)) {
     sendBuffer(res, status, body, headers);

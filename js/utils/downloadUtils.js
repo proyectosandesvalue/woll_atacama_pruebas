@@ -3,7 +3,7 @@
  * @module utils/downloadUtils
  */
 
-import { appState } from "../store/appState.js";
+import { appState, getDataFilter } from "../store/appState.js";
 import { ensureLayerData } from "./layerUtils.js";
 import { createContextLogger } from "./logger.js";
 import { encontrarTemaParaCapa, obtenerNombrePersonalizado, getCapaConfig } from "./configUtils.js";
@@ -46,7 +46,7 @@ function initDownloadModal() {
     if (btnGeoJSON) {
         btnGeoJSON.addEventListener('click', async () => {
             if (!currentCapa) return;
-            await descargarGeoJSON(currentCapa);
+            await descargarGeoJSON(currentCapa, currentTemasConfig);
             closeDownloadModal();
         });
     }
@@ -97,21 +97,121 @@ export function closeDownloadModal() {
 }
 
 /**
- * Descarga el archivo GeoJSON original
- * @param {string} capaNombre - Nombre técnico de la capa
+ * Convierte el `dataFilter` del visor a la especificación del endpoint.
+ * @param {string} capaNombre
+ * @returns {string|null}
  */
-async function descargarGeoJSON(capaNombre) {
+function buildExportFilter(capaNombre) {
+    const dataFilter = getDataFilter(capaNombre);
+    if (!dataFilter || dataFilter.size === 0) return null;
+    const conditions = [];
+    dataFilter.forEach((values, column) => {
+        if (values && values.size > 0) {
+            conditions.push({ column, operator: "in", value: [...values] });
+        }
+    });
+    return conditions.length > 0
+        ? JSON.stringify({ op: "and", conditions })
+        : null;
+}
+
+/**
+ * Columnas y encabezados visibles de la tabla para el CSV.
+ * @param {object} configCapa
+ * @returns {{columns: string[]|null, labels: string[]|null}}
+ */
+function getExportColumns(configCapa) {
+    const alias = configCapa?.alias || {};
+    const hasAlias = Object.keys(alias).length > 0;
+    if (!hasAlias) return { columns: null, labels: null };
+
+    if (Array.isArray(configCapa.popupCampos) && configCapa.popupCampos.length > 0) {
+        return {
+            columns: configCapa.popupCampos,
+            labels: configCapa.popupCampos.map((key) => alias[key] || key),
+        };
+    }
+    return {
+        columns: Object.keys(alias),
+        labels: Object.values(alias),
+    };
+}
+
+const layerApiCache = new Map();
+
+/**
+ * ¿El servidor Node expone el endpoint de capas? En Vercel no existe.
+ * @param {string} capaNombre
+ * @returns {Promise<boolean>}
+ */
+async function hasLayerApi(capaNombre) {
+    if (!layerApiCache.has(capaNombre)) {
+        try {
+            const res = await fetch(
+                `/api/layer-features?layer_id=${encodeURIComponent(capaNombre)}&limit=1`,
+                { headers: { Accept: "application/json" } }
+            );
+            layerApiCache.set(capaNombre, res.ok);
+        } catch {
+            layerApiCache.set(capaNombre, false);
+        }
+    }
+    return layerApiCache.get(capaNombre);
+}
+
+/**
+ * URL de exportación desde PostGIS, con filtro y columnas visibles.
+ * @param {string} capaNombre
+ * @param {"geojson"|"csv"} format
+ * @param {object} configCapa
+ * @returns {string}
+ */
+function buildExportUrl(capaNombre, format, configCapa) {
+    const params = new URLSearchParams({ layer_id: capaNombre, format });
+    const filter = buildExportFilter(capaNombre);
+    if (filter) params.set("filter", filter);
+
+    if (format === "csv") {
+        const { columns, labels } = getExportColumns(configCapa);
+        if (columns && labels) {
+            params.set("columns", JSON.stringify(columns));
+            params.set("labels", JSON.stringify(labels));
+        }
+    }
+    return `/api/layer-export?${params.toString()}`;
+}
+
+function triggerDownload(url, filename) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+/**
+ * Descarga GeoJSON. En capas PostGIS usa el endpoint (misma data y filtro
+ * que la tabla); si no está disponible, cae al archivo estático.
+ * @param {string} capaNombre - Nombre técnico de la capa
+ * @param {Object} temasConfig - Configuración global de temas
+ */
+async function descargarGeoJSON(capaNombre, temasConfig) {
     try {
-        const url = `geojson/${capaNombre}.geojson`;
+        const temaKey = encontrarTemaParaCapa(capaNombre, temasConfig);
+        const configCapa = getCapaConfig(capaNombre, temaKey, temasConfig);
 
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${capaNombre}.geojson`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        if (configCapa?.source?.type === "postgis" && (await hasLayerApi(capaNombre))) {
+            triggerDownload(
+                buildExportUrl(capaNombre, "geojson", configCapa),
+                `${capaNombre}.geojson`
+            );
+            log.log(`Descargando GeoJSON desde PostGIS: ${capaNombre}`);
+            return;
+        }
 
-        log.log(`Descargando GeoJSON para la capa: ${capaNombre}`);
+        triggerDownload(`geojson/${capaNombre}.geojson`, `${capaNombre}.geojson`);
+        log.log(`Descargando GeoJSON estático: ${capaNombre}`);
     } catch (e) {
         log.error("Error al descargar GeoJSON:", e);
         alert("Ocurrió un error al intentar descargar el archivo GeoJSON.");
@@ -152,6 +252,17 @@ async function descargarCSV(capaNombre, temasConfig) {
 
         const configCapa = getCapaConfig(capaNombre, temaKey, temasConfig);
 
+        // En capas PostGIS, el CSV se genera en streaming desde el servidor
+        // con las mismas columnas y filtro que la tabla.
+        if (configCapa?.source?.type === "postgis" && (await hasLayerApi(capaNombre))) {
+            triggerDownload(
+                buildExportUrl(capaNombre, "csv", configCapa),
+                `${capaNombre}_datos.csv`
+            );
+            log.log(`CSV generado desde PostGIS: ${capaNombre}`);
+            return;
+        }
+
         // 1. Obtener datos (descargar si no están en caché). En capas con
         // tiles, esto baja el GeoJSON completo solo para exportar.
         let geojson = appState.layers.geojsonData.get(capaNombre);
@@ -165,7 +276,18 @@ async function descargarCSV(capaNombre, temasConfig) {
         }
 
         const aliasConfig = configCapa?.alias || null;
-        const features = geojson.features;
+        const dataFilter = getDataFilter(capaNombre);
+        let features = geojson.features;
+        if (dataFilter && dataFilter.size > 0) {
+            features = features.filter((feature) => {
+                for (const [attr, allowedValues] of dataFilter.entries()) {
+                    const value = feature.properties?.[attr];
+                    if (value === undefined || value === null) return false;
+                    if (!allowedValues.has(String(value))) return false;
+                }
+                return true;
+            });
+        }
 
         // 3. Determinar columnas a exportar
         let columnasAMostrar = [];
