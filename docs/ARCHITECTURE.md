@@ -352,6 +352,43 @@ rate-limiter.js	Límite por IP (no distribuido en Vercel; Redis/Nginx en el VPS)
 
 El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consume `/api/proxy?source=...` mediante `js/utils/externalServices.js`; nunca ve el INSTANCE_ID ni el client secret. Detalle en `docs/integrations/proxy-servicios-externos.md`. En local, `scripts/dev-proxy.mjs` reutiliza `handleProxy()` en el puerto 3001 y el frontend lo detecta con `js/config/proxy.js`.
 
+### 4.2. Tiles MVT pregenerados (Sprint 08)
+
+Las capas estáticas o por edición no se sirven desde PostgreSQL en runtime.
+El flujo es offline:
+
+```
+PostGIS (tabla física)
+   │  scripts/build-tiles.mjs (ST_AsMVT, simplificación por zoom)
+   ▼
+tiles/<layer_id>/<version>/<z>/<x>/<y>.mvt + manifest.json
+   │  scripts/tiles-sync.mjs (índice, verificación, retención)
+   ▼
+Nginx /tiles/ (MIME MVT, gzip, Cache-Control: immutable)
+   │
+   ▼
+Navegador (cliente de tiles, Sprint 08-B)
+```
+
+- Cada zoom materializa una vez la geometría simplificada en 3857 y la indexa
+  con GIST; los tiles se recortan desde esa tabla. Los candidatos se calculan
+  por cobertura real de features, no por bbox de la capa.
+- `manifest.json` guarda bbox, zooms, conteo de features, columnas, bytes y
+  checksum SHA-256. `tiles/index.json` lista versiones y la activa.
+- Una versión publicada es inmutable. Una edición publica una versión nueva y
+  la config apunta a ella; la caché se invalida por cambio de URL.
+- Nginx sirve archivos: no hay proxy a la API ni a PostgreSQL. Funciona con la
+  base detenida.
+- Capas de puntos ≤5.000: geometría GeoJSON + valores por API y cluster/heatmap
+  en cliente. Por medición, los tiles de puntos pesan más que el GeoJSON gzip.
+- Límite por capa: 20.000 tiles; si un zoom lo supera, se publica hasta el zoom
+  anterior y se registra en el manifest (`maxzoom` vs `maxzoom_requested`).
+- Alta de capa: `load-layer --tiles` encadena tabla + catálogo + tiles + índice.
+- Comandos: `npm run tiles:build`, `npm run tiles:sync`, `npm run tiles:check`.
+- Detalle: `docs/specs/08-postgis-fuente-principal/08-A-pipeline-tiles.md` y
+  `08-G-ciclo-vida-capas.md`.
+
+
 5. Base de datos — schemas chat, admin y rag
 5.1. Schema chat — tablas
 chat.chat_catalog: catálogo de capas para el LLM.

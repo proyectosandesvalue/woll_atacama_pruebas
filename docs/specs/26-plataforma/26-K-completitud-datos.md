@@ -3,11 +3,11 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 26-K |
-| **Estado de la spec** | EN EJECUCIÓN — stack local levantado, dump v1 restaurado y auditoría inicial hecha |
+| **Estado de la spec** | 🔶 PARCIAL — stack local, dump v1 y auditoría ✅; capas faltantes, RAG/ingesta y dump v2 diferidos al panel admin (2026-11-13) |
 | **Tamaño** | Mediano-grande (8-10h) |
 | **Dependencias** | 26-E (dump v1 restaurado), 26-D (Compose/Nginx), 17/18 (RAG) |
-| **Bloquea** | 26-F (staging), 26-I (corte) |
-| **Última revisión** | 2026-11-11 |
+| **Bloquea** | Ya no bloquea el Sprint 08. 26-F (staging) espera el panel admin (Sprints 15/16) |
+| **Última revisión** | 2026-11-13 |
 
 ## 1. Objetivo
 
@@ -17,6 +17,12 @@ en Supabase, probar RAG e ingestas contra PostgreSQL propio, y generar un
 **dump v2 candidato** (no definitivo) para staging y corte.
 
 El dump v1 es la base de trabajo, no el entregable final.
+
+> **Decisión 2026-11-13.** Las capas faltantes, la ingesta RAG de prueba y el
+> dump v2 **no se hacen todavía**: se ejecutarán cuando exista el panel admin
+> (Sprints 15/16), para probar el alta de capas geográficas y la ingesta como
+> flujo real. El stack local, la auditoría y el dump v1 quedan cerrados y son
+> suficientes para arrancar el Sprint 08. 26-F queda esperando el panel.
 
 ## 2. Alcance
 

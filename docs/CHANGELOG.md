@@ -48,6 +48,13 @@
 ## [Unreleased]
 
 ### Added
+- **Sprint 08-0/08-A: tiles MVT pregenerados.** `scripts/build-tiles.mjs` genera `tiles/<layer>/<version>/<z>/<x>/<y>.mvt` desde PostGIS con simplificación por zoom, feature ids, manifest/checksum y maxzoom adaptativo (20.000 tiles). Materializa la geometría 3857 una vez por zoom y calcula la cobertura real por feature: ~8-11 ms/tile (antes ~40 ms) y sin consultar tiles vacíos.
+- **Sprint 08-G: ciclo de vida de tiles.** `scripts/tiles-sync.mjs` publica por lote, detecta capas nuevas/editadas con `chat_catalog.updated_at`, mantiene `tiles/index.json`, verifica manifests contra archivos y BD (`--check`) y aplica retención (`--prune --keep`). `load-layer --tiles` encadena alta + generación.
+- **Nginx `/tiles/`:** MIME `application/vnd.mapbox-vector-tile`, `Cache-Control: immutable`, gzip y `try_files` (404 real, sin fallback a la SPA). `tiles/` queda fuera de git y de la imagen de la API.
+- **Mediciones 08-0:** `borde_costero` 382 features → 2.887 tiles / 7,8 MB (GeoJSON 47 MB / gzip 15,3 MB); `humedales` → 2.518 tiles / 3,6 MB (GeoJSON 24,1 MB); `hidrografia` → 7.232 tiles / 12,0 MB. Puntos: 920 derechos → 8,2 MB de tiles vs 0,19 MB gzip, por lo que se quedan en GeoJSON/API. Specs `08-0-spike.md`, `08-A-pipeline-tiles.md` y `08-G-ciclo-vida-capas.md`.
+- **Tests:** `scripts/__tests__/build-tiles.test.js` (cálculo de tiles, tolerancias, maxzoom, manifest/checksum, args, versiones) y test de integración opt-in con `TILES_TEST_DATABASE_URL`. `npm test` incluye `scripts/**/*.test.js`.
+- **Scripts npm:** `tiles:build`, `tiles:sync`, `tiles:check`.
+
 - 16 capas satelitales de Copernicus: EVI, EVI2, GNDVI, SAVI, MSAVI2, VARI, MCARI, PSRI, NDYI y ARI_1 en Agricultura; MSI y MDMI en Clima; NDWI, NDCI y WIW en Agua; SWIR en Minería. Cada una con ficha, leyenda y selector de fecha.
 - `js/config/copernicusLayer.js`: ficha común de las capas Copernicus (fecha, nubosidad, bandas RGB y nota).
 - Selector de fecha de Copernicus: navegación histórica desde 2017-01-01, disponibilidad WFS por mes con caché, marcas azules y leyenda con el número de fechas del mes visible.
@@ -76,6 +83,8 @@
 - Lint: resueltos los 9 errores preexistentes (`flatpickr` global, `while (true)` en el orquestador, escapes innecesarios en adapters). `npm run lint` queda en 0 errores.
 
 ### Changed
+- **Sprint 26-K reclasificado (2026-11-13):** stack local, dump v1 y auditoría quedan cerrados; las capas faltantes, la ingesta RAG y el dump v2 se difieren al panel admin (Sprints 15/16) para probarlos como flujo real. 26-K queda parcial y deja de bloquear el Sprint 08.
+- **Sprint 08 en ejecución:** 08-0 (mediciones de generación), 08-A (pipeline/Nginx) y 08-G (ciclo de vida) parcialmente cerrados; falta el cliente de tiles, los endpoints de tabla/agregados y la prueba de carga. Duración revisada a 56-64h.
 - **Spec 08 revisada (2026-11-12):** con el inventario real, el camino principal pasa a **MVT pregenerado y versionado servido por Nginx** para capas estáticas/edición; **on-demand** solo para valores dinámicos y filtros arbitrarios. Estaciones con geometría estática y valores por API; cluster/heatmap cliente ≤5.000 puntos y server-side >5.000. Duración 52-60h. Hace viable el VPS 4 vCPU/8 GB; el disco es el recurso a medir.
 - **Decisión de infraestructura (ADR 005):** el destino final es un VPS propio; Vercel + Supabase quedan como demo/staging. Supabase en límite (~913 MB) y Vercel Hobby insuficiente. No se invierte en infraestructura específica de Vercel no portable.
 - **Disparador de migración:** la imagen Docker de PostgreSQL (PostGIS + pgvector) inicia la migración. Desde ese commit, Docker/VPS es el entorno de desarrollo, Vercel + Supabase quedan congelados y la imagen local se replica en el servidor.

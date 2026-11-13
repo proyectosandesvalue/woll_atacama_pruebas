@@ -3,11 +3,11 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 08 |
-| **Estado de la spec** | APROBADA, revisión 2026-11-12 (modelo de tiles pregenerados) |
+| **Estado de la spec** | APROBADA, revisión 2026-11-13 (pipeline pregenerado implementado; 08-0/08-A/08-G en ejecución) |
 | **Tamaño** | Grande (> 15h) |
-| **Duración estimada** | 52-60h |
+| **Duración estimada** | 56-64h |
 | **Dependencias** | Sprint 07 (`/api/config` + snapshot) y Sprint 26 (imagen Docker PostgreSQL/PostGIS, Node persistente, Compose) |
-| **Última revisión** | 2026-11-12 |
+| **Última revisión** | 2026-11-13 |
 
 > **Corrección 2026-11-10.** El sprint ya estaba registrado en el ROADMAP, pero la
 > spec no hacía explícita la **paridad de opciones de capa** ni corregía el
@@ -75,6 +75,8 @@ navegador.
   - `derechos_agua/2025`.
   - La versión anterior no se sobrescribe; la config apunta a la activa.
 - Manifest por versión con bbox, zooms, checksum, fecha y conteo de features.
+- Ciclo de vida de capas: alta/edición → tiles → índice → config → caché, sin
+  sobrescribir versiones publicadas (08-G).
 - Endpoints paginados para tabla, búsqueda, orden, conteo y filtros.
 - Geometría de estaciones estática (tiles o GeoJSON) y **valores por API**
   (`/api/stations-map`, series y detalles); los valores no se congelan en tiles.
@@ -159,12 +161,14 @@ mapa, tabla, agregados y descarga. Se define una especificación única
 | INV-10 | Un tile estático no consulta PostgreSQL en runtime | Prueba con PostgreSQL detenido: Nginx sigue sirviendo tiles |
 | INV-11 | Una versión de tiles publicada no se sobrescribe | Manifest/checksum y directorio de versión |
 | INV-12 | Los valores dinámicos de estaciones no se congelan en tiles estáticos | El popup/heatmap consulta la API de valores |
+| INV-13 | El índice de tiles y la versión activa de cada capa son consistentes | `tiles:check` y comparación índice/manifest |
+| INV-14 | Una capa nueva o editada se publica sin sobrescribir la versión anterior | `tiles:sync --changed` + inspección de directorios |
 
 ## 6. Decisiones arquitectónicas
 
 | Decisión | ADR | Estado |
 |---|---|---|
-| Cómo se sirven los tiles vectoriales (M2) | `012-servicio-de-tiles.md` | Pendiente: el spike mide pregenerado vs on-demand vs PMTiles |
+| Cómo se sirven los tiles vectoriales (M2) | `012-servicio-de-tiles.md` | Aceptada: pregenerado + Nginx (medido 2026-11-13); on-demand para dinámicas |
 | Cómo se cargan los puntos, cluster y heatmap (M1) | `013-capas-de-puntos.md` | Pendiente: el spike mide cliente vs agregados |
 | Modelo de doble fuente (`source`) | `014-doble-fuente.md` | Propuesto (sección 10) |
 | Librería cliente para tiles vectoriales y convivencia con glify (M4) | `015-cliente-de-tiles.md` | Pendiente |
@@ -225,8 +229,9 @@ cada dimensión es un tramo de 2-3h con su puerta.
 | 08-F | Zoom a capa/feature, cluster/heatmap cliente y agregados server-side >5k | 8 | 08-D | Volver al renderer en cliente para esas capas | 08-F-*.md | pendiente |
 | 08-C1 … C9 | Migración por dimensión y edición (agua, agricultura, clima, energía, minería, otros, planificación, riesgos, suelo) | 2-3 c/u (16-24 total) | 08-F | Por capa (`source.type`) | 08-C*.md | pendiente |
 | 08-E | Exportación/descarga en streaming desde PostGIS | 4 | 08-D | Quitar la opción de la UI | 08-E-*.md | pendiente |
+| 08-G | Ciclo de vida de capas nuevas: sync, índice, verificación y retención | 4 | 08-A | Volver a la versión anterior desde la config | 08-G-*.md | en ejecución |
 
-**Total:** 52-60h.
+**Total:** 56-64h.
 
 **Por qué D y F antes de C:** migrar las capas sin que tabla, zoom, filtros,
 cluster, heatmap y descarga funcionen sobre la nueva fuente multiplica el
@@ -399,12 +404,15 @@ Sprint 26-B), sin `SELECT *`, sin acceso a tablas `admin.*`/`rag.*`,
 Un tramo no se cierra hasta cumplir todo:
 
 - [ ] `npm test` y `npm run lint` limpios.
-- [ ] INV-1 a INV-12 comprobados.
+- [ ] INV-1 a INV-14 comprobados.
 - [ ] Verificado en el entorno Docker local, incluida la prueba de corte del
       endpoint (INV-3) y de PostgreSQL detenido para tiles estáticos (INV-10).
 - [ ] Reversión probada al menos una vez (INV-2).
 - [ ] Paridad de opciones verificada en las capas del tramo (INV-7).
 - [ ] Manifest/checksum y versión de tiles revisados.
+- [ ] Índice de tiles actualizado y `tiles:check` sin errores (INV-13).
+- [ ] Alta/edición de una capa de prueba publica una versión nueva sin
+      sobrescribir la anterior (INV-14).
 - [ ] Docs y CHANGELOG actualizados; ARCHITECTURE si cambia algo estructural.
 - [ ] Re-estimación del resto. Si un tramo tomó el doble, se detiene el sprint y
       se revisa esta spec.
@@ -413,8 +421,8 @@ Un tramo no se cierra hasta cumplir todo:
 
 | Nivel | Qué se prueba |
 |---|---|
-| Unitario (`node:test`) | Compilador de filtros (columnas/operadores allowlist, valores parametrizados), resolución de `source`, paginación y topes, envelope `{ ok, data, error }`, fallback, generación de URLs de tiles/manifest |
-| Integración (Docker + `DATABASE_URL`) | Tile MVT válido y no vacío, manifest/checksum, versión, conteo de tabla, búsqueda/orden, extent, agregados de cluster/heatmap, export GeoJSON/CSV completo |
+| Unitario (`node:test`) | Compilador de filtros (columnas/operadores allowlist, valores parametrizados), resolución de `source`, paginación y topes, envelope `{ ok, data, error }`, fallback, generación de URLs de tiles/manifest, cálculo de tiles/tolerancias, checksum y versiones del ciclo de vida |
+| Integración (Docker + `DATABASE_URL`) | Tile MVT válido y no vacío, manifest/checksum, versión, conteo de tabla, búsqueda/orden, extent, agregados de cluster/heatmap, export GeoJSON/CSV completo, `tiles:check` y `tiles:sync --changed` |
 | Regresión | Capa sin `source` sigue usando GeoJSON; WMS no se ve afectada; `dataFilter` sigue aplicándose; estaciones siguen usando la API de valores |
 | Manual | Paridad visual por capa, popups, leyenda, zoom, cluster, heatmap, descarga, selector de edición |
 | Carga | 25 y 50 usuarios concurrentes; p95 de tile estático y on-demand; CPU/RAM; disco |
@@ -460,7 +468,7 @@ contradicen, se actualiza el ADR y esta spec antes de empezar 08-A.
 | # | Pregunta | Decisión | Impacto si cambia | ¿Bloquea? |
 |---|---|---|---|---|
 | M1 | ¿Cómo se manejan los puntos (cluster y heatmap)? | **Geometría estática** (tiles/GeoJSON) + valores por API; cluster/heatmap cliente ≤5k; agregados server-side >5k | Si se usa MVT para puntos, hay que reimplementar iconos/popups; si no hay agregados, las capas grandes cargan todo | no (el spike valida) |
-| M2 | ¿Cómo se sirven los tiles? | **Pregenerado** en directorios `z/x/y.mvt` + Nginx para capas estáticas/edición; **on-demand** solo para dinámicas/filtros; PMTiles como alternativa si el disco/archivos lo justifican | Cambia el pipeline de 08-A y el storage | no (el spike valida) |
+| M2 | ¿Cómo se sirven los tiles? | **Aprobado por medición:** pregenerado en directorios `z/x/y.mvt` + Nginx (gzip, caché inmutable); on-demand solo para dinámicas/filtros; PMTiles descartado por ahora | Cambia el pipeline de 08-A y el storage | no |
 | M3 | ¿Cuántas capas tienen tabla física con geometría, SRID e índice GIST? | **71 capas en el catálogo** (69 tablas con geometría + 2 WMS) en el dump v1; las faltantes se cargan con `load-layer` | Si faltan, el tramo C crece | no |
 | M4 | ¿Qué librería cliente se usa para tiles vectoriales en Leaflet? | La más simple que conviva con glify (evaluar `leaflet.vectorgrid`); decidir con la prueba del spike | Si exige otro mapa, el alcance toca el Sprint 10 | no (spike) |
 | M5 | ¿Orden de las dimensiones en el tramo C? | Primero capas pesadas/estáticas (mayor ahorro), luego el resto | Solo reordena los tramos | no |
@@ -487,7 +495,8 @@ contradicen, se actualiza el ADR y esta spec antes de empezar 08-A.
 
 ROADMAP (estado por tramo, duración y dependencias), CHANGELOG, ARCHITECTURE
 (§4 backend, §5 BD, §6 frontend, §7 caché), AGENTS.md (peculiaridades nuevas de
-renderers, filtros, umbral de puntos, pregeneración y paridad de opciones),
+renderers, filtros, umbral de puntos, pregeneración, ciclo de vida y paridad de
+opciones), DEV_GUIDE (comandos `tiles:build`/`tiles:sync` y alta con `--tiles`),
 CONTRACT (si el modelo `source` agrega reglas), `.env.example`, ADRs 012-015.
 
 ## 19. Puntos de integración

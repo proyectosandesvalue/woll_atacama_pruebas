@@ -61,7 +61,7 @@
 | 06 | Respuesta geoespacial (GeoJSON en mapa) | ✅ done | alta | 4-6h | — |
 | 06-B.7 | Pintado multi-capa del chat | ✅ done | alta | 3-4h | 06-B.2 |
 | 07 | `/api/config` + snapshot | ⏳ pending | alta | 3-4h | — |
-| 08 | Migración a PostGIS (fuente principal) | ⏳ pending (bloqueado por 26-K/26) | alta | 52-60h | 07, 26 |
+| 08 | Migración a PostGIS (fuente principal) | 🔶 en ejecución (08-0/08-A/08-G parciales) | alta | 56-64h | 07, 26 |
 | 09 | Rasters y capas meteorológicas dinámicas | 🔶 parcial (Copernicus cubre indicadores; NASA/raster pendientes) | media-alta | ~30-50h | decisión técnica |
 | 09-A | Spike/ADR de rasters (semi-resuelto) | 🔶 semi-resuelto | media | 4-6h | — |
 | 09-B | Implementación de rasters (NASA + lectura IMG/TIFF/COG + variables derivadas) | ⏳ pending (bloqueado por 09-A) | media | 12-20h | 09-A |
@@ -83,7 +83,7 @@
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
-| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 en ejecución (26-E v1 ✅; 26-K en ejecución; 26-F después) | alta | 42-46h | 23, 24 |
+| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 parcial (26-E v1 ✅; 26-K diferido al panel admin; 26-F después) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | ⏳ pending | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | ⏳ pending | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
@@ -249,7 +249,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 08 — Migración a PostGIS (fuente principal)
 
-**Estado**: ⏳ pending (bloqueado por 26-K/26) · **Prioridad**: alta · **Duración**: 52-60h · **Dependencias**: 07, 26
+**Estado**: 🔶 en ejecución (08-0 parcial, 08-A en curso, 08-G en curso) · **Prioridad**: alta · **Duración**: 56-64h · **Dependencias**: 07, 26
 **Spec**: `docs/specs/08-postgis-fuente-principal/00-spec-madre.md` (APROBADA, revisión 2026-11-12)
 
 **Objetivo**: PostGIS como fuente principal de capas, con GeoJSON como fallback. El navegador deja de descargar archivos completos y recibe tiles del viewport, páginas de tabla, agregados de cluster/heatmap y exportaciones bajo demanda. **Todas las opciones de capa deben seguir disponibles**: tabla de atributos, zoom a la capa/feature, filtros, cluster, mapa de calor y descarga.
@@ -260,14 +260,23 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 **Entorno**: se ejecuta sobre la imagen Docker PostgreSQL (PostGIS + pgvector), Node persistente y Nginx/Caddy del Sprint 26. Vercel + Supabase quedan congelados (ADR 005). Los ADR de este sprint son 012-015.
 
+**Avance 2026-11-13 (08-0/08-A/08-G)**:
+- `scripts/build-tiles.mjs`: MVT por capa/versión con geometría simplificada materializada por zoom, cobertura real de features, feature ids, manifest/checksum y maxzoom adaptativo (20.000 tiles).
+- `scripts/tiles-sync.mjs`: publicación por lote, detección de capas nuevas/editadas (`chat_catalog.updated_at`), índice `tiles/index.json`, `--check` y `--prune`.
+- `load-layer --tiles`: alta de capa + generación en un paso.
+- Nginx sirve `/tiles/` con MIME MVT, gzip y `Cache-Control: immutable`; `try_files` evita el fallback a la SPA.
+- Mediciones: `borde_costero` 382 features → 2.887 tiles / 7,8 MB (GeoJSON 47 MB); `humedales` → 2.518 tiles / 3,6 MB (GeoJSON 24 MB). Puntos: 920 derechos → 8,2 MB de tiles vs 0,19 MB gzip → se quedan en GeoJSON/API.
+- Pendiente del spike: línea base en navegador, cliente de tiles y prueba de carga.
+
 **Sub-sprints**:
-- [ ] **0** — Spike: línea base, inventario, tamaños de tiles y ADR 012, 013 y 015 (4h)
-- [ ] **A** — Pipeline de tiles pregenerados, manifest/versionado, Nginx y esqueleto on-demand (10h)
+- [x] **0** — Spike: inventario y mediciones de generación ✅; línea base de navegador y ADR 012/013/015 pendientes (4h)
+- [~] **A** — Pipeline de tiles pregenerados, manifest/versionado, Nginx ✅; esqueleto on-demand pendiente (10h)
 - [ ] **B** — Piloto: 1 capa pesada pregenerada, 1 capa de puntos con API y 1 capa dinámica (6h)
 - [ ] **D** — Estilos, popups, leyenda, tabla de atributos paginada y filtros (6h)
 - [ ] **F** — Zoom a capa/feature, cluster/heatmap cliente y agregados server-side >5k (8h)
-- [ ] **C** — Migración completa: 70 capas por dimensión/edición (16-24h)
+- [ ] **C** — Migración completa: 71 capas por dimensión/edición (16-24h)
 - [ ] **E** — Exportación/descarga en streaming desde PostGIS (4h)
+- [~] **G** — Ciclo de vida de capas nuevas: sync, índice, verificación y retención (4h)
 
 ### Sprint 09 — Rasters y capas meteorológicas dinámicas
 
@@ -542,7 +551,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 26 — Plataforma propia (épica)
 
-**Estado**: 🔶 en ejecución (26-E v1 ✅; 26-K en ejecución; 26-F después) · **Prioridad:** alta · **Duración**: 42-46h · **Dependencias**: 23, 24
+**Estado**: 🔶 parcial (26-E v1 ✅; 26-K diferido al panel admin; 26-F después) · **Prioridad:** alta · **Duración**: 42-46h · **Dependencias**: 23, 24
 **Spec**: `docs/specs/26-plataforma/00-spec-madre.md` (APROBADA 2026-11-10) y una spec por tramo.
 
 **Decisión 2026-11-10 (ADR 005)**: VPS propio para producción; Vercel + Supabase quedan como demo/staging. Supabase está en el límite de almacenamiento (~913 MB) y Vercel Hobby no es comercial ni suficiente. No se agrega infraestructura específica de Vercel que no sea portable.
@@ -566,7 +575,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 | 26-C | **Imagen Postgres y migraciones portables (G2).** `000_compat_roles.sql` idempotente (roles `service_role`/`anon`/`authenticated` sin login, PostGIS en `public`, `pgvector`/`unaccent` en `extensions`); runner `scripts/migrate.mjs` con tabla de control y checksum; imagen PostgreSQL 17 + PostGIS + pgvector; probar 000-040 sobre BD vacía dos veces | 5 |
 | 26-D | **Compose, Nginx y proxy.** Servicios `postgres`, `api`, `nginx`, `ingest`; TLS, compresión, caché de estáticos/GeoJSON y de `/api/proxy`, `limit_req` sobre `/api/chat`; red interna, Postgres sin puerto publicado; healthchecks; `.dockerignore`; `.env.example` actualizado | 6 |
 | 26-E | **Datos v1.** Dump desde Supabase y restauración; `scripts/load-layer` (shp/GeoJSON → PostGIS con SRID, índice GIST, alta en catálogo y refresh de stats); `comunas_poligonos`; `build_catalog` contra la nueva BD; verificación de conteos por capa | 5 |
-| 26-K | **Completitud local y dump v2.** Stack local completo, auditoría de estructura/PostGIS, capas faltantes, RAG/ingesta de prueba y dump v2 candidato | 8-10 |
+| 26-K | **Completitud local y dump v2 (parcial).** Stack local completo y auditoría ✅; capas faltantes, RAG/ingesta de prueba y dump v2 se harán cuando exista el panel admin (Sprints 15/16) | 8-10 (3 hechos) |
 | 26-J | **Ingestas programadas.** Reemplazar los 4 workflows de GitHub Actions por systemd timers sobre `docker compose run --rm ingest`; `flock`, logs y verificación de no duplicar datos | 3 |
 | 26-F | **Staging idéntico a producción (G1).** Segundo entorno con el mismo compose, datos de prueba y variables propias | 3 |
 | 26-G | **Backups y restauración (G4).** `pg_dump` diario comprimido y cifrado, retención, copia fuera del servidor, alerta si falla, simulacro de restauración con RPO/RTO medidos | 4 |
@@ -583,7 +592,9 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 **26-E v1 restaurado (2026-11-11):** dump real de Supabase en PostgreSQL 17.11 (90 tablas, 71 capas, 1.425.842 valores), baseline 000-035, migraciones 036-040, `check:rpcs` 48/48 y `db:verify` local OK. **No es el cierre definitivo:** 26-K completa capas faltantes, RAG/ingesta, auditoría de schema y dump v2; 26-F queda bloqueado por 26-K.
 
-**26-K en ejecución (2026-11-11):** stack local (PostgreSQL 17.11 + API + Nginx) con el dump v1 restaurado. Auditoría: 71 tablas en public, 69 tablas con geometría, 37 geometrías inválidas, 1.4M valores de ingest, RAG vacío y 2 GeoJSON huérfanos (`estaciones_metereologicas_atacama`, `macrozonificacion_borde_costero`). PostGIS está en `public`; se mantiene hasta decidir con la auditoría.
+**26-K parcial (2026-11-11, revisado 2026-11-13):** stack local (PostgreSQL 17.11 + API + Nginx) con el dump v1 restaurado. Auditoría: 71 tablas en public, 69 tablas con geometría, 37 geometrías inválidas, 1.4M valores de ingest, RAG vacío y 2 GeoJSON huérfanos (`estaciones_metereologicas_atacama`, `macrozonificacion_borde_costero`). PostGIS está en `public`; se mantiene hasta decidir con la auditoría.
+
+**Decisión 2026-11-13:** las capas faltantes, la ingesta RAG y el dump v2 **no bloquean el Sprint 08**. Se harán contra el panel admin (Sprints 15/16) para probar el alta de capas geográficas y la ingesta como flujo real. 26-K queda parcial y 26-F sigue esperando el panel.
 
 **Criterios de aceptación del sprint**:
 - **CA-1** Dada una BD vacía, cuando se aplica el runner dos veces, entonces termina sin errores y las 71 capas cargan con el mismo conteo que en Supabase.

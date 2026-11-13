@@ -120,7 +120,10 @@ npm run db:dump     # Dump de Supabase (SOURCE_DATABASE_URL)
 npm run db:restore  # Restore local (TARGET_DATABASE_URL)
 npm run db:verify   # Compara origen/destino
 npm run db:extract-rpcs # Genera 038 desde las RPCs heredadas
-npm run layer:load  # Carga GeoJSON/Shapefile a PostGIS
+npm run layer:load  # Carga GeoJSON/Shapefile a PostGIS (--tiles para generar tiles)
+npm run tiles:build # Genera tiles MVT de una capa/versión (offline)
+npm run tiles:sync  # Publica capas nuevas/editadas y actualiza tiles/index.json
+npm run tiles:check # Verifica manifests, tiles y conteo contra la BD
 npm run db:up       # Levanta PostgreSQL local (Docker Compose)
 npm run db:down     # Baja PostgreSQL local
 npm run stack:up    # Stack completo dev: postgres + api + nginx (8080)
@@ -152,6 +155,13 @@ No hay build step. Los scripts que tocan Supabase o el LLM leen `.env.staging` v
 **Glify `colorCallback` no verifica `dataFilter`.** En `glifyAdapter.js:buildColorCallback()`, agrega la verificación manual si el feature debe filtrarse.
 
 **Glify solo para polígonos.** `GLIFY_CONFIG.USE_GLIFY_RENDERER` y `GLIFY_TYPES` en `constants.js`. Los puntos nunca van a glify; las líneas van a `L.geoJson` (SVG) porque WebGL maneja mal el z-index y el anti-aliasing en líneas.
+
+**Tiles pregenerados (Sprint 08).** Las capas estáticas/edición se sirven como
+MVT desde `tiles/<layer>/<version>/<z>/<x>/<y>.mvt`; Nginx no consulta
+PostgreSQL. Una versión publicada es inmutable: actualizar = generar una
+versión nueva (`tiles:sync --changed`) y cambiar la config. Los tiles de puntos
+no se generan por defecto (GeoJSON + API pesa menos que MVT). El generador baja
+un zoom si la capa supera 20.000 tiles. Ver `docs/DEV_GUIDE.md` §2.11.
 
 **Capas WMS.** El servicio se declara en `wms_services.js`; en la dimensión, la capa usa `tipo: 'wms'` + `servicio: '<clave>'` (sin `url`). `cargarCapaIndividual` las detecta con `isWMSLayer()` y crea `L.tileLayer.wms` con `createWMSLayer()`. Los filtros por atributo no aplican en cliente (los gestiona el servidor).
 

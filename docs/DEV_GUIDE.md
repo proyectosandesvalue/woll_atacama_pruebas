@@ -767,6 +767,83 @@ PostGIS docs: https://postgis.net/documentation/
 
 text
 
+### 2.11. Tiles MVT pregenerados (Sprint 08)
+
+Los tiles se generan **offline** desde PostGIS y se sirven como archivos; Nginx
+no consulta la base. Se guardan en `tiles/<layer_id>/<version>/<z>/<x>/<y>.mvt`
+(fuera de git y de la imagen de la API).
+
+**Variables**
+
+```bash
+# En .env.local o en el entorno del comando
+DATABASE_ADMIN_URL=postgres://postgres:CLAVE@127.0.0.1:5432/woll
+```
+
+`DATABASE_ADMIN_URL` necesita permiso de `CREATE TEMP TABLE` (el generador
+materializa la geometría simplificada por zoom).
+
+**Generar una capa y versión**
+
+```bash
+npm run tiles:build -- --layer borde_costero --version 2026 \
+  --minzoom 0 --maxzoom 14 --workers 3
+```
+
+- `--maxzoom` se degrada solo si la capa supera 20.000 tiles (capas regionales
+  bajan a z13). `--force` permite el zoom completo.
+- `--publish` imprime el snippet `source.tiles` para la config de la capa.
+- Una versión con `manifest.json` no se sobrescribe: usá otra `--version` o
+  `--overwrite` solo en desarrollo.
+
+**Publicar todas las capas nuevas o editadas**
+
+```bash
+npm run tiles:sync -- --changed
+npm run tiles:sync -- --layer humedales --version 2026
+npm run tiles:sync -- --index
+```
+
+`--changed` compara `chat.chat_catalog.updated_at` con `generated_at` del
+manifest. Las capas de puntos se omiten por defecto (geometría GeoJSON + valores
+por API); `--include-points` fuerza los tiles.
+
+**Verificar y retener**
+
+```bash
+npm run tiles:check                 # manifests vs archivos y conteo en la BD
+npm run tiles:sync -- --prune --keep 2
+```
+
+**Alta de una capa nueva con tiles**
+
+```bash
+npm run layer:load -- geojson/mi_capa.geojson \
+  --table mi_capa --dimension agua --display-name "Mi capa" \
+  --tiles --tiles-version 2026
+```
+
+Si la generación falla, la capa queda cargada; se reintenta con
+`npm run tiles:sync -- --layer mi_capa --version 2026`.
+
+**Servir en local**
+
+El stack de desarrollo monta el repo en `/srv/woll`; la ruta `/tiles/` ya está
+en `deploy/nginx/woll-locations.conf` con MIME MVT, gzip y caché inmutable:
+
+```bash
+npm run stack:up
+curl -I http://localhost:8090/tiles/borde_costero/2026/10/308/596.mvt
+```
+
+**Reglas de versionado**
+
+- Ediciones y años usan versión explícita: `2024`, `2026`, `2025`.
+- Capas nuevas sin edición usan `YYYYMMDD` (fecha de `updated_at`).
+- Actualizar datos = versión nueva; la anterior se conserva hasta `--prune`.
+- La versión activa es la más reciente por `generated_at` en `tiles/index.json`.
+- La caché no se purga: cambia la URL al cambiar la versión.
+
 ---
 
 ## Verificación después de reemplazar
