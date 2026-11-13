@@ -508,6 +508,21 @@ const mineriaConfig = {
     },
     distritos_mineros: {
       url: "distritos_mineros.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "distritos_mineros",
+          urlTemplate: "/tiles/distritos_mineros/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/distritos_mineros/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "distritos_mineros.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       nombrePersonalizado: "Distritos Mineros", // Nombre personalizado de la CapaMU
       atributo: "Region",
@@ -517,14 +532,14 @@ const mineriaConfig = {
       popupCampos: [
         "Nombre",
         "Descripcion",
-        "Superficie en KM",
+        "Superficie en KM2",
         "Creador Dato",
         "Origen Data",
       ],
       alias: {
         Nombre: "Nombre del Distrito",
         Descripcion: "Descripcion",
-        "Superficie en KM": "Sup. Total en Km",
+        "Superficie en KM2": "Sup. Total en Km",
         "Creador Dato": "Creador del Dato",
         "Origen Data": "Origen de la Informacion",
       },

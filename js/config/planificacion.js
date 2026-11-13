@@ -389,6 +389,21 @@ const planificacionConfig = {
     },
     prc_chañaral: {
       url: "prc_chañaral.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "prc_chanaral",
+          urlTemplate: "/tiles/prc_chanaral/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/prc_chanaral/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "prc_chañaral.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Comunal - Chañaral", // Nombre personalizado de la Capa
@@ -415,7 +430,7 @@ const planificacionConfig = {
         "UPERM",
         "UPROH",
         "Nº Decreto",
-        "Fecha Publicacion",
+        "Fecha Decreto",
         "Link Decreto",
         "Ordenanza PRC",
         "Link LGUC",
@@ -429,7 +444,7 @@ const planificacionConfig = {
         UPERM: "Usos Permitidos",
         UPROH: "Uso Prohibido",
         "Nº Decreto": "Numero Documento",
-        "Fecha Publicacion": "Fecha Publicacion",
+        "Fecha Decreto": "Fecha Decreto",
         "Link Decreto": "Link Decreto",
         "Ordenanza PRC": "Ordenanza Plan Regulador",
         "Link LGUC": "Ley General Urbanismo y Construccion",
@@ -447,6 +462,21 @@ const planificacionConfig = {
     },
     prc_chañaral_el_salado: {
       url: "prc_chañaral_el_salado.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "prc_chanaral_el_salado",
+          urlTemplate: "/tiles/prc_chanaral_el_salado/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/prc_chanaral_el_salado/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "prc_chañaral_el_salado.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Comunal - Seccional El Salado", // Nombre personalizado de la Capa
@@ -474,7 +504,7 @@ const planificacionConfig = {
         "UPERM",
         "UPROH",
         "Nº Decreto",
-        "Fecha Publicacion",
+        "Fecha Decreto",
         "Link Decreto",
         "Ordenanza PRC",
         "Link LGUC",
@@ -489,7 +519,7 @@ const planificacionConfig = {
         UPERM: "Usos Permitidos",
         UPROH: "Uso Prohibido",
         "Nº Decreto": "Numero Documento",
-        "Fecha Publicacion": "Fecha Publicacion",
+        "Fecha Decreto": "Fecha Decreto",
         "Link Decreto": "Link Decreto",
         "Ordenanza PRC": "Ordenanza Plan Regulador",
         "Link LGUC": "Ley General Urbanismo y Construccion",
@@ -507,6 +537,21 @@ const planificacionConfig = {
     },
     prc_chañaral_flamenco: {
       url: "prc_chañaral_flamenco.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "prc_chanaral_flamenco",
+          urlTemplate: "/tiles/prc_chanaral_flamenco/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/prc_chanaral_flamenco/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "prc_chañaral_flamenco.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Comunal - Seccional Flamenco", // Nombre personalizado de la Capa
@@ -534,7 +579,7 @@ const planificacionConfig = {
         "UPERM",
         "UPROH",
         "Nº Decreto",
-        "Fecha Publicacion",
+        "Fecha Decreto",
         "Link Decreto",
         "Ordenanza PRC",
         "Link LGUC",
@@ -549,7 +594,7 @@ const planificacionConfig = {
         UPERM: "Usos Permitidos",
         UPROH: "Uso Prohibido",
         "Nº Decreto": "Numero Documento",
-        "Fecha Publicacion": "Fecha Publicacion",
+        "Fecha Decreto": "Fecha Decreto",
         "Link Decreto": "Link Decreto",
         "Ordenanza PRC": "Ordenanza Plan Regulador",
         "Link LGUC": "Ley General Urbanismo y Construccion",
@@ -567,6 +612,21 @@ const planificacionConfig = {
     },
     prc_chañaral_portofino: {
       url: "prc_chañaral_portofino.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "prc_chanaral_portofino",
+          urlTemplate: "/tiles/prc_chanaral_portofino/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/prc_chanaral_portofino/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "prc_chañaral_portofino.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Comunal - Seccional Portofino", // Nombre personalizado de la Capa
@@ -594,7 +654,7 @@ const planificacionConfig = {
         "UPERM",
         "UPROH",
         "Nº Decreto",
-        "Fecha Publicacion",
+        "Fecha Decreto",
         "Link Decreto",
         "Ordenanza PRC",
         "Link LGUC",
@@ -609,7 +669,7 @@ const planificacionConfig = {
         UPERM: "Usos Permitidos",
         UPROH: "Uso Prohibido",
         "Nº Decreto": "Numero Documento",
-        "Fecha Publicacion": "Fecha Publicacion",
+        "Fecha Decreto": "Fecha Decreto",
         "Link Decreto": "Link Decreto",
         "Ordenanza PRC": "Ordenanza Plan Regulador",
         "Link LGUC": "Ley General Urbanismo y Construccion",
@@ -627,6 +687,21 @@ const planificacionConfig = {
     },
     prc_copiapo: {
       url: "prc_copiapo.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "prc_copiapo",
+          urlTemplate: "/tiles/prc_copiapo/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/prc_copiapo/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "prc_copiapo.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Comunal - Copiapó", // Nombre personalizado de la Capa
@@ -653,7 +728,7 @@ const planificacionConfig = {
         "UPERM",
         "UPROH",
         "Nº Decreto",
-        "Fecha Publicacion",
+        "Fecha Decreto",
         "Link Decreto",
         "Ordenanza PRC",
         "Link LGUC",
@@ -667,7 +742,7 @@ const planificacionConfig = {
         UPERM: "Usos Permitidos",
         UPROH: "Uso Prohibido",
         "Nº Decreto": "Numero Documento",
-        "Fecha Publicacion": "Fecha Publicacion",
+        "Fecha Decreto": "Fecha Decreto",
         "Link Decreto": "Link Decreto",
         "Ordenanza PRC": "Ordenanza Plan Regulador",
         "Link LGUC": "Ley General Urbanismo y Construccion",
@@ -685,6 +760,21 @@ const planificacionConfig = {
     },
     prc_diego_almagro: {
       url: "prc_diego_almagro.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "prc_diego_almagro",
+          urlTemplate: "/tiles/prc_diego_almagro/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/prc_diego_almagro/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "prc_diego_almagro.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Comunal - Diego de Almagro", // Nombre personalizado de la Capa
@@ -712,7 +802,7 @@ const planificacionConfig = {
         "UPERM",
         "UPROH",
         "Nº Decreto",
-        "Fecha Publicacion",
+        "Fecha Decreto",
         "Link Decreto",
         "Ordenanza PRC",
         "Link LGUC",
@@ -727,7 +817,7 @@ const planificacionConfig = {
         UPERM: "Usos Permitidos",
         UPROH: "Uso Prohibido",
         "Nº Decreto": "Numero Documento",
-        "Fecha Publicacion": "Fecha Publicacion",
+        "Fecha Decreto": "Fecha Decreto",
         "Link Decreto": "Link Decreto",
         "Ordenanza PRC": "Ordenanza Plan Regulador",
         "Link LGUC": "Ley General Urbanismo y Construccion",
@@ -745,6 +835,21 @@ const planificacionConfig = {
     },
     prc_freirina: {
       url: "prc_freirina.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "prc_freirina",
+          urlTemplate: "/tiles/prc_freirina/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/prc_freirina/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "prc_freirina.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Comunal - Freirina", // Nombre personalizado de la Capa
@@ -768,7 +873,7 @@ const planificacionConfig = {
         "UPERM",
         "UPROH",
         "Nº Decreto",
-        "Fecha Publicacion",
+        "Fecha Decreto",
         "Link Decreto",
         "Ordenanza PRC",
         "Link LGUC",
@@ -782,7 +887,7 @@ const planificacionConfig = {
         UPERM: "Usos Permitidos",
         UPROH: "Uso Prohibido",
         "Nº Decreto": "Numero Documento",
-        "Fecha Publicacion": "Fecha Publicacion",
+        "Fecha Decreto": "Fecha Decreto",
         "Link Decreto": "Link Decreto",
         "Ordenanza PRC": "Ordenanza Plan Regulador",
         "Link LGUC": "Ley General Urbanismo y Construccion",
@@ -872,6 +977,21 @@ const planificacionConfig = {
     },
     prc_vallenar: {
       url: "prc_vallenar.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "prc_vallenar",
+          urlTemplate: "/tiles/prc_vallenar/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/prc_vallenar/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "prc_vallenar.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "ZONA", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Plan Regulador Comunal - Vallenar", // Nombre personalizado de la Capa
@@ -893,7 +1013,7 @@ const planificacionConfig = {
         "UPERM",
         "UPROH",
         "Nº Decreto",
-        "Fecha Publicacion",
+        "Fecha Decreto",
         "Link Decreto",
         "Ordenanza PRC",
         "Link LGUC",
@@ -908,7 +1028,7 @@ const planificacionConfig = {
         UPERM: "Usos Permitidos",
         UPROH: "Uso Prohibido",
         "Nº Decreto": "Numero Documento",
-        "Fecha Publicacion": "Fecha Publicacion",
+        "Fecha Decreto": "Fecha Decreto",
         "Link Decreto": "Link Decreto",
         "Ordenanza PRC": "Ordenanza Plan Regulador",
         "Link LGUC": "Ley General Urbanismo y Construccion",
@@ -926,6 +1046,21 @@ const planificacionConfig = {
     },
     limites_urbanos: {
       url: "limites_urbanos.geojson",
+      // Sprint 08-C: tiles MVT pregenerados; fallback GeoJSON.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "20261005",
+          layerName: "limites_urbanos",
+          urlTemplate: "/tiles/limites_urbanos/20261005/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/limites_urbanos/20261005/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "limites_urbanos.geojson" },
+      },
       type: "polygon", // Tipo de capa: point, line, polygon
       atributo: "REG", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Limites Urbanos", // Nombre personalizado de la Capa
@@ -935,8 +1070,8 @@ const planificacionConfig = {
       popupCampos: [
         "NOM",
         "COM",
-        "INSTRUMENT",
-        "ADMIN",
+        "INSTRUMENT_1",
+        "ADMIN_1",
         "DO_1",
         "N_DOC",
         "Descripcion",
