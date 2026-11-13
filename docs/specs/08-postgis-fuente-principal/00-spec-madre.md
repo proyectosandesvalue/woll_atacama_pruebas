@@ -222,8 +222,8 @@ cada dimensión es un tramo de 2-3h con su puerta.
 
 | Tramo | Nombre | Horas | Depende de | Reversión | Spec | Estado |
 |---|---|---|---|---|---|---|
-| 08-0 | Spike: línea base, inventario, tamaños de tiles y ADRs 012/013/015 | 4 | Sprint 07 + 26 | Nada que revertir (descartable) | esta spec | pendiente |
-| 08-A | Pipeline de tiles pregenerados, manifest/versionado, Nginx y esqueleto on-demand | 10 | 08-0 | Apagar las rutas; ninguna capa las usa aún | 08-A-*.md | pendiente |
+| 08-0 | Spike: línea base, inventario, tamaños de tiles y ADRs 012/013/015 | 4 | Sprint 07 + 26 | Nada que revertir (descartable) | 08-0-spike.md | parcial: mediciones ✅, navegador/cliente pendientes |
+| 08-A | Pipeline de tiles pregenerados, manifest/versionado, Nginx y esqueleto on-demand | 10 | 08-0 | Apagar las rutas; ninguna capa las usa aún | 08-A-pipeline-tiles.md | parcial: pipeline/Nginx ✅, on-demand pendiente |
 | 08-B | Piloto: 1 capa pesada pregenerada, 1 capa de puntos con API y 1 capa dinámica | 6 | 08-A | Cambiar `source.type` de las 3 capas | 08-B-*.md | pendiente |
 | 08-D | Estilos, popups, leyenda, tabla completa (búsqueda, orden, filtros y conteo) | 6 | 08-B | Igual que 08-B | 08-D-*.md | pendiente |
 | 08-F | Zoom a capa/feature, cluster/heatmap cliente y agregados server-side >5k | 8 | 08-D | Volver al renderer en cliente para esas capas | 08-F-*.md | pendiente |
