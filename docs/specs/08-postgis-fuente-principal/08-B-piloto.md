@@ -17,8 +17,8 @@ tabla de atributos, filtros por categoría, categorías ocultas y exportación C
 El piloto valida la convivencia con Leaflet, la caída a GeoJSON y el costo real
 de la tabla antes de migrar el resto de las capas (08-C).
 
-No se migran otras capas: la config de `borde_costero` es la única con
-`source.type: "postgis"`.
+El piloto inicial usa solo `borde_costero`; 08-C agrega después otras
+13 capas con el mismo patrón (ver `08-C-migracion.md`).
 
 ## 2. Alcance
 

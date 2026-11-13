@@ -227,7 +227,7 @@ cada dimensión es un tramo de 2-3h con su puerta.
 | 08-B | Piloto: 1 capa pesada pregenerada, 1 capa de puntos con API y 1 capa dinámica | 6 | 08-A | Cambiar `source.type` de las 3 capas | 08-B-piloto.md | parcial: `borde_costero` ✅; puntos/dinámica pendientes |
 | 08-D | Estilos, popups, leyenda, tabla completa (búsqueda, orden, filtros y conteo) | 6 | 08-B | Igual que 08-B | 08-D-*.md | parcial: endpoint de properties ✅; paginación/búsqueda pendientes |
 | 08-F | Zoom a capa/feature, cluster/heatmap cliente y agregados server-side >5k | 8 | 08-D | Volver al renderer en cliente para esas capas | 08-F-*.md | pendiente |
-| 08-C1 … C9 | Migración por dimensión y edición (agua, agricultura, clima, energía, minería, otros, planificación, riesgos, suelo) | 2-3 c/u (16-24 total) | 08-F | Por capa (`source.type`) | 08-C*.md | pendiente |
+| 08-C1 … C9 | Migración por dimensión y edición (agua, agricultura, clima, energía, minería, otros, planificación, riesgos, suelo) | 2-3 c/u (16-24 total) | 08-F | Por capa (`source.type`) | 08-C-migracion.md | parcial: 14/41 capas no-punto |
 | 08-E | Exportación/descarga en streaming desde PostGIS | 4 | 08-D | Quitar la opción de la UI | 08-E-*.md | pendiente |
 | 08-G | Ciclo de vida de capas nuevas: sync, índice, verificación y retención | 4 | 08-A | Volver a la versión anterior desde la config | 08-G-*.md | en ejecución |
 

@@ -267,6 +267,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - Nginx sirve `/tiles/` con MIME MVT, gzip y `Cache-Control: immutable`; `try_files` evita el fallback a la SPA.
 - Mediciones: `borde_costero` 382 features → 2.887 tiles / 7,8 MB (GeoJSON 47 MB); `humedales` → 2.518 tiles / 3,6 MB (GeoJSON 24 MB). Puntos: 920 derechos → 8,2 MB de tiles vs 0,19 MB gzip → se quedan en GeoJSON/API.
 - **Corrida completa:** 41 capas, 88.152 tiles, 146,6 MB lógicos / 393 MB en disco; 7 capas regionales degradadas a z13; 27 puntos, 2 WMS y 1 tabla vacía omitidos. `tiles:check` valida las 41 versiones. Tiles servidos con PostgreSQL detenido (Nginx 200) y 6.502 req/s con 50 conexiones.
+- **08-C parcial (2026-11-13):** 14 capas no-punto usan tiles: `borde_costero`, `hidrografia`, `humedales`, `cuencas_dga`, los 3 decretos de escasez, `zonas_climaticas`, los 2 planes reguladores costeros, `unidades_geomorfologicas`, `capacidad_uso_suelo`, `energia_linea_transmision` y `energia_potencial_fotovoltaico`. La tabla subió a un límite de 5.000 propiedades; falta paginar (08-D) y migrar las 27 capas restantes.
 - **08-B (2026-11-13):** `borde_costero` se pinta con `leaflet.vectorgrid` (3 tiles en z8, sin GeoJSON), popup desde `properties`, zoom por manifest, tabla de 382 features desde PostGIS, filtro `ZP`=11 (coincide con SQL), CSV de 382 filas y fallback GeoJSON. La tabla dejó de mostrar 450 (GeoJSON) y ahora usa `/api/layer-features`. Pendiente: capa de puntos con API y capa dinámica.
 - Pendiente del spike: línea base en navegador y prueba de accesibilidad del canvas.
 
@@ -276,7 +277,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - [~] **B** — Piloto: `borde_costero` con tiles, popup, zoom, tabla (382), filtros (ZP=11) y CSV ✅; faltan capa de puntos con API y capa dinámica (6h)
 - [~] **D** — Estilos, popups, leyenda y tabla ✅ vía `/api/layer-features`; búsqueda, orden y paginación server-side pendientes (6h)
 - [ ] **F** — Zoom a capa/feature, cluster/heatmap cliente y agregados server-side >5k (8h)
-- [ ] **C** — Migración completa: 71 capas por dimensión/edición (16-24h)
+- [~] **C** — Migración por dimensión: 14/41 capas no-punto con `source` (agua, clima, planificación, suelo, agricultura, energía); puntos quedan GeoJSON/API (16-24h)
 - [ ] **E** — Exportación/descarga en streaming desde PostGIS (4h)
 - [~] **G** — Ciclo de vida de capas nuevas: sync, índice, verificación y retención (4h)
 

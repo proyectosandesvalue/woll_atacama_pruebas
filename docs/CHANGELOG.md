@@ -50,6 +50,7 @@
 ### Added
 - **Sprint 08-B: piloto de tiles en el visor.** `borde_costero` se sirve con `leaflet.vectorgrid@1.3.0` vendorizado (`js/lib/Leaflet.VectorGrid-1.3.0.min.js`) desde `/tiles/borde_costero/2026/...`, con popup, zoom por manifest, categorías ocultas, filtros y opacidad. No descarga el GeoJSON al activarse.
 - **Endpoint `GET /api/layer-features`:** devuelve una FeatureCollection desde la tabla física del catálogo (`layer_id`, `limit`, `offset`, `include_geometry`). Sin geometría por defecto: la tabla de `borde_costero` pasa de 32 MB a ~560 KB. La tabla, los filtros y el CSV lo usan con fallback al GeoJSON.
+- **Sprint 08-C parcial:** 13 capas no-punto adicionales con `source` (hidrografia, humedales, cuencas_dga, 3 decretos de escasez, zonas_climaticas, 2 planes reguladores costeros, unidades_geomorfologicas, capacidad_uso_suelo, energia_linea_transmision, energia_potencial_fotovoltaico). Total: 14/41 capas no-punto con tiles. El límite de propiedades de la tabla sube a 5.000.
 - Tests del handler de features (validación, 404, límites, geometría opcional).
 - Nginx dev sirve JS/CSS con `no-cache` para ver cambios sin hard reload (producción mantiene 7 días).
 
