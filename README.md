@@ -173,7 +173,9 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `scripts/dump-supabase.sh`, `scripts/restore-local.sh` | Dump de Supabase y restore al PostgreSQL local | Migración de datos o restore de staging |
 | `scripts/verify-migration.mjs` | Compara conteos, geometrías, secuencias, roles y RPCs | Antes de promover staging/producción |
 | `scripts/extract-legacy-rpcs.mjs` | Genera `039_legacy_rpcs.sql` desde Supabase | Cerrar el gap de RPCs heredadas |
-| `scripts/load-layer.mjs` | Carga GeoJSON/Shapefile a PostGIS + catálogo | Agregar o reemplazar una capa |
+| `scripts/load-layer.mjs` | Carga GeoJSON/Shapefile a PostGIS + catálogo (`--tiles` genera tiles) | Agregar o reemplazar una capa |
+| `scripts/build-tiles.mjs` | Genera tiles MVT pregenerados por capa/versión y su manifest | Publicar o regenerar una capa estática |
+| `scripts/tiles-sync.mjs` | Publica capas nuevas/editadas, índice, verificación y retención | Ciclo de vida de tiles (Sprint 08-G) |
 | `scripts/dev-proxy.mjs`, `js/config/proxy.js` | Proxy persistente para desarrollo local (3001) | Cambios del entorno local |
 | `scripts/build_catalog.mjs` | Reconstruye `chat.chat_catalog` (Supabase o PostgreSQL) | Nuevas capas o cambios de config |
 | `js/store/appState.js` | Única fuente de verdad del visor | Nuevo estado global o ciclo de capas |
