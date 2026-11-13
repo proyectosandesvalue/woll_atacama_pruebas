@@ -49,7 +49,9 @@
   (handler), reutilización de conexiones para Copernicus/tiles.
 - **Operación:** backups diarios cifrados con `pg_dump`, checksum y copia
   externa (`scripts/backup-postgres.sh`, timer systemd 03:00 UTC); simulacro de
-  restauración con `scripts/restore-drill.sh` (RTO 94 s local).
+  restauración con `scripts/restore-drill.sh` (RTO 94 s local). Las ingestas
+  corren con timers systemd (`woll-ingest-*`) sobre el contenedor `ingest`, con
+  `flock` y logs en journald; ya no dependen de GitHub Actions.
 - **Estado:** 26-C/B/A/D cerrados; 26-E con tooling listo (falta el dump real
   de Supabase); pendientes staging, backups, hardening y corte (26-F a 26-I).
   Ver `docs/DECISIONS/005-plataforma-hosting-vps.md` y `010-borde-nginx.md`.
