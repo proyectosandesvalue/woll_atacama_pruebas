@@ -1,0 +1,12 @@
+[Unit]
+Description=Ingesta MeteoChile diaria (03:00 UTC)
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=true
+RandomizedDelaySec=10m
+AccuracySec=1min
+Unit=woll-ingest@daily.service
+
+[Install]
+WantedBy=timers.target

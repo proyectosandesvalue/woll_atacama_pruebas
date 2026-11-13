@@ -1,0 +1,12 @@
+[Unit]
+Description=Ingesta RedMeteo cada hora
+
+[Timer]
+OnCalendar=*-*-* *:25:00
+Persistent=true
+RandomizedDelaySec=2m
+AccuracySec=1min
+Unit=woll-ingest@redmeteo.service
+
+[Install]
+WantedBy=timers.target

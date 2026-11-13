@@ -1,0 +1,18 @@
+[Unit]
+Description=Ingesta programada WOLL (%i)
+Documentation=file:/srv/woll/docs/specs/26-plataforma/26-J-ingestas.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=woll
+Group=woll
+WorkingDirectory=/srv/woll
+Environment=WOLL_COMPOSE_DIR=/srv/woll
+Environment=WOLL_ENV_FILE=.env
+ExecStart=/srv/woll/scripts/run-ingest-timer.sh %i
+TimeoutStartSec=30min
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

@@ -1,0 +1,12 @@
+[Unit]
+Description=Ingesta MeteoChile tiempo real cada hora
+
+[Timer]
+OnCalendar=*-*-* *:05:00
+Persistent=true
+RandomizedDelaySec=2m
+AccuracySec=1min
+Unit=woll-ingest@realtime.service
+
+[Install]
+WantedBy=timers.target

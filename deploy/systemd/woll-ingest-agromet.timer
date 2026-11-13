@@ -1,0 +1,12 @@
+[Unit]
+Description=Ingesta Agromet cada hora
+
+[Timer]
+OnCalendar=*-*-* *:15:00
+Persistent=true
+RandomizedDelaySec=2m
+AccuracySec=1min
+Unit=woll-ingest@agromet.service
+
+[Install]
+WantedBy=timers.target
