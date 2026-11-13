@@ -266,7 +266,8 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - `load-layer --tiles`: alta de capa + generación en un paso.
 - Nginx sirve `/tiles/` con MIME MVT, gzip y `Cache-Control: immutable`; `try_files` evita el fallback a la SPA.
 - Mediciones: `borde_costero` 382 features → 2.887 tiles / 7,8 MB (GeoJSON 47 MB); `humedales` → 2.518 tiles / 3,6 MB (GeoJSON 24 MB). Puntos: 920 derechos → 8,2 MB de tiles vs 0,19 MB gzip → se quedan en GeoJSON/API.
-- Pendiente del spike: línea base en navegador, cliente de tiles y prueba de carga.
+- **Corrida completa:** 41 capas, 88.152 tiles, 146,6 MB lógicos / 393 MB en disco; 7 capas regionales degradadas a z13; 27 puntos, 2 WMS y 1 tabla vacía omitidos. `tiles:check` valida las 41 versiones. Tiles servidos con PostgreSQL detenido (Nginx 200) y 6.502 req/s con 50 conexiones.
+- Pendiente del spike: línea base en navegador y cliente de tiles.
 
 **Sub-sprints**:
 - [x] **0** — Spike: inventario y mediciones de generación ✅; línea base de navegador y ADR 012/013/015 pendientes (4h)
