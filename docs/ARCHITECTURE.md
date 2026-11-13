@@ -395,6 +395,10 @@ Navegador (cliente de tiles, Sprint 08-B)
 - **Exportación:** `GET /api/layer-export?layer_id=...&format=geojson|csv`
   transmite por lotes desde PostGIS, aplica el mismo filtro y usa las columnas
   visibles del CSV. En Vercel el visor cae al archivo estático/cliente.
+- **Tabla server-side:** `/api/layer-features` acepta `search`, `sort`, `order`,
+  `filter` y devuelve `total`; `/api/layer-feature` entrega una feature con
+  geometría para el zoom/highlight desde la tabla. La paginación visual sigue
+  en cliente (las capas actuales caben en 5.000).
 - Capas migradas (08-B/08-C): 40 capas no-punto visibles con `source.type: "postgis"`; `comunas_poligonos` no está en la config. Los puntos quedan en GeoJSON + API.
 - Detalle: `docs/specs/08-postgis-fuente-principal/08-A-pipeline-tiles.md`,
   `08-B-piloto.md` y `08-G-ciclo-vida-capas.md`.

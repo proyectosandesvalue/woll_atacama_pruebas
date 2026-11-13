@@ -269,6 +269,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - **Corrida completa:** 41 capas, 88.152 tiles, 146,6 MB lógicos / 393 MB en disco; 7 capas regionales degradadas a z13; 27 puntos, 2 WMS y 1 tabla vacía omitidos. `tiles:check` valida las 41 versiones. Tiles servidos con PostgreSQL detenido (Nginx 200) y 6.502 req/s con 50 conexiones.
 - **08-C cerrado (2026-11-13):** 40 capas no-punto usan tiles: `borde_costero`, `hidrografia`, `humedales`, `cuencas_dga`, los 3 decretos de escasez, `zonas_climaticas`, los 2 planes reguladores costeros, `unidades_geomorfologicas`, `capacidad_uso_suelo`, `energia_linea_transmision` y `energia_potencial_fotovoltaico`. La tabla subió a un límite de 5.000 propiedades; falta paginar/buscar (08-D), exportar desde PostGIS (08-E) y migrar la capa de puntos solo si cambia la decisión de M1.
 - **08-B (2026-11-13):** `borde_costero` se pinta con `leaflet.vectorgrid` (3 tiles en z8, sin GeoJSON), popup desde `properties`, zoom por manifest, tabla de 382 features desde PostGIS, filtro `ZP`=11 (coincide con SQL), CSV de 382 filas y fallback GeoJSON. La tabla dejó de mostrar 450 (GeoJSON) y ahora usa `/api/layer-features`. Pendiente: capa de puntos con API y capa dinámica.
+- **08-D parcial (2026-11-13):** `/api/layer-features` acepta `search`, `sort`, `order`, `filter` y devuelve `total`; `/api/layer-feature` devuelve una feature con geometría y la tabla la usa para zoom/highlight. La tabla sigue paginando en cliente (todas las capas actuales <5.000).
 - **08-E cerrado (2026-11-13):** `/api/layer-export` transmite GeoJSON (382 features) y CSV (382 filas; 11 con filtro ZP) con columnas/alias desde PostGIS. El frontend usa el endpoint si la API existe y cae al archivo estático en Vercel. Lotes de 40/200 para no superar el `statement_timeout`.
 - Pendiente del spike: línea base en navegador y prueba de accesibilidad del canvas.
 
@@ -276,7 +277,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - [x] **0** — Spike: inventario y mediciones de generación ✅; línea base de navegador y ADR 012/013/015 pendientes (4h)
 - [~] **A** — Pipeline de tiles pregenerados, manifest/versionado, Nginx ✅; esqueleto on-demand pendiente (10h)
 - [~] **B** — Piloto: `borde_costero` con tiles, popup, zoom, tabla (382), filtros (ZP=11) y CSV ✅; faltan capa de puntos con API y capa dinámica (6h)
-- [~] **D** — Estilos, popups, leyenda y tabla ✅ vía `/api/layer-features`; búsqueda, orden y paginación server-side pendientes (6h)
+- [~] **D** — Estilos, popups, leyenda y tabla ✅; `/api/layer-features` con búsqueda, orden, filtro y total, y `/api/layer-feature` para zoom al feature; paginación visual server-side pendiente (6h)
 - [ ] **F** — Zoom a capa/feature, cluster/heatmap cliente y agregados server-side >5k (8h)
 - [x] **C** — Migración por dimensión: 40/40 capas visibles no-punto con `source`; `comunas_poligonos` no está en la config; puntos quedan GeoJSON/API (16-24h)
 - [x] **E** — Exportación/descarga en streaming desde PostGIS: GeoJSON/CSV con filtro, alias y lotes (4h)

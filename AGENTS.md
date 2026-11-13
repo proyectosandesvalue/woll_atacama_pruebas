@@ -167,7 +167,9 @@ un zoom si la capa supera 20.000 tiles. Ver `docs/DEV_GUIDE.md` §2.11.
 para Leaflet 1.9 (`fakeStop`). La capa va en `pane: "overlayPane"` (no
 `tilePane`) y usa `bounds`/`maxNativeZoom` del manifest. La tabla, los filtros y
 el CSV piden `GET /api/layer-features` (propiedades sin geometría) y caen al
-GeoJSON si la API falla. Si agregás una capa con `source.tiles`, verificá
+GeoJSON si la API falla. El clic en una fila de la tabla pide
+`GET /api/layer-feature` para obtener la geometría de ese feature y hacer
+zoom/highlight. Si agregás una capa con `source.tiles`, verificá
 popup, zoom, tabla, filtro y CSV; el total de la tabla debe coincidir con
 PostGIS, no con el GeoJSON.
 

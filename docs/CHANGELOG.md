@@ -48,6 +48,7 @@
 ## [Unreleased]
 
 ### Added
+- **Sprint 08-D parcial:** `GET /api/layer-features` agrega `search`, `search_field`, `sort`, `order`, `filter` y `total`; `GET /api/layer-feature` devuelve una feature con geometría. La tabla usa el detalle al hacer clic en una fila para zoom/highlight, sin descargar la geometría de toda la capa.
 - **Sprint 08-E: exportación en streaming desde PostGIS.** `GET /api/layer-export` transmite GeoJSON (con geometría) y CSV (columnas/alias visibles), aplica el mismo `dataFilter` de la tabla y usa lotes de 40/200 para no superar el `statement_timeout`. El frontend usa el endpoint en capas con tiles y cae al archivo estático/cliente en Vercel.
 - **Sprint 08-B: piloto de tiles en el visor.** `borde_costero` se sirve con `leaflet.vectorgrid@1.3.0` vendorizado (`js/lib/Leaflet.VectorGrid-1.3.0.min.js`) desde `/tiles/borde_costero/2026/...`, con popup, zoom por manifest, categorías ocultas, filtros y opacidad. No descarga el GeoJSON al activarse.
 - **Endpoint `GET /api/layer-features`:** devuelve una FeatureCollection desde la tabla física del catálogo (`layer_id`, `limit`, `offset`, `include_geometry`). Sin geometría por defecto: la tabla de `borde_costero` pasa de 32 MB a ~560 KB. La tabla, los filtros y el CSV lo usan con fallback al GeoJSON.
