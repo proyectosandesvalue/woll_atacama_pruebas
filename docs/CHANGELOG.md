@@ -55,6 +55,9 @@
 - **XSS:** escapados nombre/comuna/tipo/período/tooltips de estaciones, nombres y unidades del modal de gráficos, errores de la tabla server-side y datos ARClim. `help.html` sin `onclick` inline.
 - **Tests:** `scripts/__tests__/geo-utils.test.js` y `scripts/__tests__/security-frontend.test.js`.
 
+### Changed
+- **Panel admin alineado al geoportal:** `admin.html` y `css/admin.css` usan el design system de `css/base.css` (Noche Atacama, glass, azul de marca y ámbar), header con logo, tabs y tema claro/oscuro persistido en `woll-theme`. Se mantienen los IDs y el comportamiento de las secciones.
+
 ### Added
 - **Sprint 14:** `admin.config_snapshots` + `admin.config_layers`, CLI `npm run config:snapshot` (`--dry-run`, `--publish`, `--check`) y `GET /api/config` con ETag/304/503. El visor carga la config por `js/config/loader.js` con fallback a `allTemasConfig`. Snapshot v1: 9 dimensiones, 158 capas maestras, 315 filas. ADR 024.
 - **Sprint 15:** panel `admin.html` de solo lectura con login password + TOTP (ADR 007), sesión HttpOnly, CSRF, rate limit, `admin.audit_log` y vistas de configuración, chat y auditoría. Migración 042 (`admin_users`, `audit_log`). `npm run admin:user` para alta/rotación.

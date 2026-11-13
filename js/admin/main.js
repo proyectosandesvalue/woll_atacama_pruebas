@@ -20,6 +20,34 @@ const state = {
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
+const THEME_KEY = "woll-theme";
+
+function applyTheme(theme, persist = true) {
+  const next = theme === "light" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  const icon = next === "dark" ? "light_mode" : "dark_mode";
+  for (const id of ["themeIcon", "loginThemeIcon"]) {
+    const node = document.getElementById(id);
+    if (node) node.textContent = icon;
+  }
+  if (persist) {
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch {
+      // Sin localStorage (modo privado): el tema vale solo para esta sesión.
+    }
+  }
+}
+
+function initTheme() {
+  let saved = "dark";
+  try {
+    saved = localStorage.getItem(THEME_KEY) || "dark";
+  } catch {
+    saved = "dark";
+  }
+  applyTheme(saved, false);
+}
 
 function el(tag, options = {}, children = []) {
   const node = document.createElement(tag);
@@ -428,6 +456,13 @@ function bindEvents() {
     button.addEventListener("click", () => selectView(button.dataset.view));
   }
 
+  for (const id of ["themeToggle", "loginThemeToggle"]) {
+    document.getElementById(id)?.addEventListener("click", () => {
+      const current = document.documentElement.getAttribute("data-theme");
+      applyTheme(current === "dark" ? "light" : "dark");
+    });
+  }
+
   $("#logoutBtn")?.addEventListener("click", async () => {
     try {
       await api.logout();
@@ -444,6 +479,7 @@ function bindEvents() {
 }
 
 async function boot() {
+  initTheme();
   bindEvents();
   try {
     const session = await api.session();

@@ -276,7 +276,8 @@ el cierre local; la validación en el VPS queda para el Sprint 26.
 - Visor: carga `/api/config` y mantiene mapa, sidebar y estaciones; el
   fallback está cubierto por tests.
 - Panel: login TOTP, config, chat (prompts/settings/messages/unavailable) y
-  auditoría validados en navegador; sin violaciones CSP.
+  auditoría validados en navegador; sin violaciones CSP. La interfaz usa los
+  tokens de `css/base.css` y tema claro/oscuro del geoportal.
 - Tests: **383 tests, 371 pasan, 12 omitidos, 0 fallos**; lint 0 errores.
 - Prompts locales sembrados con `scripts/migrate_prompts.mjs` (2 prompts).
 
