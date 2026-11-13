@@ -48,6 +48,8 @@
 ## [Unreleased]
 
 ### Added
+- **30 carga y aceptación:** `scripts/load-test-sprint30.mjs` (static/table/filtered/on-demand/on-demand-cold/mixed, percentiles, RPS, HTTP y umbrales) y spec 30. Local: 8/8 escenarios OK; static p95 55 ms, table p95 94 ms y mixed p95 61 ms a 50 conexiones; on-demand cold p95 200-248 ms.
+- **Optimización de tabla:** `layer-features`/`layer-feature`/export construyen `properties` solo con columnas no-geométricas (antes `to_jsonb(t) - geom` serializaba la geometría). Nginx cachea `/api/layer-features` 10 s por URL con `X-Cache-Status`.
 - **Decisión GeoJSON (ADR 016):** se conservan los 71 GeoJSON (269 MB) como fallback, fuente de puntos y respaldo de análisis. `comunas_poligonos` se usa para análisis geoespaciales/estadísticas comunales; `estaciones_metereologicas_atacama` y `macrozonificacion_borde_costero` (norte/sur) quedan como respaldo. No se eliminan.
 - **08-B estaciones:** análisis confirmado: `stationsMapUtils.loadLayer()` consulta `/api/stations-map` por variable/fecha/estado y dibuja `circleMarker`; son valores dinámicos por API, no candidatos a tiles MVT (puntos). El on-demand poligonal/línea queda pendiente sin dataset.
 - **Gate de aceptación 08:** `npm run acceptance:08` valida manifests/configs, tiles estáticos y on-demand, features/paginación, filtro, búsqueda, orden, detalle y export (13/13 PASS en local).

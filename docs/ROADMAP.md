@@ -87,7 +87,7 @@
 | 27 | CI/CD y entrega versionada | 🔶 parcial (CI base ✅; deploy/rollback pendientes) | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | 🔶 parcial (accesibilidad 0.97/SEO 1.00; CSP y dependencias pendientes) | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
-| 30 | Pruebas de aceptación técnica | 🔶 parcial (gate 08 automatizado ✅; resto pendiente) | alta | 16h | 26, 27 |
+| 30 | Pruebas de aceptación técnica | 🔶 parcial (gate 08 ✅ y carga 25/50 local ✅; VPS/E2E pendientes) | alta | 16h | 26, 27 |
 | 31 | Observabilidad y operación | ⏳ pending | alta | 7-8h | 26 |
 | 32 | Marco legal y privacidad | ⏳ pending | media | 5-6h | 24, 31-A |
 | 33 | Entrega y traspaso | ⏳ pending | alta | 10h | Sprints Must |

@@ -403,7 +403,8 @@ Navegador (cliente de tiles, Sprint 08-B)
   `filter` y devuelve `total`; la tabla de capas PostGIS pagina 100 por página
   con scroll infinito y busca/ordena en el servidor. `/api/layer-feature`
   entrega una feature con geometría para el zoom/highlight. Las capas GeoJSON
-  conservan el renderer local.
+  conservan el renderer local. Nginx cachea esta ruta 10 s por URL
+  (`X-Cache-Status`) y `properties` se arma solo con columnas no-geométricas.
 - **On-demand:** `/api/layer-tiles?layer_id=&z=&x=&y=` genera MVT con
   `ST_AsMVT` para capas dinámicas; Nginx cachea por URL 5 min. No hay una capa
   dinámica en producción todavía; el cliente acepta `mode: "on-demand"`.

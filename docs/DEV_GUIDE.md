@@ -921,6 +921,20 @@ En Vercel el endpoint no existe; el visor cae al GeoJSON estático o al CSV en
 cliente. El CSV acepta `columns` y `labels` (arrays JSON) para replicar la
 tabla.
 
+**Carga y aceptación (30)**
+
+```bash
+npm run acceptance:08
+npm run load:30 -- --concurrency 25,50 --duration 15
+npm run load:30 -- --scenarios on-demand,on-demand-cold \
+  --concurrency 5,10 --duration 10 --think-time 500
+```
+
+El runner Node mide p50/p95/p99, RPS, HTTP y errores. `--think-time` simula
+usuarios reales y evita el rate limit por IP de on-demand (20 r/s). La tabla
+`/api/layer-features` está cacheada 10 s en Nginx; una edición puede tardar ese
+tiempo en reflejarse.
+
 **Reglas de versionado**
 
 - Ediciones y años usan versión explícita: `2024`, `2026`, `2025`.

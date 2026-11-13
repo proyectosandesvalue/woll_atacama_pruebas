@@ -183,6 +183,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `scripts/restore-drill.sh` | Restaura un backup en una base descartable y mide RTO | Simulacro de restauración |
 | `scripts/run-ingest-timer.sh`, `deploy/systemd/woll-ingest*` | Ingestas programadas con lock y journald | Timers del VPS (26-J) |
 | `scripts/acceptance-sprint08.mjs` | Gate de aceptación del Sprint 08 | Validar tiles, tabla, filtros y export |
+| `scripts/load-test-sprint30.mjs` | Carga 25/50: static, table, mixed y on-demand | Aceptación de performance (30) |
 | `scripts/build_catalog.mjs` | Reconstruye `chat.chat_catalog` (Supabase o PostgreSQL) | Nuevas capas o cambios de config |
 | `js/store/appState.js` | Única fuente de verdad del visor | Nuevo estado global o ciclo de capas |
 | `js/sidebar/` | Render de dimensiones, grupos, capas y leyenda | Cambios de sidebar o controles por capa |
