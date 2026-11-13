@@ -836,6 +836,20 @@ npm run stack:up
 curl -I http://localhost:8090/tiles/borde_costero/2026/10/308/596.mvt
 ```
 
+**En el VPS**
+
+El generador escribe en el checkout que Nginx monta en `/srv/woll`. Corrélo en el
+host (Node 22) con `DATABASE_ADMIN_URL` apuntando a `127.0.0.1:5432`:
+
+```bash
+cd /srv/woll
+DATABASE_ADMIN_URL=postgres://postgres:CLAVE@127.0.0.1:5432/woll \
+  npm run tiles:sync -- --changed
+```
+
+No uses `docker compose run api ...` sin montar `tiles/`: la imagen no incluye
+ese directorio y los tiles quedarían dentro del contenedor.
+
 **Reglas de versionado**
 
 - Ediciones y años usan versión explícita: `2024`, `2026`, `2025`.

@@ -147,10 +147,20 @@ día se omite.
 ### 4.7. Automatización futura (VPS)
 
 ```bash
-# Timer diario (Sprint 26-J)
-docker compose run --rm api node scripts/tiles-sync.mjs --changed
-docker compose run --rm api node scripts/tiles-sync.mjs --prune --keep 2
+# Timer diario en el host del VPS (Sprint 26-J), sobre el checkout que
+# Nginx monta en /srv/woll. Requiere Node 22 en el host.
+cd /srv/woll
+DATABASE_ADMIN_URL=postgres://postgres:CLAVE@127.0.0.1:5432/woll \
+  npm run tiles:sync -- --changed
+DATABASE_ADMIN_URL=postgres://postgres:CLAVE@127.0.0.1:5432/woll \
+  npm run tiles:sync -- --prune --keep 2
 ```
+
+**No** correr el generador con `docker compose run api ...` sin montar el
+directorio: la imagen no incluye `tiles/` y los archivos quedarían dentro del
+contenedor. Si el host no tiene Node, hay que montar el checkout y usar el
+`DATABASE_ADMIN_URL` interno (`postgres:5432`); el `tiles/` resultante debe
+quedar en el bind mount de Nginx.
 
 El comando es portable: no depende de Vercel, Supabase ni un servicio externo.
 En el panel admin (Sprint 16), el alta/edición de una capa dispara el mismo
