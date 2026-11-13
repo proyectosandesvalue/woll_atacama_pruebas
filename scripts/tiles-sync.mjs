@@ -221,7 +221,6 @@ async function buildLayer(pool, layer, opts) {
   const isPoint = String(layer.geometry_type || "").toUpperCase().includes("POINT");
 
   if (isPoint && !opts.includePoints && !opts.layer) {
-    console.log(`[tiles-sync] ${layer.layer_id}: punto, sin tiles (geometría vía GeoJSON/API).`);
     return { skipped: "point" };
   }
 
