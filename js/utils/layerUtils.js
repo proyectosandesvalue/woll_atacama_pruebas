@@ -36,6 +36,7 @@ import { LayerLoadError, handleError } from "./errorHandler.js";
 import { shouldUseGlify, createGlifyLayer } from "./glifyAdapter.js";
 import { runWorkerTask } from "../workers/workerPool.js";
 import { isWMSLayer, getWMSService, createWMSLayer } from "./wmsUtils.js";
+import { isVectorTileLayer, createVectorTileLayer } from "./vectorTileUtils.js";
 
 let sharedCanvasRenderer = null;
 
@@ -107,6 +108,52 @@ export async function estimateLayerSizeFromUrl(url) {
   } catch {
     return 0;
   }
+}
+
+/**
+ * Garantiza que los datos completos (GeoJSON) de una capa estén en memoria.
+ * Las capas con tiles no descargan el GeoJSON al activarse; la tabla, los
+ * filtros y la exportación lo piden bajo demanda hasta que existan los
+ * endpoints paginados de 08-D.
+ *
+ * @param {string} capaNombre
+ * @param {object} configCapa
+ * @returns {Promise<object>}
+ */
+export async function ensureLayerData(capaNombre, configCapa) {
+  const cached = getLayerData(capaNombre);
+  if (cached) return cached;
+
+  // Capas PostGIS: primero el endpoint (propiedades desde la tabla física).
+  // Si la API no está disponible, se cae al GeoJSON de respaldo.
+  if (configCapa?.source?.type === "postgis") {
+    try {
+      const url =
+        `/api/layer-features?layer_id=${encodeURIComponent(capaNombre)}` +
+        "&limit=1000";
+      const res = await fetch(url, { headers: { Accept: "application/json" } });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.type === "FeatureCollection" && Array.isArray(data.features)) {
+          log.log(
+            `Capa ${capaNombre}: ${data.features.length} features desde PostGIS`
+          );
+          setLayerData(capaNombre, data);
+          return data;
+        }
+      }
+      log.warn(`El endpoint de features de '${capaNombre}' no respondió; usando GeoJSON.`);
+    } catch (err) {
+      log.warn(`Error consultando features de '${capaNombre}'; usando GeoJSON.`, err);
+    }
+  }
+
+  if (!configCapa?.url) {
+    throw new Error(`La capa '${capaNombre}' no tiene URL de datos de respaldo.`);
+  }
+  const data = await fetchLayerData(capaNombre, configCapa);
+  setLayerData(capaNombre, data);
+  return data;
 }
 
 export async function fetchLayerData(capaNombre, configCapa) {
@@ -307,6 +354,26 @@ export async function cargarCapaIndividual(capaNombre, temaKey, temasConfig, isI
         applySavedOpacity(capaNombre);
         log.log(`Capa ${capaNombre} cargada como WMS (servicio: ${configCapa.servicio})`);
         return;
+      }
+
+      // ── Rama tiles vectoriales pregenerados (08-B) ──
+      // El GeoJSON no se descarga: se usa solo como fallback o para la tabla.
+      if (isVectorTileLayer(configCapa)) {
+        try {
+          const tileLayer = await createVectorTileLayer(capaNombre, configCapa);
+          tileLayer.addTo(appState.map);
+          addLayer(capaNombre, tileLayer);
+          markLayerAsLoaded(capaNombre);
+          applySavedOpacity(capaNombre);
+          log.log(`Capa ${capaNombre} cargada con tiles vectoriales`);
+          return;
+        } catch (err) {
+          log.warn(
+            `No se pudieron cargar los tiles de '${capaNombre}'. ` +
+              "Se usa el GeoJSON de respaldo.",
+            err
+          );
+        }
       }
 
       // ── Rama GeoJSON (fetch + process) ──
@@ -746,6 +813,12 @@ export function updateLayerFilter(capaNombre) {
   // WMS: los filtros por atributo no aplican client-side.
   if (layer._isWMS) return;
 
+  // Tiles vectoriales: el estilo lee dataFilter/hiddenAttributes en cada render.
+  if (layer._isVectorTile) {
+    if (typeof layer.redraw === "function") layer.redraw();
+    return;
+  }
+
   const dataFilter = getDataFilter(capaNombre);
   const hasDataFilter = dataFilter && dataFilter.size > 0;
 
@@ -929,6 +1002,12 @@ export function setLayerOpacity(capaNombre, opacity) {
 
   // WMS soporta setOpacity nativo
   if (layer._isWMS && typeof layer.setOpacity === "function") {
+    layer.setOpacity(opacity);
+    return;
+  }
+
+  // GridLayer de tiles vectoriales
+  if (layer._isVectorTile && typeof layer.setOpacity === "function") {
     layer.setOpacity(opacity);
     return;
   }

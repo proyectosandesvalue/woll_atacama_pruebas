@@ -363,12 +363,23 @@ export function crearElementoCapa(
       });
     }
 
+    const btnVerTabla = menuOptions.querySelector('[data-action="ver-tabla"]');
+    if (btnVerTabla) {
+      btnVerTabla.addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeMenu();
+        openAttributeTable(capaNombre, temasConfig);
+      });
+    }
+
     const btnFilter = menuOptions.querySelector('[data-action="filter-data"]');
     if (btnFilter) {
       btnFilter.addEventListener("click", (e) => {
         e.stopPropagation();
         closeMenu();
-        openFilterModal(capaNombre, temasConfig);
+        openFilterModal(capaNombre, temasConfig).catch((err) =>
+          log.error("Error abriendo el filtro de la capa", err)
+        );
       });
     }
 

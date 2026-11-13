@@ -4,7 +4,7 @@
  */
 
 import { appState } from "../store/appState.js";
-import { cargarCapaIndividual } from "./layerUtils.js";
+import { ensureLayerData } from "./layerUtils.js";
 import { createContextLogger } from "./logger.js";
 import { encontrarTemaParaCapa, obtenerNombrePersonalizado, getCapaConfig } from "./configUtils.js";
 
@@ -150,20 +150,20 @@ async function descargarCSV(capaNombre, temasConfig) {
 
         const temaKey = encontrarTemaParaCapa(capaNombre, temasConfig);
 
-        // 1. Obtener datos (descargar si no están en caché)
+        const configCapa = getCapaConfig(capaNombre, temaKey, temasConfig);
+
+        // 1. Obtener datos (descargar si no están en caché). En capas con
+        // tiles, esto baja el GeoJSON completo solo para exportar.
         let geojson = appState.layers.geojsonData.get(capaNombre);
         if (!geojson) {
             log.log(`Datos para ${capaNombre} no encontrados en caché. Descargando para CSV...`);
-            await cargarCapaIndividual(capaNombre, temaKey, temasConfig);
-            appState.layers.loaded.add(capaNombre);
-            geojson = appState.layers.geojsonData.get(capaNombre);
+            geojson = await ensureLayerData(capaNombre, configCapa);
         }
 
         if (!geojson || !geojson.features || geojson.features.length === 0) {
             throw new Error("La capa no contiene datos vectoriales o está vacía.");
         }
 
-        const configCapa = getCapaConfig(capaNombre, temaKey, temasConfig);
         const aliasConfig = configCapa?.alias || null;
         const features = geojson.features;
 

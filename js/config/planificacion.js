@@ -59,6 +59,22 @@ const planificacionConfig = {
     borde_costero: {
       url: "borde_costero.geojson",
       type: "polygon", // Tipo de capa: point, line, polygon
+      // Sprint 08-B: tiles MVT pregenerados. Si el manifest falla, el loader
+      // cae al GeoJSON de `url`. Revertir = borrar este bloque `source`.
+      source: {
+        type: "postgis",
+        idColumn: "fid",
+        tiles: {
+          mode: "static",
+          version: "2026",
+          layerName: "borde_costero",
+          urlTemplate: "/tiles/borde_costero/2026/{z}/{x}/{y}.mvt",
+          manifest: "/tiles/borde_costero/2026/manifest.json",
+          minZoom: 0,
+          maxZoom: 14,
+        },
+        fallback: { type: "geojson", url: "borde_costero.geojson" },
+      },
       atributo: "ZONA_1", // Asegúrate de que este atributo exista en tu GeoJSON
       nombrePersonalizado: "Macrozonificacion de los Usos del Borde Costero", // Nombre personalizado de la Capa
       colores: {
@@ -89,7 +105,7 @@ const planificacionConfig = {
         "Observacio",
         "Memoria_Explicativa",
         "Descripcion",
-        "Origen Data",
+        "Origen Dato",
       ],
       alias: {
         ZONA_1: "Zona",
@@ -98,7 +114,7 @@ const planificacionConfig = {
         Observacio: "Observacion",
         Memoria_Explicativa: "Memoria Explicativa",
         Descripcion: "Descripcion",
-        "Origen Data": "Origen de la Informacion",
+        "Origen Dato": "Origen de la Informacion",
       },
       // Personalizar el color del borde y la transparencia
       estiloBase: {

@@ -12,7 +12,12 @@ import {
   clearDataFilter,
   hasDataFilter,
 } from "../store/appState.js";
-import { cargarCapaIndividual, mostrarCapa, updateLayerFilter } from "./layerUtils.js";
+import {
+  cargarCapaIndividual,
+  ensureLayerData,
+  mostrarCapa,
+  updateLayerFilter,
+} from "./layerUtils.js";
 import { createContextLogger } from "./logger.js";
 import { escapeHtml } from "./helpers.js";
 import {
@@ -79,6 +84,16 @@ bodyEl.addEventListener("click", (e) => {
 
   if (!feature) return;
 
+  // El endpoint de 08-B devuelve propiedades sin geometría para no transferir
+  // 30 MB. El zoom al feature con geometría llega en 08-D.
+  if (!feature.geometry) {
+    log.warn(
+      `La capa ${currentCapaNombre} no incluye geometría en la tabla; ` +
+        "el zoom al feature estará disponible con los endpoints de 08-D."
+    );
+    return;
+  }
+
   if (window.turf && appState.map) {
     try {
       const bbox = turf.bbox(feature);
@@ -134,7 +149,9 @@ function initAttributeTable() {
   if (filterBtn) {
     filterBtn.addEventListener("click", () => {
       if (currentCapaNombre && currentTemasConfig) {
-        openFilterModal(currentCapaNombre, currentTemasConfig);
+        openFilterModal(currentCapaNombre, currentTemasConfig).catch((err) =>
+          log.error("Error abriendo el filtro desde la tabla", err)
+        );
       }
     });
   }
@@ -409,6 +426,12 @@ export async function openAttributeTable(capaNombre, temasConfig) {
 
   try {
     let geojson = getLayerData(capaNombre);
+
+    // Capa con tiles: el GeoJSON solo se descarga si la tabla lo necesita.
+    // Los endpoints paginados de 08-D reemplazan esta carga diferida.
+    if (!geojson && configCapa?.source?.type === "postgis") {
+      geojson = await ensureLayerData(capaNombre, configCapa);
+    }
 
     if (!geojson) {
       log.log(
@@ -782,10 +805,22 @@ function getUniqueValuesForAttribute(geojson, attribute) {
   return result;
 }
 
-export function openFilterModal(capaNombre, temasConfig) {
+export async function openFilterModal(capaNombre, temasConfig) {
   initFilterModal();
 
-  const geojson = getLayerData(capaNombre);
+  const temaKey = encontrarTemaParaCapa(capaNombre, temasConfig);
+  const configCapa = getCapaConfig(capaNombre, temaKey, temasConfig);
+
+  let geojson = getLayerData(capaNombre);
+  if (!geojson && configCapa?.source?.type === "postgis") {
+    try {
+      geojson = await ensureLayerData(capaNombre, configCapa);
+    } catch (err) {
+      log.warn(`No se pudieron cargar los datos para filtrar ${capaNombre}`, err);
+      return;
+    }
+  }
+
   if (!geojson || !geojson.features || geojson.features.length === 0) {
     log.warn(`No hay datos para filtrar en la capa ${capaNombre}`);
     return;
@@ -812,8 +847,6 @@ export function openFilterModal(capaNombre, temasConfig) {
     ) || capaNombre;
   if (filterModalLayerName) filterModalLayerName.textContent = nombreVisual;
 
-  const temaKey = encontrarTemaParaCapa(capaNombre, temasConfig);
-  const configCapa = getCapaConfig(capaNombre, temaKey, temasConfig);
   const aliasMap = getLayerAliasMap(capaNombre, temasConfig);
 
   let filterAttributes = [];
