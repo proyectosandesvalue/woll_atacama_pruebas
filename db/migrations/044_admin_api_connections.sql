@@ -3,7 +3,7 @@
 -- Inventario editable de conexiones externas del backend.
 -- Sprint 45-B (docs/specs/45-panel-admin-operaciones/00-spec-madre.md).
 --
--- Los secretos y URLs sensibles viven en variables de entorno; aquí solo se
+-- Los secretos y URLs sensibles viven en variables de entorno; acá solo se
 -- guardan parámetros no secretos y el resultado de la última prueba.
 --
 -- Idempotente: CREATE TABLE/INDEX IF NOT EXISTS + UPSERT de seeds.

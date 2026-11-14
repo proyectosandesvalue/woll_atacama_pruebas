@@ -14,7 +14,7 @@
 --
 -- Idempotente: se puede aplicar dos veces.
 --
--- Los passwords NO se crean aquí. `scripts/bootstrap-roles.sh` los setea
+-- Los passwords NO se crean acá. `scripts/bootstrap-roles.sh` los setea
 -- desde variables de entorno y les habilita LOGIN.
 -- =====================================================================
 
