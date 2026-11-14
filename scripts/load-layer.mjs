@@ -501,7 +501,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
       if (result.status !== 0) {
         console.error(
           "La capa quedó cargada, pero falló la generación de tiles. " +
-            "Reintentá con `npm run tiles:sync -- --layer " + opts.layerId +
+            "Reintenta con `npm run tiles:sync -- --layer " + opts.layerId +
             " --version " + version + "`."
         );
         process.exitCode = 1;

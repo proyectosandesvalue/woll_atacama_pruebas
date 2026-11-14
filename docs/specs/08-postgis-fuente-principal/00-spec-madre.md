@@ -423,7 +423,7 @@ Un tramo no se cierra hasta cumplir todo:
 |---|---|
 | Unitario (`node:test`) | Compilador de filtros (columnas/operadores allowlist, valores parametrizados), resolución de `source`, paginación y topes, envelope `{ ok, data, error }`, fallback, generación de URLs de tiles/manifest, cálculo de tiles/tolerancias, checksum y versiones del ciclo de vida |
 | Integración (Docker + `DATABASE_URL`) | Tile MVT válido y no vacío, manifest/checksum, versión, conteo de tabla, búsqueda/orden, extent, agregados de cluster/heatmap, export GeoJSON/CSV completo, `tiles:check` y `tiles:sync --changed` |
-| Regresión | Capa sin `source` sigue usando GeoJSON; WMS no se ve afectada; `dataFilter` sigue aplicándose; estaciones siguen usando la API de valores |
+| Regresión | Capa sin `source` sigue usando GeoJSON; WMS no se ve afectada; `dataFilter` sigue aplicandose; estaciones siguen usando la API de valores |
 | Manual | Paridad visual por capa, popups, leyenda, zoom, cluster, heatmap, descarga, selector de edición |
 | Gate automatizado | `npm run acceptance:08` valida manifests, configs, tiles estáticos/on-demand, features, filtros, búsqueda, orden y export (13 checks) |
 | Carga | 25 y 50 usuarios concurrentes; p95 de tile estático y on-demand; CPU/RAM; disco |

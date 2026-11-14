@@ -83,7 +83,7 @@ export function checkCostGuard() {
       status: 503,
       message:
         "El chat está temporalmente deshabilitado. " +
-        "El visor sigue funcionando. Intentá de nuevo más tarde.",
+        "El visor sigue funcionando. Intenta de nuevo más tarde.",
     };
   }
 

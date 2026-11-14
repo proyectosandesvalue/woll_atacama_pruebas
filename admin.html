@@ -200,7 +200,7 @@
                   <li><b>Capa:</b> clave técnica estable.</li>
                   <li><b>Fuente:</b> GeoJSON, PostGIS o WMS; “tiles” indica MVT pregenerado.</li>
                 </ul>
-                <p>Usá el buscador y el filtro para encontrar una capa. La edición llega con el gestor de capas.</p>
+                <p>Usa el buscador y el filtro para encontrar una capa. La edición llega con el gestor de capas.</p>
               </div>
             </div>
           </div>
@@ -262,7 +262,7 @@
             <div class="panel-head">
               <div>
                 <h2>Nuevo documento</h2>
-                <p class="muted">Subí el PDF, completá la procedencia y encolá la ingesta.</p>
+                <p class="muted">Sube el PDF, completa la procedencia y encola la ingesta.</p>
               </div>
               <div class="help-wrap">
                 <button class="help-btn" type="button" data-help="help-rag-form"
@@ -276,8 +276,8 @@
                     <li><b>Slug:</b> identificador único en minúsculas, números y guiones (ej. <code>ley-glaciares</code>).</li>
                     <li><b>PDF:</b> máximo 25 MB, con firma PDF válida. Se guarda en <code>rag/inbox/</code>.</li>
                     <li><b>Procedencia:</b> título, URL <code>https://</code>, editor, licencia y fecha.</li>
-                    <li><b>Derechos:</b> marcá la declaración solo si la licencia permite indexar el documento.</li>
-                    <li><b>Pasos:</b> guardá metadatos → subí el PDF → <b>Estimar</b> para ver chunks/tokens/costo → <b>Guardar e ingestar</b>.</li>
+                    <li><b>Derechos:</b> marca la declaración solo si la licencia permite indexar el documento.</li>
+                    <li><b>Pasos:</b> guarda metadatos → sube el PDF → <b>Estimar</b> para ver chunks/tokens/costo → <b>Guardar e ingestar</b>.</li>
                   </ol>
                   <p>La ingesta la procesa <code>rag-worker</code>. Si no está activo, el trabajo queda en cola.</p>
                 </div>
@@ -406,11 +406,11 @@
                 <ul>
                   <li><b>Estimar:</b> dry-run; no escribe en <code>rag.*</code> ni llama al proveedor.</li>
                   <li><b>Ingestar:</b> extrae, fragmenta, embebe y escribe la versión nueva.</li>
-                  <li><b>En cola:</b> espera al worker; podés cancelarlo.</li>
+                  <li><b>En cola:</b> espera al worker; puedes cancelarlo.</li>
                   <li><b>Ejecutando:</b> no se cancela a mitad de la ingesta.</li>
                   <li><b>Resultado:</b> chunks, páginas o código de error.</li>
                 </ul>
-                <p>Si el worker no tiene heartbeat, revisá que <code>rag-worker</code> esté corriendo.</p>
+                <p>Si el worker no tiene heartbeat, revisa que <code>rag-worker</code> esté corriendo.</p>
               </div>
             </div>
           </div>
@@ -501,7 +501,7 @@
                   <ul>
                     <li><b>Variables:</b> el panel solo muestra nombres y si están presentes; nunca lee ni guarda secretos.</li>
                     <li><b>Probar:</b> hace una petición controlada desde el servidor y guarda HTTP, latencia y error.</li>
-                    <li><b>Editar:</b> cambiá label, timeout, rate limit o si está activa. La URL y los secretos viven en el entorno.</li>
+                    <li><b>Editar:</b> cambia label, timeout, rate limit o si está activa. La URL y los secretos viven en el entorno.</li>
                     <li><b>Nuevas conexiones:</b> requieren código en la allowlist del proxy y un deploy; no se crean desde el panel.</li>
                   </ul>
                 </div>
@@ -579,7 +579,7 @@
             </p>
             <p>
               Los cambios se guardan en la taxonomía, pero <b>el sidebar no cambia hasta publicar
-              el snapshot</b>. Usá “Publicar snapshot” al terminar; si la validación falla, el
+              el snapshot</b>. Usa “Publicar snapshot” al terminar; si la validación falla, el
               snapshot anterior sigue activo.
             </p>
           </div>
@@ -629,7 +629,7 @@
                     <li><b>Subgrupo:</b> bloque anidado, por ejemplo “Estaciones en vivo”.</li>
                     <li><b>Dimensión general:</b> capa disponible en el nivel superior; puede repetirse en grupos.</li>
                   </ul>
-                  <p>Para ubicar una capa usá <b>“Ubicar una capa en esta dimensión”</b>, elegí la capa y el destino (dimensión, grupo o subgrupo) y asignala. Después usá <b>Publicar snapshot</b> para que el sidebar del geoportal lo refleje.</p>
+                  <p>Para ubicar una capa usa <b>“Ubicar una capa en esta dimensión”</b>, elige la capa y el destino (dimensión, grupo o subgrupo) y asígnala. Después usa <b>Publicar snapshot</b> para que el sidebar del geoportal lo refleje.</p>
                   <p>Si la validación falla, el snapshot anterior queda activo y el visor no se rompe.</p>
                 </div>
               </div>
@@ -703,7 +703,7 @@
                   </button>
                 </div>
                 <p class="muted">
-                  Elegí la capa y el destino. “Dimensión general” la deja en el nivel superior;
+                  Elige la capa y el destino. “Dimensión general” la deja en el nivel superior;
                   un grupo la muestra dentro de esa subdimensión del sidebar; un subgrupo la
                   muestra dentro del bloque anidado.
                 </p>
@@ -802,8 +802,8 @@
 
                 <h4>Capas dentro de este grupo</h4>
                 <p class="muted">
-                  Para agregar una capa a este grupo, usá el bloque “Ubicar una capa” de arriba
-                  y elegí este grupo o uno de sus subgrupos como destino. Acá solo se listan y
+                  Para agregar una capa a este grupo, usa el bloque “Ubicar una capa” de arriba
+                  y elige este grupo o uno de sus subgrupos como destino. Aquí solo se listan y
                   quitan las asignaciones existentes.
                 </p>
                 <div class="table-wrap">
@@ -818,7 +818,7 @@
               <div class="tax-block">
                 <div class="tax-block-head"><h3>Capas a nivel general de la dimensión</h3></div>
                 <p class="muted">
-                  Es la lista completa de la dimensión. Para sumar una capa acá usá “Dimensión
+                  Es la lista completa de la dimensión. Para sumar una capa aquí usa “Dimensión
                   general” en el bloque “Ubicar una capa”.
                 </p>
                 <div class="table-wrap">
@@ -850,7 +850,7 @@
               </button>
               <div id="help-chat-prompts" class="help-popover" hidden>
                 <strong>Prompts del asistente</strong>
-                <p>Son el system prompt y el prompt del clasificador. Cada edición futura crea una versión nueva y desactiva la anterior; podés volver a una versión previa.</p>
+                <p>Son el system prompt y el prompt del clasificador. Cada edición futura crea una versión nueva y desactiva la anterior; puedes volver a una versión previa.</p>
                 <p>Antes de activar un cambio hay que correr el golden set y comparar el acierto por tier.</p>
               </div>
             </div>

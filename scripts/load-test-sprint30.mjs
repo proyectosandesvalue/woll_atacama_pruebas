@@ -235,7 +235,7 @@ async function main() {
       );
       if (result.codes["429"]) {
         console.warn(
-          `  aviso: ${result.codes["429"]} respuestas 429 (rate limit por IP; usá --think-time para simular usuarios)`
+          `  aviso: ${result.codes["429"]} respuestas 429 (rate limit por IP; usa --think-time para simular usuarios)`
         );
       }
       const problems = verdict(result);

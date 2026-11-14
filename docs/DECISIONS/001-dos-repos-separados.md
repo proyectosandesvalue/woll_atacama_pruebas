@@ -14,7 +14,7 @@ El proyecto tiene un visor en producción con usuarios reales y, por otro lado, 
 ## Decisión
 
 **Dos repositorios separados**, cada uno con su propio Vercel y Supabase:
-- Repo de **producción**: el que ya está vivo, no se toca desde acá.
+- Repo de **producción**: el que ya está vivo, no se toca desde aquí.
 - Repo **`woll_atacama_pruebas`**: laboratorio. Ahí se desarrolla.
 
 La **promoción de código entre repos es manual**, copiando archivos del repo de pruebas al repo de producción cuando una feature está validada.

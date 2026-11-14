@@ -602,7 +602,7 @@ async function handleSend() {
 
     const friendly =
       /saturado|UNAVAILABLE|503/i.test(msg)
-        ? "El asistente está temporalmente saturado. Esperá unos segundos y vuelve a intentar."
+        ? "El asistente está temporalmente saturado. Espera unos segundos y vuelve a intentar."
         : msg;
 
     addMessage(`⚠️ ${friendly}`, "error");

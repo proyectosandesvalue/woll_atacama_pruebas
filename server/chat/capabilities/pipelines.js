@@ -10,7 +10,7 @@
  *
  * Caso especial: el pipeline `distribucion_con_elementos` usa
  * `aggregate_by_admin` cuando group_by es COMUNA/PROVINCIA/REGION,
- * y `aggregate_layer` en el resto de los casos. Eso se resuelve acá,
+ * y `aggregate_layer` en el resto de los casos. Eso se resuelve aquí,
  * no en el clasificador, para que el pipeline sea robusto a errores
  * de clasificación.
  */

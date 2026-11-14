@@ -237,7 +237,7 @@ async function withAuth(promise) {
   } catch (err) {
     if (err.status === 401) {
       showLogin();
-      setLoginError("La sesión expiró. Volvé a ingresar.");
+      setLoginError("La sesión expiró. Vuelve a ingresar.");
       return null;
     }
     throw err;
@@ -726,7 +726,7 @@ async function saveTaxDimension(event) {
   try {
     const result = await api.taxonomySaveDimension(payload);
     state.taxonomy.selectedDimensionId = result.item.id;
-    taxSetStatus("Dimensión guardada. Publicá el snapshot para aplicarla al visor.");
+    taxSetStatus("Dimensión guardada. Publica el snapshot para aplicarla al visor.");
     setDrawerOpen("taxDimensionDrawer", false, { focus: false });
     await loadTaxonomy({ silent: true });
   } catch (err) {
@@ -769,7 +769,7 @@ async function saveTaxGroup(event) {
   try {
     const result = await api.taxonomySaveGroup(payload);
     state.taxonomy.selectedGroupId = result.item.id;
-    taxSetStatus("Grupo guardado. Publicá el snapshot para aplicarlo.");
+    taxSetStatus("Grupo guardado. Publica el snapshot para aplicarlo.");
     setDrawerOpen("taxGroupDrawer", false, { focus: false });
     await loadTaxonomy({ silent: true });
   } catch (err) {
@@ -811,7 +811,7 @@ async function saveTaxSubgroup(event) {
   };
   try {
     await api.taxonomySaveSubgroup(payload);
-    taxSetStatus("Subgrupo guardado. Publicá el snapshot para aplicarlo.");
+    taxSetStatus("Subgrupo guardado. Publica el snapshot para aplicarlo.");
     setDrawerOpen("taxSubgroupDrawer", false, { focus: false });
     await loadTaxonomy({ silent: true });
   } catch (err) {
@@ -825,7 +825,7 @@ async function saveTaxAssignment(event) {
   const layerId = $("#taxAssignLayer").value;
   const destination = $("#taxAssignDestination").value;
   if (!dimension || !layerId || !destination) {
-    taxSetStatus("Elegí una capa y un destino.", "error");
+    taxSetStatus("Elige una capa y un destino.", "error");
     return;
   }
 
@@ -863,7 +863,7 @@ async function saveTaxAssignment(event) {
       scope,
       orden: Number.parseInt($("#taxAssignOrder").value, 10) || 0,
     });
-    taxSetStatus("Capa ubicada. Publicá el snapshot para verla en el sidebar.");
+    taxSetStatus("Capa ubicada. Publica el snapshot para verla en el sidebar.");
     setDrawerOpen("taxAssignDrawer", false, { focus: false });
     await loadTaxonomy({ silent: true });
   } catch (err) {
@@ -889,7 +889,7 @@ async function deleteTaxEntity(kind, id) {
     if (kind === "group" && Number(state.taxonomy.selectedGroupId) === Number(id)) {
       state.taxonomy.selectedGroupId = null;
     }
-    taxSetStatus("Elemento quitado. Publicá el snapshot para aplicarlo.");
+    taxSetStatus("Elemento quitado. Publica el snapshot para aplicarlo.");
     await loadTaxonomy({ silent: true });
   } catch (err) {
     taxSetStatus(err.message, "error");
@@ -899,7 +899,7 @@ async function deleteTaxEntity(kind, id) {
 async function deleteTaxPlacement(id) {
   try {
     await api.taxonomyDeletePlacement(id);
-    taxSetStatus("Asignación quitada. Publicá el snapshot para aplicarla.");
+    taxSetStatus("Asignación quitada. Publica el snapshot para aplicarla.");
     await loadTaxonomy({ silent: true });
   } catch (err) {
     taxSetStatus(err.message, "error");
@@ -1074,7 +1074,7 @@ async function saveApiEditor(event) {
   const activo = $("#apiEditorActive").checked;
 
   if (!key || !label) {
-    apiSetStatus("Completá el nombre visible.", "error");
+    apiSetStatus("Completa el nombre visible.", "error");
     return;
   }
   if (!Number.isInteger(timeout) || timeout < 1000 || timeout > 120000) {
@@ -1159,19 +1159,19 @@ function relativeAge(iso) {
 function collectRagEntry() {
   const slug = ragValue("ragSlug").toLowerCase();
   if (!/^[a-z0-9][a-z0-9-]{1,80}$/.test(slug)) {
-    throw new Error("Slug inválido: usá minúsculas, números y guiones.");
+    throw new Error("Slug inválido: usa minúsculas, números y guiones.");
   }
   const title = ragValue("ragTitle");
   const sourceUrl = ragValue("ragSourceUrl");
   const license = ragValue("ragLicense");
   if (!title || !sourceUrl || !license) {
-    throw new Error("Completá título, URL de origen y licencia.");
+    throw new Error("Completa título, URL de origen y licencia.");
   }
   if (!/^https:\/\//i.test(sourceUrl)) {
     throw new Error("La URL de origen debe empezar con https://.");
   }
   if (!$("#ragCopyright")?.checked) {
-    throw new Error("Tenés que declarar que la licencia permite indexar el documento.");
+    throw new Error("Tienes que declarar que la licencia permite indexar el documento.");
   }
   const tags = ragValue("ragTags")
     .split(",")
@@ -1237,7 +1237,7 @@ async function saveRagManifest() {
 async function uploadRagPdf() {
   const entry = collectRagEntry();
   const file = ragFileSelected();
-  if (!file) throw new Error("Seleccioná un PDF para subir.");
+  if (!file) throw new Error("Selecciona un PDF para subir.");
   await api.ragUpload(entry.slug, file);
   $("#ragFile").value = "";
   return entry;
@@ -1247,7 +1247,7 @@ async function prepareRagDocument({ requireFile = false } = {}) {
   const entry = collectRagEntry();
   const file = ragFileSelected();
   if (requireFile && !file && !ragEntryExistsWithFile(entry.slug)) {
-    throw new Error("El documento no tiene PDF. Subí uno antes de encolar la ingesta.");
+    throw new Error("El documento no tiene PDF. Sube uno antes de encolar la ingesta.");
   }
   await api.ragSaveManifest(entry);
   if (file) await api.ragUpload(entry.slug, file);
@@ -1331,7 +1331,7 @@ function renderRag(data) {
   $("#ragMetricWorker").textContent = worker ? "Activo" : "Sin heartbeat";
   $("#ragWorkerSeen").textContent = worker
     ? `última señal ${relativeAge(worker.last_seen_at)}`
-    : "iniciá rag-worker para procesar la cola";
+    : "inicia rag-worker para procesar la cola";
 
   renderRagDocuments(manifest, documents);
   renderRagJobs(jobs);
@@ -1696,7 +1696,7 @@ function bindEvents() {
       $("#loginForm").reset();
       showApp(session);
     } catch (err) {
-      const retry = err.retryAfter ? ` Reintentá en ${err.retryAfter}s.` : "";
+      const retry = err.retryAfter ? ` Reintenta en ${err.retryAfter}s.` : "";
       setLoginError(`${err.message}${retry}`);
       $("#adminTotp").value = "";
       $("#adminTotp").focus();
@@ -1905,7 +1905,7 @@ async function boot() {
       return;
     }
     showLogin();
-    setLoginError("El panel no está disponible. Revisá la configuración del servidor.");
+    setLoginError("El panel no está disponible. Revisa la configuración del servidor.");
   }
 }
 

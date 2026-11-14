@@ -8,7 +8,7 @@
 >
 > **Este roadmap es dinámico.** Se modifica cada vez que aparece un hallazgo nuevo,
 > se cierra un sprint, se descubre un bug estructural, o cambia una decisión. Ninguna
-> sección es definitiva. Si algo no está acá, no se hace. Si algo urge, se agrega al
+> sección es definitiva. Si algo no está aquí, no se hace. Si algo urge, se agrega al
 > roadmap antes de ejecutarlo.
 >
 > **Tipos de entradas:**

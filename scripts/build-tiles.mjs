@@ -451,7 +451,7 @@ export async function buildTiles(pool, opts, { log = console.log, warn = console
   if (!opts.overwrite && (await manifestExists(root))) {
     throw new Error(
       `La versión ${slug}/${opts.version} ya tiene manifest. ` +
-        "Una versión publicada no se sobrescribe: usá otra --version o --overwrite."
+        "Una versión publicada no se sobrescribe: usa otra --version o --overwrite."
     );
   }
   await mkdir(root, { recursive: true });
@@ -495,14 +495,14 @@ export async function buildTiles(pool, opts, { log = console.log, warn = console
         if (tileRecords.length === 0) {
           throw new Error(
             `La capa supera el límite de ${maxTiles} tiles incluso en ` +
-              `z${z}. Usá --force o subí el límite.`
+              `z${z}. Usa --force o sube el límite.`
           );
         }
         effectiveMaxzoom = z - 1;
         warn(
           `[build-tiles] z${z} sumaría ${zoomTasks.length} tiles y supera el límite ` +
             `${maxTiles}; se publica hasta z${effectiveMaxzoom}. ` +
-            "Usá --force para el zoom completo."
+            "Usa --force para el zoom completo."
         );
         break;
       }

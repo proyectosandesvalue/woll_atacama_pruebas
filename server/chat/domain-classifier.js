@@ -83,7 +83,7 @@ REGLA CRÍTICA: si la pregunta contiene "cerca de", "a menos de",
 "concentración", "más grande", "compara", o está en inglés,
 pipeline = null (excepto proximidad_conteo, que sí matchea "a menos de N metros de Y").
 
-4. slots = datos concretos que podés extraer de la pregunta:
+4. slots = datos concretos que puedes extraer de la pregunta:
    - layer_id: el id de la capa (ej: "derechos_agua_2025"). Si no
      estás seguro, null.
    - filters: filtros como {"Cuenca": "Copiapó"}. Si no hay, null.
@@ -95,7 +95,7 @@ pipeline = null (excepto proximidad_conteo, que sí matchea "a menos de N metros
    - distance_m: distancia en metros (para proximidad). Si no hay, null.
 5. confidence: 0.0 a 1.0. Alta (0.8+) si estás seguro de la
    clasificación, pipeline y slots. Baja (<0.5) si hay ambigüedad.
-6. Si no podés llenar un slot con seguridad, poné null y bajá
+6. Si no puedes llenar un slot con seguridad, pon null y baja
    confidence. NO inventes valores.
 
 EJEMPLOS:
@@ -163,7 +163,7 @@ Pregunta: "¿Cuál fue el promedio de caudal del Río Copiapó en 2010?"
 REGLA CLIMA — MUY IMPORTANTE:
 Si la pregunta menciona "estaciones" (meteorológicas, climáticas,
 históricas, online, de monitoreo, de la red, etc.) en una comuna de
-Atacama, devolvé pipeline = null. NO intentes matchear con una capa
+Atacama, devuelve pipeline = null. NO intentes matchear con una capa
 del catálogo. El orquestador tiene una tool específica para eso.
 
 Ejemplos:

@@ -86,7 +86,12 @@ export function scopeFilter(text) {
     return { blocked: false };
   }
 
-  const lower = text.toLowerCase();
+  // Normaliza tildes para que los patrones funcionen con "escríbeme",
+  // "código", etc. sin depender de la forma exacta.
+  const lower = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 
   for (const rule of BLOCK_PATTERNS) {
     if (rule.regex.test(lower)) {

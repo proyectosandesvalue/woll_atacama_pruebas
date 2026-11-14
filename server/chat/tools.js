@@ -5,7 +5,7 @@
  * (una tool por archivo) durante la Fase 3 del refactor.
  *
  * Este archivo se mantiene para no romper `orchestrator.js`, que importa
- * `TOOL_DEFINITIONS` desde acá. En una feature posterior se puede borrar y
+ * `TOOL_DEFINITIONS` desde aquí. En una feature posterior se puede borrar y
  * cambiar el import del orquestador directamente.
  *
  * @deprecated usar `server/chat/tools/index.js` directamente en código nuevo.

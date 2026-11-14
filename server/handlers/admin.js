@@ -116,7 +116,7 @@ export async function handleAdminLogin(ctx, { getDB = defaultGetDB } = {}) {
   if (!allowed.allowed) {
     return json(
       429,
-      { error: "Demasiados intentos. Esperá unos minutos." },
+      { error: "Demasiados intentos. Espera unos minutos." },
       { "Retry-After": String(allowed.retryAfter) }
     );
   }

@@ -14,8 +14,8 @@ import { scopeFilter, SCOPE_PATTERNS } from "../scope-filter.js";
 
 // ── Casos que DEBEN bloquear ─────────────────────────────────
 
-test("bloquea generación de código: 'escribime una función'", () => {
-  const out = scopeFilter("escribime una función que cuente plantas");
+test("bloquea generación de código: 'escríbeme una función'", () => {
+  const out = scopeFilter("escríbeme una función que cuente plantas");
   assert.strictEqual(out.blocked, true);
 });
 
@@ -55,7 +55,7 @@ test("bloquea consejos personales", () => {
 });
 
 test("devuelve reason cuando bloquea", () => {
-  const out = scopeFilter("escribime un programa");
+  const out = scopeFilter("escríbeme un programa");
   assert.strictEqual(out.blocked, true);
   assert.ok(typeof out.reason === "string" && out.reason.length > 0);
 });
@@ -99,7 +99,7 @@ test("texto no-string → no bloquea", () => {
 });
 
 test("case-insensitive", () => {
-  const out = scopeFilter("ESCRIBIME UN PROGRAMA");
+  const out = scopeFilter("Escríbeme UN PROGRAMA");
   assert.strictEqual(out.blocked, true);
 });
 
@@ -131,7 +131,7 @@ test("bloquea 'en qué año estamos'", () => {
 });
 
 // ── Conversación casual ──
-// (si agregás los patrones correspondientes)
+// (si agregas los patrones correspondientes)
 
 test("NO bloquea consulta del dominio con fecha", () => {
   const out = scopeFilter("¿en qué fecha se promulgó la ley de glaciares?");

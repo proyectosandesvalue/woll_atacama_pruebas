@@ -42,7 +42,7 @@ export function compact(name, out, ctx) {
       ref,
       total: r.features.length,
       sample: r.features.slice(0, 15).map((f) => f.properties),
-      _hint: "Geometrías guardadas. Se pintan en el mapa, no se analizan acá.",
+      _hint: "Geometrías guardadas. Se pintan en el mapa, no se analizan aquí.",
     };
   }
 

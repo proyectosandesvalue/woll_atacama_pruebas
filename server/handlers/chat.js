@@ -297,10 +297,10 @@ export async function handleChat(body, ctx = {}) {
       status,
       body: {
         error: isBusy
-          ? "El asistente está con alta demanda. Intentá de nuevo en unos segundos."
+          ? "El asistente está con alta demanda. Intenta de nuevo en unos segundos."
           : "Ocurrió un error procesando tu consulta. " +
-            "Intentá de nuevo en unos segundos. " +
-            "Si persiste, reportá el código de error al equipo.",
+            "Intenta de nuevo en unos segundos. " +
+            "Si persiste, reporta el código de error al equipo.",
         errorId,
       },
       ...(isBusy

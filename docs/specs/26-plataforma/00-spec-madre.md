@@ -427,7 +427,7 @@ despliegue), `.env.example`, ADRs 006/010/011 y
 - **Sprint 28 (seguridad frontend):** CSP, vendorización y auditoría de
   dependencias se hacen sobre el Nginx de este sprint.
 - **Sprints 15/16 (admin):** usan la misma base y el mismo runner; la auth es
-  ADR 007 y no se implementa acá.
+  ADR 007 y no se implementa aquí.
 - **Chat IA:** mismas tools y RPCs; el único cambio es el transporte (Node en
   vez de Vercel Function) y el presupuesto de tiempo.
 

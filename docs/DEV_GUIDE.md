@@ -38,20 +38,20 @@ Una sola vez en tu máquina:
 bash
 git config --global user.name "Tu Nombre"
 git config --global user.email "tu-email@dominio.com"
-Importante: el email debe ser el mismo que tenés registrado y verificado en GitHub. Si no, Vercel bloquea los deploys (ver ADR 001).
+Importante: el email debe ser el mismo que tienes registrado y verificado en GitHub. Si no, Vercel bloquea los deploys (ver ADR 001).
 
 2.4. Crear .env.staging
-Copiá .env.example a .env.staging y completá los valores:
+Copia .env.example a .env.staging y completa los valores:
 
 bash
 cp .env.example .env.staging
-Editá .env.staging con los valores reales:
+Edita .env.staging con los valores reales:
 
 SUPABASE_URL y SUPABASE_SERVICE_KEY de Supabase staging.
 
 LLM_API_KEY del proveedor (Vertex, Groq, o el que uses).
 
-GOOGLE_APPLICATION_CREDENTIALS_JSON (si usás Vertex AI en local).
+GOOGLE_APPLICATION_CREDENTIALS_JSON (si usas Vertex AI en local).
 
 .env.staging está en .gitignore. NUNCA se sube a GitHub.
 
@@ -65,18 +65,18 @@ Instala ESLint (dev) y las dependencias de runtime (`pg`, Vertex AI, `csv-parser
 Desde 26-C el entorno de referencia es Docker/Podman + PostgreSQL 17 con
 PostGIS y pgvector. La demo Vercel + Supabase queda congelada.
 
-1. Copiá `.env.example` a `.env.local` y completá:
+1. Copia `.env.example` a `.env.local` y completa:
    - `POSTGRES_PASSWORD`
    - `DATABASE_URL` (rol `woll_api`)
    - `DATABASE_ADMIN_URL` (rol `postgres`, solo migraciones)
    - `WOLL_API_PASSWORD`, `WOLL_INGEST_PASSWORD`
-2. Levantá la base:
+2. Levanta la base:
 
 ```bash
 npm run db:up
 ```
 
-3. Aplicá las migraciones (idempotente):
+3. Aplica las migraciones (idempotente):
 
 ```bash
 npm run migrate
@@ -85,7 +85,7 @@ npm run check:rpcs
 npm run audit:db
 ```
 
-4. Habilitá los roles de login (una vez por base):
+4. Habilita los roles de login (una vez por base):
 
 ```bash
 ./scripts/bootstrap-roles.sh
@@ -98,8 +98,8 @@ npm run db:down
 ```
 
 La base escucha solo en `127.0.0.1:5432` con `docker-compose.dev.yml`. En el VPS
-no se publica: queda en la red interna de Compose. Si usás Podman sin Compose,
-podés levantar el contenedor equivalente con `podman run` o instalar
+no se publica: queda en la red interna de Compose. Si usas Podman sin Compose,
+puedes levantar el contenedor equivalente con `podman run` o instalar
 `podman-compose`.
 
 ### 2.7. Servidor Node (Sprint 26-A)
@@ -133,7 +133,7 @@ npm run stack:down
 - API directa: `http://localhost:3000`.
 - Health: `http://localhost:8080/healthz` y `http://localhost:8080/nginx-health`.
 - No corras `npm run dev:api` al mismo tiempo: ambos usan el puerto 3000.
-- Si recreás solo el contenedor `api` en desarrollo, reiniciá Nginx
+- Si recreas solo el contenedor `api` en desarrollo, reinicia Nginx
   (`docker compose ... restart nginx`) para que resuelva la nueva IP.
 
 **Producción (VPS):**
@@ -239,8 +239,8 @@ Para embeddings Vertex falta el driver `vertex-ai`; por ahora el RAG local usa
 el endpoint OpenAI-compatible de Google AI Studio o un servidor de embeddings
 compatible con OpenAI.
 
-Si ya tenés un `.env` local con un proveedor OpenAI-compatible (por ejemplo
-Gemini API), podés cargarlo sin copiar claves:
+Si ya tienes un `.env` local con un proveedor OpenAI-compatible (por ejemplo
+Gemini API), puedes cargarlo sin copiar claves:
 
 ```bash
 podman-compose -p woll_local --env-file /tmp/woll-local.env \
@@ -250,7 +250,7 @@ podman-compose -p woll_local --env-file /tmp/woll-local.env \
 
 Si el chat responde `402 RESOURCE_EXHAUSTED` o `prepayment credits are
 depleted`, la clave es válida pero el proyecto de Google AI Studio no tiene
-créditos: cargá billing en AI Studio o usá Vertex AI.
+créditos: carga billing en AI Studio o usa Vertex AI.
 
 Después de editar `.env.local`, recrear el contenedor API (no alcanza con
 `restart`, porque `env_file` se lee al crear):
@@ -272,7 +272,7 @@ curl -X POST http://localhost:8090/api/chat \
 ### 2.10. Migración de datos desde Supabase (Sprint 26-E)
 
 La conexión directa a Supabase (DBeaver o `supabase db dump`) **no se guarda en
-el repo**. Exportá `SOURCE_DATABASE_URL` solo en la sesión.
+el repo**. Exporta `SOURCE_DATABASE_URL` solo en la sesión.
 
 ```bash
 export SOURCE_DATABASE_URL='postgres://...'
@@ -316,16 +316,16 @@ Opción A — servidor estático (más simple, sin backend):
 
 bash
 npx http-server -p 8099
-Abrí http://localhost:8099. El visor funciona, pero el chat no (el endpoint /api/chat no existe local).
+Abre http://localhost:8099. El visor funciona, pero el chat no (el endpoint /api/chat no existe local).
 
 Opción B — Vercel CLI (con backend):
 
 bash
 npx vercel dev
-Abrí http://localhost:3000. El chat funciona porque Vercel CLI levanta las Functions localmente.
+Abre http://localhost:3000. El chat funciona porque Vercel CLI levanta las Functions localmente.
 
 Recomiendo Opción B si vas a tocar el chat. Para probar el servidor del VPS sin
-el frontend, usá `npm run dev:api` (también en 3000).
+el frontend, usa `npm run dev:api` (también en 3000).
 
 La forma más simple es:
 
@@ -333,7 +333,7 @@ La forma más simple es:
 npm run dev
 ```
 
-Levanta `vercel dev` y el proxy persistente de Copernicus en `http://localhost:3001/api/proxy`. Si querés levantarlos por separado:
+Levanta `vercel dev` y el proxy persistente de Copernicus en `http://localhost:3001/api/proxy`. Si quieres levantarlos por separado:
 
 ```bash
 npx vercel dev     # terminal 1
@@ -354,7 +354,7 @@ El frontend detecta que está en `localhost` y usa el proxy de 3001; en producci
 3.2. Lint
 bash
 npm run lint
-Si tenés errores, corregilos antes de commitear.
+Si tienes errores, corrígelos antes de commitear.
 
 3.3. Tests
 bash
@@ -362,14 +362,14 @@ npm test
 Tests con node:test. Los tests están en server/chat/__tests__/.
 
 3.4. Poblar el catálogo del chat
-Cuando agregues capas nuevas a Supabase, corré:
+Cuando agregues capas nuevas a Supabase, ejecuta:
 
 bash
 node --env-file=.env.staging scripts/build_catalog.mjs
 Esto hace UPSERT de todas las capas declaradas en js/config/allTemasConfig.js en chat.chat_catalog.
 
 3.5. Cargar los prompts del chat en la BD
-Cuando cambies SYSTEM_PROMPT_BASE o CLASSIFIER_SYSTEM_PROMPT en el código, corré:
+Cuando cambies SYSTEM_PROMPT_BASE o CLASSIFIER_SYSTEM_PROMPT en el código, ejecuta:
 
 bash
 node --env-file=.env.staging scripts/migrate_prompts.mjs
@@ -478,12 +478,12 @@ Preguntate:
 ¿Es solo un fix? → Verificar que no rompe nada existente.
 
 4.2. Desarrollo
-Actualizá main:
+Actualiza main:
 
 bash
 git checkout main
 git pull origin main
-Hacé el cambio. Commits atómicos con mensaje claro:
+Haz el cambio. Commits atómicos con mensaje claro:
 
 text
 feat: descripción corta
@@ -500,14 +500,14 @@ Push:
 
 bash
 git push origin main
-Vercel deploya automáticamente (~30s). Esperá a que esté Ready.
+Vercel deploya automáticamente (~30s). Espera a que esté Ready.
 
-Verificá en el navegador:
+Verifica en el navegador:
 
 text
 https://wollatacamapruebas.vercel.app
 4.3. Cuándo crear rama
-Hoy: como sos vos solo, commiteás directo a main. Simple.
+Hoy: como eres tú solo, haces commit directo a main. Simple.
 
 Cuando sumes gente:
 
@@ -535,7 +535,7 @@ Vercel prod deploya.
 Verificar.
 
 5. Estructura de carpetas — dónde va cada cosa
-Si vas a tocar...	Mirá esto
+Si vas a tocar...	Mira esto
 Backend del chat	server/chat/
 Configuración de capas	js/config/
 UI del visor	js/ui/
@@ -578,13 +578,13 @@ Nunca editar una migración ya aplicada. Si hace falta un cambio, crear una nuev
 Números reservados: la 021 y la 022 son del 40-A (filtros). La 024 y la 025 son del 40-D.2 (admin config y rollback). No renumerar.
 
 6.2. Aplicar en Supabase
-Abrí el SQL Editor del proyecto Supabase correspondiente.
+Abre el SQL Editor del proyecto Supabase correspondiente.
 
-Pegá el contenido.
+Pega el contenido.
 
 Run.
 
-Verificá que no haya errores.
+Verifica que no haya errores.
 
 6.3. Después de aplicar
 Si la migración agrega/modifica RPCs:
@@ -592,12 +592,12 @@ Si la migración agrega/modifica RPCs:
 sql
 NOTIFY pgrst, 'reload schema';
 NOTIFY pgrst, 'reload config';
-PostgREST tarda ~10s en recargar el schema. Si tu RPC no aparece inmediatamente, esperá.
+PostgREST tarda ~10s en recargar el schema. Si tu RPC no aparece inmediatamente, espera.
 
 7. Agregar una capa nueva al visor
-Colocá el .geojson en geojson/.
+Coloca el .geojson en geojson/.
 
-Agregá la config en js/config/<dimension>.js:
+Agrega la config en js/config/<dimension>.js:
 
 js
 nueva_capa: {
@@ -609,11 +609,11 @@ nueva_capa: {
   popupCampos: ["campo1", "campo2"],
   alias: { campo1: "Nombre", campo2: "Descripción" },
 }
-Agregá el nombre en el array capas: de la dimensión.
+Agrega el nombre en el array capas: de la dimensión.
 
 Si la capa va dentro de un grupo, agregala al array del grupo.
 
-Recargá el navegador. No hay build step.
+Recarga el navegador. No hay build step.
 
 Para que el chat la vea:
 
@@ -695,16 +695,16 @@ Los campos desconocidos devuelven error (no se ignoran silenciosamente).
 
 9. Troubleshooting
 El visor no carga
-Abrí consola del navegador (F12) → Console → buscá errores.
+Abre consola del navegador (F12) → Console → busca errores.
 
-Verificá que estás sirviendo con HTTP (no file://).
+Verifica que estás sirviendo con HTTP (no file://).
 
 Confirma que /geojson/ es accesible.
 
 El chat no responde
-Verificá que las env vars están cargadas en Vercel.
+Verifica que las env vars están cargadas en Vercel.
 
-Revisá Deployments → último → Functions → chat → logs.
+Revisa Deployments → último → Functions → chat → logs.
 
 Si dice "Variable de entorno requerida no configurada: X", agregala.
 
@@ -712,7 +712,7 @@ Si dice "Supabase RPC X falló (404)", alguna migración falta.
 
 Si dice "LLM 401", la LLM_API_KEY está mal.
 
-Si dice "invalid_rapt", corré gcloud auth application-default login (Vertex AI).
+Si dice "invalid_rapt", ejecuta gcloud auth application-default login (Vertex AI).
 
 Vercel bloquea el deploy
 Error: "The deployment was blocked because the commit email X could not be matched to a GitHub account".
@@ -721,7 +721,7 @@ Causa: el email de git no está verificado en GitHub.
 
 Fix:
 
-Corregí git config user.email (debe ser el email verificado en GitHub).
+Corrige git config user.email (debe ser el email verificado en GitHub).
 
 Si el historial ya tiene commits con el email mal:
 
@@ -742,7 +742,7 @@ echo ".env.staging" >> .gitignore
 git add .gitignore
 git commit -m "chore: ignorar .env.staging"
 El golden set falla con "no puedo responder"
-Si los casos de Tier 3/4 fallan con "no puedo responder", es porque CHAT_UNAVAILABLE_ENABLED=0 (default). Corré con:
+Si los casos de Tier 3/4 fallan con "no puedo responder", es porque CHAT_UNAVAILABLE_ENABLED=0 (default). Ejecuta con:
 
 bash
 CHAT_UNAVAILABLE_ENABLED=1 node --env-file=.env.staging scripts/run-golden-set.mjs --all
@@ -793,7 +793,7 @@ npm run tiles:build -- --layer borde_costero --version 2026 \
 - `--maxzoom` se degrada solo si la capa supera 20.000 tiles (capas regionales
   bajan a z13). `--force` permite el zoom completo.
 - `--publish` imprime el snippet `source.tiles` para la config de la capa.
-- Una versión con `manifest.json` no se sobrescribe: usá otra `--version` o
+- Una versión con `manifest.json` no se sobrescribe: usa otra `--version` o
   `--overwrite` solo en desarrollo.
 
 **Publicar todas las capas nuevas o editadas**
@@ -838,7 +838,7 @@ curl -I http://localhost:8090/tiles/borde_costero/2026/10/308/596.mvt
 
 **En el VPS**
 
-El generador escribe en el checkout que Nginx monta en `/srv/woll`. Corrélo en el
+El generador escribe en el checkout que Nginx monta en `/srv/woll`. Ejecútalo en el
 host (Node 22) con `DATABASE_ADMIN_URL` apuntando a `127.0.0.1:5432`:
 
 ```bash
@@ -902,7 +902,7 @@ source: {
 - La tabla y la descarga usan `/api/layer-features` y `/api/layer-export`
   cuando la capa es PostGIS; si la API no existe (Vercel), usan GeoJSON.
 
-Para una capa nueva, copiá el bloque `source` y verificá popup, zoom, tabla,
+Para una capa nueva, copia el bloque `source` y verifica popup, zoom, tabla,
 filtro y CSV con `npm run acceptance:08` como referencia.
 
 **Exportación (08-E)**
@@ -1017,7 +1017,7 @@ npm run taxonomy:compile -- --check
 - Los cambios se guardan en la taxonomía, pero el sidebar no cambia hasta
   **Publicar snapshot**. Si la validación falla, el snapshot anterior sigue
   activo.
-- Los formularios de alta están colapsados: usá **Agregar dimensión/grupo/
+- Los formularios de alta están colapsados: usa **Agregar dimensión/grupo/
   subgrupo/capa** para abrirlos; se cierran al guardar o con **Cancelar**.
   En RAG, **Agregar documento** abre el formulario y la tabla usa todo el
   ancho cuando está cerrado.

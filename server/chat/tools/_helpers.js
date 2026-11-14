@@ -6,7 +6,7 @@
  *   - Timeout de RPCs (withTimeout).
  *   - Constantes compartidas (METRICS, ADMIN_LEVELS, MAX_LIMIT).
  *
- * Los runners de cada tool importan lo que necesitan desde acá.
+ * Los runners de cada tool importan lo que necesitan desde aquí.
  */
 
 const RPC_TIMEOUT_MS = 6000;

@@ -3,7 +3,7 @@
 -- Autenticación local del panel admin (TOTP + password) y auditoría.
 -- Sprint 15 (docs/specs/14-15-panel-admin.md, ADR 007).
 --
--- El secreto TOTP NO vive en la base: se lee de ADMIN_TOTP_SECRET. Acá solo
+-- El secreto TOTP NO vive en la base: se lee de ADMIN_TOTP_SECRET. Aquí solo
 -- se guarda el hash scrypt del password y el estado del usuario.
 --
 -- Idempotente: CREATE TABLE/INDEX IF NOT EXISTS.

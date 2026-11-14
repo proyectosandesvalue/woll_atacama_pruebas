@@ -127,7 +127,7 @@ elif [[ "${BACKUP_ALLOW_PLAIN:-0}" == "1" ]]; then
   FILE="${BACKUP_DIR}/${BASE}"
   mv "$TMP" "$FILE"
 else
-  echo "[backup] definí BACKUP_GPG_RECIPIENT o BACKUP_GPG_PASSPHRASE_FILE." >&2
+  echo "[backup] define BACKUP_GPG_RECIPIENT o BACKUP_GPG_PASSPHRASE_FILE." >&2
   echo "[backup] (para desarrollo: BACKUP_ALLOW_PLAIN=1)" >&2
   exit 1
 fi

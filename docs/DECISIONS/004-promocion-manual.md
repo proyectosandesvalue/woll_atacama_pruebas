@@ -103,7 +103,7 @@ En tu terminal:
 cd "/media/osx/Respaldo/Proyectos/2025 - Atacama Andes Value/woll_atacama_pruebas"
 mkdir -p docs/DECISIONS
 
-Después, creá cada archivo con el contenido que te pasé arriba. Podés usar nano, code, gedit, o el editor que prefieras:
+Después, crea cada archivo con el contenido que te pasé arriba. Puedes usar nano, code, gedit, o el editor que prefieras:
 
 nano docs/DECISIONS/001-dos-repos-separados.md
 nano docs/DECISIONS/002-config-planos.md
@@ -113,7 +113,7 @@ nano docs/DECISIONS/004-promocion-manual.md
 Recordatorio: .md — Markdown.
 
 Verificación
-Cuando termines, verificá:
+Cuando termines, verifica:
 
 ls -la docs/
 # Debe mostrar: CONTRACT.md, ARCHITECTURE.md, DECISIONS/

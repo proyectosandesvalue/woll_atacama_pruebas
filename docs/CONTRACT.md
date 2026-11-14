@@ -32,7 +32,7 @@
 | **Datos** | Valores, colores, alias, textos, PDFs | BD (futuro: `admin.*`) | Operador (futuro: vía panel) |
 | **Secretos e infra** | API keys, URLs, config Vercel | Env vars | Dev |
 
-**Regla de oro**: si dudás de qué plano corresponde algo, preguntate "¿esto requiere cambiar código para que funcione?". Si sí → Plano 1. Si no → Plano 2. Si es un secreto → Plano 3.
+**Regla de oro**: si dudas de qué plano corresponde algo, pregúntate "¿esto requiere cambiar código para que funcione?". Si sí → Plano 1. Si no → Plano 2. Si es un secreto → Plano 3.
 
 **Estado actual (2026-10-22)**:
 - **Plano 1 (estructura)**: sigue en código.
@@ -342,7 +342,16 @@ appState es la única fuente de verdad del visor.
 
 Nunca estado global mutable fuera de appState.
 
-7.5. Performance
+7.5. Idioma y tono
+
+- **Español neutro para Chile.** No se usa voseo rioplatense (imperativos en
+  -á/-í, formas verbales de segunda persona rioplatenses) ni modismos como
+  “che” o “laburo”.
+- UI: tuteo neutro (“Selecciona”, “Guarda”, “Puedes”) o impersonal.
+- La regla aplica a documentación, prompts del chat, mensajes de error,
+  comentarios y tests.
+
+7.6. Performance
 
 Lazy loading de capas.
 
@@ -468,7 +477,7 @@ Verificar en prod que funciona.
 
 8. Nunca editar una migración ya aplicada.
 
-9. Si dudás, preguntá. Mejor 5 minutos de aclaración que 5 horas de refactor.
+9. Si dudas, pregunta. Mejor 5 minutos de aclaración que 5 horas de refactor.
 
 10. Documentar la decisión, no el código.
 

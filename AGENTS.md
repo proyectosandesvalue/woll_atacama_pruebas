@@ -77,11 +77,12 @@ Reglas:
 - No cargar más de 1-2 skills por tarea; si no aporta, no usarla.
 - Si una skill no existe en el repo, no inventarla: proponer instalarla o escribir el trigger en `AGENTS.md`.
 - Las skills no reemplazan al CONTRACT ni a las specs: son guías de ejecución.
-- Para agregar una skill: copiarla a `.opencode/skills/<id>/SKILL.md`, asegurar un `description` con “Úsala cuando…”, y agregar el trigger acá si es una regla del proyecto.
+- Para agregar una skill: copiarla a `.opencode/skills/<id>/SKILL.md`, asegurar un `description` con “Úsala cuando…”, y agregar el trigger aquí si es una regla del proyecto.
 - **Features nuevas o cambios de roadmap:** cargar `spec-writer`, crear/actualizar la spec en `docs/specs/` y esperar aprobación antes de implementar.
 
 ## Reglas operativas
 
+- **Idioma:** español neutro para Chile. Prohibido el voseo rioplatense (imperativos en -á/-í, formas verbales de segunda persona rioplatenses) y modismos como “che” o “laburo”. Usar tuteo neutro (“escribe”, “usa”, “tienes”, “puedes”, “aquí”) o impersonal. Aplica a UI, documentación, prompts, mensajes de error, tests y commits.
 - **Ramas:** un solo dev, se commitea **directo a `main`**. Sin `develop`.
 - **Commits:** `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`; un commit por sub-sprint con el ID (`feat: sprint-06-A backend geoespacial`).
 - **Migraciones:** `db/migrations/NNN_nombre.sql`, idempotentes. Nunca editar una ya aplicada; crear una nueva.
@@ -196,7 +197,7 @@ GeoJSON si la API falla. El clic en una fila de la tabla pide
 `GET /api/layer-feature` para obtener la geometría de ese feature y hacer
 zoom/highlight. La tabla de capas PostGIS pagina 100 por página con scroll
 infinito y busca/ordena en el servidor (`serverTable.js`); las capas GeoJSON
-siguen con la tabla local. Si agregás una capa con `source.tiles`, verificá
+siguen con la tabla local. Si agregas una capa con `source.tiles`, verifica
 popup, zoom, tabla, filtro y CSV; el total de la tabla debe coincidir con
 PostGIS, no con el GeoJSON.
 

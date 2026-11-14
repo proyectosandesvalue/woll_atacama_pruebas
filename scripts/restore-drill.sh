@@ -53,7 +53,7 @@ if [[ -z "$RESTORE_CONTAINER" ]]; then
   RESTORE_CONTAINER="$("$RESTORE_ENGINE" ps --format '{{.Names}}' | grep -E 'postgres' | head -1 || true)"
 fi
 if [[ -z "$RESTORE_CONTAINER" ]]; then
-  echo "[restore-drill] no se encontró el contenedor de PostgreSQL; definí RESTORE_CONTAINER." >&2
+  echo "[restore-drill] no se encontró el contenedor de PostgreSQL; define RESTORE_CONTAINER." >&2
   exit 1
 fi
 

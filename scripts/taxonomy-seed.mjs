@@ -374,7 +374,7 @@ async function main() {
       const rows = await client.query("SELECT count(*)::int AS n FROM admin.dimensions");
       if (rows.rows[0].n > 0) {
         throw new Error(
-          "La taxonomía ya tiene datos. Usá --force para reemplazarla."
+          "La taxonomía ya tiene datos. Usa --force para reemplazarla."
         );
       }
     }

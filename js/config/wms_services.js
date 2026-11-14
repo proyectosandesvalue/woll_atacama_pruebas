@@ -4,7 +4,7 @@ import { PROXY_URL } from "./proxy.js";
  * Servicio WMS de Copernicus Data Space Ecosystem.
  *
  * Todos comparten proxy, proyección, tamaño de tile y fecha. El INSTANCE_ID
- * vive solo en el servidor; acá se declara únicamente la capa.
+ * vive solo en el servidor; aquí se declara únicamente la capa.
  * MAXCC=30 descarta escenas con más de 30% de nubosidad.
  */
 function copernicus(layers, nombre) {

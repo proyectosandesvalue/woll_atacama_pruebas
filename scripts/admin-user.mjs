@@ -60,7 +60,7 @@ async function main() {
   if (opts.newTotp) {
     console.log(`ADMIN_TOTP_SECRET=${generateTotpSecret()}`);
     console.log(
-      "Guardá el secreto en el entorno del servidor y enrolalo en tu app TOTP."
+      "Guarda el secreto en el entorno del servidor y enrólalo en tu app TOTP."
     );
     return;
   }
@@ -69,7 +69,7 @@ async function main() {
     throw new Error("--username es obligatorio (máximo 80 caracteres).");
   }
   if (!opts.password && !opts.disable) {
-    throw new Error("--password es obligatorio (o usá --disable).");
+    throw new Error("--password es obligatorio (o usa --disable).");
   }
 
   const url = connectionString();
@@ -101,7 +101,7 @@ async function main() {
     );
     console.log(`[admin:user] ${opts.username} creado/actualizado.`);
     console.log(
-      "Recordá configurar ADMIN_SESSION_SECRET (32+ caracteres) y ADMIN_TOTP_SECRET."
+      "Recuerda configurar ADMIN_SESSION_SECRET (32+ caracteres) y ADMIN_TOTP_SECRET."
     );
   } finally {
     await client.end().catch(() => {});

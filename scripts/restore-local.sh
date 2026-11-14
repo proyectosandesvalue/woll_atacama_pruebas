@@ -6,7 +6,7 @@
 #     ./scripts/restore-local.sh backups/woll-....dump
 #
 # ADVERTENCIA: usa --clean --if-exists. Pensado para una base vacía o de
-# staging recién creada. No lo corras contra producción sin backup.
+# staging creada hace poco. No lo corras contra producción sin backup.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

@@ -233,7 +233,7 @@ async function buildLayer(pool, layer, opts) {
   if (version && !opts.force && versions.some((entry) => entry.version === version)) {
     throw new Error(
       `La versión ${layer.layer_id}/${version} ya está publicada. ` +
-        "Usá otra --version o --force para republicarla."
+        "Usa otra --version o --force para republicarla."
     );
   }
   if (!version) {

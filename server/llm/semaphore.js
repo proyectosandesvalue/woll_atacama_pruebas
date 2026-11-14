@@ -12,7 +12,7 @@
 
 function busyError(detail) {
   const err = new Error(
-    "El asistente está con alta demanda. Intentá de nuevo en unos segundos."
+    "El asistente está con alta demanda. Intenta de nuevo en unos segundos."
   );
   err.code = "LLM_BUSY";
   err.status = 503;
