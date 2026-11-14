@@ -396,6 +396,31 @@ El runner imprime en el header: modelo, flags, versiones de prompt y la fuente
 del golden set (`admin.golden_cases` o `golden.json`). Cada corrida es
 reproducible. Si la BD no responde, cae al archivo (INV-5).
 
+### 3.6.1. Antes de tocar el chat
+
+El chat es un orquestador de fuentes; la calidad se mide por ruta, no solo por
+respuesta. Antes de cambiar prompts, tools, router, RAG o settings:
+
+1. Identifica el tipo de pregunta y la ruta esperada en `CONTRACT.md` §6.7.
+2. Si agregas o cambias una tool, agrega el caso al golden set con
+   `tools_any` y documenta la tool en el prompt del orquestador.
+3. Si tocas el RAG, mide primero el retrieval (Recall@5, MRR). No cambies el
+   prompt hasta saber si el problema es el corpus, el chunking o el ranking.
+4. Si tocas el enrutamiento, actualiza el mapa de fuentes y los casos mixtos.
+5. Corre el golden set antes y después:
+   `CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1 npm run eval:chat`.
+6. Compara el acierto por tier y por ruta. Si baja, no actives el cambio.
+7. Revisa la latencia con `CHAT_TIMING_ENABLED=1` y el baseline de
+   `docs/chat-latency-baseline.md`.
+8. Verifica la abstención: una pregunta sin evidencia debe decirlo, no
+   inventar una respuesta.
+9. Actualiza la spec, el CHANGELOG y, si cambia una decisión, el ADR.
+10. Deja el golden set y la configuración versionados; no actives cambios
+    manuales sin auditoría.
+
+El detalle de las reglas está en `CONTRACT.md` §6.7 y el porqué en
+`docs/DECISIONS/025-calidad-chat-orquestador-fuentes.md`.
+
 3.7. Smoke tests
 bash
 # Test de conexión a la BD

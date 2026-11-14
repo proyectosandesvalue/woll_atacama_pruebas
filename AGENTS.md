@@ -21,6 +21,7 @@ Si el código contradice el CONTRACT, no decidas por tu cuenta: señálalo y dej
 | Si necesitas… | Lee… |
 |---|---|
 | Reglas que no se rompen | `docs/CONTRACT.md` |
+| Reglas de calidad del chat (rutas, evidencia, abstención, evaluación) | `docs/CONTRACT.md` §6.7 + `docs/DECISIONS/025-calidad-chat-orquestador-fuentes.md` |
 | Cómo está armado el sistema hoy | `docs/ARCHITECTURE.md` |
 | Qué sprint sigue o está activo | `docs/ROADMAP.md` |
 | Cómo hacer una tarea habitual | `docs/DEV_GUIDE.md` |
@@ -217,6 +218,9 @@ PostGIS, no con el GeoJSON.
 
 ## Chat IA
 
+- **Antes de tocar cualquier componente del chat**, lee `docs/CONTRACT.md` §6.7
+  y el checklist `docs/DEV_GUIDE.md` §3.6.1. La calidad se mide por ruta
+  (tool/RAG/mixta), por evidencia y por abstención, no solo por la respuesta.
 - Endpoint `api/chat.js`: handler delgado. Capas de defensa previas al orquestador: `input-validator`, `rate-limiter` (en memoria), `geo-filter`, `scope-filter` y `domain-classifier`.
 - Orquestador: L1 (tool calling) + L2 (síntesis forzada). `ORCHESTRATOR_MAX_ITERATIONS` controla las rondas de tools (default 1, mínimo 1). Presupuesto: `ORCHESTRATOR_BUDGET_MS` (default 8000).
 - **13 tools**, una por archivo en `server/chat/tools/`: 9 de capas (`get_layer_stats`, `get_layer_schema`, `query_layer`, `aggregate_layer`, `aggregate_by_admin`, `aggregate_by_admin_and_column`, `count_near_layer`, `aggregate_near_layer`, `get_layer_features`) y 4 de clima (`get_station_weather`, `get_historical_climate`, `list_climate_stations`, `get_arclim_forecast`). `normalizeArgs` y `withTimeout` en `tools/_helpers.js`. Las RPCs tienen timeout de 6 s. El router determinístico solo conoce las 9 de capas (`server/chat/capabilities/registry.js`); las de clima las invoca el orquestador.

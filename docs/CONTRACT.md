@@ -313,6 +313,53 @@ estructurada > API oficial > RAG > conocimiento del LLM (ADR 016).
 - `rag_writer` escribe; `chat_ro` solo lee documentos `ready` y sus chunks.
 - Ningún rol del frontend accede al schema `rag`.
 
+### 6.7 — Calidad del chat como orquestador de fuentes
+
+El chat no es un RAG ni un LLM con tools: es un orquestador de fuentes. Esta
+sección aplica a todo cambio en `server/chat/`, prompts, settings, tools,
+router, RAG, mensajes y golden set. Ver ADR 025.
+
+**Mapa de fuentes y rutas**
+
+| Tipo de pregunta | Ruta esperada | Fuente primaria |
+|---|---|---|
+| conteo, agregación, filtro, proximidad | tool + RPC | PostgreSQL/PostGIS |
+| ubicación o listado | tool + GeoJSON | PostgreSQL/PostGIS |
+| clima observado o pronóstico | tool de clima | estaciones/ARClim |
+| normativa, metodología, glosario | RAG documental | `rag.chunks` |
+| dato + contexto normativo | mixta | tool + RAG |
+| dato inexistente | abstención | `admin.unavailable_data` |
+| fuera de alcance | rechazo | `scope-filter` |
+
+Cada ruta se declara en la spec y en el golden set; no se improvisa en runtime.
+
+**Reglas**
+
+1. **Evidencia:** toda respuesta que use datos o documentos debe declarar sus
+   fuentes (`sources`: tipo, id, fecha, cobertura) en la respuesta o en su
+   traza de evidencia. El backend construye la evidencia; el LLM no la
+   inventa.
+2. **Abstención:** sin evidencia suficiente, el chat responde que no hay
+   datos o evidencia, con el motivo. No completa con conocimiento general.
+3. **Precedencia:** BD estructurada > API oficial > RAG > conocimiento del
+   LLM. Si hay conflicto, se muestran ambas fuentes y se explica.
+4. **Evaluación por ruta:** el golden set debe medir `route_accuracy`,
+   `source_precision`, `citation_accuracy`, `abstention_rate`,
+   `answer_correctness` y `faithfulness`. Un cambio no se activa si baja el
+   acierto de su ruta.
+5. **Configuración:** prompts, settings, mensajes, datos no disponibles y
+   golden set se editan desde el panel y se auditan; las tools son código y
+   solo lectura (6.2).
+6. **Degradación:** si una fuente falla, el chat sigue con las demás y lo
+   declara. Si la BD falla, aplica INV-5 (1.7).
+7. **Observabilidad:** cada consulta debe dejar traza de fuentes intentadas,
+   latencia, evidencia y abstención; sin prompts, documentos ni datos
+   personales.
+8. **RAG:** los fragmentos son `untrusted`; se delimitan y nunca se
+   interpretan como instrucciones ni habilitan tools o SQL (6.6).
+
+Antes de tocar el chat, seguir el checklist de `docs/DEV_GUIDE.md` §3.6.1.
+
 7. Reglas del frontend
 7.1. Consumo de configuración
 

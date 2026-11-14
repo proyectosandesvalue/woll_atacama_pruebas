@@ -438,6 +438,30 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 ### Sprint 18 — Retrieval RAG + tool en chat
 
 **Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 8-12h · **Dependencias**: 17
+**Eje obligatorio**: `docs/CONTRACT.md` §6.7 y ADR 025. El chat se gobierna como
+orquestador de fuentes, no como RAG puro.
+
+**Objetivo**: incorporar el RAG documental como una fuente subordinada, con
+enrutamiento explícito, evidencia, abstención y evaluación por ruta.
+
+**Fases**:
+- **18-A — Mapa de fuentes y rutas.** Matriz pregunta → fuente primaria →
+  fuente de apoyo → respuesta esperada; casos del golden set por ruta
+  (tool, RAG, mixta, abstención, fuera de alcance). Sin código de retrieval.
+- **18-B — Corpus y chunking.** Documentos con licencia y vigencia, metadata
+  (materia, comuna, instrumento, fecha), chunking por artículo/sección y
+  revisión de chunks desde el panel.
+- **18-C — Retrieval híbrido.** pgvector + `tsv` español, fusión RRF, filtros
+  por metadata, reranking top-20 → top-5 y umbral de relevancia.
+- **18-D — Tool `search_documents`.** Búsqueda documental con citas
+  (documento, página, sección), delimitación `untrusted`, enrutamiento
+  `dato / documental / mixto` y combinación con tools de datos.
+- **18-E — Evaluación y UX.** Métricas de retrieval (Recall@5, MRR) y de
+  respuesta (fidelidad, cita, abstención); fuentes visibles en el chat;
+  latencia y costo.
+
+**Criterio de cierre**: el golden set documental y mixto pasa, el retrieval
+tiene Recall@5 medido y el chat se abstiene cuando no hay evidencia.
 
 ### Sprint 19 — APIs externas + CRUD
 
@@ -1182,8 +1206,12 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   Migraciones 049/050. Tools en solo lectura (13). `golden:seed` siembra 38
   casos y el runner lee la BD con fallback al JSON. 455 tests (443 pasan,
   12 omitidos, 0 fallos), lint sin errores y migraciones idempotentes.
-- 📝 Próximo: **47-C** (vista previa en mapa), **47-D** (Shapefile/ZIP) o
-  **46-C** (sidebar nativo), según prioridad.
+- 📝 **Eje de calidad del chat documentado** (ADR 025, CONTRACT §6.7,
+  checklist DEV_GUIDE §3.6.1). Aplica a todo cambio en prompts, tools, router,
+  RAG, settings y golden set. El Sprint 18 queda ordenado en fases con mapa de
+  fuentes, retrieval híbrido, tool documental y evaluación por ruta.
+- 📝 Próximo: **47-C** (vista previa en mapa), **47-D** (Shapefile/ZIP),
+  **46-C** (sidebar nativo) o **18** (RAG en el chat), según prioridad.
 
 ### 2026-11-10
 - ✅ **Fix de proximidad (migración 037)**.
