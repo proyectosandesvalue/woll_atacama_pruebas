@@ -83,6 +83,53 @@ test("apis actualiza parámetros no secretos", async () => {
   assert.equal(result.body.item.key, "arclim");
 });
 
+test("apis lista una conexión archivada", async () => {
+  const result = await handleAdminApisList(ctx(), {
+    getDB: async () => db([
+      { key: "arclim", label: "ARClim archivada", activo: false, timeout_ms: 15000 },
+    ]),
+  });
+  assert.equal(result.status, 200);
+  const arclim = result.body.items.find((item) => item.key === "arclim");
+  assert.equal(arclim.activo, false);
+});
+
+test("apis archiva una conexión sin borrar su definición", async () => {
+  let params = null;
+  const result = await handleAdminApisUpdate(
+    ctx({
+      body: {
+        key: "arclim",
+        label: "ARClim (MMA)",
+        timeout_ms: 15000,
+        rate_limit: "120/min",
+        activo: false,
+      },
+    }),
+    {
+      getDB: async () => ({
+        pool: { query: async () => [] },
+        query: async (sql, values) => {
+          if (sql.includes("INSERT INTO admin.api_connections")) {
+            params = values;
+            return [{
+              key: "arclim",
+              label: "ARClim (MMA)",
+              timeout_ms: 15000,
+              rate_limit: "120/min",
+              activo: false,
+            }];
+          }
+          return [];
+        },
+      }),
+    }
+  );
+  assert.equal(result.status, 200);
+  assert.equal(result.body.item.activo, false);
+  assert.equal(params[4], false);
+});
+
 test("apis prueba una conexión y guarda el resultado", async () => {
   const calls = [];
   const fakeDB = {

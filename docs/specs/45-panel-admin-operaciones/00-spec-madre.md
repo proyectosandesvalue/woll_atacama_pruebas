@@ -175,13 +175,17 @@ Compose. El API solo escribe uploads y consulta.
   nombres), timeout, rate limit y último estado.
 - Probar conexión desde el servidor y guardar HTTP/latencia.
 - Editar label, timeout, límites y activo (no secretos).
+- Archivar/reactivar una conexión: desactiva su uso en el backend sin borrar
+  su definición de código.
+- Mostrar una guía de alta cuando se necesita una conexión nueva.
 - Alertar si falta una variable de entorno.
 
 **Fuera**
 - Escribir secretos desde el panel.
 - Agregar URLs arbitrarias: el proxy sigue siendo una allowlist cerrada. Una
-  conexión nueva requiere código/deploy; el panel puede marcarla “requiere
-  deploy”.
+  conexión nueva requiere código/deploy; el panel muestra los pasos.
+- Eliminar una conexión operativa desde el panel: se hace por código
+  (registro y allowlist) y deploy. El panel solo archiva/desactiva.
 
 **Modelo:** `admin.api_connections` (key, label, kind, base_url, secret_env,
 timeout_ms, rate_limit, activo, last_check_at/status/latency). Los secretos

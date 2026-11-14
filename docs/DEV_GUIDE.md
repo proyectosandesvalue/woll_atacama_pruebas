@@ -1088,9 +1088,15 @@ npm run layer:worker -- --once
   secretos ni descarga el cuerpo completo.
 - **Editar** permite cambiar nombre, timeout, rate limit y si está activa.
   La URL base y los secretos viven en el entorno/registro de código.
-- Agregar una conexión nueva requiere editar
-  `server/admin/api-registry.js` y la allowlist de `server/proxy/services.js`,
-  luego deployar. El panel no acepta URLs arbitrarias.
+- **Archivar** desactiva la conexión para el backend sin borrar su definición
+  de código; **Reactivar** la vuelve a habilitar. La tabla marca la conexión
+  como `archivada`.
+- **Nueva conexión** abre una guía con los pasos. Una conexión operativa
+  requiere editar `server/admin/api-registry.js`, la allowlist de
+  `server/proxy/services.js` si usa el proxy, agregar tests y deployar. El
+  panel no acepta URLs arbitrarias.
+- La tabla tiene scroll horizontal y la columna de acciones queda fija para
+  que Probar, Editar y Archivar estén siempre visibles.
 - Migración: `044_admin_api_connections.sql`.
 
 **Configuración del chat (48)**

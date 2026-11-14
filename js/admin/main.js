@@ -44,6 +44,7 @@ const state = {
   apis: {
     data: null,
     loading: false,
+    reload: false,
   },
   taxonomy: {
     data: null,
@@ -1044,7 +1045,10 @@ function apiSetStatus(message, kind = "ok") {
 }
 
 async function loadApis({ silent = false } = {}) {
-  if (state.apis.loading) return;
+  if (state.apis.loading) {
+    state.apis.reload = true;
+    return;
+  }
   state.apis.loading = true;
   if (!silent) setStatus("Cargando conexiones externas…");
   try {
@@ -1058,6 +1062,10 @@ async function loadApis({ silent = false } = {}) {
     setStatus(`No se pudieron cargar las APIs: ${err.message}`, "error");
   } finally {
     state.apis.loading = false;
+    if (state.apis.reload) {
+      state.apis.reload = false;
+      loadApis({ silent: true });
+    }
   }
 }
 
@@ -1110,11 +1118,19 @@ function renderApis(data) {
       text: "Editar",
       attrs: { type: "button", "data-api-edit": item.key },
     });
+    const toggleButton = el("button", {
+      className: "btn btn-secondary btn-mini",
+      text: item.activo === false ? "Reactivar" : "Archivar",
+      attrs: { type: "button", "data-api-toggle": item.key },
+    });
 
     fragment.appendChild(
       el("tr", {}, [
         el("td", {}, [
           el("strong", { className: "layer-name", text: item.label }),
+          item.activo === false
+            ? el("span", { className: "badge badge-warn", text: "archivada" })
+            : null,
           el("small", { className: "item-meta", text: ` ${item.key}` }),
           item.description
             ? el("small", { className: "item-meta", text: ` · ${item.description}` })
@@ -1145,7 +1161,7 @@ function renderApis(data) {
           el("span", { className: probe.className, text: probe.label, title: item.last_error || "" }),
         ]),
         el("td", {}, [
-          el("div", { className: "row-actions" }, [testButton, editButton]),
+          el("div", { className: "row-actions" }, [testButton, editButton, toggleButton]),
         ]),
       ])
     );
@@ -1214,6 +1230,33 @@ async function testApi(key, button) {
     await loadApis({ silent: true });
   } catch (err) {
     setStatus(`No se pudo probar ${key}: ${err.message}`, "error");
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function toggleApi(key, button) {
+  const item = state.apis.data?.items?.find((entry) => entry.key === key);
+  if (!item) return;
+  const nextActive = item.activo === false;
+  if (!nextActive && !window.confirm(
+    `¿Archivar ${item.label}? Dejará de usarse en el backend, pero su definición de código no se borra.`
+  )) {
+    return;
+  }
+  if (button) button.disabled = true;
+  try {
+    await api.apisUpdate({
+      key,
+      label: item.label,
+      timeout_ms: item.timeout_ms,
+      rate_limit: item.rate_limit || "",
+      activo: nextActive,
+    });
+    setStatus(nextActive ? `${item.label} reactivada.` : `${item.label} archivada.`);
+    await loadApis({ silent: true });
+  } catch (err) {
+    setStatus(`No se pudo cambiar el estado de ${key}: ${err.message}`, "error");
   } finally {
     if (button) button.disabled = false;
   }
@@ -2726,10 +2769,28 @@ function bindEvents() {
     if (editor) editor.hidden = true;
   });
   $("#apiEditorForm")?.addEventListener("submit", saveApiEditor);
+  $("#apiNewToggle")?.addEventListener("click", () => {
+    const panel = $("#apiNewPanel");
+    if (!panel) return;
+    const willOpen = panel.hidden;
+    panel.hidden = !willOpen;
+    $("#apiNewToggle")?.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    if (willOpen) panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  $("#apiNewClose")?.addEventListener("click", () => {
+    const panel = $("#apiNewPanel");
+    if (panel) panel.hidden = true;
+    $("#apiNewToggle")?.setAttribute("aria-expanded", "false");
+  });
   $("#apisBody")?.addEventListener("click", async (event) => {
     const testButton = event.target.closest("[data-api-test]");
     if (testButton) {
       await testApi(testButton.dataset.apiTest, testButton);
+      return;
+    }
+    const toggleButton = event.target.closest("[data-api-toggle]");
+    if (toggleButton) {
+      await toggleApi(toggleButton.dataset.apiToggle, toggleButton);
       return;
     }
     const editButton = event.target.closest("[data-api-edit]");

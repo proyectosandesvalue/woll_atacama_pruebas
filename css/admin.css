@@ -944,6 +944,52 @@ details.prompt[open] summary::before { content: "−"; }
   max-width: 300px;
   overflow-wrap: anywhere;
 }
+
+.api-table {
+  min-width: 1080px;
+}
+.api-table th:last-child,
+.api-table td:last-child {
+  position: sticky;
+  right: 0;
+  background: var(--bg-surface);
+  box-shadow: -1px 0 0 var(--border-subtle);
+}
+.api-table th:last-child {
+  z-index: 3;
+  background: var(--bg-surface-2);
+}
+.api-table tbody tr:hover td:last-child {
+  background: var(--bg-surface-hover);
+}
+
+.table-hint {
+  margin: 0;
+  padding: 0 20px 8px;
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+}
+
+.api-guide {
+  padding: 16px 20px 20px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+.api-guide p { margin: 0 0 8px; }
+.api-guide ol {
+  margin: 8px 0 12px;
+  padding-left: 20px;
+}
+.api-guide li { margin-bottom: 6px; }
+.api-guide code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--bg-surface-2);
+  color: var(--color-brand-text);
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+}
 #view-apis .data-table td:nth-child(1) {
   min-width: 220px;
 }

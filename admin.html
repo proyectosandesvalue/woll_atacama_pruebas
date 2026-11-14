@@ -697,18 +697,26 @@
                     <li><b>Variables:</b> el panel solo muestra nombres y si están presentes; nunca lee ni guarda secretos.</li>
                     <li><b>Probar:</b> hace una petición controlada desde el servidor y guarda HTTP, latencia y error.</li>
                     <li><b>Editar:</b> cambia label, timeout, rate limit o si está activa. La URL y los secretos viven en el entorno.</li>
-                    <li><b>Nuevas conexiones:</b> requieren código en la allowlist del proxy y un deploy; no se crean desde el panel.</li>
+                    <li><b>Archivar:</b> desactiva la conexión para el backend sin borrar su definición de código. Se puede reactivar cuando quieras.</li>
+                    <li><b>Nueva conexión:</b> requiere código en la allowlist del proxy y un deploy; el botón muestra los pasos, no crea URLs arbitrarias.</li>
+                    <li><b>Eliminar del todo:</b> se hace por código (registro y allowlist) y deploy; el panel no borra conexiones operativas.</li>
                   </ul>
                 </div>
               </div>
+              <button id="apiNewToggle" class="btn btn-secondary" type="button"
+                      aria-expanded="false" aria-controls="apiNewPanel">
+                <span class="material-symbols-outlined">add</span>
+                Nueva conexión
+              </button>
               <button id="apisRefresh" class="btn btn-secondary" type="button">
                 <span class="material-symbols-outlined">refresh</span>
                 Actualizar
               </button>
             </div>
           </div>
+          <p class="table-hint">Desliza horizontalmente para ver todas las columnas y los botones de acción.</p>
           <div class="table-wrap">
-            <table class="data-table">
+            <table class="data-table api-table">
               <thead>
                 <tr>
                   <th scope="col">Conexión</th>
@@ -724,6 +732,26 @@
             </table>
           </div>
           <p id="apisEmpty" class="empty" hidden>No hay conexiones registradas.</p>
+        </div>
+
+        <div id="apiNewPanel" class="panel" hidden>
+          <div class="panel-head">
+            <div>
+              <h2>Agregar una conexión nueva</h2>
+              <p class="muted">Requiere código y deploy; el panel no acepta URLs arbitrarias.</p>
+            </div>
+            <button id="apiNewClose" class="btn btn-secondary" type="button">Cerrar</button>
+          </div>
+          <div class="api-guide">
+            <p>El proxy es una allowlist cerrada. Para incorporar una fuente nueva:</p>
+            <ol>
+              <li>Agrega la definición en <code>server/admin/api-registry.js</code> con clave, label, tipo, variables y prueba.</li>
+              <li>Si usa el proxy, agrega el servicio en <code>server/proxy/services.js</code> y sus variables en <code>.env</code>.</li>
+              <li>Agrega los tests del handler y del proxy.</li>
+              <li>Haz deploy y prueba la conexión desde esta pantalla.</li>
+            </ol>
+            <p>Mientras no exista en el código, la conexión no puede operar ni aparecer en el panel.</p>
+          </div>
         </div>
 
         <div id="apiEditor" class="panel" hidden>

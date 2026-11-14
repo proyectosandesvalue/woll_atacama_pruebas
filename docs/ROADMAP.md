@@ -1206,6 +1206,10 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   Migraciones 049/050. Tools en solo lectura (13). `golden:seed` siembra 38
   casos y el runner lee la BD con fallback al JSON. 455 tests (443 pasan,
   12 omitidos, 0 fallos), lint sin errores y migraciones idempotentes.
+- ✅ **Gestor de APIs:** scroll horizontal y acciones fijas en la tabla;
+  Archivar/Reactivar conexiones y guía de alta. Se corrigió la recarga cuando
+  se archiva y reactiva en rápida sucesión. Tests de listado archivado y
+  archivado sin borrado.
 - 📝 **Eje de calidad del chat documentado** (ADR 025, CONTRACT §6.7,
   checklist DEV_GUIDE §3.6.1). Aplica a todo cambio en prompts, tools, router,
   RAG, settings y golden set. El Sprint 18 queda ordenado en fases con mapa de
