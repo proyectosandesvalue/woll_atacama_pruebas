@@ -324,7 +324,18 @@ test("golden save exige expected como objeto", async () => {
   assert.equal(result.status, 400);
 });
 
-test("golden save guarda un caso con tier 4", async () => {
+test("golden save guarda un caso con tier 4 y ruta", async () => {
+  let params = null;
+  const db = {
+    pool: { query: async () => [] },
+    query: async (sql, values) => {
+      if (sql.includes("INSERT INTO admin.golden_cases")) {
+        params = values;
+        return [{ id: "caso-1", route: "rag" }];
+      }
+      return [];
+    },
+  };
   const result = await handleGoldenSave(
     ctx({
       body: {
@@ -332,13 +343,32 @@ test("golden save guarda un caso con tier 4", async () => {
         question: "¿Pregunta?",
         level: 2,
         tier: 4,
-        expected: { tools_any: ["query_layer"] },
+        route: "rag",
+        expected: { sources_any: ["document"] },
       },
     }),
-    { getDB: getDBFrom(mockDb({ dbRows: [{ id: "caso-1" }] })) }
+    { getDB: getDBFrom(db) }
   );
   assert.equal(result.status, 200);
   assert.equal(result.body.item.id, "caso-1");
+  assert.equal(params[10], "rag");
+});
+
+test("golden save rechaza una ruta inválida", async () => {
+  const result = await handleGoldenSave(
+    ctx({
+      body: {
+        id: "caso-1",
+        question: "¿Pregunta?",
+        level: 1,
+        tier: 1,
+        route: "otro",
+        expected: {},
+      },
+    }),
+    { getDB: getDBFrom(mockDb()) }
+  );
+  assert.equal(result.status, 400);
 });
 
 test("golden delete devuelve 404 si no existe", async () => {

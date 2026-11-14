@@ -3,13 +3,12 @@
  *
  * Prioriza `admin.golden_cases` (editable desde el panel) y cae al archivo
  * `server/chat/__evals__/golden.json` si `--from-json`, si la BD no está
- * disponible o si no hay casos activos. INV-5: el eval no se rompe sin BD.
+ * disponible o si no hay casos. INV-5: el eval no se rompe sin BD.
  */
 
 export const GOLDEN_QUERY = `SELECT id, level, tier, intent_esperado, fuente_esperada, category,
-              question, expected, notes, history
+              question, expected, notes, history, route, activo
          FROM admin.golden_cases
-        WHERE activo = true
         ORDER BY level, id`;
 
 /**

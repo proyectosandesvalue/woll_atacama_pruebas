@@ -75,7 +75,7 @@
 | 15 | Panel admin — solo lectura | 🔶 local (login, config, chat y auditoría ✅; VPS pendiente) | alta | 6-8h | 14 |
 | 16 | Panel admin — CRUD de capas | ⏳ pending | alta | 8-12h | 08, 14, 15 |
 | 17 | Ingesta RAG (PDFs → chunks → embeddings) | 🔶 parcial | media | 8-12h | — (CLI); 15 solo para el panel |
-| 18 | Retrieval RAG + tool en chat | ⏳ pending | media | 8-12h | 17 |
+| 18 | Retrieval RAG + tool en chat | 🔶 parcial (18-A ✅; 18-B a 18-E pendientes) | media | 8-12h | 17 |
 | 19 | APIs externas + CRUD | ⏳ pending | media | 15-25h | 16 |
 | 20 | Adapter real: meteorología | ⏳ pending | baja | 4-6h | 19 |
 | 21 | Adapter real: leyes (BCN) | ⏳ pending | baja | 6-8h | 19 |
@@ -437,7 +437,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 18 — Retrieval RAG + tool en chat
 
-**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 8-12h · **Dependencias**: 17
+**Estado**: 🔶 parcial (18-A ✅; 18-B a 18-E pendientes) · **Prioridad**: media · **Duración**: 8-12h · **Dependencias**: 17
 **Eje obligatorio**: `docs/CONTRACT.md` §6.7 y ADR 025. El chat se gobierna como
 orquestador de fuentes, no como RAG puro.
 
@@ -445,9 +445,10 @@ orquestador de fuentes, no como RAG puro.
 enrutamiento explícito, evidencia, abstención y evaluación por ruta.
 
 **Fases**:
-- **18-A — Mapa de fuentes y rutas.** Matriz pregunta → fuente primaria →
-  fuente de apoyo → respuesta esperada; casos del golden set por ruta
-  (tool, RAG, mixta, abstención, fuera de alcance). Sin código de retrieval.
+- **18-A — Mapa de fuentes y rutas.** ✅ Documento
+  `docs/chat-map-fuentes-rutas.md`, columna `route` en el golden set
+  (migración 051), 8 casos nuevos inactivos y resumen por ruta en el runner.
+  Sin código de retrieval.
 - **18-B — Corpus y chunking.** Documentos con licencia y vigencia, metadata
   (materia, comuna, instrumento, fecha), chunking por artículo/sección y
   revisión de chunks desde el panel.
@@ -1206,6 +1207,10 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   Migraciones 049/050. Tools en solo lectura (13). `golden:seed` siembra 38
   casos y el runner lee la BD con fallback al JSON. 455 tests (443 pasan,
   12 omitidos, 0 fallos), lint sin errores y migraciones idempotentes.
+- ✅ **18-A mapa de fuentes y rutas:** documento canónico, `route` en
+  `admin.golden_cases` (migración 051), 46 casos (8 inactivos hasta 18-D),
+  selector de ruta en el panel, resumen por ruta y `--include-inactive` en el
+  runner. Sin retrieval todavía.
 - ✅ **Gestor de APIs:** scroll horizontal y acciones fijas en la tabla;
   Archivar/Reactivar conexiones y guía de alta. Se corrigió la recarga cuando
   se archiva y reactiva en rápida sucesión. Tests de listado archivado y

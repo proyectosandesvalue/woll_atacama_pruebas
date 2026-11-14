@@ -71,6 +71,7 @@ de solo lectura.
 | `category` | text | categoría funcional |
 | `question` | text not null | pregunta al chat |
 | `expected` | jsonb | checks (`tools_any`, `geojson_required`, ...) |
+| `route` | text | ruta esperada: `tool`, `rag`, `mixta`, `abstencion`, `fuera_de_alcance` (migración 051) |
 | `notes` | text | contexto del caso |
 | `history` | jsonb | historial de conversación, opcional |
 | `activo` | boolean | el runner solo lee activos |
@@ -139,6 +140,7 @@ Todas las mutaciones exigen sesión, `X-CSRF-Token` y escriben
 | CA-12 | migraciones 049/050 | aplico dos veces | sin error |
 | CA-13 | mutación sin CSRF | llamo al endpoint | 403 |
 | CA-14 | cualquier mutación | reviso auditoría | queda actor, acción, objetivo y resultado |
+| CA-15 | un caso del golden | lo guardo | tiene una ruta válida y el runner la usa para el resumen por ruta |
 
 ## 7. Seguridad
 
@@ -170,7 +172,7 @@ Todas las mutaciones exigen sesión, `X-CSRF-Token` y escriben
 - UI **Chat IA** validada en navegador: crear/editar/activar/eliminar prompt,
   editar setting/mensaje/unavailable y crear/editar/eliminar golden.
 - `GET /api/admin/chat/tools`: 13 tools, `editable:false`.
-- Tests: 459 tests, 447 pasan, 12 omitidos, 0 fallos; lint 0 errores.
+- Tests: 463 tests, 451 pasan, 12 omitidos, 0 fallos; lint 0 errores.
 - Ayuda contextual validada en navegador: banner, seis popovers y pistas de
   formulario; `scripts/__tests__/admin-help.test.js` cubre el enlace
   botón/popover.

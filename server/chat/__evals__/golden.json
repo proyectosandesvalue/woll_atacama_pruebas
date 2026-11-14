@@ -1,9 +1,9 @@
 {
-  "version": "1.1",
+  "version": "1.2",
   "created": "2026-10-12",
-  "updated": "2026-10-22",
+  "updated": "2026-11-14",
   "model_expected": "gemini-3.1-flash-lite",
-  "description": "Golden set del chat del Visor Territorial de Atacama. Tres niveles (1=smoke, 2=core, 3=extendido) y cuatro tiers (1=simple, 2=multi-filtro, 3=multicriterio, 4=dato inexistente). Campos nuevos v1.1: tier, intent_esperado, fuente_esperada.",
+  "description": "Golden set del chat del Visor Territorial de Atacama. Tres niveles (1=smoke, 2=core, 3=extendido) y tiers 1-4. Campos nuevos v1.2: route (tool/rag/mixta/abstencion/fuera_de_alcance) y activo. Los casos rag y mixta quedan inactivos hasta que exista search_documents (18-D).",
   "cases": [
     {
       "id": "smoke-count-lagunas-por-comuna",
@@ -14,14 +14,24 @@
       "category": "conteo",
       "question": "¿Cuántas lagunas hay por comuna?",
       "expected": {
-        "tools_any": ["aggregate_by_admin", "aggregate_layer"],
+        "tools_any": [
+          "aggregate_by_admin",
+          "aggregate_layer"
+        ],
         "charts_count_min": 0,
         "charts_count_max": 2,
         "geojson_required": false,
-        "reply_must_contain": ["laguna"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar", "error"]
+        "reply_must_contain": [
+          "laguna"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar",
+          "error"
+        ]
       },
-      "notes": "Conteo simple por comuna. Puede devolver chart o tabla."
+      "notes": "Conteo simple por comuna. Puede devolver chart o tabla.",
+      "route": "tool"
     },
     {
       "id": "smoke-list-glaciares",
@@ -32,12 +42,22 @@
       "category": "listado-pintado",
       "question": "¿Cuáles son los glaciares?",
       "expected": {
-        "tools_any": ["query_layer", "get_layer_features"],
+        "tools_any": [
+          "query_layer",
+          "get_layer_features"
+        ],
         "geojson_required": true,
-        "reply_must_contain": ["glaciar"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar", "no puedo responder esa pregunta"]
+        "reply_must_contain": [
+          "glaciar"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar",
+          "no puedo responder esa pregunta"
+        ]
       },
-      "notes": "Debe pintar en el mapa (regla 20)."
+      "notes": "Debe pintar en el mapa (regla 20).",
+      "route": "tool"
     },
     {
       "id": "smoke-ubicacion-desaladoras",
@@ -48,12 +68,21 @@
       "category": "ubicacion",
       "question": "¿Dónde están las plantas desaladoras?",
       "expected": {
-        "tools_any": ["get_layer_features"],
+        "tools_any": [
+          "get_layer_features"
+        ],
         "geojson_required": true,
-        "reply_must_contain": ["planta", "desaladora"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "planta",
+          "desaladora"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Pintado puro con get_layer_features."
+      "notes": "Pintado puro con get_layer_features.",
+      "route": "tool"
     },
     {
       "id": "smoke-bloqueo-fecha",
@@ -65,11 +94,14 @@
       "question": "¿Qué día es hoy?",
       "expected": {
         "blocked": true,
-        "reply_must_contain": ["no puedo responder"],
+        "reply_must_contain": [
+          "no puedo responder"
+        ],
         "geojson_required": false,
         "charts_count_max": 0
       },
-      "notes": "El clasificador de dominio debe bloquear."
+      "notes": "El clasificador de dominio debe bloquear.",
+      "route": "fuera_de_alcance"
     },
     {
       "id": "smoke-count-total-glaciares",
@@ -80,12 +112,21 @@
       "category": "conteo",
       "question": "¿Cuántos glaciares hay en total?",
       "expected": {
-        "tools_any": ["get_layer_stats", "aggregate_layer"],
+        "tools_any": [
+          "get_layer_stats",
+          "aggregate_layer"
+        ],
         "geojson_required": false,
-        "reply_must_contain": ["glaciar"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "glaciar"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Conteo total, sin agrupación."
+      "notes": "Conteo total, sin agrupación.",
+      "route": "tool"
     },
     {
       "id": "smoke-count-humedales-por-comuna",
@@ -96,14 +137,22 @@
       "category": "conteo",
       "question": "¿Cuántos humedales hay por comuna?",
       "expected": {
-        "tools_any": ["aggregate_by_admin"],
+        "tools_any": [
+          "aggregate_by_admin"
+        ],
         "charts_count_min": 1,
         "charts_count_max": 2,
         "geojson_required": false,
-        "reply_must_contain": ["humedal"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "humedal"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Conteo con chart."
+      "notes": "Conteo con chart.",
+      "route": "tool"
     },
     {
       "id": "smoke-count-derechos-por-provincia",
@@ -114,13 +163,21 @@
       "category": "conteo",
       "question": "¿Cuántos derechos de agua hay por provincia?",
       "expected": {
-        "tools_any": ["aggregate_by_admin"],
+        "tools_any": [
+          "aggregate_by_admin"
+        ],
         "charts_count_min": 1,
         "geojson_required": false,
-        "reply_must_contain": ["derecho"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "derecho"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Conteo por provincia."
+      "notes": "Conteo por provincia.",
+      "route": "tool"
     },
     {
       "id": "smoke-list-yacimientos",
@@ -131,12 +188,21 @@
       "category": "listado-pintado",
       "question": "¿Cuáles son los yacimientos?",
       "expected": {
-        "tools_any": ["query_layer", "get_layer_features"],
+        "tools_any": [
+          "query_layer",
+          "get_layer_features"
+        ],
         "geojson_required": true,
-        "reply_must_contain": ["yacimiento"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "yacimiento"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Bug histórico: el LLM no llamaba a get_layer_features. Regla 20 lo fuerza."
+      "notes": "Bug histórico: el LLM no llamaba a get_layer_features. Regla 20 lo fuerza.",
+      "route": "tool"
     },
     {
       "id": "smoke-list-humedales",
@@ -147,12 +213,21 @@
       "category": "listado-pintado",
       "question": "Lista los humedales",
       "expected": {
-        "tools_any": ["query_layer", "get_layer_features"],
+        "tools_any": [
+          "query_layer",
+          "get_layer_features"
+        ],
         "geojson_required": true,
-        "reply_must_contain": ["humedal"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "humedal"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Listado con pintado. Flaky conocido (1 de 3)."
+      "notes": "Listado con pintado. Flaky conocido (1 de 3).",
+      "route": "tool"
     },
     {
       "id": "smoke-muestra-volcanes",
@@ -163,12 +238,20 @@
       "category": "ubicacion",
       "question": "Muéstrame los volcanes activos en el mapa",
       "expected": {
-        "tools_any": ["get_layer_features"],
+        "tools_any": [
+          "get_layer_features"
+        ],
         "geojson_required": true,
-        "reply_must_contain": ["volc"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "volc"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Pintado en el mapa."
+      "notes": "Pintado en el mapa.",
+      "route": "tool"
     },
     {
       "id": "core-color-glaciares-tipo",
@@ -179,15 +262,29 @@
       "category": "coloreo-por-atributo",
       "question": "¿Cuántos glaciares por tipo?",
       "expected": {
-        "tools_any": ["aggregate_layer", "get_layer_features"],
+        "tools_any": [
+          "aggregate_layer",
+          "get_layer_features"
+        ],
         "geojson_required": true,
         "geojson_meta_style_hint_required": true,
-        "style_hint_attribute_any": ["TIPO", "CLASIFICA", "tipo", "clasifica"],
+        "style_hint_attribute_any": [
+          "TIPO",
+          "CLASIFICA",
+          "tipo",
+          "clasifica"
+        ],
         "charts_count_min": 0,
-        "reply_must_contain": ["glaciar"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "glaciar"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Debe pintar con color por TIPO/CLASIFICA."
+      "notes": "Debe pintar con color por TIPO/CLASIFICA.",
+      "route": "tool"
     },
     {
       "id": "core-color-derechos-tipo",
@@ -198,14 +295,27 @@
       "category": "coloreo-por-atributo",
       "question": "¿Cuántos derechos de agua por tipo?",
       "expected": {
-        "tools_any": ["aggregate_layer", "get_layer_features"],
+        "tools_any": [
+          "aggregate_layer",
+          "get_layer_features"
+        ],
         "geojson_required": true,
         "geojson_meta_style_hint_required": true,
-        "style_hint_attribute_any": ["Tipo Derecho", "TIPO DERECHO", "tipo derecho"],
-        "reply_must_contain": ["derecho"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "style_hint_attribute_any": [
+          "Tipo Derecho",
+          "TIPO DERECHO",
+          "tipo derecho"
+        ],
+        "reply_must_contain": [
+          "derecho"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Debe pintar con color por Tipo Derecho."
+      "notes": "Debe pintar con color por Tipo Derecho.",
+      "route": "tool"
     },
     {
       "id": "core-color-humedales-clasificacion",
@@ -216,13 +326,22 @@
       "category": "coloreo-por-atributo",
       "question": "Distribución de humedales por clasificación",
       "expected": {
-        "tools_any": ["aggregate_layer", "get_layer_features"],
+        "tools_any": [
+          "aggregate_layer",
+          "get_layer_features"
+        ],
         "geojson_required": true,
         "geojson_meta_style_hint_required": true,
-        "reply_must_contain": ["humedal"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "humedal"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Coloreo por clasificación. Flaky conocido (1 de 3)."
+      "notes": "Coloreo por clasificación. Flaky conocido (1 de 3).",
+      "route": "tool"
     },
     {
       "id": "core-compare-glaciares-humedales",
@@ -233,15 +352,24 @@
       "category": "comparacion",
       "question": "Compárame glaciares y humedales por comuna",
       "expected": {
-        "tools_any": ["aggregate_by_admin"],
+        "tools_any": [
+          "aggregate_by_admin"
+        ],
         "tools_count_min": 2,
         "charts_count_min": 0,
         "charts_count_max": 3,
         "geojson_required": false,
-        "reply_must_contain": ["glaciar", "humedal"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "glaciar",
+          "humedal"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Comparación multi-capa. Debe llamar 2+ tools."
+      "notes": "Comparación multi-capa. Debe llamar 2+ tools.",
+      "route": "tool"
     },
     {
       "id": "core-compare-glaciares-derechos",
@@ -252,13 +380,24 @@
       "category": "comparacion",
       "question": "Comparame la cantidad de glaciares y de derechos de agua",
       "expected": {
-        "tools_any": ["aggregate_layer", "aggregate_by_admin", "get_layer_stats"],
+        "tools_any": [
+          "aggregate_layer",
+          "aggregate_by_admin",
+          "get_layer_stats"
+        ],
         "tools_count_min": 2,
         "geojson_required": false,
-        "reply_must_contain": ["glaciar", "derecho"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "glaciar",
+          "derecho"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Comparación de totales."
+      "notes": "Comparación de totales.",
+      "route": "tool"
     },
     {
       "id": "core-filter-derechos-consuntivos-copiapo",
@@ -269,16 +408,25 @@
       "category": "filtro-combinado",
       "question": "Dame los derechos de agua de la cuenca Copiapó pero solo los consuntivos",
       "expected": {
-        "tools_any": ["query_layer", "get_layer_features"],
+        "tools_any": [
+          "query_layer",
+          "get_layer_features"
+        ],
         "geojson_required": true,
         "geojson_filter_required": {
           "Tipo Derecho": "Consuntivo"
         },
         "geojson_cuenca_contains": "copiapo",
-        "reply_must_contain": ["consuntivo"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "consuntivo"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Bug actual: el filtro por Cuenca se descarta si no matchea exacto. Requiere ILIKE y resolución de valores."
+      "notes": "Bug actual: el filtro por Cuenca se descarta si no matchea exacto. Requiere ILIKE y resolución de valores.",
+      "route": "tool"
     },
     {
       "id": "core-proximidad-derechos-rio",
@@ -289,12 +437,21 @@
       "category": "proximidad",
       "question": "¿Cuántos derechos de agua hay a menos de 1 km de un río?",
       "expected": {
-        "tools_any": ["count_near_layer", "aggregate_near_layer"],
+        "tools_any": [
+          "count_near_layer",
+          "aggregate_near_layer"
+        ],
         "geojson_required": false,
-        "reply_must_contain": ["derecho"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "derecho"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Proximidad. Usa ST_DWithin."
+      "notes": "Proximidad. Usa ST_DWithin.",
+      "route": "tool"
     },
     {
       "id": "core-ambiguedad-dame-glaciares",
@@ -305,12 +462,21 @@
       "category": "ambiguedad",
       "question": "Dame los glaciares",
       "expected": {
-        "tools_any": ["query_layer", "get_layer_features"],
+        "tools_any": [
+          "query_layer",
+          "get_layer_features"
+        ],
         "geojson_required": true,
-        "reply_must_contain": ["glaciar"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "glaciar"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Pregunta vaga. Debe inferir query + pintado."
+      "notes": "Pregunta vaga. Debe inferir query + pintado.",
+      "route": "tool"
     },
     {
       "id": "core-error-columna-inexistente",
@@ -322,9 +488,12 @@
       "question": "¿Cuántos glaciares hay por comuna según color?",
       "expected": {
         "graceful_error": true,
-        "reply_must_not_contain": ["no puedo responder esa pregunta"]
+        "reply_must_not_contain": [
+          "no puedo responder esa pregunta"
+        ]
       },
-      "notes": "La columna 'color' no existe. Debe fallar graceful, no con 'no puedo responder'."
+      "notes": "La columna 'color' no existe. Debe fallar graceful, no con 'no puedo responder'.",
+      "route": "tool"
     },
     {
       "id": "core-truncamiento-todos-derechos",
@@ -335,13 +504,19 @@
       "category": "truncamiento",
       "question": "Dame TODOS los derechos de agua",
       "expected": {
-        "tools_any": ["get_layer_features"],
+        "tools_any": [
+          "get_layer_features"
+        ],
         "geojson_required": true,
         "geojson_meta_truncated_expected": true,
         "notice_required": true,
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Debe devolver >500 features y truncar con notice."
+      "notes": "Debe devolver >500 features y truncar con notice.",
+      "route": "tool"
     },
     {
       "id": "ext-seguimiento-filtro",
@@ -352,16 +527,32 @@
       "category": "seguimiento",
       "question": "Dame los glaciares",
       "history": [
-        { "role": "user", "content": "¿Cuáles son los humedales?" },
-        { "role": "assistant", "content": "Hay 500 humedales..." }
+        {
+          "role": "user",
+          "content": "¿Cuáles son los humedales?"
+        },
+        {
+          "role": "assistant",
+          "content": "Hay 500 humedales..."
+        }
       ],
       "expected": {
-        "tools_any": ["query_layer", "get_layer_features"],
+        "tools_any": [
+          "query_layer",
+          "get_layer_features"
+        ],
         "geojson_required": true,
-        "reply_must_contain": ["glaciar"],
-        "reply_must_not_contain": ["humedal", "no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "glaciar"
+        ],
+        "reply_must_not_contain": [
+          "humedal",
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "El historial no debe contaminar. Fix pendiente: reducir slice(-3) a slice(-2)."
+      "notes": "El historial no debe contaminar. Fix pendiente: reducir slice(-3) a slice(-2).",
+      "route": "tool"
     },
     {
       "id": "ext-correccion-consuntivos",
@@ -372,16 +563,30 @@
       "category": "correccion",
       "question": "No, esos no. Solo los consuntivos.",
       "history": [
-        { "role": "user", "content": "Dame los derechos de agua de la cuenca Copiapó" },
-        { "role": "assistant", "content": "Encontré 150 derechos..." }
+        {
+          "role": "user",
+          "content": "Dame los derechos de agua de la cuenca Copiapó"
+        },
+        {
+          "role": "assistant",
+          "content": "Encontré 150 derechos..."
+        }
       ],
       "expected": {
-        "tools_any": ["query_layer"],
+        "tools_any": [
+          "query_layer"
+        ],
         "geojson_required": false,
-        "reply_must_contain": ["consuntivo"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "consuntivo"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Corrección conversacional. El LLM debe entender el contexto previo."
+      "notes": "Corrección conversacional. El LLM debe entender el contexto previo.",
+      "route": "tool"
     },
     {
       "id": "ext-analisis-concentracion",
@@ -392,12 +597,21 @@
       "category": "analisis",
       "question": "¿Dónde hay más concentración de derechos de agua?",
       "expected": {
-        "tools_any": ["aggregate_by_admin", "aggregate_layer"],
+        "tools_any": [
+          "aggregate_by_admin",
+          "aggregate_layer"
+        ],
         "geojson_required": false,
-        "reply_must_contain": ["derecho"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "derecho"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Análisis simple de concentración."
+      "notes": "Análisis simple de concentración.",
+      "route": "tool"
     },
     {
       "id": "ext-cruce-capas",
@@ -408,13 +622,22 @@
       "category": "cruce",
       "question": "¿Qué relación hay entre los glaciares y los derechos de agua por comuna?",
       "expected": {
-        "tools_any": ["aggregate_by_admin"],
+        "tools_any": [
+          "aggregate_by_admin"
+        ],
         "tools_count_min": 2,
         "geojson_required": false,
-        "reply_must_contain": ["glaciar", "derecho"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "glaciar",
+          "derecho"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Cruce de 2 capas. No debe afirmar causalidad."
+      "notes": "Cruce de 2 capas. No debe afirmar causalidad.",
+      "route": "tool"
     },
     {
       "id": "ext-color-comuna-acumulado",
@@ -425,16 +648,32 @@
       "category": "multi-capa",
       "question": "¿Cuántos glaciares por comuna?",
       "history": [
-        { "role": "user", "content": "¿Cuáles son los humedales?" },
-        { "role": "assistant", "content": "..." }
+        {
+          "role": "user",
+          "content": "¿Cuáles son los humedales?"
+        },
+        {
+          "role": "assistant",
+          "content": "..."
+        }
       ],
       "expected": {
-        "tools_any": ["aggregate_by_admin", "get_layer_features"],
+        "tools_any": [
+          "aggregate_by_admin",
+          "get_layer_features"
+        ],
         "geojson_required": true,
-        "reply_must_contain": ["glaciar"],
-        "reply_must_not_contain": ["humedal", "no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "glaciar"
+        ],
+        "reply_must_not_contain": [
+          "humedal",
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Acumulación de capas + coloreo por comuna."
+      "notes": "Acumulación de capas + coloreo por comuna.",
+      "route": "tool"
     },
     {
       "id": "ext-bloqueo-territorio-otro",
@@ -446,10 +685,13 @@
       "question": "¿Cuántos glaciares hay en Argentina?",
       "expected": {
         "blocked": true,
-        "reply_must_contain": ["no puedo responder"],
+        "reply_must_contain": [
+          "no puedo responder"
+        ],
         "geojson_required": false
       },
-      "notes": "Bloqueo por territorio distinto."
+      "notes": "Bloqueo por territorio distinto.",
+      "route": "fuera_de_alcance"
     },
     {
       "id": "ext-bloqueo-tema-otro",
@@ -461,10 +703,13 @@
       "question": "¿Cuánto cuesta un iPhone?",
       "expected": {
         "blocked": true,
-        "reply_must_contain": ["no puedo responder"],
+        "reply_must_contain": [
+          "no puedo responder"
+        ],
         "geojson_required": false
       },
-      "notes": "Bloqueo por tema distinto."
+      "notes": "Bloqueo por tema distinto.",
+      "route": "fuera_de_alcance"
     },
     {
       "id": "ext-idioma-ingles",
@@ -475,12 +720,22 @@
       "category": "idioma",
       "question": "How many glaciers are in Atacama?",
       "expected": {
-        "tools_any": ["get_layer_stats", "aggregate_layer", "aggregate_by_admin"],
+        "tools_any": [
+          "get_layer_stats",
+          "aggregate_layer",
+          "aggregate_by_admin"
+        ],
         "geojson_required": false,
-        "reply_must_contain": ["glaciar"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "glaciar"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Pregunta en inglés. El sistema debe responder en español."
+      "notes": "Pregunta en inglés. El sistema debe responder en español.",
+      "route": "tool"
     },
     {
       "id": "core-filter-vallenar-huasco",
@@ -491,11 +746,20 @@
       "category": "filtro-combinado",
       "question": "¿Cuántos derechos hay en Vallenar o Huasco?",
       "expected": {
-        "tools_any": ["aggregate_by_admin", "query_layer"],
-        "reply_must_contain": ["derecho"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "tools_any": [
+          "aggregate_by_admin",
+          "query_layer"
+        ],
+        "reply_must_contain": [
+          "derecho"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Requiere operador 'in' (40-A)."
+      "notes": "Requiere operador 'in' (40-A).",
+      "route": "tool"
     },
     {
       "id": "core-compare-copiapo-vallenar",
@@ -506,12 +770,22 @@
       "category": "comparacion",
       "question": "Compara los derechos de agua de Copiapó y Vallenar",
       "expected": {
-        "tools_any": ["aggregate_by_admin", "aggregate_layer", "aggregate_by_admin_and_column"],
+        "tools_any": [
+          "aggregate_by_admin",
+          "aggregate_layer",
+          "aggregate_by_admin_and_column"
+        ],
         "tools_count_min": 1,
-        "reply_must_contain": ["derecho"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "derecho"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Comparación entre dos comunas."
+      "notes": "Comparación entre dos comunas.",
+      "route": "tool"
     },
     {
       "id": "core-filter-caudal-mayor-100",
@@ -522,11 +796,17 @@
       "category": "filtro-combinado",
       "question": "Derechos con más de 100 L/s",
       "expected": {
-        "tools_any": ["query_layer", "aggregate_layer"],
+        "tools_any": [
+          "query_layer",
+          "aggregate_layer"
+        ],
         "graceful_error": true,
-        "reply_must_not_contain": ["no puedo responder esa pregunta"]
+        "reply_must_not_contain": [
+          "no puedo responder esa pregunta"
+        ]
       },
-      "notes": "Hasta 37-D, Caudal Anual Promedio es texto. Debe fallar graceful."
+      "notes": "Hasta 37-D, Caudal Anual Promedio es texto. Debe fallar graceful.",
+      "route": "tool"
     },
     {
       "id": "core-filter-consuntivos-copiapo-por-comuna",
@@ -537,12 +817,21 @@
       "category": "filtro-combinado",
       "question": "Derechos consuntivos de la cuenca Copiapó por comuna",
       "expected": {
-        "tools_any": ["aggregate_by_admin", "aggregate_layer"],
+        "tools_any": [
+          "aggregate_by_admin",
+          "aggregate_layer"
+        ],
         "charts_count_min": 1,
-        "reply_must_contain": ["derecho"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "derecho"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Filtro + agrupación."
+      "notes": "Filtro + agrupación.",
+      "route": "tool"
     },
     {
       "id": "core-multi-capa-humedales-glaciares",
@@ -553,12 +842,23 @@
       "category": "multi-capa",
       "question": "Humedales y glaciares en Alto del Carmen",
       "expected": {
-        "tools_any": ["query_layer", "get_layer_features", "aggregate_by_admin"],
+        "tools_any": [
+          "query_layer",
+          "get_layer_features",
+          "aggregate_by_admin"
+        ],
         "tools_count_min": 2,
-        "reply_must_contain": ["humedal", "glaciar"],
-        "reply_must_not_contain": ["no puedo responder", "no pude generar"]
+        "reply_must_contain": [
+          "humedal",
+          "glaciar"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder",
+          "no pude generar"
+        ]
       },
-      "notes": "Dos capas, resolución de entidad (Alto del Carmen)."
+      "notes": "Dos capas, resolución de entidad (Alto del Carmen).",
+      "route": "tool"
     },
     {
       "id": "tier3-aptitud-jojoba",
@@ -570,11 +870,17 @@
       "question": "¿Cuál es la mejor zona para jojoba?",
       "expected": {
         "graceful_error": true,
-        "reply_must_not_contain": ["no puedo responder esa pregunta"],
-        "reply_must_not_match": ["mejor zona es", "la zona óptima es"],
+        "reply_must_not_contain": [
+          "no puedo responder esa pregunta"
+        ],
+        "reply_must_not_match": [
+          "mejor zona es",
+          "la zona óptima es"
+        ],
         "notice_required": true
       },
-      "notes": "Sin receta registrada. Debe declarar que no hay análisis de aptitud."
+      "notes": "Sin receta registrada. Debe declarar que no hay análisis de aptitud.",
+      "route": "abstencion"
     },
     {
       "id": "tier3-aptitud-olivos",
@@ -586,11 +892,17 @@
       "question": "¿Dónde conviene plantar olivos?",
       "expected": {
         "graceful_error": true,
-        "reply_must_not_contain": ["no puedo responder esa pregunta"],
-        "reply_must_not_match": ["conviene plantar en", "la mejor zona es"],
+        "reply_must_not_contain": [
+          "no puedo responder esa pregunta"
+        ],
+        "reply_must_not_match": [
+          "conviene plantar en",
+          "la mejor zona es"
+        ],
         "notice_required": true
       },
-      "notes": "Sin receta registrada. Debe declarar que no hay análisis."
+      "notes": "Sin receta registrada. Debe declarar que no hay análisis.",
+      "route": "abstencion"
     },
     {
       "id": "tier4-kilos-jojoba",
@@ -602,11 +914,17 @@
       "question": "¿Cuántos kilos de jojoba se producen al año?",
       "expected": {
         "graceful_error": true,
-        "reply_must_not_contain": ["no puedo responder esa pregunta"],
-        "reply_must_not_match": ["\\d+\\s*(kg|kilos|toneladas)", "se producen \\d+"],
+        "reply_must_not_contain": [
+          "no puedo responder esa pregunta"
+        ],
+        "reply_must_not_match": [
+          "\\d+\\s*(kg|kilos|toneladas)",
+          "se producen \\d+"
+        ],
         "notice_required": true
       },
-      "notes": "El visor no tiene producción en kilos. CA-8 de la spec 40-D."
+      "notes": "El visor no tiene producción en kilos. CA-8 de la spec 40-D.",
+      "route": "abstencion"
     },
     {
       "id": "tier4-rendimiento-palto",
@@ -618,11 +936,17 @@
       "question": "¿Cuánto rinde una hectárea de palto?",
       "expected": {
         "graceful_error": true,
-        "reply_must_not_contain": ["no puedo responder esa pregunta"],
-        "reply_must_not_match": ["\\d+\\s*(kg|kilos|toneladas|t/ha)", "rinde \\d+"],
+        "reply_must_not_contain": [
+          "no puedo responder esa pregunta"
+        ],
+        "reply_must_not_match": [
+          "\\d+\\s*(kg|kilos|toneladas|t/ha)",
+          "rinde \\d+"
+        ],
         "notice_required": true
       },
-      "notes": "El visor no tiene rendimiento. Tier 4."
+      "notes": "El visor no tiene rendimiento. Tier 4.",
+      "route": "abstencion"
     },
     {
       "id": "tier4-heladas-vallenar",
@@ -634,11 +958,193 @@
       "question": "¿Cuántas heladas hubo el año pasado en Vallenar?",
       "expected": {
         "graceful_error": true,
-        "reply_must_not_contain": ["no puedo responder esa pregunta"],
-        "reply_must_not_match": ["\\d+ heladas", "hubo \\d+"],
+        "reply_must_not_contain": [
+          "no puedo responder esa pregunta"
+        ],
+        "reply_must_not_match": [
+          "\\d+ heladas",
+          "hubo \\d+"
+        ],
         "notice_required": true
       },
-      "notes": "El visor no tiene heladas históricas. Tier 4. Sprint 42."
+      "notes": "El visor no tiene heladas históricas. Tier 4. Sprint 42.",
+      "route": "abstencion"
+    },
+    {
+      "id": "doc-normativa-cauces",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "rag",
+      "category": "normativa",
+      "route": "rag",
+      "activo": false,
+      "question": "¿Qué dice la normativa sobre la protección de cauces y zonas de inundación?",
+      "expected": {
+        "sources_any": [
+          "document"
+        ],
+        "citation_required": true,
+        "reply_must_not_contain": [
+          "no puedo responder"
+        ],
+        "expected_abstain": false
+      },
+      "notes": "Pendiente 18-D: requiere search_documents. Se activa cuando exista corpus normativo."
+    },
+    {
+      "id": "doc-metodologia-catastro",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "rag",
+      "category": "metodologia",
+      "route": "rag",
+      "activo": false,
+      "question": "¿Cuál es la metodología del catastro frutícola?",
+      "expected": {
+        "sources_any": [
+          "document"
+        ],
+        "citation_required": true,
+        "reply_must_not_contain": [
+          "no puedo responder"
+        ],
+        "expected_abstain": false
+      },
+      "notes": "Pendiente 18-D: requiere el documento metodológico en el corpus."
+    },
+    {
+      "id": "doc-plan-regulador-caldera",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "rag",
+      "category": "normativa",
+      "route": "rag",
+      "activo": false,
+      "question": "¿Qué regula el plan regulador de Caldera sobre densidad y altura?",
+      "expected": {
+        "sources_any": [
+          "document"
+        ],
+        "citation_required": true,
+        "reply_must_not_contain": [
+          "no puedo responder"
+        ],
+        "expected_abstain": false
+      },
+      "notes": "Pendiente 18-D: requiere el plan regulador vigente en el corpus."
+    },
+    {
+      "id": "mix-desaladoras-normativa",
+      "level": 3,
+      "tier": 2,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "db+rag",
+      "category": "mixta",
+      "route": "mixta",
+      "activo": false,
+      "question": "¿Cuántas plantas desaladoras hay y qué normativa regula su instalación?",
+      "expected": {
+        "tools_any": [
+          "get_layer_stats",
+          "query_layer",
+          "aggregate_layer"
+        ],
+        "sources_any": [
+          "data",
+          "document"
+        ],
+        "citation_required": true,
+        "reply_must_not_contain": [
+          "no puedo responder"
+        ]
+      },
+      "notes": "Pendiente 18-D: combina RPC de capas con RAG normativo."
+    },
+    {
+      "id": "mix-derechos-ley",
+      "level": 3,
+      "tier": 2,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "db+rag",
+      "category": "mixta",
+      "route": "mixta",
+      "activo": false,
+      "question": "¿Qué comunas concentran más derechos de agua y qué dice la ley sobre su uso?",
+      "expected": {
+        "tools_any": [
+          "aggregate_by_admin",
+          "aggregate_layer"
+        ],
+        "sources_any": [
+          "data",
+          "document"
+        ],
+        "citation_required": true,
+        "reply_must_not_contain": [
+          "no puedo responder"
+        ]
+      },
+      "notes": "Pendiente 18-D: dato por comuna + contexto legal citado."
+    },
+    {
+      "id": "abstencion-informe-calidad-agua",
+      "level": 3,
+      "tier": 4,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "no_disponible",
+      "category": "abstencion",
+      "route": "abstencion",
+      "activo": false,
+      "question": "¿Qué dice el informe de calidad de agua 2025 sobre el río Copiapó?",
+      "expected": {
+        "abstain": true,
+        "notice_required": true,
+        "reply_must_not_contain": [
+          "según el informe",
+          "el documento indica"
+        ]
+      },
+      "notes": "Pendiente 18-D: el documento no está en el corpus; debe abstenerse con motivo."
+    },
+    {
+      "id": "abstencion-normativa-litio",
+      "level": 3,
+      "tier": 4,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "no_disponible",
+      "category": "abstencion",
+      "route": "abstencion",
+      "activo": false,
+      "question": "¿Qué dice la normativa sobre el uso de agua en la industria del litio?",
+      "expected": {
+        "abstain": true,
+        "notice_required": true,
+        "reply_must_not_contain": [
+          "según la normativa",
+          "la ley indica"
+        ]
+      },
+      "notes": "Pendiente 18-D: sin documento en el corpus, no debe inventar una norma."
+    },
+    {
+      "id": "fuera-alcance-capital-francia",
+      "level": 1,
+      "tier": 1,
+      "intent_esperado": "fuera_de_alcance",
+      "fuente_esperada": null,
+      "category": "bloqueo",
+      "route": "fuera_de_alcance",
+      "activo": false,
+      "question": "¿Cuál es la capital de Francia?",
+      "expected": {
+        "reply_must_contain": [
+          "no puedo responder"
+        ]
+      },
+      "notes": "Pendiente de verificar con el scope-filter; se activa en 18-A solo si pasa."
     }
   ]
 }

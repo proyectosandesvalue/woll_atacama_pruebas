@@ -2231,6 +2231,14 @@ function renderUnavailable(items) {
   container.replaceChildren(fragment);
 }
 
+const GOLDEN_ROUTE_LABELS = {
+  tool: "tool",
+  rag: "rag",
+  mixta: "mixta",
+  abstencion: "abstención",
+  fuera_de_alcance: "fuera de alcance",
+};
+
 function renderGolden(items) {
   const container = $("#goldenList");
   if (!container) return;
@@ -2248,7 +2256,10 @@ function renderGolden(items) {
           el("span", { className: item.activo ? "badge badge-ok" : "badge", text: item.activo ? "activo" : "inactivo" }),
         ]),
         el("p", { className: "muted", text: item.question || "" }),
-        el("p", { className: "item-meta", text: `${item.category || "—"} · ${item.intent_esperado || "—"} · ${item.fuente_esperada || "—"}` }),
+        el("p", {
+          className: "item-meta",
+          text: `${GOLDEN_ROUTE_LABELS[item.route] || item.route || "sin ruta"} · ${item.category || "—"} · ${item.intent_esperado || "—"} · ${item.fuente_esperada || "—"}`,
+        }),
         el("div", { className: "row-actions" }, [
           chatAction("Editar", { "data-golden-action": "edit", "data-id": item.id }),
           chatAction("Eliminar", { "data-golden-action": "delete", "data-id": item.id }),
@@ -2364,6 +2375,7 @@ function editGolden(id) {
   $("#goldenId").readOnly = true;
   $("#goldenLevel").value = item.level || 1;
   $("#goldenTier").value = item.tier || 1;
+  $("#goldenRoute").value = item.route || "tool";
   $("#goldenIntent").value = item.intent_esperado || "";
   $("#goldenFuente").value = item.fuente_esperada || "";
   $("#goldenCategory").value = item.category || "";
@@ -2395,6 +2407,7 @@ function newChatForm(kind) {
   if (kind === "golden") {
     $("#goldenLevel").value = "1";
     $("#goldenTier").value = "1";
+    $("#goldenRoute").value = "tool";
     $("#goldenExpected").value = "{}";
     $("#goldenActivo").checked = true;
   }
@@ -2505,6 +2518,7 @@ async function saveGolden(event) {
       id: $("#goldenId").value.trim(),
       level: Number($("#goldenLevel").value),
       tier: Number($("#goldenTier").value),
+      route: $("#goldenRoute").value,
       intent_esperado: $("#goldenIntent").value.trim(),
       fuente_esperada: $("#goldenFuente").value.trim(),
       category: $("#goldenCategory").value.trim(),

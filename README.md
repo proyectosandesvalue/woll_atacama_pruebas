@@ -16,7 +16,7 @@ Aplicación web interactiva para visualizar y analizar datos geoespaciales estra
 - **Visualización geoespacial** con Leaflet y render WebGL de polígonos (`Leaflet.glify`).
 - **Asistente IA** conectado a Supabase (PostGIS): consultas reales vía tool calling, con gráficos automáticos en las respuestas.
 - **Router determinístico** (Sprint 40-C): clasificador unificado + pipelines declarativos + paquete de evidencia. El código decide qué tools ejecutar; el LLM interpreta la intención y redacta desde la evidencia.
-- **Golden set** (Sprint 40-D.3/48): 38 casos de prueba con `tier`, `intent_esperado` y `fuente_esperada`. Viven en `admin.golden_cases` (editables desde el panel) y el archivo `server/chat/__evals__/golden.json` queda como seed y fallback. Se corre con `npm run eval:chat`; `--from-json` fuerza el archivo.
+- **Golden set** (Sprints 40-D.3/48/18-A): 46 casos de prueba con `tier`, `intent_esperado`, `fuente_esperada` y `route` (`tool`, `rag`, `mixta`, `abstencion`, `fuera_de_alcance`). Viven en `admin.golden_cases` (editables desde el panel) y el archivo `server/chat/__evals__/golden.json` queda como seed y fallback. Se corre con `npm run eval:chat`; `--from-json` fuerza el archivo y `--include-inactive` prueba los casos pendientes.
 - **Configuración en BD** (Sprint 40-D.2): prompts, settings, mensajes y datos no disponibles viven en `admin.*`. Editables desde el panel admin (Sprint 15).
 - **Capas WMS** (IDE Chile, CIREN) además de ~70 capas GeoJSON locales.
 - **9 dimensiones de análisis + capas base:** Agua, Clima, Agricultura, Minería, Otros, Planificación Territorial, Riesgos, Suelo, Energía, y Capas base.

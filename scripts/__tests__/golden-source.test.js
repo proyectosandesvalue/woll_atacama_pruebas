@@ -106,7 +106,28 @@ test("golden seed normaliza todos los casos del archivo real", async () => {
     assert.ok(row[1] >= 1 && row[1] <= 3, "level fuera de rango");
     assert.ok(row[2] >= 1 && row[2] <= 6, "tier fuera de rango");
     assert.equal(typeof JSON.parse(row[7]), "object");
+    assert.ok(
+      ["tool", "rag", "mixta", "abstencion", "fuera_de_alcance"].includes(row[10]),
+      `ruta inválida: ${row[10]}`
+    );
+    assert.equal(typeof row[11], "boolean");
   }
+});
+
+test("el golden set cubre las cinco rutas del mapa", async () => {
+  const golden = JSON.parse(await readFile(GOLDEN, "utf8"));
+  const routes = new Set(golden.cases.map((item) => item.route));
+  for (const route of ["tool", "rag", "mixta", "abstencion", "fuera_de_alcance"]) {
+    assert.ok(routes.has(route), `falta la ruta ${route}`);
+  }
+  const pending = golden.cases.filter(
+    (item) => item.route === "rag" || item.route === "mixta"
+  );
+  assert.ok(pending.length >= 5, "faltan casos rag/mixtos");
+  assert.ok(
+    pending.every((item) => item.activo === false),
+    "los casos rag/mixtos deben quedar inactivos hasta 18-D"
+  );
 });
 
 test("golden seed convierte tier nulo en 1 y omite historial vacío", () => {
@@ -118,6 +139,8 @@ test("golden seed convierte tier nulo en 1 y omite historial vacío", () => {
   assert.equal(rows[0][2], 1);
   assert.equal(rows[0][7], "{}");
   assert.equal(rows[0][9], null);
+  assert.equal(rows[0][10], null);
+  assert.equal(rows[0][11], true);
 });
 
 test("golden seed ejecuta BEGIN, un INSERT por caso y COMMIT", async () => {

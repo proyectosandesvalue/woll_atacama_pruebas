@@ -392,9 +392,14 @@ CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1 \
 
 # Forzar el archivo y no leer admin.golden_cases
 node --env-file=.env.staging scripts/run-golden-set.mjs --all --from-json
+
+# Probar también los casos inactivos (por ejemplo, los de RAG antes de 18-D)
+node --env-file=.env.staging scripts/run-golden-set.mjs --all --include-inactive
 El runner imprime en el header: modelo, flags, versiones de prompt y la fuente
-del golden set (`admin.golden_cases` o `golden.json`). Cada corrida es
-reproducible. Si la BD no responde, cae al archivo (INV-5).
+del golden set (`admin.golden_cases` o `golden.json`). El resumen incluye el
+acierto por ruta (`tool`, `rag`, `mixta`, `abstencion`, `fuera_de_alcance`).
+Los casos inactivos no se ejecutan por defecto. Cada corrida es reproducible;
+si la BD no responde, cae al archivo (INV-5).
 
 ### 3.6.1. Antes de tocar el chat
 
@@ -1113,7 +1118,9 @@ npm run layer:worker -- --once
   actualiza `verificado_en`.
 - **Golden set**: CRUD de `admin.golden_cases`. El campo `expected` es JSON
   (por ejemplo `{ "tools_any": ["query_layer"] }`); `level` va de 1 a 3 y
-  `tier` de 1 a 6. Sembrar desde el archivo con:
+  `tier` de 1 a 6. La **ruta esperada** (`tool`, `rag`, `mixta`,
+  `abstencion`, `fuera_de_alcance`) agrupa el acierto en el runner. Sembrar
+  desde el archivo con:
 
 ```bash
 npm run golden:seed            # aplica sobre admin.golden_cases

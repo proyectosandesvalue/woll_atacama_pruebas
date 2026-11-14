@@ -16,6 +16,8 @@
  *   --limit <n>   Limita a los primeros n casos (después del filtro).
  *   --id <id>     Un caso específico.
  *   --from-json   Fuerza el archivo server/chat/__evals__/golden.json.
+ *   --include-inactive  Incluye casos con activo=false (para probarlos antes
+ *                 de activarlos; no se ejecutan por defecto).
  *   --remote      Usa la URL de Vercel en lugar del orquestador local.
  *                 En modo remoto, los checks que dependen de `trace`
  *                 (tools_any, tools_count_min, geojson_filter_required,
@@ -45,6 +47,7 @@ const opts = {
   limit: null,
   remote: false,
   fromJson: false,
+  includeInactive: false,
   url: DEFAULT_REMOTE_URL,
   quiet: false,
 };
@@ -57,6 +60,7 @@ for (let i = 0; i < args.length; i++) {
   else if (a === "--limit") opts.limit = Number(args[++i]);
   else if (a === "--remote") opts.remote = true;
   else if (a === "--from-json") opts.fromJson = true;
+  else if (a === "--include-inactive") opts.includeInactive = true;
   else if (a === "--url") opts.url = args[++i];
   else if (a === "--quiet") opts.quiet = true;
 }
@@ -87,8 +91,19 @@ const golden = await loadGoldenCases({
   readFile,
   goldenPath: GOLDEN_PATH,
 });
-let cases = golden.cases;
-if (!opts.quiet) console.log(`Golden set: ${golden.source === "db" ? "admin.golden_cases" : "golden.json"}`);
+const allCases = golden.cases;
+const inactiveCount = allCases.filter((c) => c.activo === false).length;
+let cases = opts.includeInactive
+  ? allCases
+  : allCases.filter((c) => c.activo !== false);
+if (!opts.quiet) {
+  console.log(`Golden set: ${golden.source === "db" ? "admin.golden_cases" : "golden.json"}`);
+  if (inactiveCount > 0) {
+    console.log(
+      `Casos inactivos: ${inactiveCount} (no se ejecutan; usa --include-inactive para probarlos).`
+    );
+  }
+}
 
 if (opts.id) {
   cases = cases.filter((c) => c.id === opts.id);
@@ -560,6 +575,24 @@ if (Object.keys(byTier).length > 0) {
   log(`${C.bold}Por tier:${C.reset}`);
   for (const [tier, count] of Object.entries(byTier).sort()) {
     log(`  Tier ${tier}: ${count}`);
+  }
+  log("");
+}
+
+// Reporte por ruta (Sprint 18-A)
+const failedIds = new Set(failures.map((f) => f.case.id));
+const byRoute = {};
+for (const c of cases) {
+  const route = c.route || "sin_ruta";
+  if (!byRoute[route]) byRoute[route] = { total: 0, passed: 0, failed: 0 };
+  byRoute[route].total += 1;
+  if (failedIds.has(c.id)) byRoute[route].failed += 1;
+  else byRoute[route].passed += 1;
+}
+if (Object.keys(byRoute).length > 0) {
+  log(`${C.bold}Por ruta:${C.reset}`);
+  for (const [route, stats] of Object.entries(byRoute).sort()) {
+    log(`  ${route}: ${stats.passed}/${stats.total} (${stats.failed} fallos)`);
   }
   log("");
 }

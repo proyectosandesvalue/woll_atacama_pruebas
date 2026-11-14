@@ -18,6 +18,7 @@ import {
 
 const KEY_RE = /^[a-z][a-z0-9._-]{1,80}$/;
 const ID_RE = /^[a-z0-9][a-z0-9_-]{1,100}$/;
+const GOLDEN_ROUTES = new Set(["tool", "rag", "mixta", "abstencion", "fuera_de_alcance"]);
 
 function text(value, max = 500) {
   return String(value ?? "").trim().slice(0, max);
@@ -468,7 +469,7 @@ export async function handleGoldenGet(ctx, { getDB = defaultGetDB } = {}) {
   try {
     const rows = await db.query(
       `SELECT id, level, tier, intent_esperado, fuente_esperada, category,
-              question, expected, notes, history, activo, updated_at, updated_by
+              question, expected, notes, history, route, activo, updated_at, updated_by
          FROM admin.golden_cases
         ORDER BY level, id`
     );
@@ -491,9 +492,13 @@ export async function handleGoldenSave(ctx, { getDB = defaultGetDB } = {}) {
   const question = text(body.question, 1000);
   const level = Number.parseInt(body.level, 10) || 1;
   const tier = Number.parseInt(body.tier, 10) || 1;
+  const route = body.route === undefined || body.route === null || body.route === ""
+    ? null
+    : text(body.route, 40);
   if (!ID_RE.test(id) || !question) return json(400, { error: "Caso inválido." });
   if (level < 1 || level > 3) return json(400, { error: "Level fuera de rango." });
   if (tier < 1 || tier > 6) return json(400, { error: "Tier fuera de rango." });
+  if (route && !GOLDEN_ROUTES.has(route)) return json(400, { error: "Ruta inválida." });
 
   let expected;
   let history;
@@ -513,18 +518,19 @@ export async function handleGoldenSave(ctx, { getDB = defaultGetDB } = {}) {
     const rows = await db.query(
       `INSERT INTO admin.golden_cases
          (id, level, tier, intent_esperado, fuente_esperada, category,
-          question, expected, notes, history, activo, updated_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10::jsonb,$11,$12)
+          question, expected, notes, history, route, activo, updated_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10::jsonb,$11,$12,$13)
        ON CONFLICT (id) DO UPDATE
          SET level = EXCLUDED.level, tier = EXCLUDED.tier,
              intent_esperado = EXCLUDED.intent_esperado,
              fuente_esperada = EXCLUDED.fuente_esperada,
              category = EXCLUDED.category, question = EXCLUDED.question,
              expected = EXCLUDED.expected, notes = EXCLUDED.notes,
-             history = EXCLUDED.history, activo = EXCLUDED.activo,
+             history = EXCLUDED.history, route = EXCLUDED.route,
+             activo = EXCLUDED.activo,
              updated_at = now(), updated_by = EXCLUDED.updated_by
        RETURNING id, level, tier, intent_esperado, fuente_esperada, category,
-                 question, expected, notes, history, activo`,
+                 question, expected, notes, history, route, activo`,
       [
         id,
         level,
@@ -536,6 +542,7 @@ export async function handleGoldenSave(ctx, { getDB = defaultGetDB } = {}) {
         JSON.stringify(expected),
         text(body.notes, 1000) || null,
         history === undefined || history === null ? null : JSON.stringify(history),
+        route,
         body.activo !== false,
         auth.session.sub,
       ]

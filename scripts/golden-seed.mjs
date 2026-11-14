@@ -14,15 +14,16 @@ const GOLDEN = path.join(ROOT, "server", "chat", "__evals__", "golden.json");
 
 export const SEED_SQL = `INSERT INTO admin.golden_cases
            (id, level, tier, intent_esperado, fuente_esperada, category,
-            question, expected, notes, history, activo, updated_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10::jsonb,true,'golden-seed')
+            question, expected, notes, history, route, activo, updated_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9,$10::jsonb,$11,$12,'golden-seed')
          ON CONFLICT (id) DO UPDATE
            SET level=EXCLUDED.level, tier=EXCLUDED.tier,
                intent_esperado=EXCLUDED.intent_esperado,
                fuente_esperada=EXCLUDED.fuente_esperada,
                category=EXCLUDED.category, question=EXCLUDED.question,
                expected=EXCLUDED.expected, notes=EXCLUDED.notes,
-               history=EXCLUDED.history, activo=true,
+               history=EXCLUDED.history, route=EXCLUDED.route,
+               activo=EXCLUDED.activo,
                updated_at=now(), updated_by='golden-seed'`;
 
 /**
@@ -45,6 +46,8 @@ export function normalizeGoldenCases(golden) {
     JSON.stringify(item.expected || {}),
     item.notes || null,
     item.history ? JSON.stringify(item.history) : null,
+    item.route || null,
+    item.activo !== false,
   ]);
 }
 
