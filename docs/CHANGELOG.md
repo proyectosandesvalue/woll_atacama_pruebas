@@ -56,6 +56,7 @@
 - **Tests:** `scripts/__tests__/geo-utils.test.js` y `scripts/__tests__/security-frontend.test.js`.
 
 ### Changed
+- **Formularios de alta colapsados:** en RAG y Taxonomía las cajas de “Agregar documento/dimensión/grupo/subgrupo/capa” quedan ocultas detrás de un botón; se abren al presionarlo y se cierran al guardar o cancelar. El formulario de RAG ocupa una columna al abrirse y la tabla de documentos usa todo el ancho cuando está cerrado.
 - **Panel admin alineado al geoportal:** `admin.html` y `css/admin.css` usan el design system de `css/base.css` (Noche Atacama, glass, azul de marca y ámbar), header con logo, tabs y tema claro/oscuro persistido en `woll-theme`. Se mantienen los IDs y el comportamiento de las secciones.
 
 ### Added

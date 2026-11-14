@@ -134,6 +134,43 @@ function bindHelpPopovers() {
   });
 }
 
+function setDrawerOpen(id, open, { focus = true } = {}) {
+  const drawer = document.getElementById(id);
+  if (!drawer) return;
+  drawer.hidden = !open;
+
+  const toggles = [...document.querySelectorAll(`[data-form-toggle="${id}"]`)];
+  for (const button of toggles) {
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  const layoutId = toggles[0]?.dataset.drawerLayout;
+  if (layoutId) {
+    const layout = document.getElementById(layoutId);
+    layout?.classList.toggle("is-single", !open);
+  }
+  if (open && focus) {
+    drawer
+      .querySelector("input:not([type=hidden]), select, textarea, button")
+      ?.focus();
+  }
+}
+
+function bindFormDrawers() {
+  for (const button of document.querySelectorAll("[data-form-toggle]")) {
+    button.addEventListener("click", () => {
+      const id = button.dataset.formToggle;
+      const drawer = document.getElementById(id);
+      if (!drawer) return;
+      setDrawerOpen(id, drawer.hidden);
+    });
+  }
+  for (const button of document.querySelectorAll("[data-form-close]")) {
+    button.addEventListener("click", () => {
+      setDrawerOpen(button.dataset.formClose, false, { focus: false });
+    });
+  }
+}
+
 function setStatus(message, kind = "ok") {
   const status = $("#globalStatus");
   if (!status) return;
@@ -653,6 +690,7 @@ function renderTaxMaster(dimension) {
 }
 
 function editTaxDimension(id) {
+  setDrawerOpen("taxDimensionDrawer", true, { focus: false });
   const dimension = state.taxonomy.data?.dimensions?.find(
     (item) => Number(item.id) === Number(id)
   );
@@ -689,6 +727,7 @@ async function saveTaxDimension(event) {
     const result = await api.taxonomySaveDimension(payload);
     state.taxonomy.selectedDimensionId = result.item.id;
     taxSetStatus("Dimensión guardada. Publicá el snapshot para aplicarla al visor.");
+    setDrawerOpen("taxDimensionDrawer", false, { focus: false });
     await loadTaxonomy({ silent: true });
   } catch (err) {
     taxSetStatus(err.message, "error");
@@ -696,6 +735,7 @@ async function saveTaxDimension(event) {
 }
 
 function editTaxGroup(id) {
+  setDrawerOpen("taxGroupDrawer", true, { focus: false });
   const group = state.taxonomy.data?.groups?.find((item) => Number(item.id) === Number(id));
   if (!group) return;
   $("#taxGroupId").value = group.id;
@@ -730,6 +770,7 @@ async function saveTaxGroup(event) {
     const result = await api.taxonomySaveGroup(payload);
     state.taxonomy.selectedGroupId = result.item.id;
     taxSetStatus("Grupo guardado. Publicá el snapshot para aplicarlo.");
+    setDrawerOpen("taxGroupDrawer", false, { focus: false });
     await loadTaxonomy({ silent: true });
   } catch (err) {
     taxSetStatus(err.message, "error");
@@ -737,6 +778,7 @@ async function saveTaxGroup(event) {
 }
 
 function editTaxSubgroup(id) {
+  setDrawerOpen("taxSubgroupDrawer", true, { focus: false });
   const subgroup = state.taxonomy.data?.subgroups?.find((item) => Number(item.id) === Number(id));
   if (!subgroup) return;
   $("#taxSubgroupId").value = subgroup.id;
@@ -770,6 +812,7 @@ async function saveTaxSubgroup(event) {
   try {
     await api.taxonomySaveSubgroup(payload);
     taxSetStatus("Subgrupo guardado. Publicá el snapshot para aplicarlo.");
+    setDrawerOpen("taxSubgroupDrawer", false, { focus: false });
     await loadTaxonomy({ silent: true });
   } catch (err) {
     taxSetStatus(err.message, "error");
@@ -821,6 +864,7 @@ async function saveTaxAssignment(event) {
       orden: Number.parseInt($("#taxAssignOrder").value, 10) || 0,
     });
     taxSetStatus("Capa ubicada. Publicá el snapshot para verla en el sidebar.");
+    setDrawerOpen("taxAssignDrawer", false, { focus: false });
     await loadTaxonomy({ silent: true });
   } catch (err) {
     taxSetStatus(err.message, "error");
@@ -1149,6 +1193,7 @@ function collectRagEntry() {
 
 function fillRagForm(entry) {
   if (!entry) return;
+  setDrawerOpen("ragFormPanel", true, { focus: false });
   $("#ragSlug").value = entry.slug || "";
   $("#ragSlug").readOnly = true;
   $("#ragTitle").value = entry.title || "";
@@ -1220,25 +1265,29 @@ async function runRagAction(action) {
   ].map((selector) => $(selector)).filter(Boolean);
   buttons.forEach((button) => { button.disabled = true; });
 
+  let successMessage = null;
   try {
     if (action === "save") {
       const entry = await saveRagManifest();
-      ragSetStatus(`Metadatos de ${entry.slug} guardados.`);
+      successMessage = `Metadatos de ${entry.slug} guardados.`;
     } else if (action === "upload") {
       await saveRagManifest();
       const entry = await uploadRagPdf();
-      ragSetStatus(`PDF de ${entry.slug} subido a rag/inbox/.`);
+      successMessage = `PDF de ${entry.slug} subido a rag/inbox/.`;
     } else if (action === "dry_run" || action === "ingest") {
       const entry = await prepareRagDocument({ requireFile: true });
       const result = await api.ragQueue(entry.slug, action, false);
-      ragSetStatus(
-        `Trabajo #${result.job.id} encolado para ${entry.slug} (${action === "dry_run" ? "estimación" : "ingesta"}).`
-      );
+      successMessage = `Trabajo #${result.job.id} encolado para ${entry.slug} (${action === "dry_run" ? "estimación" : "ingesta"}).`;
     } else if (action === "new") {
       resetRagForm();
       return;
     }
 
+    if (successMessage) {
+      ragSetStatus(successMessage);
+      setStatus(successMessage);
+      setDrawerOpen("ragFormPanel", false, { focus: false });
+    }
     await loadRag({ silent: true });
   } catch (err) {
     ragSetStatus(err.message, "error");
@@ -1845,6 +1894,7 @@ async function boot() {
   initTheme();
   bindEvents();
   bindHelpPopovers();
+  bindFormDrawers();
   try {
     const session = await api.session();
     setCsrfToken(session.csrfToken);

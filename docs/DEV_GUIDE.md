@@ -1017,6 +1017,10 @@ npm run taxonomy:compile -- --check
 - Los cambios se guardan en la taxonomía, pero el sidebar no cambia hasta
   **Publicar snapshot**. Si la validación falla, el snapshot anterior sigue
   activo.
+- Los formularios de alta están colapsados: usá **Agregar dimensión/grupo/
+  subgrupo/capa** para abrirlos; se cierran al guardar o con **Cancelar**.
+  En RAG, **Agregar documento** abre el formulario y la tabla usa todo el
+  ancho cuando está cerrado.
 - El seed es fiel al snapshot v1 (mismo checksum). Si se edita una capa común
   con estilos distintos por dimensión, se conserva la variante en
   `layer_placements.config`.

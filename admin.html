@@ -248,8 +248,17 @@
           </article>
         </div>
 
-        <div class="rag-layout">
-          <div class="panel">
+        <div class="view-toolbar">
+          <button id="ragAddToggle" class="btn btn-primary" type="button"
+                  data-form-toggle="ragFormPanel" data-drawer-layout="ragLayout"
+                  aria-expanded="false" aria-controls="ragFormPanel">
+            <span class="material-symbols-outlined">add</span>
+            Agregar documento
+          </button>
+        </div>
+
+        <div id="ragLayout" class="rag-layout is-single">
+          <div id="ragFormPanel" class="panel" hidden>
             <div class="panel-head">
               <div>
                 <h2>Nuevo documento</h2>
@@ -324,6 +333,7 @@
                 <button id="ragUploadBtn" class="btn btn-secondary" type="button">Subir PDF</button>
                 <button id="ragDryRunBtn" class="btn btn-secondary" type="button">Estimar</button>
                 <button id="ragIngestBtn" class="btn btn-primary" type="button">Guardar e ingestar</button>
+                <button id="ragFormClose" class="btn btn-secondary" type="button" data-form-close="ragFormPanel">Cerrar</button>
               </div>
               <p id="ragFormStatus" class="status-line" role="status" aria-live="polite" hidden></p>
             </form>
@@ -648,6 +658,14 @@
               </div>
               <p id="taxDimensionsEmpty" class="empty" hidden>No hay dimensiones.</p>
 
+              <div class="tax-add-row">
+                <button class="btn btn-secondary" type="button" data-form-toggle="taxDimensionDrawer"
+                        aria-expanded="false" aria-controls="taxDimensionDrawer">
+                  <span class="material-symbols-outlined">add</span>
+                  Agregar dimensión
+                </button>
+              </div>
+              <div id="taxDimensionDrawer" hidden>
               <form id="taxDimensionForm" class="tax-form" novalidate>
                 <input id="taxDimId" type="hidden" />
                 <div class="field-grid">
@@ -662,8 +680,10 @@
                 <div class="rag-actions">
                   <button id="taxDimNew" class="btn btn-secondary" type="button">Nueva</button>
                   <button id="taxDimSave" class="btn btn-primary" type="submit">Guardar dimensión</button>
+                  <button class="btn btn-secondary" type="button" data-form-close="taxDimensionDrawer">Cancelar</button>
                 </div>
               </form>
+              </div>
             </div>
 
             <div id="taxDimensionDetail" class="tax-detail" hidden>
@@ -673,12 +693,21 @@
               </div>
 
               <div class="tax-block">
-                <div class="tax-block-head"><h3>Ubicar una capa en esta dimensión</h3></div>
+                <div class="tax-block-head">
+                  <h3>Ubicar una capa en esta dimensión</h3>
+                  <button class="btn btn-secondary btn-mini" type="button"
+                          data-form-toggle="taxAssignDrawer" aria-expanded="false"
+                          aria-controls="taxAssignDrawer">
+                    <span class="material-symbols-outlined">add</span>
+                    Agregar capa
+                  </button>
+                </div>
                 <p class="muted">
                   Elegí la capa y el destino. “Dimensión general” la deja en el nivel superior;
                   un grupo la muestra dentro de esa subdimensión del sidebar; un subgrupo la
                   muestra dentro del bloque anidado.
                 </p>
+                <div id="taxAssignDrawer" hidden>
                 <form id="taxAssignForm" class="tax-form" novalidate>
                   <div class="field-grid">
                     <div>
@@ -694,8 +723,10 @@
                   <input id="taxAssignOrder" type="number" value="0" />
                   <div class="rag-actions">
                     <button class="btn btn-primary" type="submit">Asignar capa</button>
+                    <button class="btn btn-secondary" type="button" data-form-close="taxAssignDrawer">Cancelar</button>
                   </div>
                 </form>
+                </div>
               </div>
 
               <div class="tax-block">
@@ -707,6 +738,14 @@
                   </table>
                 </div>
                 <p id="taxGroupsEmpty" class="empty" hidden>Esta dimensión no tiene grupos.</p>
+                <div class="tax-add-row">
+                  <button class="btn btn-secondary" type="button" data-form-toggle="taxGroupDrawer"
+                          aria-expanded="false" aria-controls="taxGroupDrawer">
+                    <span class="material-symbols-outlined">add</span>
+                    Agregar grupo
+                  </button>
+                </div>
+                <div id="taxGroupDrawer" hidden>
                 <form id="taxGroupForm" class="tax-form" novalidate>
                   <input id="taxGroupId" type="hidden" />
                   <div class="field-grid">
@@ -719,8 +758,10 @@
                   <div class="rag-actions">
                     <button id="taxGroupNew" class="btn btn-secondary" type="button">Nuevo</button>
                     <button class="btn btn-primary" type="submit">Guardar grupo</button>
+                    <button class="btn btn-secondary" type="button" data-form-close="taxGroupDrawer">Cancelar</button>
                   </div>
                 </form>
+                </div>
               </div>
 
               <div id="taxGroupDetail" class="tax-block" hidden>
@@ -734,6 +775,14 @@
                   </table>
                 </div>
                 <p id="taxSubgroupsEmpty" class="empty" hidden>Sin subgrupos.</p>
+                <div class="tax-add-row">
+                  <button class="btn btn-secondary" type="button" data-form-toggle="taxSubgroupDrawer"
+                          aria-expanded="false" aria-controls="taxSubgroupDrawer">
+                    <span class="material-symbols-outlined">add</span>
+                    Agregar subgrupo
+                  </button>
+                </div>
+                <div id="taxSubgroupDrawer" hidden>
                 <form id="taxSubgroupForm" class="tax-form" novalidate>
                   <input id="taxSubgroupId" type="hidden" />
                   <div class="field-grid">
@@ -746,8 +795,10 @@
                   <div class="rag-actions">
                     <button id="taxSubgroupNew" class="btn btn-secondary" type="button">Nuevo</button>
                     <button class="btn btn-primary" type="submit">Guardar subgrupo</button>
+                    <button class="btn btn-secondary" type="button" data-form-close="taxSubgroupDrawer">Cancelar</button>
                   </div>
                 </form>
+                </div>
 
                 <h4>Capas dentro de este grupo</h4>
                 <p class="muted">

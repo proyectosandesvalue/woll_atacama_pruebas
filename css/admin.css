@@ -902,6 +902,11 @@ details.prompt[open] summary::before { content: "−"; }
   padding-top: 10px;
   border-top: 1px solid var(--border-subtle);
 }
+.tax-add-row {
+  display: flex;
+  justify-content: flex-start;
+}
+.tax-add-row .btn { font-size: 0.72rem; }
 .tax-form > label,
 .tax-form .field-grid label {
   margin-top: 2px;
@@ -948,6 +953,13 @@ details.prompt[open] summary::before { content: "−"; }
   grid-template-columns: minmax(340px, 420px) minmax(0, 1fr);
   gap: 20px;
   align-items: start;
+}
+.rag-layout.is-single { grid-template-columns: minmax(0, 1fr); }
+
+.view-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .rag-form {
