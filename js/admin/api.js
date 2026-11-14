@@ -55,10 +55,10 @@ async function parseResponse(res) {
 }
 
 export const api = {
-  login: (username, password, totp) =>
+  login: (username, password) =>
     request("/api/admin/login", {
       method: "POST",
-      body: { username, password, totp },
+      body: { username, password },
     }),
   logout: () => request("/api/admin/logout", { method: "POST", body: {} }),
   session: () => request("/api/admin/session"),

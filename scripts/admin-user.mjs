@@ -101,7 +101,8 @@ async function main() {
     );
     console.log(`[admin:user] ${opts.username} creado/actualizado.`);
     console.log(
-      "Recuerda configurar ADMIN_SESSION_SECRET (32+ caracteres) y ADMIN_TOTP_SECRET."
+      "Recuerda configurar ADMIN_SESSION_SECRET (32+ caracteres). " +
+        "ADMIN_TOTP_SECRET es opcional y solo se usa en flujos sensibles."
     );
   } finally {
     await client.end().catch(() => {});

@@ -2,7 +2,7 @@
  * Endpoints del panel admin (Sprint 15).
  *
  * Solo lectura salvo login/logout. La autenticación es local: password scrypt
- * + TOTP, sesión en cookie HttpOnly firmada y auditoría en `admin.audit_log`.
+ * (TOTP opcional para flujos sensibles), sesión en cookie HttpOnly firmada y auditoría.
  *
  * El panel requiere PostgreSQL (DB_DRIVER=postgres); en la demo Supabase no
  * se expone.
@@ -99,14 +99,16 @@ export async function handleAdminLogin(ctx, { getDB = defaultGetDB } = {}) {
   const username = String(body.username || "").trim();
   const password = String(body.password || "");
   const totp = String(body.totp || "").trim();
+  const totpRequired = /^(1|true|yes)$/i.test(
+    String(ctx.env?.ADMIN_TOTP_REQUIRED || "")
+  );
 
   if (
     !username ||
     username.length > MAX_USERNAME ||
     !password ||
     password.length > MAX_PASSWORD ||
-    !totp ||
-    totp.length > MAX_TOTP
+    (totpRequired && (!totp || totp.length > MAX_TOTP))
   ) {
     return json(400, { error: "Credenciales incompletas o inválidas." });
   }
@@ -148,28 +150,34 @@ export async function handleAdminLogin(ctx, { getDB = defaultGetDB } = {}) {
   }
 
   const passwordOk = Boolean(user?.activo) && verifyPassword(password, user.password_hash);
-  let totpOk = false;
-  if (passwordOk) {
+
+  // TOTP es opcional en el login. La lógica se conserva para flujos
+  // sensibles (por ejemplo, cambio de contraseña) y se puede volver a exigir
+  // con ADMIN_TOTP_REQUIRED=1.
+  let secondFactorOk = true;
+  let secondFactorError = null;
+  if (passwordOk && totpRequired) {
     const totpSecret = ctx.env?.ADMIN_TOTP_SECRET;
     if (!totpSecret) {
-      console.error("[admin] falta ADMIN_TOTP_SECRET.");
+      console.error("[admin] falta ADMIN_TOTP_SECRET con ADMIN_TOTP_REQUIRED=1.");
       return json(503, { error: "Panel admin no configurado." });
     }
     try {
-      totpOk = verifyTotp(totpSecret, totp);
+      secondFactorOk = verifyTotp(totpSecret, totp);
+      if (!secondFactorOk) secondFactorError = "totp";
     } catch (err) {
       console.error("[admin] TOTP inválido en configuración:", err.message);
       return json(503, { error: "Panel admin no configurado." });
     }
   }
 
-  if (!passwordOk || !totpOk) {
+  if (!passwordOk || !secondFactorOk) {
     recordLoginFailure(key);
     await audit(db, ctx, null, "admin.login", "fail", {
       username,
-      reason: passwordOk ? "totp" : "password",
+      reason: passwordOk ? secondFactorError || "totp" : "password",
     });
-    return json(401, { error: "Usuario, password o TOTP incorrectos." });
+    return json(401, { error: "Usuario o contraseña incorrectos." });
   }
 
   clearLoginFailures(key);

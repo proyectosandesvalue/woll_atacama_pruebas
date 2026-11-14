@@ -947,7 +947,7 @@ npm run config:snapshot -- --publish --notes "capa nueva X"
 # Verificar que el snapshot activo coincide con js/config
 npm run config:snapshot -- --check
 
-# Alta/rotación del usuario admin (password + TOTP)
+# Alta/rotación del usuario admin
 npm run admin:user -- --username admin --password '...'
 npm run admin:user -- --new-totp
 ```
@@ -956,11 +956,11 @@ npm run admin:user -- --new-totp
   `allTemasConfig` (INV-5). No editar el snapshot a mano: publicar con el CLI.
 - `admin.config_layers` es un índice derivado para el panel; no es la fuente
   de verdad.
-- El panel vive en `/admin.html` (noindex) y es solo lectura. Requiere
-  `DB_DRIVER=postgres`, `ADMIN_SESSION_SECRET` (32+ caracteres) y
-  `ADMIN_TOTP_SECRET`.
-- Si se pierde el TOTP, generar uno nuevo con `--new-totp`, actualizar el
-  entorno y reiniciar la API.
+- El panel vive en `/admin.html` (noindex). Requiere `DB_DRIVER=postgres` y
+  `ADMIN_SESSION_SECRET` (32+ caracteres). `ADMIN_TOTP_SECRET` es opcional y
+  solo se usa en flujos sensibles.
+- El login usa usuario y contraseña; el TOTP no se pide. Si se necesita
+  reactivar, configurar `ADMIN_TOTP_REQUIRED=1` y `ADMIN_TOTP_SECRET`.
 - La demo Vercel/Supabase no expone el panel: usa el fallback local.
 
 **Ingesta RAG desde el panel (45-A)**

@@ -39,7 +39,7 @@ capas**, porque el gestor de capas necesita la taxonomía normalizada.
 
 ```text
 admin.html
-  └─ /api/admin/* (auth TOTP, CSRF, auditoría)
+  └─ /api/admin/* (auth por contraseña, CSRF, auditoría; TOTP opcional)
        ├─ RAG: manifest + upload + cola
        ├─ APIs: conexiones no secretas + test
        ├─ Taxonomía: dimensions/groups/subgroups/placements
@@ -275,7 +275,7 @@ Cada fase es un commit y actualiza ROADMAP/CHANGELOG.
 
 ## 9. Seguridad
 
-- Mismo auth TOTP/CSRF/rate limit/auditoría del Sprint 15.
+- Mismo auth por contraseña/CSRF/rate limit/auditoría del Sprint 15; TOTP opcional para flujos sensibles.
 - Uploads: tamaño, extensión, firma `%PDF-`, nombre desde slug validado,
   escritura atómica, sin path traversal.
 - Chunks/PDFs solo con sesión; `Cache-Control: no-store`.

@@ -7,6 +7,11 @@
 | Origen | Sprint 15 / decisión del dev |
 | Relacionado | ADR 005 (VPS), spec 14-15, CONTRACT §12.3 |
 
+> **Actualización 2026-11-14:** el login del panel ya no exige TOTP. Se mantiene
+> usuario + contraseña con scrypt, rate limit, bloqueo y auditoría. La lógica
+> TOTP se conserva para cambios de contraseña y otros flujos sensibles, y puede
+> reactivarse con `ADMIN_TOTP_REQUIRED=1`.
+
 ## Contexto
 
 El panel admin necesita autenticación antes del Sprint 16 (CRUD de capas).
@@ -27,8 +32,9 @@ Requisitos:
 
 1. **Factor 1:** password verificada con `scrypt` (sal única, parámetros
    N=16384, r=8, p=1, 64 bytes). El hash vive en `admin.admin_users`.
-2. **Factor 2:** TOTP RFC 6238 de 6 dígitos, ventana ±1 paso. El secreto vive
-   **solo** en `ADMIN_TOTP_SECRET`; nunca en la base ni en el frontend.
+2. **Factor 2 (opcional):** TOTP RFC 6238 de 6 dígitos, ventana ±1 paso. No se
+   pide en el login; se conserva para flujos sensibles. El secreto vive **solo**
+   en `ADMIN_TOTP_SECRET`; nunca en la base ni en el frontend.
 3. **Sesión:** cookie `woll_admin` `HttpOnly`, `SameSite=Strict`, `Secure` en
    producción, 8 h, firmada con HMAC-SHA256 usando `ADMIN_SESSION_SECRET`
    (32+ caracteres). El payload incluye usuario, expiración y token CSRF.
@@ -51,9 +57,10 @@ Requisitos:
 - Portable al VPS y testeable sin red.
 
 **Negativas**
-- La custodia del secreto TOTP y del password es manual.
-- No hay SSO ni recuperación automática; si se pierde el TOTP, se rota el
-  secreto con `--new-totp`.
+- La custodia del password es manual; el secreto TOTP solo se usa si se
+  reactiva el segundo factor.
+- No hay SSO ni recuperación automática. El login depende de la contraseña y
+  del bloqueo por intentos; el TOTP queda para flujos sensibles.
 - El rate limit es en memoria por proceso; en el VPS con una sola API es
   suficiente. Si se escala horizontalmente, moverlo a PostgreSQL/Redis.
 

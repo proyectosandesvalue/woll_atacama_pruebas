@@ -161,7 +161,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `server/handlers/chat.js` | Pipeline completo de `handleChat()` | Cambios de flujo del chat |
 | `server/handlers/arclim.js`, `server/handlers/stations.js` | Lógica compartida Vercel/VPS | Cambios de contrato o consultas |
 | `server/handlers/config.js`, `server/handlers/admin.js` | Snapshot `/api/config` y endpoints del panel admin | Cambios de contrato o de auth |
-| `server/admin/auth.js` | Password scrypt, TOTP, sesión, CSRF y auditoría | Cambios de autenticación (ADR 007) |
+| `server/admin/auth.js` | Password scrypt, sesión, CSRF, auditoría y TOTP reutilizable | Cambios de autenticación (ADR 007) |
 | `server/handlers/admin-rag.js`, `server/routes/admin-rag.js` | Ingesta RAG desde el panel: manifiesto, upload y cola | Cambios del flujo RAG (45-A) |
 | `server/handlers/admin-apis.js`, `server/admin/api-registry.js` | Inventario, prueba y edición de conexiones externas | Cambios del gestor de APIs (45-B) |
 | `server/handlers/admin-layers.js`, `server/admin/layer-files.js` | CRUD de capas, upload GeoJSON y cola de importación | Cambios del gestor de capas (47) |
@@ -193,7 +193,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `scripts/restore-drill.sh` | Restaura un backup en una base descartable y mide RTO | Simulacro de restauración |
 | `scripts/run-ingest-timer.sh`, `deploy/systemd/woll-ingest*` | Ingestas programadas con lock y journald | Timers del VPS (26-J) |
 | `scripts/config-snapshot.mjs` | Publica/valida el snapshot de config en `admin.*` | Cambios de config o versiones (Sprint 14) |
-| `scripts/admin-user.mjs` | Alta/rotación del usuario admin y secreto TOTP | Bootstrap o recuperación (Sprint 15) |
+| `scripts/admin-user.mjs` | Alta/rotación del usuario admin; TOTP opcional | Bootstrap o recuperación (Sprint 15) |
 | `scripts/acceptance-sprint08.mjs` | Gate de aceptación del Sprint 08 | Validar tiles, tabla, filtros y export |
 | `scripts/load-test-sprint30.mjs` | Carga 25/50: static, table, mixed y on-demand | Aceptación de performance (30) |
 | `scripts/build_catalog.mjs` | Reconstruye `chat.chat_catalog` (Supabase o PostgreSQL) | Nuevas capas o cambios de config |

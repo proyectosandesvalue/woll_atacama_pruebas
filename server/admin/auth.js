@@ -1,5 +1,6 @@
 /**
- * Autenticación del panel admin: password scrypt + TOTP + sesión firmada.
+ * Autenticación del panel admin: password scrypt, sesión firmada y TOTP
+ * reutilizable para flujos sensibles.
  *
  * No usa dependencias externas. El secreto TOTP y la clave de sesión viven en
  * variables de entorno, nunca en la base.

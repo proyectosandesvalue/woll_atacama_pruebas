@@ -130,7 +130,7 @@ Este tramo hace dos cosas:
 Todos menos login/logout exigen sesión. No hay `POST/PUT/PATCH/DELETE` de
 configuración en este tramo.
 
-### 4.4. Autenticación (ADR 007, pendiente)
+### 4.4. Autenticación (ADR 007)
 
 Propuesta por defecto si no hay IdP institucional:
 
@@ -138,14 +138,14 @@ Propuesta por defecto si no hay IdP institucional:
   scrypt, `activo`, `last_login_at`). El secreto TOTP **no** se guarda en la
   BD: vive en `ADMIN_TOTP_SECRET`.
 - **Factor 1:** password verificada con `crypto.scrypt` (sal única).
-- **Factor 2:** TOTP de 6 dígitos, ventana ±1 paso.
+- **Factor 2 (opcional):** TOTP de 6 dígitos, ventana ±1 paso. El login no lo exige; se conserva para cambios de contraseña y flujos sensibles. Se puede reactivar con `ADMIN_TOTP_REQUIRED=1`.
 - **Sesión:** cookie `woll_admin` `HttpOnly`, `Secure` en producción,
   `SameSite=Strict`, expiración 8 h, firmada con `ADMIN_SESSION_SECRET`.
 - **CSRF:** token en `sessionStorage` + header `X-CSRF-Token` en POST.
 - **Rate limit:** 5 intentos/minuto por IP+usuario; bloqueo 15 min tras 5
   fallos.
-- **Secretos:** `ADMIN_SESSION_SECRET` y `ADMIN_TOTP_SECRET` solo en env;
-  nunca en el repo ni en la BD en claro. El alta usa
+- **Secretos:** `ADMIN_SESSION_SECRET` y, si se usa TOTP,
+  `ADMIN_TOTP_SECRET` solo en env; nunca en el repo ni en la BD en claro. El alta usa
   `npm run admin:user -- --username admin --password '…'`.
 - **Auditoría:** cada login, logout, fallo y lectura sensible en
   `admin.audit_log` (`at`, `actor`, `action`, `target`, `ip_hash`, `result`).
@@ -191,7 +191,7 @@ OIDC y se mantiene la misma sesión/cookie y auditoría.
   payload.
 - `scripts/__tests__/config-loader.test.js`: usa API, cae a fallback si 503 o
   JSON inválido, no muta `appState`.
-- `server/__tests__/admin-auth.test.js`: password + TOTP, cookie firmada,
+- `server/__tests__/admin-auth.test.js`: password, TOTP opcional, cookie firmada,
   expiración, CSRF, rate limit, auditoría.
 - `scripts/__tests__/admin-panel.test.js`: el HTML no tiene handlers inline ni
   `innerHTML` con datos; las vistas usan `textContent`.
@@ -202,7 +202,7 @@ OIDC y se mantiene la misma sesión/cookie y auditoría.
 - El panel **no** se enlaza desde el visor público y responde `X-Robots-Tag:
   noindex`.
 - Cookies `HttpOnly`/`SameSite=Strict`; nunca tokens en `localStorage`.
-- TOTP y password hash nunca se serializan al frontend.
+- El hash de contraseña y el secreto TOTP nunca se serializan al frontend.
 - Los endpoints de lectura usan `Cache-Control: no-store`.
 - La IP se guarda hasheada en auditoría, no en claro.
 - Los prompts son contenido sensible: solo se muestran con sesión.
@@ -233,8 +233,8 @@ el cierre local; la validación en el VPS queda para el Sprint 26.
   --check` en CI compara checksum y falla.
 - **Doble fuente:** durante la transición conviven JS y BD. Mitigación:
   `/api/config` es la única lectura; el fallback solo se usa si la API falla.
-- **Auth casera:** TOTP local es más simple que OIDC pero exige disciplina de
-  secretos. Mitigación: scrypt, rate limit, bloqueo y auditoría.
+- **Auth casera:** contraseña + rate limit/bloqueo y auditoría; TOTP queda
+  disponible para flujos sensibles. Mitigación: scrypt y disciplina de secretos.
 - **Panel expuesto:** `noindex` no es seguridad. Mitigación: auth obligatoria,
   firewall/Nginx y rate limit.
 - **Snapshots grandes:** la config completa puede pesar cientos de KB.
@@ -275,7 +275,7 @@ el cierre local; la validación en el VPS queda para el Sprint 26.
   `Retry-After` si no hay snapshot.
 - Visor: carga `/api/config` y mantiene mapa, sidebar y estaciones; el
   fallback está cubierto por tests.
-- Panel: login TOTP, config, chat (prompts/settings/messages/unavailable) y
+- Panel: login con contraseña, config, chat (prompts/settings/messages/unavailable) y
   auditoría validados en navegador; sin violaciones CSP. La interfaz usa los
   tokens de `css/base.css` y tema claro/oscuro del geoportal.
 - Tests: **383 tests, 371 pasan, 12 omitidos, 0 fallos**; lint 0 errores.
@@ -287,4 +287,4 @@ el cierre local; la validación en el VPS queda para el Sprint 26.
 - Desvíos: el panel se implementó sin framework y con DOM API para cumplir
   CSP; la validación en VPS queda pendiente.
 - Lecciones: el snapshot + índice desacopla el panel de la estructura JS; el
-  TOTP local evita bloquear el Sprint 16 por el IdP institucional.
+  login con contraseña evita bloquear el Sprint 16; TOTP queda para flujos sensibles.

@@ -72,7 +72,7 @@
 | 12 | Registro y visualización de indicadores | ⏳ pending | media | 20-33h | 08, 11, 14 |
 | 13 | Generación de reportes con IA | ⏳ pending | media | 20-32h | 08, 11, 12 |
 | 14 | Migrar config a Supabase (`admin.*`) | 🔶 local (snapshot + `/api/config` ✅; VPS pendiente) | alta | 4-6h | 07 |
-| 15 | Panel admin — solo lectura | 🔶 local (TOTP, config, chat y auditoría ✅; VPS pendiente) | alta | 6-8h | 14 |
+| 15 | Panel admin — solo lectura | 🔶 local (login, config, chat y auditoría ✅; VPS pendiente) | alta | 6-8h | 14 |
 | 16 | Panel admin — CRUD de capas | ⏳ pending | alta | 8-12h | 08, 14, 15 |
 | 17 | Ingesta RAG (PDFs → chunks → embeddings) | 🔶 parcial | media | 8-12h | — (CLI); 15 solo para el panel |
 | 18 | Retrieval RAG + tool en chat | ⏳ pending | media | 8-12h | 17 |
@@ -394,7 +394,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 **Estado**: 🔶 parcial (implementado y validado local; falta VPS) · **Prioridad**: alta · **Duración**: 6-8h · **Dependencias**: 14, ADR 007
 **Spec**: `docs/specs/14-15-panel-admin.md` (EN EJECUCIÓN)
 
-**Implementado:** `admin.html` de solo lectura, login password+TOTP, sesión HttpOnly, CSRF, rate limit, `admin.audit_log`, vistas de configuración/chat/auditoría. ADR 007. Falta validar en el VPS y rotar secretos en 26-H.
+**Implementado:** `admin.html` de solo lectura, login con usuario y contraseña, sesión HttpOnly, CSRF, rate limit, `admin.audit_log`, vistas de configuración/chat/auditoría. TOTP opcional para flujos sensibles. ADR 007. Falta validar en el VPS y rotar secretos en 26-H.
 
 ### Sprint 16 — Panel admin: CRUD de capas
 
@@ -1017,7 +1017,7 @@ y eliminación.
 | **07** | Ejecutar después de la plataforma (26): `/api/config` corre en el servidor propio. |
 | **08** | Quitar referencias a Supabase; MVT con Martin o pg_tileserv; migraciones con el runner del 26-C. ADRs renumerados a 012-015. |
 | **14** | ✅ Tablas `admin.*` bajo el runner del 26-C; snapshot + `/api/config` implementados. |
-| **15** | ✅ Auth TOTP local (ADR 007), panel de solo lectura y auditoría implementados. |
+| **15** | ✅ Login con contraseña (TOTP opcional), panel de solo lectura y auditoría implementados. |
 | **16** | Carga de capas con límites, validación, `ogr2ogr` aislado, preview y reversión. |
 | **17** | `pgvector` en la imagen Postgres; versión de embeddings; documentos como fuente no confiable; procedencia; ingesta asíncrona. |
 | **18** | Prompt delimita documentos recuperados y exige citarlos. |

@@ -40,7 +40,7 @@ test("login rechaza credenciales incorrectas y audita", async () => {
 
   const result = await handleAdminLogin(
     {
-      body: { username: "admin", password: "incorrecto", totp: "000000" },
+      body: { username: "admin", password: "incorrecto" },
       env: ENV,
       ip: "127.0.0.1",
       req: { headers: {} },
@@ -52,18 +52,17 @@ test("login rechaza credenciales incorrectas y audita", async () => {
   assert.equal(result.headers["Cache-Control"], "no-store");
 });
 
-test("login acepta password + TOTP y devuelve cookie de sesión", async () => {
+test("login acepta usuario y contraseña sin TOTP", async () => {
   _resetLoginLimiterForTests();
   const db = createDB({
     username: "admin",
     password_hash: hashPassword("admin_local_2026"),
     activo: true,
   });
-  const totp = generateTotp(ENV.ADMIN_TOTP_SECRET);
 
   const result = await handleAdminLogin(
     {
-      body: { username: "admin", password: "admin_local_2026", totp },
+      body: { username: "admin", password: "admin_local_2026" },
       env: ENV,
       ip: "127.0.0.1",
       req: { headers: {} },
@@ -76,6 +75,40 @@ test("login acepta password + TOTP y devuelve cookie de sesión", async () => {
   assert.ok(result.body.csrfToken);
   assert.match(result.headers["Set-Cookie"], /HttpOnly/);
   assert.match(result.headers["Set-Cookie"], /SameSite=Strict/);
+});
+
+test("login exige TOTP si ADMIN_TOTP_REQUIRED=1", async () => {
+  _resetLoginLimiterForTests();
+  const db = createDB({
+    username: "admin",
+    password_hash: hashPassword("admin_local_2026"),
+    activo: true,
+  });
+  const env = { ...ENV, ADMIN_TOTP_REQUIRED: "1" };
+
+  const withoutTotp = await handleAdminLogin(
+    {
+      body: { username: "admin", password: "admin_local_2026" },
+      env,
+      ip: "127.0.0.1",
+      req: { headers: {} },
+    },
+    { getDB: async () => db }
+  );
+  assert.equal(withoutTotp.status, 400);
+
+  _resetLoginLimiterForTests();
+  const totp = generateTotp(env.ADMIN_TOTP_SECRET);
+  const withTotp = await handleAdminLogin(
+    {
+      body: { username: "admin", password: "admin_local_2026", totp },
+      env,
+      ip: "127.0.0.1",
+      req: { headers: {} },
+    },
+    { getDB: async () => db }
+  );
+  assert.equal(withTotp.status, 200);
 });
 
 test("session devuelve 401 sin cookie y 200 con cookie válida", () => {

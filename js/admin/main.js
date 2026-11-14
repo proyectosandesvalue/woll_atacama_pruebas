@@ -2071,25 +2071,24 @@ function bindEvents() {
     const button = $("#loginSubmit");
     const username = $("#adminUsername").value.trim();
     const password = $("#adminPassword").value;
-    const totp = $("#adminTotp").value.trim();
 
     setLoginError("");
     button.disabled = true;
-    button.textContent = "Verificando…";
+    button.textContent = "Ingresando…";
 
     try {
-      const session = await api.login(username, password, totp);
+      const session = await api.login(username, password);
       setCsrfToken(session.csrfToken);
       $("#loginForm").reset();
       showApp(session);
     } catch (err) {
       const retry = err.retryAfter ? ` Reintenta en ${err.retryAfter}s.` : "";
       setLoginError(`${err.message}${retry}`);
-      $("#adminTotp").value = "";
-      $("#adminTotp").focus();
+      $("#adminPassword").value = "";
+      $("#adminPassword").focus();
     } finally {
       button.disabled = false;
-      button.textContent = "Verificar identidad";
+      button.textContent = "Ingresar";
     }
   });
 

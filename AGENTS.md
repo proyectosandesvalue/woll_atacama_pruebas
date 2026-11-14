@@ -94,7 +94,7 @@ Reglas:
 - **Secretos:** solo en variables de entorno. `.env.staging` está en `.gitignore`.
 - **Seguridad frontend:** CSP en Nginx sin `unsafe-eval`; CDN con SRI + versión fija; datos de API/GeoJSON escapados antes de `innerHTML`; `npm audit --omit=dev --audit-level=high` en CI. Ver `docs/specs/28-seguridad-frontend.md`.
 - **Tests:** toda feature nueva trae al menos un test (`node:test`).
-- **Configuración del visor**: el runtime lee el snapshot activo por `GET /api/config`; publicar con `npm run config:snapshot -- --publish` y verificar con `--check`. El fallback es `allTemasConfig` (INV-5). Panel admin en `/admin.html` (TOTP local, ADR 007).
+- **Configuración del visor**: el runtime lee el snapshot activo por `GET /api/config`; publicar con `npm run config:snapshot -- --publish` y verificar con `--check`. El fallback es `allTemasConfig` (INV-5). Panel admin en `/admin.html` con contraseña y sesión; TOTP opcional para flujos sensibles (ADR 007).
 - **Capas (47)**: el panel sube GeoJSON a `geojson/uploads/`, encola en `admin.layer_jobs` y `npm run layer:worker` carga a PostGIS/genera tiles. Luego se asigna en Taxonomía y se publica el snapshot. El borrado es lógico.
 - **Taxonomía (46)**: las dimensiones/grupos/subgrupos/capas viven en `admin.*`; el panel las edita y `npm run taxonomy:compile -- --publish` genera el snapshot que lee el visor. El seed reproduce el snapshot v1 con el mismo checksum.
 - **Panel RAG (45-A)**: la UI sube PDFs a `rag/inbox/`, edita `rag/manifest.json` y encola en `admin.rag_jobs`. El worker `npm run rag:worker` (imagen `docker/rag-worker`) extrae, embebe y escribe `rag.*`. El API nunca importa `pdfjs-dist`.
@@ -121,7 +121,7 @@ npm run ingest:dry  # Ingesta RAG: estima chunks/tokens/costo sin BD ni proveedo
 npm run ingest      # Ingesta RAG real (requiere RAG_DATABASE_URL + EMBEDDINGS_*)
 npm run migrate     # Aplica migraciones al PostgreSQL local
 npm run config:snapshot # Valida/publica la config del visor en admin.* (--dry-run/--publish/--check)
-npm run admin:user  # Alta/rotación del usuario admin y TOTP (--new-totp)
+npm run admin:user  # Alta/rotación del usuario admin; --new-totp es opcional
 npm run rag:worker  # Worker de ingesta RAG (--once para una pasada)
 npm run taxonomy:seed    # Siembra dimensiones/grupos/capas desde el snapshot
 npm run taxonomy:compile # Compila y publica la taxonomía

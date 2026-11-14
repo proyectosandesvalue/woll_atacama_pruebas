@@ -53,23 +53,19 @@
         <span>Acceso administrativo</span>
       </div>
       <h2 id="loginTitle">Ingresar</h2>
-      <p class="muted">Password + código TOTP de 6 dígitos.</p>
+      <p class="muted">Usuario y contraseña.</p>
 
       <form id="loginForm" novalidate>
         <label for="adminUsername">Usuario</label>
         <input id="adminUsername" name="username" type="text" autocomplete="username"
                maxlength="80" required autofocus />
 
-        <label for="adminPassword">Password</label>
+        <label for="adminPassword">Contraseña</label>
         <input id="adminPassword" name="password" type="password"
                autocomplete="current-password" maxlength="256" required />
 
-        <label for="adminTotp">Código TOTP</label>
-        <input id="adminTotp" name="totp" type="text" inputmode="numeric"
-               autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required />
-
         <button id="loginSubmit" class="btn btn-primary" type="submit">
-          Verificar identidad
+          Ingresar
         </button>
         <p id="loginError" class="form-error" role="alert" hidden></p>
       </form>

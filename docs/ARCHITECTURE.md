@@ -388,9 +388,9 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
   (INV-5). `js/config/loader.js` hace el fetch y el fallback.
 - **Panel:** `admin.html` + `js/admin/*` sin framework. Solo lectura:
   configuración, prompts/settings/mensajes/datos no disponibles y auditoría.
-- **Auth (ADR 007):** password scrypt + TOTP local, cookie `woll_admin`
+- **Auth (ADR 007):** password scrypt, cookie `woll_admin`
   HttpOnly/SameSite=Strict firmada con HMAC, CSRF y rate limit. El secreto
-  TOTP vive en `ADMIN_TOTP_SECRET`; nunca en la BD.
+  El login no exige TOTP; la lógica queda disponible para flujos sensibles y `ADMIN_TOTP_SECRET` nunca vive en la BD.
 - **Auditoría:** `admin.audit_log` registra login/logout, actor, resultado, IP
   hasheada y detalle. El panel requiere `DB_DRIVER=postgres`.
 
