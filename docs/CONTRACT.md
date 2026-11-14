@@ -36,15 +36,15 @@
 
 **Estado actual (2026-10-22)**:
 - **Plano 1 (estructura)**: sigue en código.
-- **Plano 2 (datos)**: en BD. Las tablas `admin.unavailable_data`, `admin.prompt_templates`, `admin.settings`, `admin.messages`, `admin.config_snapshots` y `admin.config_layers` viven en PostgreSQL (migraciones 024/041/042). Los prompts del chat se leen de la BD y el visor lee el snapshot activo por `GET /api/config`. La autoría de la config sigue en `js/config/*.js` hasta el Sprint 16; el fallback es `allTemasConfig` (INV-5).
+- **Plano 2 (datos)**: en BD. Las tablas `admin.unavailable_data`, `admin.prompt_templates`, `admin.settings`, `admin.messages`, `admin.golden_cases`, `admin.config_snapshots` y `admin.config_layers` viven en PostgreSQL (migraciones 024/041/042/049). El panel admin edita prompts, settings, mensajes, datos no disponibles y golden set; el visor lee el snapshot activo por `GET /api/config`. La autoría de la config sigue en `js/config/*.js` hasta el Sprint 16; el fallback es `allTemasConfig` (INV-5).
 - **Plano 3 (secretos)**: sigue en env vars.
 
 **Reglas de gobierno de la configuración en BD**:
 - **Versionado**: cada cambio a un prompt crea una versión nueva (`admin_set_prompt`). Se puede volver atrás con `admin_rollback_prompt`.
-- **Golden antes de activar**: antes de promover un prompt a producción, correr el golden set en staging con `CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1`. Si el acierto por tier no baja, se promueve. Si baja, rollback.
+- **Golden antes de activar**: antes de promover un prompt a producción, correr el golden set en staging con `CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1`. Si el acierto por tier no baja, se promueve. Si baja, rollback. El golden set se edita desde el panel (`admin.golden_cases`); el runner cae a `server/chat/__evals__/golden.json` si la tabla no responde o se usa `--from-json`.
 - **Fallback**: si la BD no responde o el prompt no existe, el código usa el hardcodeado (`SYSTEM_PROMPT_BASE`, `CLASSIFIER_SYSTEM_PROMPT`). El chat no se rompe sin BD. INV-5.
 - **Caché**: los prompts y settings se cachean 5 min en memoria del módulo. Cambios en la BD se reflejan en ≤ 5 min.
-- **Acceso**: las RPCs `chat_*` son `SECURITY DEFINER` y solo `service_role`. Hasta que exista la autenticación de admin (Sprint 15), solo el backend puede leerlas.
+- **Acceso**: las RPCs `chat_*` son `SECURITY DEFINER` y solo `service_role`. El panel admin lee y escribe la configuración con el rol del servidor (`woll_api`) detrás de sesión, CSRF y auditoría; el frontend nunca recibe secretos ni escribe SQL.
 
 ---
 
@@ -217,7 +217,9 @@ Reglas del campo geojson_meta:
 - El registro (`tools/index.js`) solo lista archivos, no define lógica.
 - Agregar una tool = 1 archivo nuevo + 1 línea en el registro.
 
-**Tools actuales (9)**: `get_layer_stats`, `get_layer_schema`, `query_layer`, `aggregate_layer`, `aggregate_by_admin`, `aggregate_by_admin_and_column`, `count_near_layer`, `aggregate_near_layer`, `get_layer_features`.
+**Tools actuales (13)**: `get_layer_stats`, `get_layer_schema`, `query_layer`, `aggregate_layer`, `aggregate_by_admin`, `aggregate_by_admin_and_column`, `count_near_layer`, `aggregate_near_layer`, `get_layer_features`, `get_station_weather`, `get_historical_climate`, `list_climate_stations`, `get_arclim_forecast`.
+
+- **Las tools no se editan desde el panel.** Son estructura y código: una tool = un archivo + una entrada en el registro. El panel las muestra como inventario de solo lectura (`GET /api/admin/chat/tools`, `editable: false`). Crear, borrar o reescribir tools desde la UI requeriría código en runtime y rompería el contrato de RPCs tipadas (6.3).
 
 **Reglas del contrato de gráficos**:
 - `charts` (plural) es el campo canónico. Contiene 0, 1 o varios gráficos.

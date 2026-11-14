@@ -386,13 +386,44 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
   `Cache-Control: public, max-age=300` y `304` si no cambió. Si no hay
   snapshot o la BD falla, responde `503` y el visor usa `allTemasConfig`
   (INV-5). `js/config/loader.js` hace el fetch y el fallback.
-- **Panel:** `admin.html` + `js/admin/*` sin framework. Solo lectura:
-  configuración, prompts/settings/mensajes/datos no disponibles y auditoría.
+- **Panel:** `admin.html` + `js/admin/*` sin framework. Secciones: Configuración
+  (solo lectura), Capas, RAG, APIs, Taxonomía, Chat IA (CRUD) y Auditoría
+  (solo lectura). El chip del encabezado indica `editable` o `solo lectura`.
 - **Auth (ADR 007):** password scrypt, cookie `woll_admin`
   HttpOnly/SameSite=Strict firmada con HMAC, CSRF y rate limit. El secreto
   El login no exige TOTP; la lógica queda disponible para flujos sensibles y `ADMIN_TOTP_SECRET` nunca vive en la BD.
 - **Auditoría:** `admin.audit_log` registra login/logout, actor, resultado, IP
   hasheada y detalle. El panel requiere `DB_DRIVER=postgres`.
+
+### 4.2.1. Configuración del chat en el panel (Sprint 48)
+
+- **Prompts:** `admin.prompt_templates` versionado. Crear o editar guarda una
+  versión nueva y desactiva la anterior; activar una versión histórica la
+  copia como versión nueva (no se muta la historia). La versión activa no se
+  puede borrar.
+- **Settings:** `admin.settings` con tipos `string|number|boolean|json`. Solo
+  los settings con `editable=true` se pueden cambiar o borrar; el resto se
+  muestra para diagnóstico.
+- **Mensajes:** `admin.messages` (`chat.out_of_scope`, `chat.no_response`,
+  `chat.llm_error`) editables con fallback al texto hardcodeado.
+- **Datos no disponibles:** `admin.unavailable_data` con descripción,
+  palabras clave, capas relacionadas, motivo, origen y `verificado_en`
+  actualizado al guardar.
+- **Golden set:** `admin.golden_cases` (migración 049). El panel permite CRUD
+  de casos con `expected` e `history` en JSON y tiers 1-6 (migración 050).
+  `npm run golden:seed` siembra los 38 casos del archivo; `node
+  scripts/run-golden-set.mjs` lee la tabla y cae a
+  `server/chat/__evals__/golden.json` con `--from-json` o si la BD falla.
+- **Tools:** `GET /api/admin/chat/tools` devuelve el inventario (`editable:
+  false`). No hay POST/PUT/DELETE: una tool es código (CONTRACT §6.2).
+- **Endpoints:** `POST /api/admin/prompts`, `POST
+  /api/admin/prompts/activate`, `DELETE /api/admin/prompts?id=&version=`,
+  `PUT|DELETE /api/admin/settings`, `PUT|DELETE /api/admin/messages`,
+  `PUT|DELETE /api/admin/unavailable`, `GET|PUT|DELETE /api/admin/golden`.
+  Todos exigen sesión y CSRF; las mutaciones se auditan.
+- **Fallback:** si la BD no responde, el chat sigue con prompts, settings y
+  mensajes hardcodeados (INV-5); el panel muestra el error sin romper el visor.
+- **Migraciones:** 049 (tabla y grants) y 050 (rango de tier). Idempotentes.
 
 ### 4.3. Panel RAG: manifiesto, uploads y cola (Sprint 45-A)
 
@@ -577,6 +608,7 @@ admin.prompt_templates	Prompts versionados (chat.system, chat.classifier). Cada 
 admin.settings	Key-value con tipos (chat.router.min_confidence, chat.router.enabled, chat.unavailable.enabled, chat.geojson.enabled, chat.verbose).
 admin.messages	Mensajes estándar (chat.out_of_scope, chat.no_response, chat.llm_error).
 admin.unavailable_data	Datos que el visor no tiene (produccion_frutales_kg, aptitud_cultivos, rendimiento_por_hectarea, heladas_historicas).
+admin.golden_cases	Casos de evaluación del chat (migración 049): level 1-3, tier 1-6, question, expected jsonb, history, activo y updated_by. CRUD desde el panel.
 RPCs de lectura (service_role):
 
 chat_get_prompt(id) — devuelve el content de la versión activa.
@@ -587,7 +619,7 @@ chat_get_message(key) — devuelve el content.
 
 chat_unavailable_data() — devuelve el inventario activo como jsonb.
 
-RPCs de escritura (panel admin, Sprint 15):
+RPCs de escritura (panel admin; el CRUD del Sprint 48 usa SQL directo con el rol `woll_api` detrás de sesión y CSRF):
 
 admin_set_setting(key, value, by) — UPSERT.
 
@@ -607,7 +639,7 @@ Fallback (INV-5): si la BD no responde, el código usa el hardcodeado. El chat n
 
 Caché: prompts y settings se cachean 5 min en memoria del módulo.
 
-Acceso: SECURITY DEFINER y solo service_role. PostgREST no expone el schema admin.
+Acceso: SECURITY DEFINER y solo service_role. PostgREST no expone el schema admin. El panel es la única vía de escritura y audita cada cambio.
 
 5.6. Schema rag — índice documental (Sprint 17)
 Migración `036_rag_schema.sql`. Diseñado para PostgreSQL propio con pgvector; no usa RPCs ni PostgREST.

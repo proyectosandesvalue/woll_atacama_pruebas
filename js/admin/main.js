@@ -8,13 +8,13 @@
 import { api, setCsrfToken } from "./api.js";
 
 const VIEW_META = {
-  config: { eyebrow: "Operación / Configuración", title: "Configuración del visor" },
-  layers: { eyebrow: "Operación / Capas", title: "Gestor de capas" },
-  rag: { eyebrow: "Operación / Documentos", title: "Ingesta RAG" },
-  apis: { eyebrow: "Operación / Integraciones", title: "Conexiones externas" },
-  taxonomy: { eyebrow: "Operación / Taxonomía", title: "Dimensiones y capas" },
-  chat: { eyebrow: "Operación / Chat IA", title: "Prompts y mensajes" },
-  audit: { eyebrow: "Operación / Trazabilidad", title: "Auditoría" },
+  config: { eyebrow: "Operación / Configuración", title: "Configuración del visor", mode: "solo lectura" },
+  layers: { eyebrow: "Operación / Capas", title: "Gestor de capas", mode: "editable" },
+  rag: { eyebrow: "Operación / Documentos", title: "Ingesta RAG", mode: "editable" },
+  apis: { eyebrow: "Operación / Integraciones", title: "Conexiones externas", mode: "editable" },
+  taxonomy: { eyebrow: "Operación / Taxonomía", title: "Dimensiones y capas", mode: "editable" },
+  chat: { eyebrow: "Operación / Chat IA", title: "Prompts y mensajes", mode: "editable" },
+  audit: { eyebrow: "Operación / Trazabilidad", title: "Auditoría", mode: "solo lectura" },
 };
 
 const state = {
@@ -25,6 +25,14 @@ const state = {
     data: null,
     loading: false,
     pollTimer: null,
+  },
+  chat: {
+    prompts: [],
+    settings: [],
+    messages: [],
+    unavailable: [],
+    golden: [],
+    tools: [],
   },
   rag: {
     data: null,
@@ -100,6 +108,12 @@ function formatDate(value) {
     dateStyle: "short",
     timeStyle: "short",
   }).format(date);
+}
+
+function formatDay(value) {
+  if (!value) return "—";
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : String(value);
 }
 
 function shortHash(value) {
@@ -226,6 +240,13 @@ function selectView(view) {
 
   $("#viewEyebrow").textContent = VIEW_META[view].eyebrow;
   $("#viewTitle").textContent = VIEW_META[view].title;
+  const mode = VIEW_META[view].mode || "solo lectura";
+  const modeChip = $("#viewModeChip");
+  if (modeChip) {
+    modeChip.classList.toggle("chip-live", mode === "editable");
+    const modeText = document.getElementById("viewModeText");
+    if (modeText) modeText.textContent = mode;
+  }
   setStatus("");
 
   if (view === "config" && !state.loaded.config) loadConfig();
@@ -1892,26 +1913,53 @@ function renderEmpty(container, message) {
   container.replaceChildren(el("p", { className: "empty", text: message }));
 }
 
-async function loadChat() {
-  setStatus("Cargando configuración del chat…");
+async function loadChat({ keepStatus = false } = {}) {
+  if (!keepStatus) setStatus("Cargando configuración del chat…");
   try {
-    const [prompts, settings, messages, unavailable] = await Promise.all([
+    const [prompts, settings, messages, unavailable, golden, tools] = await Promise.all([
       withAuth(api.prompts()),
       withAuth(api.settings()),
       withAuth(api.messages()),
       withAuth(api.unavailable()),
+      withAuth(api.goldenList()),
+      withAuth(api.chatTools()),
     ]);
-    if (!prompts || !settings || !messages || !unavailable) return;
+    if (!prompts || !settings || !messages || !unavailable || !golden || !tools) return;
 
-    renderPrompts(prompts.items || []);
-    renderSettings(settings.items || []);
-    renderMessages(messages.items || []);
-    renderUnavailable(unavailable.items || []);
+    state.chat.prompts = prompts.items || [];
+    state.chat.settings = settings.items || [];
+    state.chat.messages = messages.items || [];
+    state.chat.unavailable = unavailable.items || [];
+    state.chat.golden = golden.items || [];
+    state.chat.tools = tools.items || [];
+
+    renderPrompts(state.chat.prompts);
+    renderSettings(state.chat.settings);
+    renderMessages(state.chat.messages);
+    renderUnavailable(state.chat.unavailable);
+    renderGolden(state.chat.golden);
+    renderTools(state.chat.tools, tools);
     state.loaded.chat = true;
-    setStatus("");
+    if (!keepStatus) setStatus("");
   } catch (err) {
     setStatus(`No se pudo cargar el chat: ${err.message}`, "error");
   }
+}
+
+function chatFormStatus(id, message, kind = "ok") {
+  const node = document.getElementById(id);
+  if (!node) return;
+  node.textContent = message || "";
+  node.hidden = !message;
+  node.classList.toggle("is-error", kind === "error");
+}
+
+function chatAction(label, attrs) {
+  return el("button", {
+    className: "btn btn-secondary btn-mini",
+    text: label,
+    attrs: { type: "button", ...attrs },
+  });
 }
 
 function renderPrompts(items) {
@@ -1924,6 +1972,28 @@ function renderPrompts(items) {
 
   const fragment = document.createDocumentFragment();
   for (const prompt of items) {
+    const actions = [
+      chatAction("Editar como nueva versión", {
+        "data-prompt-action": "edit",
+        "data-id": prompt.id,
+        "data-version": prompt.version,
+      }),
+    ];
+    if (!prompt.activo) {
+      actions.push(
+        chatAction("Activar", {
+          "data-prompt-action": "activate",
+          "data-id": prompt.id,
+          "data-version": prompt.version,
+        }),
+        chatAction("Eliminar", {
+          "data-prompt-action": "delete",
+          "data-id": prompt.id,
+          "data-version": prompt.version,
+        })
+      );
+    }
+
     const summary = el("summary", { className: "item-head" }, [
       el("span", {}, [
         el("strong", { text: `${prompt.id} · v${prompt.version}` }),
@@ -1939,6 +2009,10 @@ function renderPrompts(items) {
 
     const details = el("details", { className: "prompt" }, [
       summary,
+      el("div", {
+        className: "row-actions",
+        attrs: { style: "padding: 0 20px 10px;" },
+      }, actions),
       el("pre", { className: "prompt-body", text: prompt.content || "" }),
     ]);
     fragment.appendChild(details);
@@ -1967,6 +2041,12 @@ function renderSettings(items) {
         ]),
         el("p", { className: "muted", text: setting.description || "" }),
         el("pre", { className: "prompt-body", text: value }),
+        el("div", { className: "row-actions" }, [
+          chatAction("Editar", { "data-setting-action": "edit", "data-key": setting.key }),
+          setting.editable
+            ? chatAction("Eliminar", { "data-setting-action": "delete", "data-key": setting.key })
+            : null,
+        ]),
       ])
     );
   }
@@ -1991,6 +2071,10 @@ function renderMessages(items) {
         ]),
         el("p", { className: "muted", text: message.content || "" }),
         el("p", { className: "item-meta", text: message.description || "" }),
+        el("div", { className: "row-actions" }, [
+          chatAction("Editar", { "data-message-action": "edit", "data-key": message.key }),
+          chatAction("Eliminar", { "data-message-action": "delete", "data-key": message.key }),
+        ]),
       ])
     );
   }
@@ -2017,11 +2101,382 @@ function renderUnavailable(items) {
           el("span", { className: item.activo ? "badge badge-ok" : "badge", text: item.activo ? "activo" : "inactivo" }),
         ]),
         el("p", { className: "muted", text: item.descripcion || "" }),
-        el("p", { className: "item-meta", text: `${item.motivo || "—"} · ${layers} · verificado ${item.verificado_en || "—"}` }),
+        el("p", { className: "item-meta", text: `${item.motivo || "—"} · ${layers} · verificado ${formatDay(item.verificado_en)}` }),
+        el("div", { className: "row-actions" }, [
+          chatAction("Editar", { "data-unavailable-action": "edit", "data-id": item.id }),
+          chatAction("Eliminar", { "data-unavailable-action": "delete", "data-id": item.id }),
+        ]),
       ])
     );
   }
   container.replaceChildren(fragment);
+}
+
+function renderGolden(items) {
+  const container = $("#goldenList");
+  if (!container) return;
+  if (items.length === 0) {
+    renderEmpty(container, "No hay casos. Usa Agregar caso o npm run golden:seed.");
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  for (const item of items) {
+    fragment.appendChild(
+      el("div", { className: "item" }, [
+        el("div", { className: "item-head" }, [
+          el("strong", { text: `${item.id} · L${item.level}/T${item.tier}` }),
+          el("span", { className: item.activo ? "badge badge-ok" : "badge", text: item.activo ? "activo" : "inactivo" }),
+        ]),
+        el("p", { className: "muted", text: item.question || "" }),
+        el("p", { className: "item-meta", text: `${item.category || "—"} · ${item.intent_esperado || "—"} · ${item.fuente_esperada || "—"}` }),
+        el("div", { className: "row-actions" }, [
+          chatAction("Editar", { "data-golden-action": "edit", "data-id": item.id }),
+          chatAction("Eliminar", { "data-golden-action": "delete", "data-id": item.id }),
+        ]),
+      ])
+    );
+  }
+  container.replaceChildren(fragment);
+}
+
+function renderTools(items, response) {
+  const container = $("#toolsList");
+  if (!container) return;
+  if (items.length === 0) {
+    renderEmpty(container, "No hay tools registradas.");
+    return;
+  }
+
+  const note = el("p", {
+    className: "muted",
+    text: response?.reason || "Las tools son código de solo lectura.",
+    attrs: { style: "padding: 12px 20px;" },
+  });
+  const fragment = document.createDocumentFragment();
+  fragment.appendChild(note);
+  for (const tool of items) {
+    fragment.appendChild(
+      el("details", { className: "prompt" }, [
+        el("summary", { className: "item-head" }, [
+          el("strong", { text: tool.name }),
+          el("span", { className: "badge", text: "solo lectura" }),
+        ]),
+        el("p", { className: "muted", text: tool.description || "" }),
+        el("pre", {
+          className: "prompt-body",
+          text: JSON.stringify(tool.parameters || {}, null, 2),
+        }),
+      ])
+    );
+  }
+  container.replaceChildren(fragment);
+}
+
+// Formularios de configuración del chat
+
+function resetChatForm(formId) {
+  const form = document.getElementById(formId);
+  form?.reset();
+  for (const input of form?.querySelectorAll("input, textarea, select") || []) {
+    if (input.type !== "checkbox") input.value = input.defaultValue || "";
+    input.readOnly = false;
+  }
+}
+
+function editPrompt(id) {
+  const prompt = state.chat.prompts.find((item) => item.id === id);
+  if (!prompt) return;
+  setDrawerOpen("promptFormDrawer", true, { focus: false });
+  $("#promptId").value = prompt.id;
+  $("#promptId").readOnly = true;
+  $("#promptContent").value = prompt.content || "";
+  $("#promptDescription").value = prompt.description || "";
+  chatFormStatus("promptFormStatus", "");
+}
+
+function editSetting(key) {
+  const setting = state.chat.settings.find((item) => item.key === key);
+  if (!setting) return;
+  setDrawerOpen("settingFormDrawer", true, { focus: false });
+  $("#settingKey").value = setting.key;
+  $("#settingKey").readOnly = true;
+  $("#settingType").value = setting.type || "string";
+  $("#settingValue").value = typeof setting.value === "string"
+    ? setting.value
+    : JSON.stringify(setting.value, null, 2);
+  $("#settingDescription").value = setting.description || "";
+  $("#settingEditable").checked = setting.editable !== false;
+  chatFormStatus("settingFormStatus", "");
+}
+
+function editMessage(key) {
+  const message = state.chat.messages.find((item) => item.key === key);
+  if (!message) return;
+  setDrawerOpen("messageFormDrawer", true, { focus: false });
+  $("#messageKey").value = message.key;
+  $("#messageKey").readOnly = true;
+  $("#messageContent").value = message.content || "";
+  $("#messageDescription").value = message.description || "";
+  chatFormStatus("messageFormStatus", "");
+}
+
+function editUnavailable(id) {
+  const item = state.chat.unavailable.find((entry) => entry.id === id);
+  if (!item) return;
+  setDrawerOpen("unavailableFormDrawer", true, { focus: false });
+  $("#unavailableId").value = item.id;
+  $("#unavailableId").readOnly = true;
+  $("#unavailableDescripcion").value = item.descripcion || "";
+  $("#unavailablePalabras").value = (item.palabras || []).join(", ");
+  $("#unavailableCapas").value = (item.capas_relacionadas || []).join(", ");
+  $("#unavailableExiste").value = item.existe || "";
+  $("#unavailableMotivo").value = item.motivo || "dato_inexistente";
+  $("#unavailableSource").value = item.source || "manual";
+  $("#unavailableActivo").checked = item.activo !== false;
+  chatFormStatus("unavailableFormStatus", "");
+}
+
+function editGolden(id) {
+  const item = state.chat.golden.find((entry) => entry.id === id);
+  if (!item) return;
+  setDrawerOpen("goldenFormDrawer", true, { focus: false });
+  $("#goldenId").value = item.id;
+  $("#goldenId").readOnly = true;
+  $("#goldenLevel").value = item.level || 1;
+  $("#goldenTier").value = item.tier || 1;
+  $("#goldenIntent").value = item.intent_esperado || "";
+  $("#goldenFuente").value = item.fuente_esperada || "";
+  $("#goldenCategory").value = item.category || "";
+  $("#goldenQuestion").value = item.question || "";
+  $("#goldenExpected").value = JSON.stringify(item.expected || {}, null, 2);
+  $("#goldenNotes").value = item.notes || "";
+  $("#goldenHistory").value = item.history ? JSON.stringify(item.history, null, 2) : "";
+  $("#goldenActivo").checked = item.activo !== false;
+  chatFormStatus("goldenFormStatus", "");
+}
+
+function newChatForm(kind) {
+  const map = {
+    prompt: ["promptForm", "promptFormDrawer", "promptFormStatus"],
+    setting: ["settingForm", "settingFormDrawer", "settingFormStatus"],
+    message: ["messageForm", "messageFormDrawer", "messageFormStatus"],
+    unavailable: ["unavailableForm", "unavailableFormDrawer", "unavailableFormStatus"],
+    golden: ["goldenForm", "goldenFormDrawer", "goldenFormStatus"],
+  };
+  const [formId, drawerId, statusId] = map[kind];
+  resetChatForm(formId);
+  const form = document.getElementById(formId);
+  if (kind === "setting") $("#settingEditable").checked = true;
+  if (kind === "unavailable") {
+    $("#unavailableMotivo").value = "dato_inexistente";
+    $("#unavailableSource").value = "manual";
+    $("#unavailableActivo").checked = true;
+  }
+  if (kind === "golden") {
+    $("#goldenLevel").value = "1";
+    $("#goldenTier").value = "1";
+    $("#goldenExpected").value = "{}";
+    $("#goldenActivo").checked = true;
+  }
+  chatFormStatus(statusId, "");
+  setDrawerOpen(drawerId, true);
+}
+
+async function savePrompt(event) {
+  event.preventDefault();
+  try {
+    await api.promptSave({
+      id: $("#promptId").value.trim(),
+      content: $("#promptContent").value,
+      description: $("#promptDescription").value.trim(),
+    });
+    setDrawerOpen("promptFormDrawer", false, { focus: false });
+    setStatus("Prompt guardado como versión nueva y activado.");
+    await loadChat({ keepStatus: true });
+  } catch (err) {
+    chatFormStatus("promptFormStatus", err.message, "error");
+  }
+}
+
+async function saveSetting(event) {
+  event.preventDefault();
+  const type = $("#settingType").value;
+  const raw = $("#settingValue").value;
+  let value = raw;
+  try {
+    if (type === "json") value = JSON.parse(raw);
+    else if (type === "number") {
+      value = Number(raw);
+      if (!Number.isFinite(value)) throw new Error("El valor debe ser numérico.");
+    } else if (type === "boolean") {
+      value = raw === "true";
+    }
+  } catch (err) {
+    chatFormStatus("settingFormStatus", err.message, "error");
+    return;
+  }
+  try {
+    await api.settingSave({
+      key: $("#settingKey").value.trim(),
+      value,
+      type,
+      description: $("#settingDescription").value.trim(),
+      editable: $("#settingEditable").checked,
+    });
+    setDrawerOpen("settingFormDrawer", false, { focus: false });
+    setStatus("Setting guardado.");
+    await loadChat({ keepStatus: true });
+  } catch (err) {
+    chatFormStatus("settingFormStatus", err.message, "error");
+  }
+}
+
+async function saveMessage(event) {
+  event.preventDefault();
+  try {
+    await api.messageSave({
+      key: $("#messageKey").value.trim(),
+      content: $("#messageContent").value,
+      description: $("#messageDescription").value.trim(),
+    });
+    setDrawerOpen("messageFormDrawer", false, { focus: false });
+    setStatus("Mensaje guardado.");
+    await loadChat({ keepStatus: true });
+  } catch (err) {
+    chatFormStatus("messageFormStatus", err.message, "error");
+  }
+}
+
+async function saveUnavailable(event) {
+  event.preventDefault();
+  try {
+    await api.unavailableSave({
+      id: $("#unavailableId").value.trim(),
+      descripcion: $("#unavailableDescripcion").value.trim(),
+      palabras: $("#unavailablePalabras").value,
+      capas_relacionadas: $("#unavailableCapas").value,
+      existe: $("#unavailableExiste").value.trim(),
+      motivo: $("#unavailableMotivo").value,
+      source: $("#unavailableSource").value,
+      activo: $("#unavailableActivo").checked,
+    });
+    setDrawerOpen("unavailableFormDrawer", false, { focus: false });
+    setStatus("Registro de datos no disponibles guardado.");
+    await loadChat({ keepStatus: true });
+  } catch (err) {
+    chatFormStatus("unavailableFormStatus", err.message, "error");
+  }
+}
+
+async function saveGolden(event) {
+  event.preventDefault();
+  let expected;
+  let history = null;
+  try {
+    expected = JSON.parse($("#goldenExpected").value || "{}");
+    const historyRaw = $("#goldenHistory").value.trim();
+    history = historyRaw ? JSON.parse(historyRaw) : null;
+  } catch {
+    chatFormStatus("goldenFormStatus", "Expected e historial deben ser JSON válido.", "error");
+    return;
+  }
+  try {
+    await api.goldenSave({
+      id: $("#goldenId").value.trim(),
+      level: Number($("#goldenLevel").value),
+      tier: Number($("#goldenTier").value),
+      intent_esperado: $("#goldenIntent").value.trim(),
+      fuente_esperada: $("#goldenFuente").value.trim(),
+      category: $("#goldenCategory").value.trim(),
+      question: $("#goldenQuestion").value.trim(),
+      expected,
+      notes: $("#goldenNotes").value.trim(),
+      history,
+      activo: $("#goldenActivo").checked,
+    });
+    setDrawerOpen("goldenFormDrawer", false, { focus: false });
+    setStatus("Caso del golden set guardado.");
+    await loadChat({ keepStatus: true });
+  } catch (err) {
+    chatFormStatus("goldenFormStatus", err.message, "error");
+  }
+}
+
+async function promptAction(action, id, version) {
+  try {
+    if (action === "activate") {
+      await api.promptActivate(id, version);
+      setStatus(`Prompt ${id} v${version} reactivado como versión nueva.`);
+      await loadChat({ keepStatus: true });
+    } else if (action === "delete") {
+      if (!window.confirm(`¿Eliminar ${id} v${version}?`)) return;
+      await api.promptDelete(id, version);
+      setStatus("Versión eliminada.");
+      await loadChat({ keepStatus: true });
+    } else if (action === "edit") {
+      editPrompt(id);
+    }
+  } catch (err) {
+    setStatus(err.message, "error");
+  }
+}
+
+async function settingAction(action, key) {
+  try {
+    if (action === "edit") {
+      editSetting(key);
+    } else if (action === "delete") {
+      if (!window.confirm(`¿Eliminar el setting ${key}?`)) return;
+      await api.settingDelete(key);
+      setStatus("Setting eliminado.");
+      await loadChat({ keepStatus: true });
+    }
+  } catch (err) {
+    setStatus(err.message, "error");
+  }
+}
+
+async function messageAction(action, key) {
+  try {
+    if (action === "edit") editMessage(key);
+    else if (action === "delete") {
+      if (!window.confirm(`¿Eliminar el mensaje ${key}?`)) return;
+      await api.messageDelete(key);
+      setStatus("Mensaje eliminado.");
+      await loadChat({ keepStatus: true });
+    }
+  } catch (err) {
+    setStatus(err.message, "error");
+  }
+}
+
+async function unavailableAction(action, id) {
+  try {
+    if (action === "edit") editUnavailable(id);
+    else if (action === "delete") {
+      if (!window.confirm(`¿Eliminar ${id}?`)) return;
+      await api.unavailableDelete(id);
+      setStatus("Registro eliminado.");
+      await loadChat({ keepStatus: true });
+    }
+  } catch (err) {
+    setStatus(err.message, "error");
+  }
+}
+
+async function goldenAction(action, id) {
+  try {
+    if (action === "edit") editGolden(id);
+    else if (action === "delete") {
+      if (!window.confirm(`¿Eliminar el caso ${id}?`)) return;
+      await api.goldenDelete(id);
+      setStatus("Caso eliminado.");
+      await loadChat({ keepStatus: true });
+    }
+  } catch (err) {
+    setStatus(err.message, "error");
+  }
 }
 
 // ── Auditoría ─────────────────────────────────────────────
@@ -2327,6 +2782,55 @@ function bindEvents() {
     } catch (err) {
       layerSetStatus(err.message, "error");
     }
+  });
+
+  // Configuración del chat
+  $("#promptForm")?.addEventListener("submit", savePrompt);
+  $("#settingForm")?.addEventListener("submit", saveSetting);
+  $("#messageForm")?.addEventListener("submit", saveMessage);
+  $("#unavailableForm")?.addEventListener("submit", saveUnavailable);
+  $("#goldenForm")?.addEventListener("submit", saveGolden);
+
+  for (const [toggleId, kind, drawerId] of [
+    ["promptAddToggle", "prompt", "promptFormDrawer"],
+    ["settingAddToggle", "setting", "settingFormDrawer"],
+    ["messageAddToggle", "message", "messageFormDrawer"],
+    ["unavailableAddToggle", "unavailable", "unavailableFormDrawer"],
+    ["goldenAddToggle", "golden", "goldenFormDrawer"],
+  ]) {
+    document.getElementById(toggleId)?.addEventListener("click", (event) => {
+      event.stopImmediatePropagation();
+      const drawer = document.getElementById(drawerId);
+      if (drawer.hidden) newChatForm(kind);
+      else setDrawerOpen(drawerId, false, { focus: false });
+    });
+  }
+
+  $("#promptsList")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-prompt-action]");
+    if (!button) return;
+    event.preventDefault();
+    promptAction(
+      button.dataset.promptAction,
+      button.dataset.id,
+      Number(button.dataset.version)
+    );
+  });
+  $("#settingsList")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-setting-action]");
+    if (button) settingAction(button.dataset.settingAction, button.dataset.key);
+  });
+  $("#messagesList")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-message-action]");
+    if (button) messageAction(button.dataset.messageAction, button.dataset.key);
+  });
+  $("#unavailableList")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-unavailable-action]");
+    if (button) unavailableAction(button.dataset.unavailableAction, button.dataset.id);
+  });
+  $("#goldenList")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-golden-action]");
+    if (button) goldenAction(button.dataset.goldenAction, button.dataset.id);
   });
 }
 

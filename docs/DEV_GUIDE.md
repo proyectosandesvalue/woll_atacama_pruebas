@@ -373,7 +373,7 @@ Cuando cambies SYSTEM_PROMPT_BASE o CLASSIFIER_SYSTEM_PROMPT en el código, ejec
 
 bash
 node --env-file=.env.staging scripts/migrate_prompts.mjs
-Esto carga los 2 prompts en admin.prompt_templates (versionado, idempotente). No se puede editar un prompt sin pasar por este script o por el panel admin (Sprint 15).
+Esto carga los 2 prompts en admin.prompt_templates (versionado, idempotente). Para editar la configuración del chat usa el panel admin (`/admin.html` → **Chat IA**); el script queda para el bootstrap inicial. Cada cambio de prompt crea una versión nueva.
 
 3.6. Correr el golden set
 bash
@@ -389,7 +389,12 @@ node --env-file=.env.staging scripts/run-golden-set.mjs --id smoke-bloqueo-fecha
 # Con router y unavailable activados
 CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1 \
   node --env-file=.env.staging scripts/run-golden-set.mjs --all
-El runner imprime en el header: modelo, flags, versiones de prompt. Cada corrida es reproducible.
+
+# Forzar el archivo y no leer admin.golden_cases
+node --env-file=.env.staging scripts/run-golden-set.mjs --all --from-json
+El runner imprime en el header: modelo, flags, versiones de prompt y la fuente
+del golden set (`admin.golden_cases` o `golden.json`). Cada corrida es
+reproducible. Si la BD no responde, cae al archivo (INV-5).
 
 3.7. Smoke tests
 bash
@@ -1062,6 +1067,35 @@ npm run layer:worker -- --once
   `server/admin/api-registry.js` y la allowlist de `server/proxy/services.js`,
   luego deployar. El panel no acepta URLs arbitrarias.
 - Migración: `044_admin_api_connections.sql`.
+
+**Configuración del chat (48)**
+
+- `/admin.html` → **Chat IA**.
+- **Prompts versionados**: **Nueva versión** crea una versión y la activa;
+  **Editar como nueva versión** parte de una versión existente. Las versiones
+  históricas se pueden **Activar** (se copian como versión nueva) o
+  **Eliminar**. La versión activa no se borra.
+- **Settings**: edita `admin.settings` con tipo `string|number|boolean|json`.
+  Los settings con `editable=false` se muestran en solo lectura.
+- **Mensajes estándar**: `admin.messages` con fallback al texto hardcodeado.
+- **Datos no disponibles**: CRUD de `admin.unavailable_data`; al guardar se
+  actualiza `verificado_en`.
+- **Golden set**: CRUD de `admin.golden_cases`. El campo `expected` es JSON
+  (por ejemplo `{ "tools_any": ["query_layer"] }`); `level` va de 1 a 3 y
+  `tier` de 1 a 6. Sembrar desde el archivo con:
+
+```bash
+npm run golden:seed            # aplica sobre admin.golden_cases
+npm run golden:seed -- --dry-run
+```
+
+- **Herramientas del chat**: inventario de solo lectura. Una tool nueva se
+  agrega con un archivo en `server/chat/tools/` y una línea en
+  `server/chat/tools/index.js`; no se crea desde el panel (CONTRACT §6.2).
+- Antes de activar un prompt o un cambio de router, correr el golden set y
+  comparar el acierto por tier (CONTRACT §2).
+- Migraciones: `049_admin_chat_config_crud.sql` y
+  `050_golden_tier_range.sql`. No renumerar.
 
 **Seguridad del frontend (28)**
 

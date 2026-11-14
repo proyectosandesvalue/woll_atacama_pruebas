@@ -142,7 +142,7 @@
           <p class="eyebrow" id="viewEyebrow">Operación / Configuración</p>
           <h1 id="viewTitle">Configuración del visor</h1>
         </div>
-        <span class="chip chip-live"><span class="status-dot"></span> solo lectura</span>
+        <span class="chip chip-live" id="viewModeChip"><span class="status-dot"></span> <span id="viewModeText">solo lectura</span></span>
       </header>
 
       <p id="globalStatus" class="status-line" role="status" aria-live="polite" hidden></p>
@@ -1035,8 +1035,15 @@
           <div class="panel-head">
             <div>
               <h2>Prompts versionados</h2>
-              <p class="muted">Cada cambio crea una versión. Solo lectura.</p>
+              <p class="muted">Cada cambio crea una versión y activa la nueva.</p>
             </div>
+            <div class="panel-head-actions">
+              <button id="promptAddToggle" class="btn btn-secondary" type="button"
+                      data-form-toggle="promptFormDrawer" aria-expanded="false"
+                      aria-controls="promptFormDrawer">
+                <span class="material-symbols-outlined">add</span>
+                Nueva versión
+              </button>
             <div class="help-wrap">
               <button class="help-btn" type="button" data-help="help-chat-prompts"
                       aria-label="Ayuda sobre los prompts del chat" aria-expanded="false"
@@ -1049,14 +1056,38 @@
                 <p>Antes de activar un cambio hay que correr el golden set y comparar el acierto por tier.</p>
               </div>
             </div>
+            </div>
           </div>
           <div id="promptsList" class="stack"></div>
+          <div id="promptFormDrawer" hidden>
+            <form id="promptForm" class="rag-form" novalidate>
+              <label for="promptId">Prompt</label>
+              <input id="promptId" list="promptIds" maxlength="80" placeholder="chat.system" required />
+              <datalist id="promptIds">
+                <option value="chat.system"></option>
+                <option value="chat.classifier"></option>
+              </datalist>
+              <label for="promptContent">Contenido</label>
+              <textarea id="promptContent" rows="14" required></textarea>
+              <label for="promptDescription">Descripción</label>
+              <input id="promptDescription" maxlength="500" />
+              <div class="rag-actions">
+                <button class="btn btn-primary" type="submit">Guardar y activar versión</button>
+                <button class="btn btn-secondary" type="button" data-form-close="promptFormDrawer">Cancelar</button>
+              </div>
+              <p id="promptFormStatus" class="status-line" role="status" aria-live="polite" hidden></p>
+            </form>
+          </div>
         </div>
 
         <div class="grid-2">
           <div class="panel">
             <div class="panel-head">
               <h2>Settings</h2>
+              <div class="panel-head-actions">
+                <button id="settingAddToggle" class="btn btn-secondary btn-mini" type="button"
+                        data-form-toggle="settingFormDrawer" aria-expanded="false"
+                        aria-controls="settingFormDrawer">Agregar</button>
               <div class="help-wrap">
                 <button class="help-btn" type="button" data-help="help-chat-settings"
                         aria-label="Ayuda sobre los settings del chat" aria-expanded="false"
@@ -1068,12 +1099,42 @@
                   <p>Parámetros como router, confianza mínima, killswitches y modo verbose. Se leen desde <code>admin.settings</code>; el panel los muestra en solo lectura.</p>
                 </div>
               </div>
+              </div>
             </div>
             <div id="settingsList" class="stack"></div>
+            <div id="settingFormDrawer" hidden>
+              <form id="settingForm" class="rag-form" novalidate>
+                <div class="field-grid">
+                  <div><label for="settingKey">Clave</label><input id="settingKey" maxlength="80" required /></div>
+                  <div><label for="settingType">Tipo</label>
+                    <select id="settingType">
+                      <option value="string">string</option>
+                      <option value="number">number</option>
+                      <option value="boolean">boolean</option>
+                      <option value="json">json</option>
+                    </select>
+                  </div>
+                </div>
+                <label for="settingValue">Valor (texto o JSON)</label>
+                <textarea id="settingValue" rows="3" required></textarea>
+                <label for="settingDescription">Descripción</label>
+                <input id="settingDescription" maxlength="500" />
+                <label class="checkbox-row"><input id="settingEditable" type="checkbox" checked /><span>Editable desde el panel</span></label>
+                <div class="rag-actions">
+                  <button class="btn btn-primary" type="submit">Guardar setting</button>
+                  <button class="btn btn-secondary" type="button" data-form-close="settingFormDrawer">Cancelar</button>
+                </div>
+                <p id="settingFormStatus" class="status-line" role="status" aria-live="polite" hidden></p>
+              </form>
+            </div>
           </div>
           <div class="panel">
             <div class="panel-head">
               <h2>Mensajes estándar</h2>
+              <div class="panel-head-actions">
+                <button id="messageAddToggle" class="btn btn-secondary btn-mini" type="button"
+                        data-form-toggle="messageFormDrawer" aria-expanded="false"
+                        aria-controls="messageFormDrawer">Agregar</button>
               <div class="help-wrap">
                 <button class="help-btn" type="button" data-help="help-chat-messages"
                         aria-label="Ayuda sobre los mensajes estándar" aria-expanded="false"
@@ -1085,8 +1146,24 @@
                   <p>Texto que devuelve el chat cuando no puede responder: fuera de alcance, sin respuesta o error del LLM. Viven en <code>admin.messages</code>.</p>
                 </div>
               </div>
+              </div>
             </div>
             <div id="messagesList" class="stack"></div>
+            <div id="messageFormDrawer" hidden>
+              <form id="messageForm" class="rag-form" novalidate>
+                <label for="messageKey">Clave</label>
+                <input id="messageKey" maxlength="80" required />
+                <label for="messageContent">Contenido</label>
+                <textarea id="messageContent" rows="4" required></textarea>
+                <label for="messageDescription">Descripción</label>
+                <input id="messageDescription" maxlength="500" />
+                <div class="rag-actions">
+                  <button class="btn btn-primary" type="submit">Guardar mensaje</button>
+                  <button class="btn btn-secondary" type="button" data-form-close="messageFormDrawer">Cancelar</button>
+                </div>
+                <p id="messageFormStatus" class="status-line" role="status" aria-live="polite" hidden></p>
+              </form>
+            </div>
           </div>
         </div>
 
@@ -1096,6 +1173,10 @@
               <h2>Datos no disponibles</h2>
               <p class="muted">Inventario que usa el chat para responder con honestidad.</p>
             </div>
+            <div class="panel-head-actions">
+              <button id="unavailableAddToggle" class="btn btn-secondary btn-mini" type="button"
+                      data-form-toggle="unavailableFormDrawer" aria-expanded="false"
+                      aria-controls="unavailableFormDrawer">Agregar</button>
             <div class="help-wrap">
               <button class="help-btn" type="button" data-help="help-chat-unavailable"
                       aria-label="Ayuda sobre los datos no disponibles" aria-expanded="false"
@@ -1108,8 +1189,101 @@
                 <p>Incluye palabras clave, capas relacionadas y el motivo: dato inexistente, sin receta o fuente no ingerida.</p>
               </div>
             </div>
+            </div>
           </div>
           <div id="unavailableList" class="stack"></div>
+          <div id="unavailableFormDrawer" hidden>
+            <form id="unavailableForm" class="rag-form" novalidate>
+              <div class="field-grid">
+                <div><label for="unavailableId">Clave</label><input id="unavailableId" maxlength="100" required /></div>
+                <div><label for="unavailableMotivo">Motivo</label>
+                  <select id="unavailableMotivo">
+                    <option value="dato_inexistente">Dato inexistente</option>
+                    <option value="sin_receta">Sin receta</option>
+                    <option value="fuente_no_ingerida">Fuente no ingerida</option>
+                  </select>
+                </div>
+              </div>
+              <label for="unavailableDescripcion">Descripción</label>
+              <input id="unavailableDescripcion" maxlength="1000" required />
+              <label for="unavailablePalabras">Palabras clave (separadas por coma)</label>
+              <input id="unavailablePalabras" />
+              <label for="unavailableCapas">Capas relacionadas (separadas por coma)</label>
+              <input id="unavailableCapas" />
+              <div class="field-grid">
+                <div><label for="unavailableExiste">Dato existente</label><input id="unavailableExiste" maxlength="200" /></div>
+                <div><label for="unavailableSource">Origen</label>
+                  <select id="unavailableSource">
+                    <option value="manual">manual</option>
+                    <option value="catalog">catalog</option>
+                    <option value="ingest">ingest</option>
+                    <option value="recipe">recipe</option>
+                  </select>
+                </div>
+              </div>
+              <label class="checkbox-row"><input id="unavailableActivo" type="checkbox" checked /><span>Registro activo</span></label>
+              <div class="rag-actions">
+                <button class="btn btn-primary" type="submit">Guardar registro</button>
+                <button class="btn btn-secondary" type="button" data-form-close="unavailableFormDrawer">Cancelar</button>
+              </div>
+              <p id="unavailableFormStatus" class="status-line" role="status" aria-live="polite" hidden></p>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Golden set</h2>
+              <p class="muted">Casos de evaluación del chat. Se ejecutan con <code>npm run eval:chat</code>.</p>
+            </div>
+            <div class="panel-head-actions">
+              <button id="goldenAddToggle" class="btn btn-secondary btn-mini" type="button"
+                      data-form-toggle="goldenFormDrawer" aria-expanded="false"
+                      aria-controls="goldenFormDrawer">Agregar caso</button>
+            </div>
+          </div>
+          <div id="goldenList" class="stack"></div>
+          <div id="goldenFormDrawer" hidden>
+            <form id="goldenForm" class="rag-form" novalidate>
+              <div class="field-grid">
+                <div><label for="goldenId">ID</label><input id="goldenId" maxlength="100" required /></div>
+                <div><label for="goldenCategory">Categoría</label><input id="goldenCategory" maxlength="100" /></div>
+              </div>
+              <div class="field-grid">
+                <div><label for="goldenLevel">Level</label><input id="goldenLevel" type="number" min="1" max="3" value="1" /></div>
+                <div><label for="goldenTier">Tier</label><input id="goldenTier" type="number" min="1" max="6" value="1" /></div>
+              </div>
+              <div class="field-grid">
+                <div><label for="goldenIntent">Intent esperado</label><input id="goldenIntent" maxlength="100" /></div>
+                <div><label for="goldenFuente">Fuente esperada</label><input id="goldenFuente" maxlength="100" /></div>
+              </div>
+              <label for="goldenQuestion">Pregunta</label>
+              <input id="goldenQuestion" maxlength="1000" required />
+              <label for="goldenExpected">Expected (JSON)</label>
+              <textarea id="goldenExpected" rows="6" required>{}</textarea>
+              <label for="goldenNotes">Notas</label>
+              <input id="goldenNotes" maxlength="1000" />
+              <label for="goldenHistory">Historial (JSON, opcional)</label>
+              <textarea id="goldenHistory" rows="3"></textarea>
+              <label class="checkbox-row"><input id="goldenActivo" type="checkbox" checked /><span>Caso activo</span></label>
+              <div class="rag-actions">
+                <button class="btn btn-primary" type="submit">Guardar caso</button>
+                <button class="btn btn-secondary" type="button" data-form-close="goldenFormDrawer">Cancelar</button>
+              </div>
+              <p id="goldenFormStatus" class="status-line" role="status" aria-live="polite" hidden></p>
+            </form>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Herramientas del chat</h2>
+              <p class="muted">Inventario de solo lectura. Las tools son código y RPCs tipadas.</p>
+            </div>
+          </div>
+          <div id="toolsList" class="stack"></div>
         </div>
       </section>
 

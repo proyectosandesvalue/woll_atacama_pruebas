@@ -1,13 +1,13 @@
-# Spec 45-47 — Panel admin: operaciones
+# Spec 45-48 — Panel admin: operaciones
 
 | Campo | Valor |
 |---|---|
-| **Sprints (ROADMAP)** | 45 (RAG y APIs), 46 (taxonomía normalizada), 47 (capas) |
-| **Estado de la spec** | EN EJECUCIÓN — 45-A/45-B y 46-A/46-B implementados; 46-C y 47 pendientes |
+| **Sprints (ROADMAP)** | 45 (RAG y APIs), 46 (taxonomía normalizada), 47 (capas), 48 (configuración del chat) |
+| **Estado de la spec** | EN EJECUCIÓN — 45, 46-A/B, 47-A/B y 48 implementados; 46-C y 47-C/D pendientes |
 | **Tamaño** | Grande (épica) |
 | **Duración estimada** | 56-72 h |
 | **Dependencias** | 08-G (tiles), 14/15 (panel/auth), 17 (RAG), 19 (APIs), 26 (VPS) |
-| **Última revisión** | 2026-11-13 |
+| **Última revisión** | 2026-11-14 |
 
 ## 1. Objetivo
 
@@ -21,6 +21,8 @@ Convertir el panel de solo lectura en una consola de operación:
    tablas normalizadas.
 4. **Capas geográficas:** CRUD completo, carga a PostGIS, tiles, publicación y
    reversión.
+5. **Configuración del chat:** prompts versionados, settings, mensajes, datos
+   no disponibles y golden set editables; tools en solo lectura.
 
 El orden de implementación es **45-A RAG → 45-B APIs → 46 taxonomía → 47
 capas**, porque el gestor de capas necesita la taxonomía normalizada.
@@ -43,7 +45,8 @@ admin.html
        ├─ RAG: manifest + upload + cola
        ├─ APIs: conexiones no secretas + test
        ├─ Taxonomía: dimensions/groups/subgroups/placements
-       └─ Capas: layers + upload + load/tiles
+       ├─ Capas: layers + upload + load/tiles
+       └─ Chat: prompts + settings + messages + unavailable + golden
   └─ workers (cola en PostgreSQL)
        ├─ rag-worker   → server/rag + embeddings
        └─ layer-worker → scripts/load-layer + build-tiles
@@ -269,7 +272,8 @@ La migración es aditiva. Las tablas se siembran desde el snapshot v1
 | 46-A | Migración y seed de taxonomía; compilador de snapshot | 6-8 | ✅ |
 | 46-B | CRUD de dimensiones/grupos/subgrupos y assignments | 8-10 | ✅ |
 | 46-C | `/api/taxonomy` + adaptación del sidebar con flag | 6-8 | ⏳ |
-| 47 | Capas: CRUD, upload GeoJSON, load/tiles worker, UI | 18-24 | ⏳ |
+| 47 | Capas: CRUD, upload GeoJSON, load/tiles worker, UI | 18-24 | 🔶 local |
+| 48 | Chat: CRUD de prompts/settings/mensajes/unavailable/golden; tools read-only | 8-10 | ✅ |
 
 Cada fase es un commit y actualiza ROADMAP/CHANGELOG.
 
@@ -358,3 +362,18 @@ R1 quedó aprobada y 45-A está implementado. R2 se decide al iniciar el Sprint 
   que el API no importe `pdfjs-dist`; el worker necesita `npm ci --include=dev`.
 - Lecciones: el worker debe ser una imagen separada; el volumen `rag/` necesita
   permisos SELinux compartidos (`:z` + dev `label=disable`).
+
+## 17. Resultados 48 — CRUD de configuración del chat (2026-11-14)
+
+**Spec de tramo:** `48-crud-config-chat.md`.
+
+**Dentro:** CRUD de `admin.prompt_templates`, `admin.settings`,
+`admin.messages`, `admin.unavailable_data` y `admin.golden_cases`; inventario
+read-only de tools; seed del golden y lectura desde la BD con fallback.
+
+**Fuera:** crear/editar tools desde el panel (son código y RPCs tipadas,
+CONTRACT §6.2/§6.3) y editar los prompts hardcodeados de fallback (INV-5).
+
+**Resultado:** migraciones 049/050; 38 casos sembrados; UI **Chat IA**
+validada en navegador; 13 tools en solo lectura; 455 tests (443 pasan, 12
+omitidos, 0 fallos); lint 0 errores.

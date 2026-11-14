@@ -1,7 +1,7 @@
 # ROADMAP.md — Plan de sprints
 
 > **Fuente de verdad del roadmap.** Se actualiza al inicio y al cierre de cada sesión de trabajo.
-> Última actualización: 2026-11-10.
+> Última actualización: 2026-11-14.
 >
 > **Infraestructura (2026-11-10):** el destino final es un **VPS propio** (Node persistente + PostgreSQL/PostGIS/pgvector + Nginx/Caddy + proxy persistente). **Vercel + Supabase son solo demo/staging**: Supabase alcanzó su límite de almacenamiento y Vercel Hobby no alcanza para producción. Las optimizaciones serverless son para la demo; no invertir en Upstash/Redis/cron para Vercel salvo que sea portable. **Sprint 26 es la prioridad de producción.** Ver ADR 005.
 > **Disparador de migración:** la creación de la **imagen Docker de PostgreSQL (PostGIS + pgvector)** marca el inicio de la migración. Desde ese commit, el entorno de desarrollo es Docker Compose/VPS, Vercel + Supabase quedan congelados para demo, y todo cambio debe funcionar primero en la imagen local y luego replicarse en el servidor.
@@ -103,6 +103,7 @@
 | 45 | Panel admin: ingesta RAG + gestor de APIs | 🔶 local (45-A/45-B ✅; VPS pendiente) | alta | 24-30h | 14/15, 17, 19 |
 | 46 | Taxonomía normalizada + sidebar | 🔶 parcial (46-A/46-B ✅; 46-C pendiente) | alta | 20-26h | 14/15, 45 |
 | 47 | Gestor de capas geográficas | 🔶 local (GeoJSON, worker y tiles ✅; VPS/Shapefile pendientes) | alta | 18-24h | 08-G, 46 |
+| 48 | CRUD de configuración del chat | ✅ local (prompts, settings, mensajes, unavailable y golden; tools read-only) | alta | 8-10h | 40-D.2, 45 |
 
 **Leyenda de estados:**
 - ✅ `done` — Completado y en producción.
@@ -1144,9 +1145,45 @@ tiles, publicación y reversión.
 
 ---
 
+### Sprint 48 — CRUD de configuración del chat
+
+**Estado**: ✅ local · **Prioridad**: alta · **Duración**: 8-10h · **Dependencias**: 40-D.2, 45
+**Spec**: `docs/specs/45-panel-admin-operaciones/48-crud-config-chat.md`
+
+**Objetivo**: editar desde el panel toda la configuración del chat que no sea
+código: prompts versionados, settings, mensajes, datos no disponibles y golden
+set. Las tools quedan como inventario de solo lectura porque son estructura y
+RPCs tipadas (CONTRACT §6.2/§6.3).
+
+**Implementado**:
+- CRUD de `admin.prompt_templates` (crear/editar como versión nueva, activar
+  histórica y borrar inactiva).
+- CRUD de `admin.settings`, `admin.messages` y `admin.unavailable_data`.
+- CRUD de `admin.golden_cases` (migración 049) con tier 1-6 (migración 050).
+- `npm run golden:seed` y lectura del golden desde la BD con fallback a
+  `server/chat/__evals__/golden.json`.
+- `GET /api/admin/chat/tools` (13 tools, `editable:false`).
+- Tests de handlers, normalización/seed y fallback del runner.
+- Pendiente: validar el flujo en el VPS y definir si el golden set por tier
+  reemplaza el baseline del archivo.
+
+---
+
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-11-14
+- ✅ **Login del panel sin TOTP** (`98ae91d`): usuario + contraseña con scrypt,
+  rate limit y auditoría. La generación/verificación TOTP se conserva para
+  flujos sensibles y se reactiva con `ADMIN_TOTP_REQUIRED=1`.
+- ✅ **Sprint 48 — CRUD de configuración del chat**: sección **Chat IA** con
+  prompts versionados, settings, mensajes, datos no disponibles y golden set.
+  Migraciones 049/050. Tools en solo lectura (13). `golden:seed` siembra 38
+  casos y el runner lee la BD con fallback al JSON. 455 tests (443 pasan,
+  12 omitidos, 0 fallos), lint sin errores y migraciones idempotentes.
+- 📝 Próximo: **47-C** (vista previa en mapa), **47-D** (Shapefile/ZIP) o
+  **46-C** (sidebar nativo), según prioridad.
 
 ### 2026-11-10
 - ✅ **Fix de proximidad (migración 037)**.

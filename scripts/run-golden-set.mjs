@@ -15,6 +15,7 @@
  *   --all         Todos los casos.
  *   --limit <n>   Limita a los primeros n casos (después del filtro).
  *   --id <id>     Un caso específico.
+ *   --from-json   Fuerza el archivo server/chat/__evals__/golden.json.
  *   --remote      Usa la URL de Vercel en lugar del orquestador local.
  *                 En modo remoto, los checks que dependen de `trace`
  *                 (tools_any, tools_count_min, geojson_filter_required,
@@ -28,6 +29,8 @@
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { getDB } from "../server/db/pool.js";
+import { loadGoldenCases } from "./lib/golden-source.mjs";
 
 // ── Config ──────────────────────────────────────────────────
 const ROOT = process.cwd();
@@ -41,6 +44,7 @@ const opts = {
   id: null,
   limit: null,
   remote: false,
+  fromJson: false,
   url: DEFAULT_REMOTE_URL,
   quiet: false,
 };
@@ -52,6 +56,7 @@ for (let i = 0; i < args.length; i++) {
   else if (a === "--id") opts.id = args[++i];
   else if (a === "--limit") opts.limit = Number(args[++i]);
   else if (a === "--remote") opts.remote = true;
+  else if (a === "--from-json") opts.fromJson = true;
   else if (a === "--url") opts.url = args[++i];
   else if (a === "--quiet") opts.quiet = true;
 }
@@ -76,8 +81,14 @@ const log = (...a) => {
 };
 
 // ── Cargar golden set ───────────────────────────────────────
-const golden = JSON.parse(await readFile(GOLDEN_PATH, "utf8"));
+const golden = await loadGoldenCases({
+  fromJson: opts.fromJson,
+  getDB,
+  readFile,
+  goldenPath: GOLDEN_PATH,
+});
 let cases = golden.cases;
+if (!opts.quiet) console.log(`Golden set: ${golden.source === "db" ? "admin.golden_cases" : "golden.json"}`);
 
 if (opts.id) {
   cases = cases.filter((c) => c.id === opts.id);

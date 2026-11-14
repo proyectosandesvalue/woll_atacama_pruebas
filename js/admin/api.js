@@ -69,6 +69,33 @@ export const api = {
   unavailable: () => request("/api/admin/unavailable"),
   audit: (limit = 50) => request(`/api/admin/audit?limit=${limit}`),
 
+  chatTools: () => request("/api/admin/chat/tools"),
+  promptSave: (payload) =>
+    request("/api/admin/prompts", { method: "POST", body: payload }),
+  promptActivate: (id, version) =>
+    request("/api/admin/prompts/activate", { method: "POST", body: { id, version } }),
+  promptDelete: (id, version) =>
+    request(`/api/admin/prompts?id=${encodeURIComponent(id)}&version=${encodeURIComponent(version)}`, {
+      method: "DELETE",
+    }),
+  settingSave: (payload) =>
+    request("/api/admin/settings", { method: "PUT", body: payload }),
+  settingDelete: (key) =>
+    request(`/api/admin/settings?key=${encodeURIComponent(key)}`, { method: "DELETE" }),
+  messageSave: (payload) =>
+    request("/api/admin/messages", { method: "PUT", body: payload }),
+  messageDelete: (key) =>
+    request(`/api/admin/messages?key=${encodeURIComponent(key)}`, { method: "DELETE" }),
+  unavailableSave: (payload) =>
+    request("/api/admin/unavailable", { method: "PUT", body: payload }),
+  unavailableDelete: (id) =>
+    request(`/api/admin/unavailable?id=${encodeURIComponent(id)}`, { method: "DELETE" }),
+  goldenList: () => request("/api/admin/golden"),
+  goldenSave: (payload) =>
+    request("/api/admin/golden", { method: "PUT", body: payload }),
+  goldenDelete: (id) =>
+    request(`/api/admin/golden?id=${encodeURIComponent(id)}`, { method: "DELETE" }),
+
   layersList: () => request("/api/admin/layers"),
   layerSave: (payload) =>
     request("/api/admin/layers", {
