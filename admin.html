@@ -106,6 +106,10 @@
           <span class="material-symbols-outlined">api</span>
           <span>APIs</span>
         </button>
+        <button class="nav-item" type="button" data-view="taxonomy">
+          <span class="material-symbols-outlined">account_tree</span>
+          <span>Taxonomía</span>
+        </button>
         <button class="nav-item" type="button" data-view="chat">
           <span class="material-symbols-outlined">forum</span>
           <span>Chat IA</span>
@@ -548,6 +552,196 @@
             </div>
             <p id="apiEditorStatus" class="status-line" role="status" aria-live="polite" hidden></p>
           </form>
+        </div>
+      </section>
+
+      <!-- TAXONOMIA -->
+      <section id="view-taxonomy" class="view" aria-labelledby="viewTitle" hidden>
+        <div class="metrics">
+          <article class="metric">
+            <span class="metric-label">Dimensiones</span>
+            <strong class="metric-value" id="taxMetricDimensions">—</strong>
+            <small>temas del sidebar</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Grupos</span>
+            <strong class="metric-value" id="taxMetricGroups">—</strong>
+            <small>nivel intermedio</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Subgrupos</span>
+            <strong class="metric-value" id="taxMetricSubgroups">—</strong>
+            <small>estaciones y proyecciones</small>
+          </article>
+          <article class="metric metric-wide">
+            <span class="metric-label">Capas</span>
+            <strong class="metric-value" id="taxMetricLayers">—</strong>
+            <small>registradas en la taxonomía</small>
+          </article>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Dimensiones, grupos y capas</h2>
+              <p class="muted">Los cambios se publican al snapshot del visor.</p>
+            </div>
+            <div class="panel-head-actions">
+              <div class="help-wrap">
+                <button class="help-btn" type="button" data-help="help-taxonomy"
+                        aria-label="Ayuda sobre la taxonomía" aria-expanded="false"
+                        aria-controls="help-taxonomy">
+                  <span class="material-symbols-outlined">help</span>
+                </button>
+                <div id="help-taxonomy" class="help-popover" hidden>
+                  <strong>Cómo funciona</strong>
+                  <ul>
+                    <li><b>Dimensión:</b> tema principal del sidebar (Agua, Clima…).</li>
+                    <li><b>Grupo:</b> bloque dentro de la dimensión.</li>
+                    <li><b>Subgrupo:</b> división opcional, por ejemplo estaciones en vivo.</li>
+                    <li><b>Asignación:</b> ubica una capa en el nivel maestro, grupo o subgrupo.</li>
+                  </ul>
+                  <p>Los cambios no llegan al visor hasta que uses <b>Publicar snapshot</b>. Si la validación falla, el snapshot anterior queda activo.</p>
+                </div>
+              </div>
+              <button id="taxPublishBtn" class="btn btn-primary" type="button">
+                <span class="material-symbols-outlined">publish</span>
+                Publicar snapshot
+              </button>
+              <button id="taxRefresh" class="btn btn-secondary" type="button">
+                <span class="material-symbols-outlined">refresh</span>
+                Actualizar
+              </button>
+            </div>
+          </div>
+          <p id="taxStatus" class="status-line" role="status" aria-live="polite" hidden></p>
+
+          <div class="tax-layout">
+            <div class="tax-list">
+              <div class="tax-block-head">
+                <h3>Dimensiones</h3>
+              </div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead><tr><th>Clave</th><th>Nombre</th><th>Orden</th><th>Activa</th><th>Acciones</th></tr></thead>
+                  <tbody id="taxDimensionsBody"></tbody>
+                </table>
+              </div>
+              <p id="taxDimensionsEmpty" class="empty" hidden>No hay dimensiones.</p>
+
+              <form id="taxDimensionForm" class="tax-form" novalidate>
+                <input id="taxDimId" type="hidden" />
+                <div class="field-grid">
+                  <div><label for="taxDimKey">Clave</label><input id="taxDimKey" maxlength="60" placeholder="agua" required /></div>
+                  <div><label for="taxDimOrder">Orden</label><input id="taxDimOrder" type="number" value="0" /></div>
+                </div>
+                <label for="taxDimNombre">Nombre</label>
+                <input id="taxDimNombre" maxlength="160" required />
+                <label for="taxDimIcono">Icono (Material Symbols)</label>
+                <input id="taxDimIcono" maxlength="80" placeholder="water_drop" />
+                <label class="checkbox-row"><input id="taxDimActivo" type="checkbox" checked /><span>Dimensión activa</span></label>
+                <div class="rag-actions">
+                  <button id="taxDimNew" class="btn btn-secondary" type="button">Nueva</button>
+                  <button id="taxDimSave" class="btn btn-primary" type="submit">Guardar dimensión</button>
+                </div>
+              </form>
+            </div>
+
+            <div id="taxDimensionDetail" class="tax-detail" hidden>
+              <div class="tax-block-head">
+                <h3 id="taxDimensionTitle">Dimensión</h3>
+                <button id="taxDimensionClose" class="btn btn-secondary btn-mini" type="button">Cerrar</button>
+              </div>
+
+              <div class="tax-block">
+                <div class="tax-block-head"><h3>Grupos</h3></div>
+                <div class="table-wrap">
+                  <table class="data-table">
+                    <thead><tr><th>Clave</th><th>Nombre</th><th>Orden</th><th>Activo</th><th>Acciones</th></tr></thead>
+                    <tbody id="taxGroupsBody"></tbody>
+                  </table>
+                </div>
+                <p id="taxGroupsEmpty" class="empty" hidden>Esta dimensión no tiene grupos.</p>
+                <form id="taxGroupForm" class="tax-form" novalidate>
+                  <input id="taxGroupId" type="hidden" />
+                  <div class="field-grid">
+                    <div><label for="taxGroupKey">Clave</label><input id="taxGroupKey" maxlength="60" required /></div>
+                    <div><label for="taxGroupOrder">Orden</label><input id="taxGroupOrder" type="number" value="0" /></div>
+                  </div>
+                  <label for="taxGroupNombre">Nombre</label>
+                  <input id="taxGroupNombre" maxlength="160" required />
+                  <label class="checkbox-row"><input id="taxGroupActivo" type="checkbox" checked /><span>Grupo activo</span></label>
+                  <div class="rag-actions">
+                    <button id="taxGroupNew" class="btn btn-secondary" type="button">Nuevo</button>
+                    <button class="btn btn-primary" type="submit">Guardar grupo</button>
+                  </div>
+                </form>
+              </div>
+
+              <div id="taxGroupDetail" class="tax-block" hidden>
+                <div class="tax-block-head"><h3 id="taxGroupTitle">Grupo</h3></div>
+
+                <h4>Subgrupos</h4>
+                <div class="table-wrap">
+                  <table class="data-table">
+                    <thead><tr><th>Clave</th><th>Nombre</th><th>Orden</th><th>Activo</th><th>Acciones</th></tr></thead>
+                    <tbody id="taxSubgroupsBody"></tbody>
+                  </table>
+                </div>
+                <p id="taxSubgroupsEmpty" class="empty" hidden>Sin subgrupos.</p>
+                <form id="taxSubgroupForm" class="tax-form" novalidate>
+                  <input id="taxSubgroupId" type="hidden" />
+                  <div class="field-grid">
+                    <div><label for="taxSubgroupKey">Clave</label><input id="taxSubgroupKey" maxlength="60" required /></div>
+                    <div><label for="taxSubgroupOrder">Orden</label><input id="taxSubgroupOrder" type="number" value="0" /></div>
+                  </div>
+                  <label for="taxSubgroupNombre">Nombre</label>
+                  <input id="taxSubgroupNombre" maxlength="160" required />
+                  <label class="checkbox-row"><input id="taxSubgroupActivo" type="checkbox" checked /><span>Subgrupo activo</span></label>
+                  <div class="rag-actions">
+                    <button id="taxSubgroupNew" class="btn btn-secondary" type="button">Nuevo</button>
+                    <button class="btn btn-primary" type="submit">Guardar subgrupo</button>
+                  </div>
+                </form>
+
+                <h4>Capas del grupo</h4>
+                <div class="table-wrap">
+                  <table class="data-table">
+                    <thead><tr><th>Capa</th><th>Ubicación</th><th>Orden</th><th>Acciones</th></tr></thead>
+                    <tbody id="taxPlacementsBody"></tbody>
+                  </table>
+                </div>
+                <p id="taxPlacementsEmpty" class="empty" hidden>Sin capas asignadas.</p>
+                <form id="taxPlacementForm" class="tax-form" novalidate>
+                  <div class="field-grid">
+                    <div><label for="taxPlacementLayer">Capa</label><select id="taxPlacementLayer"></select></div>
+                    <div><label for="taxPlacementScope">Ubicación</label><select id="taxPlacementScope"></select></div>
+                  </div>
+                  <label for="taxPlacementOrder">Orden</label>
+                  <input id="taxPlacementOrder" type="number" value="0" />
+                  <div class="rag-actions"><button class="btn btn-primary" type="submit">Asignar capa</button></div>
+                </form>
+              </div>
+
+              <div class="tax-block">
+                <div class="tax-block-head"><h3>Capas maestras de la dimensión</h3></div>
+                <div class="table-wrap">
+                  <table class="data-table">
+                    <thead><tr><th>Capa</th><th>Orden</th><th>Acciones</th></tr></thead>
+                    <tbody id="taxMasterBody"></tbody>
+                  </table>
+                </div>
+                <p id="taxMasterEmpty" class="empty" hidden>Sin capas maestras.</p>
+                <form id="taxMasterForm" class="tax-form" novalidate>
+                  <div class="field-grid">
+                    <div><label for="taxMasterLayer">Capa</label><select id="taxMasterLayer"></select></div>
+                    <div><label for="taxMasterOrder">Orden</label><input id="taxMasterOrder" type="number" value="0" /></div>
+                  </div>
+                  <div class="rag-actions"><button class="btn btn-primary" type="submit">Agregar al maestro</button></div>
+                </form>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -160,7 +160,7 @@ Limitaciones de esta etapa:
   `statement_timeout`/`query_timeout` y un registro cerrado de 48 RPCs en
   `server/db/rpc-signatures.js` (50 RPCs). `npm run check:rpcs` verifica que existan.
 - **Migraciones:** runner `scripts/migrate.mjs` con checksum y
-  `db/migrations/000-044`; `000_compat_roles.sql` crea extensiones, roles y
+  `db/migrations/000-047`; `000_compat_roles.sql` crea extensiones, roles y
   `search_path`.
 - **Schema `admin.*`**: configuración editable (prompts, settings, mensajes, datos no disponibles), snapshots de config, índice de capas, usuarios admin y auditoría. PostgREST no lo expone; se accede por RPCs `SECURITY DEFINER` o por el servidor con el rol `woll_api`.
 
@@ -416,7 +416,24 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
   chat siguen funcionando; los jobs quedan en cola o fallan con un mensaje
   claro.
 
-### 4.4. Gestor de APIs externas (Sprint 45-B)
+### 4.4. Taxonomía normalizada (Sprint 46)
+
+- **Tablas:** `admin.dimensions`, `admin.groups`, `admin.subgroups`,
+  `admin.layers`, `admin.layer_placements` y `admin.dimension_initial_items`.
+  `layer_placements.config` conserva la variante de estilo por dimensión.
+- **Seed:** `npm run taxonomy:seed` toma el snapshot activo (o
+  `--from-js`) y llena las tablas. `--force` reemplaza datos existentes.
+- **Compilador:** `npm run taxonomy:compile -- --dry-run|--publish|--check`
+  reconstruye la forma de `allTemasConfig`, valida con
+  `validarConfiguracionGlobal` y publica un `admin.config_snapshots`.
+- **Fidelidad:** el seed del snapshot v1 produce exactamente el mismo
+  checksum (`f85f80273f3b…`), incluyendo `leyenda` y variantes por dimensión.
+- **Panel:** `/admin.html` → Taxonomía permite CRUD de dimensiones, grupos,
+  subgrupos y asignaciones, y publicar el snapshot. El sidebar sigue
+  leyendo `/api/config`; el endpoint nativo `/api/taxonomy` queda para 46-C.
+- **Migraciones:** 045 (modelo), 046 (updated_by), 047 (extra).
+
+### 4.5. Gestor de APIs externas (Sprint 45-B)
 
 - **Registro:** `server/admin/api-registry.js` describe las conexiones
   existentes (Copernicus WMS/WFS/WMTS, Worldview, ARClim, Agromet,
@@ -432,7 +449,7 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
   prueba y permite editar parámetros no secretos. Una conexión nueva requiere
   código y deploy.
 
-### 4.5. Tiles MVT pregenerados (Sprint 08)
+### 4.6. Tiles MVT pregenerados (Sprint 08)
 
 Las capas estáticas o por edición no se sirven desde PostgreSQL en runtime.
 El flujo es offline:

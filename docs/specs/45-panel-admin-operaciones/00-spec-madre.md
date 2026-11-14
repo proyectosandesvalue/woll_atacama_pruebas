@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprints (ROADMAP)** | 45 (RAG y APIs), 46 (taxonomía normalizada), 47 (capas) |
-| **Estado de la spec** | EN EJECUCIÓN — 45-A/45-B implementados y validados localmente; 46/47 pendientes |
+| **Estado de la spec** | EN EJECUCIÓN — 45-A/45-B y 46-A/46-B implementados; 46-C y 47 pendientes |
 | **Tamaño** | Grande (épica) |
 | **Duración estimada** | 56-72 h |
 | **Dependencias** | 08-G (tiles), 14/15 (panel/auth), 17 (RAG), 19 (APIs), 26 (VPS) |
@@ -266,8 +266,8 @@ La migración es aditiva. Las tablas se siembran desde el snapshot v1
 |---|---|---|---|
 | 45-A | RAG: migración, manifest, upload, cola, worker, UI y tests | 18-22 | ✅ |
 | 45-B | APIs: inventario, test y edición no secreta | 6-8 | ✅ |
-| 46-A | Migración y seed de taxonomía; compilador de snapshot | 6-8 | ⏳ |
-| 46-B | CRUD de dimensiones/grupos/subgrupos y assignments | 8-10 | ⏳ |
+| 46-A | Migración y seed de taxonomía; compilador de snapshot | 6-8 | ✅ |
+| 46-B | CRUD de dimensiones/grupos/subgrupos y assignments | 8-10 | ✅ |
 | 46-C | `/api/taxonomy` + adaptación del sidebar con flag | 6-8 | ⏳ |
 | 47 | Capas: CRUD, upload GeoJSON, load/tiles worker, UI | 18-24 | ⏳ |
 
@@ -339,9 +339,21 @@ R1 quedó aprobada y 45-A está implementado. R2 se decide al iniciar el Sprint 
 - UI **APIs** validada en navegador; no expone valores de secretos.
 - Tests: 401 tests, 389 pasan, 12 omitidos, 0 fallos; lint 0 errores.
 
-## 15. Cierre
+## 15. Resultados 46-A/46-B (2026-11-13)
 
-- Horas reales: 10 (45-A 6 h; 45-B 4 h).
+- Migraciones 045/046/047 aplicadas; seed desde snapshot v1 con **mismo
+  checksum** (`f85f80273f3b…`) y 9 dimensiones, 37 grupos, 7 subgrupos,
+  139 capas y 315 asignaciones.
+- Compilador `taxonomy:compile -- --check` valida el snapshot activo.
+- Panel **Taxonomía** con CRUD de dimensiones/grupos/subgrupos y asignaciones;
+  publicación de snapshot desde el panel (v2 validado).
+- El sidebar sigue leyendo `/api/config`; `/api/taxonomy` nativo queda para
+  46-C.
+- Tests: 408 tests, 396 pasan, 12 omitidos, 0 fallos; lint 0 errores.
+
+## 16. Cierre
+
+- Horas reales: 14 (45-A 6 h; 45-B 4 h; 46-A/B 4 h).
 - Desvíos: hubo que separar `validateEntry` en `server/rag/manifest.js` para
   que el API no importe `pdfjs-dist`; el worker necesita `npm ci --include=dev`.
 - Lecciones: el worker debe ser una imagen separada; el volumen `rag/` necesita

@@ -11,6 +11,7 @@ const VIEW_META = {
   config: { eyebrow: "Operación / Configuración", title: "Configuración del visor" },
   rag: { eyebrow: "Operación / Documentos", title: "Ingesta RAG" },
   apis: { eyebrow: "Operación / Integraciones", title: "Conexiones externas" },
+  taxonomy: { eyebrow: "Operación / Taxonomía", title: "Dimensiones y capas" },
   chat: { eyebrow: "Operación / Chat IA", title: "Prompts y mensajes" },
   audit: { eyebrow: "Operación / Trazabilidad", title: "Auditoría" },
 };
@@ -18,7 +19,7 @@ const VIEW_META = {
 const state = {
   view: "config",
   layers: [],
-  loaded: { config: false, rag: false, apis: false, chat: false, audit: false },
+  loaded: { config: false, rag: false, apis: false, taxonomy: false, chat: false, audit: false },
   rag: {
     data: null,
     loading: false,
@@ -29,6 +30,12 @@ const state = {
   apis: {
     data: null,
     loading: false,
+  },
+  taxonomy: {
+    data: null,
+    loading: false,
+    selectedDimensionId: null,
+    selectedGroupId: null,
   },
 };
 
@@ -181,6 +188,7 @@ function selectView(view) {
   if (view === "config" && !state.loaded.config) loadConfig();
   if (view === "rag") loadRag();
   if (view === "apis") loadApis();
+  if (view === "taxonomy") loadTaxonomy();
   if (view === "chat" && !state.loaded.chat) loadChat();
   if (view === "audit") loadAudit();
   if (view !== "rag") stopRagPolling();
@@ -292,6 +300,559 @@ function renderLayers() {
 
   body.replaceChildren(fragment);
   empty.hidden = rows.length > 0;
+}
+
+// ── Taxonomía ─────────────────────────────────────────────
+
+function taxSetStatus(message, kind = "ok") {
+  const node = $("#taxStatus");
+  if (!node) return;
+  node.textContent = message || "";
+  node.hidden = !message;
+  node.classList.toggle("is-error", kind === "error");
+}
+
+function taxDimension() {
+  return state.taxonomy.data?.dimensions?.find(
+    (item) => Number(item.id) === Number(state.taxonomy.selectedDimensionId)
+  ) || null;
+}
+
+function taxGroup() {
+  return state.taxonomy.data?.groups?.find(
+    (item) => Number(item.id) === Number(state.taxonomy.selectedGroupId)
+  ) || null;
+}
+
+function taxGroupRows(dimensionId) {
+  return (state.taxonomy.data?.groups || []).filter(
+    (item) => Number(item.dimension_id) === Number(dimensionId)
+  );
+}
+
+function taxSubgroupRows(groupId) {
+  return (state.taxonomy.data?.subgroups || []).filter(
+    (item) => Number(item.group_id) === Number(groupId)
+  );
+}
+
+async function loadTaxonomy({ silent = false } = {}) {
+  if (state.taxonomy.loading) return;
+  state.taxonomy.loading = true;
+  if (!silent) setStatus("Cargando taxonomía…");
+  try {
+    const data = await withAuth(api.taxonomy());
+    if (!data) return;
+    state.taxonomy.data = data;
+    state.loaded.taxonomy = true;
+
+    if (
+      state.taxonomy.selectedDimensionId &&
+      !data.dimensions.some(
+        (item) => Number(item.id) === Number(state.taxonomy.selectedDimensionId)
+      )
+    ) {
+      state.taxonomy.selectedDimensionId = null;
+    }
+    if (!state.taxonomy.selectedDimensionId && data.dimensions.length > 0) {
+      state.taxonomy.selectedDimensionId = data.dimensions[0].id;
+    }
+    if (
+      state.taxonomy.selectedGroupId &&
+      !data.groups.some(
+        (item) => Number(item.id) === Number(state.taxonomy.selectedGroupId)
+      )
+    ) {
+      state.taxonomy.selectedGroupId = null;
+    }
+
+    renderTaxonomy(data);
+    if (!silent) setStatus("");
+  } catch (err) {
+    setStatus(`No se pudo cargar la taxonomía: ${err.message}`, "error");
+  } finally {
+    state.taxonomy.loading = false;
+  }
+}
+
+function taxActionButton(label, action, id) {
+  return el("button", {
+    className: "btn btn-secondary btn-mini",
+    text: label,
+    attrs: { type: "button", "data-tax-action": action, "data-id": id },
+  });
+}
+
+function taxDeleteButton(action, id) {
+  return el("button", {
+    className: "btn btn-secondary btn-mini",
+    text: "Quitar",
+    attrs: { type: "button", "data-tax-delete": action, "data-id": id },
+  });
+}
+
+function renderTaxonomy(data) {
+  $("#taxMetricDimensions").textContent = String(data.dimensions.length);
+  $("#taxMetricGroups").textContent = String(data.groups.length);
+  $("#taxMetricSubgroups").textContent = String(data.subgroups.length);
+  $("#taxMetricLayers").textContent = String(data.layers.length);
+
+  renderTaxDimensions(data.dimensions);
+  renderTaxLayerSelects(data.layers);
+  renderTaxDetail();
+}
+
+function renderTaxDimensions(dimensions) {
+  const body = $("#taxDimensionsBody");
+  const empty = $("#taxDimensionsEmpty");
+  const fragment = document.createDocumentFragment();
+
+  for (const dimension of dimensions) {
+    const selected = Number(dimension.id) === Number(state.taxonomy.selectedDimensionId);
+    const rows = [];
+    rows.push(el("td", {}, [el("code", { text: dimension.key })]));
+    rows.push(el("td", { className: "layer-name", text: dimension.nombre }));
+    rows.push(el("td", { text: dimension.orden }));
+    rows.push(el("td", {}, [
+      el("span", {
+        className: dimension.activo ? "badge badge-ok" : "badge",
+        text: dimension.activo ? "activa" : "inactiva",
+      }),
+    ]));
+    rows.push(el("td", {}, [
+      el("div", { className: "row-actions" }, [
+        el("button", {
+          className: "btn btn-secondary btn-mini",
+          text: selected ? "Seleccionada" : "Abrir",
+          attrs: { type: "button", "data-tax-action": "select-dimension", "data-id": dimension.id },
+        }),
+        taxActionButton("Editar", "edit-dimension", dimension.id),
+        taxDeleteButton("dimension", dimension.id),
+      ]),
+    ]));
+    const tr = el("tr", { className: selected ? "is-selected" : "" }, rows);
+    fragment.appendChild(tr);
+  }
+
+  body.replaceChildren(fragment);
+  empty.hidden = dimensions.length > 0;
+}
+
+function renderTaxLayerSelects(layers) {
+  const options = layers
+    .filter((layer) => layer.activo !== false)
+    .map((layer) =>
+      el("option", {
+        text: `${layer.nombre} (${layer.layer_key})`,
+        attrs: { value: layer.id },
+      })
+    );
+  for (const selector of ["#taxPlacementLayer", "#taxMasterLayer"]) {
+    const select = $(selector);
+    if (!select) continue;
+    const current = select.value;
+    select.replaceChildren(el("option", { text: "Seleccionar capa…", attrs: { value: "" } }), ...options.map((node) => node.cloneNode(true)));
+    if ([...select.options].some((option) => option.value === current)) select.value = current;
+  }
+}
+
+function renderTaxDetail() {
+  const detail = $("#taxDimensionDetail");
+  const dimension = taxDimension();
+  if (!dimension) {
+    detail.hidden = true;
+    return;
+  }
+  detail.hidden = false;
+  $("#taxDimensionTitle").textContent = dimension.nombre === dimension.key
+    ? dimension.nombre
+    : `${dimension.nombre} · ${dimension.key}`;
+
+  const groups = taxGroupRows(dimension.id);
+  if (
+    state.taxonomy.selectedGroupId &&
+    !groups.some((group) => Number(group.id) === Number(state.taxonomy.selectedGroupId))
+  ) {
+    state.taxonomy.selectedGroupId = null;
+  }
+  const groupsBody = $("#taxGroupsBody");
+  const groupsEmpty = $("#taxGroupsEmpty");
+  const fragment = document.createDocumentFragment();
+  for (const group of groups) {
+    const subgroups = taxSubgroupRows(group.id);
+    const selected = Number(group.id) === Number(state.taxonomy.selectedGroupId);
+    const placements = (state.taxonomy.data.placements || []).filter(
+      (item) => Number(item.group_id) === Number(group.id)
+    );
+    fragment.appendChild(
+      el("tr", { className: selected ? "is-selected" : "" }, [
+        el("td", {}, [el("code", { text: group.key })]),
+        el("td", { className: "layer-name", text: group.nombre }),
+        el("td", { text: group.orden }),
+        el("td", {}, [
+          el("span", {
+            className: group.activo ? "badge badge-ok" : "badge",
+            text: group.activo ? "activo" : "inactivo",
+          }),
+          el("small", { className: "item-meta", text: ` · ${subgroups.length} subgrupos · ${placements.length} capas` }),
+        ]),
+        el("td", {}, [
+          el("div", { className: "row-actions" }, [
+            el("button", {
+              className: "btn btn-secondary btn-mini",
+              text: selected ? "Seleccionado" : "Abrir",
+              attrs: { type: "button", "data-tax-action": "select-group", "data-id": group.id },
+            }),
+            taxActionButton("Editar", "edit-group", group.id),
+            taxDeleteButton("group", group.id),
+          ]),
+        ]),
+      ])
+    );
+  }
+  groupsBody.replaceChildren(fragment);
+  groupsEmpty.hidden = groups.length > 0;
+
+  renderTaxGroupDetail();
+  renderTaxMaster(dimension);
+}
+
+function renderTaxGroupDetail() {
+  const detail = $("#taxGroupDetail");
+  const group = taxGroup();
+  if (!group) {
+    detail.hidden = true;
+    return;
+  }
+  detail.hidden = false;
+  $("#taxGroupTitle").textContent = group.nombre === group.key
+    ? group.nombre
+    : `${group.nombre} · ${group.key}`;
+
+  const subgroups = taxSubgroupRows(group.id);
+  const subgroupBody = $("#taxSubgroupsBody");
+  const subgroupEmpty = $("#taxSubgroupsEmpty");
+  const fragment = document.createDocumentFragment();
+  for (const subgroup of subgroups) {
+    fragment.appendChild(
+      el("tr", {}, [
+        el("td", {}, [el("code", { text: subgroup.key })]),
+        el("td", { className: "layer-name", text: subgroup.nombre }),
+        el("td", { text: subgroup.orden }),
+        el("td", {}, [
+          el("span", {
+            className: subgroup.activo ? "badge badge-ok" : "badge",
+            text: subgroup.activo ? "activo" : "inactivo",
+          }),
+        ]),
+        el("td", {}, [
+          el("div", { className: "row-actions" }, [
+            taxActionButton("Editar", "edit-subgroup", subgroup.id),
+            taxDeleteButton("subgroup", subgroup.id),
+          ]),
+        ]),
+      ])
+    );
+  }
+  subgroupBody.replaceChildren(fragment);
+  subgroupEmpty.hidden = subgroups.length > 0;
+
+  const scope = $("#taxPlacementScope");
+  const currentScope = scope.value;
+  scope.replaceChildren(
+    el("option", { text: "Grupo directo", attrs: { value: "group" } }),
+    ...subgroups.map((subgroup) =>
+      el("option", {
+        text: `Subgrupo · ${subgroup.nombre}`,
+        attrs: { value: `subgroup:${subgroup.id}` },
+      })
+    )
+  );
+  if ([...scope.options].some((option) => option.value === currentScope)) {
+    scope.value = currentScope;
+  }
+
+  const placements = (state.taxonomy.data.placements || []).filter(
+    (item) => Number(item.group_id) === Number(group.id)
+  );
+  const placementBody = $("#taxPlacementsBody");
+  const placementEmpty = $("#taxPlacementsEmpty");
+  const placementFragment = document.createDocumentFragment();
+  for (const placement of placements) {
+    const subgroup = (state.taxonomy.data.subgroups || []).find(
+      (item) => Number(item.id) === Number(placement.subgroup_id)
+    );
+    placementFragment.appendChild(
+      el("tr", {}, [
+        el("td", { className: "layer-name", text: placement.layer_nombre || placement.layer_key }),
+        el("td", { text: subgroup ? subgroup.nombre : "Grupo directo" }),
+        el("td", { text: placement.orden }),
+        el("td", {}, [
+          el("button", {
+            className: "btn btn-secondary btn-mini",
+            text: "Quitar",
+            attrs: { type: "button", "data-tax-placement": placement.id },
+          }),
+        ]),
+      ])
+    );
+  }
+  placementBody.replaceChildren(placementFragment);
+  placementEmpty.hidden = placements.length > 0;
+}
+
+function renderTaxMaster(dimension) {
+  const placements = (state.taxonomy.data.placements || []).filter(
+    (item) =>
+      Number(item.dimension_id) === Number(dimension.id) &&
+      item.scope === "master"
+  );
+  const body = $("#taxMasterBody");
+  const empty = $("#taxMasterEmpty");
+  const fragment = document.createDocumentFragment();
+  for (const placement of placements) {
+    fragment.appendChild(
+      el("tr", {}, [
+        el("td", { className: "layer-name", text: placement.layer_nombre || placement.layer_key }),
+        el("td", { text: placement.orden }),
+        el("td", {}, [
+          el("button", {
+            className: "btn btn-secondary btn-mini",
+            text: "Quitar",
+            attrs: { type: "button", "data-tax-placement": placement.id },
+          }),
+        ]),
+      ])
+    );
+  }
+  body.replaceChildren(fragment);
+  empty.hidden = placements.length > 0;
+}
+
+function editTaxDimension(id) {
+  const dimension = state.taxonomy.data?.dimensions?.find(
+    (item) => Number(item.id) === Number(id)
+  );
+  if (!dimension) return;
+  $("#taxDimId").value = dimension.id;
+  $("#taxDimKey").value = dimension.key;
+  $("#taxDimKey").readOnly = true;
+  $("#taxDimNombre").value = dimension.nombre;
+  $("#taxDimIcono").value = dimension.icono || "";
+  $("#taxDimOrder").value = dimension.orden;
+  $("#taxDimActivo").checked = dimension.activo !== false;
+  $("#taxDimensionForm").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function newTaxDimension() {
+  $("#taxDimensionForm").reset();
+  $("#taxDimId").value = "";
+  $("#taxDimKey").readOnly = false;
+  $("#taxDimActivo").checked = true;
+  $("#taxDimOrder").value = "0";
+}
+
+async function saveTaxDimension(event) {
+  event.preventDefault();
+  const payload = {
+    id: $("#taxDimId").value || undefined,
+    key: $("#taxDimKey").value.trim().toLowerCase(),
+    nombre: $("#taxDimNombre").value.trim(),
+    icono: $("#taxDimIcono").value.trim(),
+    orden: Number.parseInt($("#taxDimOrder").value, 10) || 0,
+    activo: $("#taxDimActivo").checked,
+  };
+  try {
+    const result = await api.taxonomySaveDimension(payload);
+    state.taxonomy.selectedDimensionId = result.item.id;
+    taxSetStatus("Dimensión guardada. Publicá el snapshot para aplicarla al visor.");
+    await loadTaxonomy({ silent: true });
+  } catch (err) {
+    taxSetStatus(err.message, "error");
+  }
+}
+
+function editTaxGroup(id) {
+  const group = state.taxonomy.data?.groups?.find((item) => Number(item.id) === Number(id));
+  if (!group) return;
+  $("#taxGroupId").value = group.id;
+  $("#taxGroupKey").value = group.key;
+  $("#taxGroupKey").readOnly = true;
+  $("#taxGroupNombre").value = group.nombre;
+  $("#taxGroupOrder").value = group.orden;
+  $("#taxGroupActivo").checked = group.activo !== false;
+}
+
+function newTaxGroup() {
+  $("#taxGroupForm").reset();
+  $("#taxGroupId").value = "";
+  $("#taxGroupKey").readOnly = false;
+  $("#taxGroupActivo").checked = true;
+  $("#taxGroupOrder").value = "0";
+}
+
+async function saveTaxGroup(event) {
+  event.preventDefault();
+  const dimension = taxDimension();
+  if (!dimension) return;
+  const payload = {
+    id: $("#taxGroupId").value || undefined,
+    dimension_id: dimension.id,
+    key: $("#taxGroupKey").value.trim().toLowerCase(),
+    nombre: $("#taxGroupNombre").value.trim(),
+    orden: Number.parseInt($("#taxGroupOrder").value, 10) || 0,
+    activo: $("#taxGroupActivo").checked,
+  };
+  try {
+    const result = await api.taxonomySaveGroup(payload);
+    state.taxonomy.selectedGroupId = result.item.id;
+    taxSetStatus("Grupo guardado. Publicá el snapshot para aplicarlo.");
+    await loadTaxonomy({ silent: true });
+  } catch (err) {
+    taxSetStatus(err.message, "error");
+  }
+}
+
+function editTaxSubgroup(id) {
+  const subgroup = state.taxonomy.data?.subgroups?.find((item) => Number(item.id) === Number(id));
+  if (!subgroup) return;
+  $("#taxSubgroupId").value = subgroup.id;
+  $("#taxSubgroupKey").value = subgroup.key;
+  $("#taxSubgroupKey").readOnly = true;
+  $("#taxSubgroupNombre").value = subgroup.nombre;
+  $("#taxSubgroupOrder").value = subgroup.orden;
+  $("#taxSubgroupActivo").checked = subgroup.activo !== false;
+}
+
+function newTaxSubgroup() {
+  $("#taxSubgroupForm").reset();
+  $("#taxSubgroupId").value = "";
+  $("#taxSubgroupKey").readOnly = false;
+  $("#taxSubgroupActivo").checked = true;
+  $("#taxSubgroupOrder").value = "0";
+}
+
+async function saveTaxSubgroup(event) {
+  event.preventDefault();
+  const group = taxGroup();
+  if (!group) return;
+  const payload = {
+    id: $("#taxSubgroupId").value || undefined,
+    group_id: group.id,
+    key: $("#taxSubgroupKey").value.trim().toLowerCase(),
+    nombre: $("#taxSubgroupNombre").value.trim(),
+    orden: Number.parseInt($("#taxSubgroupOrder").value, 10) || 0,
+    activo: $("#taxSubgroupActivo").checked,
+  };
+  try {
+    await api.taxonomySaveSubgroup(payload);
+    taxSetStatus("Subgrupo guardado. Publicá el snapshot para aplicarlo.");
+    await loadTaxonomy({ silent: true });
+  } catch (err) {
+    taxSetStatus(err.message, "error");
+  }
+}
+
+async function saveTaxPlacement(event) {
+  event.preventDefault();
+  const dimension = taxDimension();
+  const group = taxGroup();
+  const layerId = $("#taxPlacementLayer").value;
+  const scopeValue = $("#taxPlacementScope").value;
+  if (!dimension || !group || !layerId) {
+    taxSetStatus("Elegí una capa y una ubicación.", "error");
+    return;
+  }
+  const subgroupId = scopeValue.startsWith("subgroup:")
+    ? scopeValue.slice("subgroup:".length)
+    : null;
+  try {
+    await api.taxonomySavePlacement({
+      layer_id: layerId,
+      dimension_id: dimension.id,
+      group_id: group.id,
+      subgroup_id: subgroupId,
+      scope: subgroupId ? "subgroup" : "group",
+      orden: Number.parseInt($("#taxPlacementOrder").value, 10) || 0,
+    });
+    taxSetStatus("Capa asignada. Publicá el snapshot para aplicarla.");
+    await loadTaxonomy({ silent: true });
+  } catch (err) {
+    taxSetStatus(err.message, "error");
+  }
+}
+
+async function saveTaxMaster(event) {
+  event.preventDefault();
+  const dimension = taxDimension();
+  const layerId = $("#taxMasterLayer").value;
+  if (!dimension || !layerId) {
+    taxSetStatus("Elegí una capa.", "error");
+    return;
+  }
+  try {
+    await api.taxonomySavePlacement({
+      layer_id: layerId,
+      dimension_id: dimension.id,
+      scope: "master",
+      orden: Number.parseInt($("#taxMasterOrder").value, 10) || 0,
+    });
+    taxSetStatus("Capa agregada al maestro. Publicá el snapshot para aplicarla.");
+    await loadTaxonomy({ silent: true });
+  } catch (err) {
+    taxSetStatus(err.message, "error");
+  }
+}
+
+async function deleteTaxEntity(kind, id) {
+  const labels = {
+    dimension: "la dimensión y todo su contenido",
+    group: "el grupo y sus subgrupos/asignaciones",
+    subgroup: "el subgrupo y sus asignaciones",
+  };
+  if (!window.confirm(`¿Quitar ${labels[kind] || kind}?`)) return;
+  try {
+    if (kind === "dimension") await api.taxonomyDeleteDimension(id);
+    if (kind === "group") await api.taxonomyDeleteGroup(id);
+    if (kind === "subgroup") await api.taxonomyDeleteSubgroup(id);
+    if (kind === "dimension" && Number(state.taxonomy.selectedDimensionId) === Number(id)) {
+      state.taxonomy.selectedDimensionId = null;
+      state.taxonomy.selectedGroupId = null;
+    }
+    if (kind === "group" && Number(state.taxonomy.selectedGroupId) === Number(id)) {
+      state.taxonomy.selectedGroupId = null;
+    }
+    taxSetStatus("Elemento quitado. Publicá el snapshot para aplicarlo.");
+    await loadTaxonomy({ silent: true });
+  } catch (err) {
+    taxSetStatus(err.message, "error");
+  }
+}
+
+async function deleteTaxPlacement(id) {
+  try {
+    await api.taxonomyDeletePlacement(id);
+    taxSetStatus("Asignación quitada. Publicá el snapshot para aplicarla.");
+    await loadTaxonomy({ silent: true });
+  } catch (err) {
+    taxSetStatus(err.message, "error");
+  }
+}
+
+async function publishTaxonomy() {
+  const button = $("#taxPublishBtn");
+  button.disabled = true;
+  taxSetStatus("Publicando snapshot…");
+  try {
+    const result = await api.taxonomyPublish();
+    state.loaded.config = false;
+    taxSetStatus(`Snapshot publicado. ${String(result.output || "").split("\n").slice(-2).join(" ").trim()}`);
+    await loadTaxonomy({ silent: true });
+  } catch (err) {
+    taxSetStatus(String(err.output || err.message).slice(0, 800), "error");
+  } finally {
+    button.disabled = false;
+  }
 }
 
 // ── APIs externas ─────────────────────────────────────────
@@ -1185,6 +1746,77 @@ function bindEvents() {
     const editButton = event.target.closest("[data-api-edit]");
     if (editButton) editApi(editButton.dataset.apiEdit);
   });
+
+  // Taxonomía
+  $("#taxRefresh")?.addEventListener("click", () => loadTaxonomy());
+  $("#taxPublishBtn")?.addEventListener("click", publishTaxonomy);
+  $("#taxDimensionForm")?.addEventListener("submit", saveTaxDimension);
+  $("#taxGroupForm")?.addEventListener("submit", saveTaxGroup);
+  $("#taxSubgroupForm")?.addEventListener("submit", saveTaxSubgroup);
+  $("#taxPlacementForm")?.addEventListener("submit", saveTaxPlacement);
+  $("#taxMasterForm")?.addEventListener("submit", saveTaxMaster);
+  $("#taxDimNew")?.addEventListener("click", newTaxDimension);
+  $("#taxGroupNew")?.addEventListener("click", newTaxGroup);
+  $("#taxSubgroupNew")?.addEventListener("click", newTaxSubgroup);
+  $("#taxDimensionClose")?.addEventListener("click", () => {
+    state.taxonomy.selectedDimensionId = null;
+    state.taxonomy.selectedGroupId = null;
+    renderTaxDetail();
+  });
+
+  $("#taxDimensionsBody")?.addEventListener("click", (event) => {
+    const action = event.target.closest("[data-tax-action]");
+    const remove = event.target.closest("[data-tax-delete]");
+    if (remove) {
+      deleteTaxEntity(remove.dataset.taxDelete, Number(remove.dataset.id));
+      return;
+    }
+    if (!action) return;
+    const id = Number(action.dataset.id);
+    if (action.dataset.taxAction === "select-dimension") {
+      state.taxonomy.selectedDimensionId = id;
+      state.taxonomy.selectedGroupId = null;
+      renderTaxonomy(state.taxonomy.data);
+    } else if (action.dataset.taxAction === "edit-dimension") {
+      editTaxDimension(id);
+    }
+  });
+
+  $("#taxGroupsBody")?.addEventListener("click", (event) => {
+    const action = event.target.closest("[data-tax-action]");
+    const remove = event.target.closest("[data-tax-delete]");
+    if (remove) {
+      deleteTaxEntity(remove.dataset.taxDelete, Number(remove.dataset.id));
+      return;
+    }
+    if (!action) return;
+    const id = Number(action.dataset.id);
+    if (action.dataset.taxAction === "select-group") {
+      state.taxonomy.selectedGroupId = id;
+      renderTaxDetail();
+    } else if (action.dataset.taxAction === "edit-group") {
+      editTaxGroup(id);
+    }
+  });
+
+  $("#taxSubgroupsBody")?.addEventListener("click", (event) => {
+    const action = event.target.closest("[data-tax-action]");
+    const remove = event.target.closest("[data-tax-delete]");
+    if (remove) {
+      deleteTaxEntity(remove.dataset.taxDelete, Number(remove.dataset.id));
+      return;
+    }
+    if (action?.dataset.taxAction === "edit-subgroup") {
+      editTaxSubgroup(Number(action.dataset.id));
+    }
+  });
+
+  for (const selector of ["#taxPlacementsBody", "#taxMasterBody"]) {
+    $(selector)?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-tax-placement]");
+      if (button) deleteTaxPlacement(Number(button.dataset.taxPlacement));
+    });
+  }
 }
 
 async function boot() {

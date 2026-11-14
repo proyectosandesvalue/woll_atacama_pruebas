@@ -992,6 +992,28 @@ npm run rag:worker -- --once  # una pasada (cron/tests)
   normal no hace falta; en el VPS el volumen debe pertenecer al usuario del
   contenedor.
 
+**Taxonomía normalizada (46)**
+
+```bash
+# Sembrar desde el snapshot activo (o --from-js)
+npm run taxonomy:seed -- --dry-run
+npm run taxonomy:seed
+npm run taxonomy:seed -- --force
+
+# Compilar y publicar el snapshot del visor
+npm run taxonomy:compile -- --dry-run
+npm run taxonomy:compile -- --publish --notes "cambio de grupos"
+npm run taxonomy:compile -- --check
+```
+
+- El panel **Taxonomía** edita dimensiones, grupos, subgrupos y asignaciones;
+  **Publicar snapshot** ejecuta el compilador y activa la versión nueva.
+- El seed es fiel al snapshot v1 (mismo checksum). Si se edita una capa común
+  con estilos distintos por dimensión, se conserva la variante en
+  `layer_placements.config`.
+- El sidebar sigue leyendo `/api/config`; la lectura nativa de
+  `/api/taxonomy` queda para 46-C.
+
 **Gestor de APIs (45-B)**
 
 - `/admin.html` → **APIs** lista las conexiones externas y muestra si faltan

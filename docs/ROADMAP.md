@@ -101,7 +101,7 @@
 | 43 | Normativa urbana: BCN + planes reguladores | ⏳ pending | media | 20-32h | 17, 18, 41-A |
 | 44 | Catálogo de indicadores satelitales Copernicus | ✅ done | media | 8-10h | proxy (2026-11-06) |
 | 45 | Panel admin: ingesta RAG + gestor de APIs | 🔶 local (45-A/45-B ✅; VPS pendiente) | alta | 24-30h | 14/15, 17, 19 |
-| 46 | Taxonomía normalizada + sidebar | 📝 DRAFT (spec) | alta | 20-26h | 14/15, 45 |
+| 46 | Taxonomía normalizada + sidebar | 🔶 parcial (46-A/46-B ✅; 46-C pendiente) | alta | 20-26h | 14/15, 45 |
 | 47 | Gestor de capas geográficas | 📝 DRAFT (spec) | alta | 18-24h | 08-G, 46 |
 
 **Leyenda de estados:**
@@ -1111,16 +1111,20 @@ conexiones en el VPS.
 
 ### Sprint 46 — Taxonomía normalizada + sidebar
 
-**Estado**: 📝 DRAFT (spec escrita, pendiente de revisión) · **Prioridad**: alta · **Duración**: 20-26h · **Dependencias**: 14/15, 45
+**Estado**: 🔶 parcial (modelo, seed, compilador y CRUD ✅; sidebar nativo 46-C pendiente) · **Prioridad**: alta · **Duración**: 20-26h · **Dependencias**: 14/15, 45
 **Spec**: `docs/specs/45-panel-admin-operaciones/00-spec-madre.md` §6
 
 **Objetivo**: mover dimensiones, grupos, subgrupos, capas y asignaciones a
 tablas normalizadas; compilar el snapshot para el visor y adaptar el sidebar.
 
+**Implementado 46-A/46-B:** migraciones 045-047, seed fiel al snapshot v1
+(mismo checksum), compilador `taxonomy:compile`, CRUD y publicación desde el
+panel. 46-C (sidebar nativo) queda pendiente.
+
 **Fases**:
-- **46-A** — Migración, seed desde snapshot v1 y compilador.
-- **46-B** — CRUD de dimensiones/grupos/subgrupos y assignments.
-- **46-C** — `/api/taxonomy` + adaptación del sidebar con flag.
+- **46-A** — Migración, seed desde snapshot v1 y compilador. ✅
+- **46-B** — CRUD de dimensiones/grupos/subgrupos y assignments. ✅
+- **46-C** — `/api/taxonomy` + adaptación del sidebar con flag. ⏳
 
 ---
 

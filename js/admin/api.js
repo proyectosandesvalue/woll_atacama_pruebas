@@ -33,6 +33,8 @@ async function request(path, { method = "GET", body, headers = {} } = {}) {
   if (!res.ok) {
     const error = new Error(data.error || `HTTP ${res.status}`);
     error.status = res.status;
+    error.code = data.code;
+    error.output = data.output;
     error.retryAfter = res.headers.get("Retry-After");
     throw error;
   }
@@ -45,6 +47,7 @@ async function parseResponse(res) {
     const error = new Error(data.error || `HTTP ${res.status}`);
     error.status = res.status;
     error.code = data.code;
+    error.output = data.output;
     error.retryAfter = res.headers.get("Retry-After");
     throw error;
   }
@@ -96,6 +99,43 @@ export const api = {
       method: "POST",
       body: {},
     }),
+
+  taxonomy: () => request("/api/admin/taxonomy"),
+  taxonomySaveDimension: (payload) =>
+    request("/api/admin/taxonomy/dimensions", {
+      method: payload.id ? "PUT" : "POST",
+      body: payload,
+    }),
+  taxonomyDeleteDimension: (id) =>
+    request(`/api/admin/taxonomy/dimensions?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }),
+  taxonomySaveGroup: (payload) =>
+    request("/api/admin/taxonomy/groups", {
+      method: payload.id ? "PUT" : "POST",
+      body: payload,
+    }),
+  taxonomyDeleteGroup: (id) =>
+    request(`/api/admin/taxonomy/groups?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }),
+  taxonomySaveSubgroup: (payload) =>
+    request("/api/admin/taxonomy/subgroups", {
+      method: payload.id ? "PUT" : "POST",
+      body: payload,
+    }),
+  taxonomyDeleteSubgroup: (id) =>
+    request(`/api/admin/taxonomy/subgroups?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }),
+  taxonomySavePlacement: (payload) =>
+    request("/api/admin/taxonomy/placements", { method: "POST", body: payload }),
+  taxonomyDeletePlacement: (id) =>
+    request(`/api/admin/taxonomy/placements?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }),
+  taxonomyPublish: () =>
+    request("/api/admin/taxonomy/publish", { method: "POST", body: {} }),
 
   ragUpload: async (slug, file) => {
     const headers = {

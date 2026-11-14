@@ -812,6 +812,78 @@ details.prompt[open] summary::before { content: "−"; }
   font-size: 0.72rem;
 }
 
+/* ── Taxonomía ──────────────────────────────────────────── */
+
+.tax-layout {
+  display: grid;
+  grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1.1fr);
+  gap: 20px;
+  padding: 20px;
+  align-items: start;
+}
+
+.tax-list,
+.tax-detail {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.tax-list .table-wrap { max-height: 360px; }
+.tax-detail .table-wrap { max-height: 260px; }
+
+.tax-block {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--bg-surface-2);
+}
+
+.tax-block-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.tax-block-head h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.tax-block h4 {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.tax-form {
+  display: grid;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+.tax-form > label,
+.tax-form .field-grid label {
+  margin-top: 2px;
+}
+.tax-form input,
+.tax-form select { font-size: 0.82rem; }
+
+.data-table tbody tr.is-selected {
+  background: var(--color-accent-subtle);
+}
+.data-table tbody tr.is-selected td {
+  border-bottom-color: color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+
 /* ── APIs externas ─────────────────────────────────────── */
 
 .env-badges {
@@ -954,6 +1026,7 @@ details.prompt[open] summary::before { content: "−"; }
 @media (max-width: 1180px) {
   .admin-header { grid-template-columns: minmax(0, auto) minmax(0, 1fr) minmax(0, auto); }
   .rag-layout { grid-template-columns: 1fr; }
+  .tax-layout { grid-template-columns: 1fr; }
   .admin-brand-text { display: none; }
   .admin-brand-sep { display: none; }
   .chip-neutral { display: none; }
@@ -995,6 +1068,7 @@ details.prompt[open] summary::before { content: "−"; }
 @media (max-width: 560px) {
   .metrics { grid-template-columns: 1fr; }
   .field-grid { grid-template-columns: 1fr; }
+  .tax-layout { padding: 14px; }
   .metric-wide { grid-column: span 1; }
   .panel-head { flex-direction: column; align-items: flex-start; }
   .field-inline { width: 100%; justify-content: flex-start; }
