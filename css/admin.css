@@ -974,6 +974,25 @@ details.prompt[open] summary::before { content: "−"; }
   margin-top: 4px;
 }
 
+.rag-form textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  background: var(--search-bg);
+  color: var(--search-text);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+.rag-form textarea:focus {
+  outline: none;
+  border-color: var(--search-focus-border);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

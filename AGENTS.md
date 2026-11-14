@@ -95,6 +95,7 @@ Reglas:
 - **Seguridad frontend:** CSP en Nginx sin `unsafe-eval`; CDN con SRI + versión fija; datos de API/GeoJSON escapados antes de `innerHTML`; `npm audit --omit=dev --audit-level=high` en CI. Ver `docs/specs/28-seguridad-frontend.md`.
 - **Tests:** toda feature nueva trae al menos un test (`node:test`).
 - **Configuración del visor**: el runtime lee el snapshot activo por `GET /api/config`; publicar con `npm run config:snapshot -- --publish` y verificar con `--check`. El fallback es `allTemasConfig` (INV-5). Panel admin en `/admin.html` (TOTP local, ADR 007).
+- **Capas (47)**: el panel sube GeoJSON a `geojson/uploads/`, encola en `admin.layer_jobs` y `npm run layer:worker` carga a PostGIS/genera tiles. Luego se asigna en Taxonomía y se publica el snapshot. El borrado es lógico.
 - **Taxonomía (46)**: las dimensiones/grupos/subgrupos/capas viven en `admin.*`; el panel las edita y `npm run taxonomy:compile -- --publish` genera el snapshot que lee el visor. El seed reproduce el snapshot v1 con el mismo checksum.
 - **Panel RAG (45-A)**: la UI sube PDFs a `rag/inbox/`, edita `rag/manifest.json` y encola en `admin.rag_jobs`. El worker `npm run rag:worker` (imagen `docker/rag-worker`) extrae, embebe y escribe `rag.*`. El API nunca importa `pdfjs-dist`.
 - **Configuración del chat**: los prompts y settings viven en `admin.*` (migración 024). Antes de activar un cambio, correr el golden set. Ver "Gobierno de la configuración del chat".
@@ -124,6 +125,7 @@ npm run admin:user  # Alta/rotación del usuario admin y TOTP (--new-totp)
 npm run rag:worker  # Worker de ingesta RAG (--once para una pasada)
 npm run taxonomy:seed    # Siembra dimensiones/grupos/capas desde el snapshot
 npm run taxonomy:compile # Compila y publica la taxonomía
+npm run layer:worker    # Worker de importación de capas GeoJSON
 npm run migrate:status # Estado de migraciones
 npm run check:rpcs  # Verifica que las RPCs registradas existan en la BD
 npm run db:dump     # Dump de Supabase (SOURCE_DATABASE_URL)

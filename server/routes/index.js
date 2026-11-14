@@ -6,6 +6,7 @@
 
 import { adminRoutes } from "./admin.js";
 import { adminApiRoutes } from "./admin-apis.js";
+import { adminLayerRoutes } from "./admin-layers.js";
 import { adminRagRoutes } from "./admin-rag.js";
 import { adminTaxonomyRoutes } from "./admin-taxonomy.js";
 import { arclimRoute } from "./arclim.js";
@@ -23,6 +24,7 @@ export const routes = [
   ...adminRagRoutes,
   ...adminApiRoutes,
   ...adminTaxonomyRoutes,
+  ...adminLayerRoutes,
   proxyRoute,
   arclimRoute,
   ...layerRoutes,

@@ -95,7 +95,7 @@ El entorno de referencia desde 26-C es PostgreSQL propio en Docker/Podman:
 ```bash
 cp .env.example .env.local   # completar POSTGRES_PASSWORD, DATABASE_* y WOLL_*_PASSWORD
 npm run db:up                # docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d postgres
-npm run migrate              # aplica db/migrations/000-047
+npm run migrate              # aplica db/migrations/000-048
 npm run migrate:status       # pendientes / aplicadas / cambiadas
 npm run db:down
 ```
@@ -164,6 +164,8 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `server/admin/auth.js` | Password scrypt, TOTP, sesión, CSRF y auditoría | Cambios de autenticación (ADR 007) |
 | `server/handlers/admin-rag.js`, `server/routes/admin-rag.js` | Ingesta RAG desde el panel: manifiesto, upload y cola | Cambios del flujo RAG (45-A) |
 | `server/handlers/admin-apis.js`, `server/admin/api-registry.js` | Inventario, prueba y edición de conexiones externas | Cambios del gestor de APIs (45-B) |
+| `server/handlers/admin-layers.js`, `server/admin/layer-files.js` | CRUD de capas, upload GeoJSON y cola de importación | Cambios del gestor de capas (47) |
+| `scripts/layer-worker.mjs`, `docker/api/Dockerfile` | Carga a PostGIS y generación de tiles en worker | Importación de capas (47) |
 | `server/handlers/admin-taxonomy.js`, `scripts/taxonomy-*.mjs` | CRUD de dimensiones/grupos/subgrupos y compilación del snapshot | Cambios de taxonomía (46) |
 | `server/admin/rag-manifest.js` | Lectura/escritura atómica del manifiesto y PDFs | Validación o almacenamiento de documentos |
 | `scripts/rag-worker.mjs`, `docker/rag-worker/` | Worker de extracción/embeddings y cola | Ingesta real de PDFs |
@@ -328,6 +330,7 @@ npm run admin:user      # alta/rotación del usuario admin
 npm run rag:worker      # worker de ingesta RAG
 npm run taxonomy:seed   # siembra dimensiones/grupos/capas desde el snapshot
 npm run taxonomy:compile # compila y publica la taxonomía
+npm run layer:worker     # worker de importación de capas GeoJSON
 npm run check:rpcs      # RPCs registradas vs. BD
 npm run db:up / db:down # PostgreSQL local en Docker/Podman
 ```

@@ -160,7 +160,7 @@ Limitaciones de esta etapa:
   `statement_timeout`/`query_timeout` y un registro cerrado de 48 RPCs en
   `server/db/rpc-signatures.js` (50 RPCs). `npm run check:rpcs` verifica que existan.
 - **Migraciones:** runner `scripts/migrate.mjs` con checksum y
-  `db/migrations/000-047`; `000_compat_roles.sql` crea extensiones, roles y
+  `db/migrations/000-048`; `000_compat_roles.sql` crea extensiones, roles y
   `search_path`.
 - **Schema `admin.*`**: configuración editable (prompts, settings, mensajes, datos no disponibles), snapshots de config, índice de capas, usuarios admin y auditoría. PostgREST no lo expone; se accede por RPCs `SECURITY DEFINER` o por el servidor con el rol `woll_api`.
 
@@ -433,7 +433,25 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
   leyendo `/api/config`; el endpoint nativo `/api/taxonomy` queda para 46-C.
 - **Migraciones:** 045 (modelo), 046 (updated_by), 047 (extra).
 
-### 4.5. Gestor de APIs externas (Sprint 45-B)
+### 4.5. Gestor de capas (Sprint 47)
+
+- **UI:** `/admin.html` → Capas. CRUD de `admin.layers`, upload de GeoJSON y
+  listado de trabajos.
+- **Archivos:** `geojson/uploads/<key>.geojson` (ignorado por git); el
+  GeoJSON original queda como fallback.
+- **Cola:** `admin.layer_jobs`; un job activo por capa.
+- **Worker:** `scripts/layer-worker.mjs` ejecuta
+  `load-layer --force --tiles`, actualiza
+  `admin.layers.config.source.tiles` con la versión publicada y deja el
+  `fallback` GeoJSON. Reutiliza la imagen del API y los volúmenes `geojson/` y
+  `tiles/`.
+- **Publicación:** se hace con el compilador de taxonomía; la capa debe
+  asignarse a dimensión/grupo/subgrupo antes de publicar.
+- **Borrado:** lógico (`activo=false`); no elimina la tabla PostGIS ni los
+  tiles.
+- **Shapefile/ZIP:** fuera de esta fase.
+
+### 4.6. Gestor de APIs externas (Sprint 45-B)
 
 - **Registro:** `server/admin/api-registry.js` describe las conexiones
   existentes (Copernicus WMS/WFS/WMTS, Worldview, ARClim, Agromet,
@@ -449,7 +467,7 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
   prueba y permite editar parámetros no secretos. Una conexión nueva requiere
   código y deploy.
 
-### 4.6. Tiles MVT pregenerados (Sprint 08)
+### 4.7. Tiles MVT pregenerados (Sprint 08)
 
 Las capas estáticas o por edición no se sirven desde PostgreSQL en runtime.
 El flujo es offline:

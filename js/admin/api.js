@@ -69,6 +69,37 @@ export const api = {
   unavailable: () => request("/api/admin/unavailable"),
   audit: (limit = 50) => request(`/api/admin/audit?limit=${limit}`),
 
+  layersList: () => request("/api/admin/layers"),
+  layerSave: (payload) =>
+    request("/api/admin/layers", {
+      method: payload.id ? "PUT" : "POST",
+      body: payload,
+    }),
+  layerArchive: (id) =>
+    request(`/api/admin/layers?id=${encodeURIComponent(id)}`, { method: "DELETE" }),
+  layerQueue: (payload) =>
+    request("/api/admin/layers/jobs", { method: "POST", body: payload }),
+  layerJobs: (id) =>
+    request(`/api/admin/layers/jobs${id ? `?id=${encodeURIComponent(id)}` : ""}`),
+  layerCancel: (id) =>
+    request("/api/admin/layers/jobs/cancel", { method: "POST", body: { id } }),
+  layerUpload: async (key, file, name) => {
+    const headers = {
+      Accept: "application/json",
+      "Content-Type": "application/geo+json",
+    };
+    if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+    const params = new URLSearchParams({ key });
+    if (name) params.set("name", name);
+    const res = await fetch(`/api/admin/layers/upload?${params.toString()}`, {
+      method: "POST",
+      credentials: "same-origin",
+      headers,
+      body: file,
+    });
+    return parseResponse(res);
+  },
+
   ragOverview: () => request("/api/admin/rag/overview"),
   ragSaveManifest: (entry) =>
     request("/api/admin/rag/manifest", { method: "POST", body: entry }),

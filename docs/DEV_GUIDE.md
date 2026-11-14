@@ -1027,6 +1027,29 @@ npm run taxonomy:compile -- --check
 - El sidebar sigue leyendo `/api/config`; la lectura nativa de
   `/api/taxonomy` queda para 46-C.
 
+**Gestor de capas (47, GeoJSON)**
+
+- `/admin.html` → **Capas**.
+- **Agregar capa** crea los metadatos (clave, nombre, tipo, fuente y JSON de
+  estilo/popup/alias).
+- **Importar GeoJSON** sube el archivo, lo guarda en `geojson/uploads/`,
+  encola la importación y, si se marca, genera tiles MVT.
+- El worker se ejecuta con:
+
+```bash
+npm run layer:worker
+npm run layer:worker -- --once
+```
+
+- Requiere `DATABASE_URL` para la cola y `DATABASE_ADMIN_URL` para crear la
+  tabla y los tiles. Volúmenes: `./geojson` y `./tiles`.
+- Al terminar, `admin.layers.config.source.tiles` queda actualizado y el
+  GeoJSON original sigue como fallback.
+- Después hay que asignar la capa a dimensión/grupo/subgrupo en **Taxonomía**
+  y publicar el snapshot.
+- El borrado es lógico (`activo=false`); no elimina la tabla PostGIS ni los
+  tiles.
+
 **Gestor de APIs (45-B)**
 
 - `/admin.html` → **APIs** lista las conexiones externas y muestra si faltan

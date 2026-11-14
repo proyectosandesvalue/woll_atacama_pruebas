@@ -53,6 +53,9 @@ secrets/
 *gcp*.json
 *service-account*.json
 
+# GeoJSON subidos desde el panel admin (Sprint 47)
+geojson/uploads/
+
 # Tiles MVT pregenerados (se generan con npm run tiles:build; no se versionan)
 tiles/
 

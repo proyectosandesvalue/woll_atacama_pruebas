@@ -98,6 +98,10 @@
           <span class="material-symbols-outlined">tune</span>
           <span>Configuración</span>
         </button>
+        <button class="nav-item" type="button" data-view="layers">
+          <span class="material-symbols-outlined">layers</span>
+          <span>Capas</span>
+        </button>
         <button class="nav-item" type="button" data-view="rag">
           <span class="material-symbols-outlined">library_books</span>
           <span>RAG</span>
@@ -220,6 +224,201 @@
             </table>
           </div>
           <p id="layersEmpty" class="empty" hidden>No hay capas que coincidan con el filtro.</p>
+        </div>
+      </section>
+
+      <!-- CAPAS -->
+      <section id="view-layers" class="view" aria-labelledby="viewTitle" hidden>
+        <div class="metrics">
+          <article class="metric">
+            <span class="metric-label">Capas</span>
+            <strong class="metric-value" id="layersMetricTotal">—</strong>
+            <small>registradas en la taxonomía</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Activas</span>
+            <strong class="metric-value" id="layersMetricActive">—</strong>
+            <small>visibles para publicar</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Con tiles</span>
+            <strong class="metric-value" id="layersMetricTiles">—</strong>
+            <small>MVT pregenerados</small>
+          </article>
+          <article class="metric metric-wide">
+            <span class="metric-label">Trabajos activos</span>
+            <strong class="metric-value metric-value-sm" id="layersMetricJobs">—</strong>
+            <small id="layersWorkerSeen">sin heartbeat</small>
+          </article>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Gestor de capas geográficas</h2>
+              <p class="muted">GeoJSON → PostGIS → tiles → snapshot del visor.</p>
+            </div>
+            <div class="panel-head-actions">
+              <div class="help-wrap">
+                <button class="help-btn" type="button" data-help="help-layers"
+                        aria-label="Ayuda sobre el gestor de capas" aria-expanded="false"
+                        aria-controls="help-layers">
+                  <span class="material-symbols-outlined">help</span>
+                </button>
+                <div id="help-layers" class="help-popover" hidden>
+                  <strong>Cómo importar una capa</strong>
+                  <ol>
+                    <li>Crea los metadatos con <b>Agregar capa</b>.</li>
+                    <li>En <b>Importar GeoJSON</b> elige la capa, el archivo y la dimensión.</li>
+                    <li>El worker carga la tabla en PostGIS y genera los tiles MVT.</li>
+                    <li>Asigna la capa a grupos/subgrupos en <b>Taxonomía</b>.</li>
+                    <li>Publica el snapshot para que el visor la muestre.</li>
+                  </ol>
+                  <p>El GeoJSON original queda como fallback. La versión de tiles es inmutable.</p>
+                </div>
+              </div>
+              <button id="layerAddToggle" class="btn btn-secondary" type="button"
+                      data-form-toggle="layerFormDrawer" aria-expanded="false"
+                      aria-controls="layerFormDrawer">
+                <span class="material-symbols-outlined">add</span>
+                Agregar capa
+              </button>
+              <button id="layerImportToggle" class="btn btn-secondary" type="button"
+                      data-form-toggle="layerImportDrawer" aria-expanded="false"
+                      aria-controls="layerImportDrawer">
+                <span class="material-symbols-outlined">upload_file</span>
+                Importar GeoJSON
+              </button>
+              <button id="layersPublishBtn" class="btn btn-primary" type="button">
+                <span class="material-symbols-outlined">publish</span>
+                Publicar snapshot
+              </button>
+              <button id="layersRefresh" class="btn btn-secondary" type="button">
+                <span class="material-symbols-outlined">refresh</span>
+                Actualizar
+              </button>
+            </div>
+          </div>
+          <p id="layersStatus" class="status-line" role="status" aria-live="polite" hidden></p>
+
+          <div id="layerFormDrawer" hidden>
+            <form id="layerForm" class="rag-form" novalidate>
+              <input id="layerId" type="hidden" />
+              <div class="field-grid">
+                <div>
+                  <label for="layerKey">Clave técnica</label>
+                  <input id="layerKey" maxlength="60" placeholder="mi_capa" required />
+                </div>
+                <div>
+                  <label for="layerName">Nombre visible</label>
+                  <input id="layerName" maxlength="200" required />
+                </div>
+              </div>
+              <div class="field-grid">
+                <div>
+                  <label for="layerType">Tipo</label>
+                  <select id="layerType">
+                    <option value="polygon">Polígono</option>
+                    <option value="line">Línea</option>
+                    <option value="point">Punto</option>
+                    <option value="heatmap">Mapa de calor</option>
+                    <option value="wms">WMS</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="layerSourceType">Fuente</label>
+                  <select id="layerSourceType">
+                    <option value="geojson">GeoJSON</option>
+                    <option value="postgis">PostGIS / tiles</option>
+                    <option value="wms">WMS</option>
+                  </select>
+                </div>
+              </div>
+              <label for="layerConfig">Configuración avanzada (JSON)</label>
+              <textarea id="layerConfig" rows="8" spellcheck="false" placeholder='{"popupCampos":["NOMBRE"],"alias":{"NOMBRE":"Nombre"}}'></textarea>
+              <label class="checkbox-row"><input id="layerActive" type="checkbox" checked /><span>Capa activa</span></label>
+              <label class="checkbox-row"><input id="layerHasTiles" type="checkbox" /><span>Usa tiles MVT publicados</span></label>
+              <div class="rag-actions">
+                <button class="btn btn-primary" type="submit">Guardar capa</button>
+                <button class="btn btn-secondary" type="button" data-form-close="layerFormDrawer">Cancelar</button>
+              </div>
+            </form>
+          </div>
+
+          <div id="layerImportDrawer" hidden>
+            <form id="layerImportForm" class="rag-form" novalidate>
+              <div class="field-grid">
+                <div>
+                  <label for="layerImportKey">Capa</label>
+                  <select id="layerImportKey"></select>
+                </div>
+                <div>
+                  <label for="layerImportDimension">Dimensión del catálogo</label>
+                  <select id="layerImportDimension"></select>
+                </div>
+              </div>
+              <label for="layerImportFile">Archivo GeoJSON</label>
+              <input id="layerImportFile" type="file" accept=".geojson,.json,application/geo+json,application/json" />
+              <p class="field-hint">Máximo 100 MB. Debe ser una FeatureCollection con geometrías.</p>
+              <div class="field-grid">
+                <div>
+                  <label for="layerImportName">Nombre visible</label>
+                  <input id="layerImportName" maxlength="200" />
+                </div>
+                <div>
+                  <label class="checkbox-row" style="margin-top: 22px;">
+                    <input id="layerImportTiles" type="checkbox" checked />
+                    <span>Generar tiles MVT</span>
+                  </label>
+                </div>
+              </div>
+              <div class="rag-actions">
+                <button id="layerImportSubmit" class="btn btn-primary" type="submit">Subir y encolar</button>
+                <button class="btn btn-secondary" type="button" data-form-close="layerImportDrawer">Cancelar</button>
+              </div>
+              <p id="layerImportStatus" class="status-line" role="status" aria-live="polite" hidden></p>
+            </form>
+          </div>
+
+          <div class="field-inline" style="padding: 12px 20px; border-bottom: 1px solid var(--border-subtle);">
+            <input id="layerSearch" type="search" placeholder="Buscar por clave, nombre o tipo…" />
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Clave</th>
+                  <th scope="col">Nombre</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Fuente</th>
+                  <th scope="col">Tiles</th>
+                  <th scope="col">Asignaciones</th>
+                  <th scope="col">Archivo</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="layerManagerBody"></tbody>
+            </table>
+          </div>
+          <p id="layerManagerEmpty" class="empty" hidden>No hay capas que coincidan.</p>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Trabajos de importación</h2>
+              <p class="muted">Cola procesada por <code>layer-worker</code>.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr><th>ID</th><th>Capa</th><th>Acción</th><th>Estado</th><th>Inicio</th><th>Resultado</th><th>Acciones</th></tr>
+              </thead>
+              <tbody id="layerJobsBody"></tbody>
+            </table>
+          </div>
+          <p id="layerJobsEmpty" class="empty" hidden>Sin trabajos registrados.</p>
         </div>
       </section>
 

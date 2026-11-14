@@ -9,6 +9,7 @@ import { api, setCsrfToken } from "./api.js";
 
 const VIEW_META = {
   config: { eyebrow: "Operación / Configuración", title: "Configuración del visor" },
+  layers: { eyebrow: "Operación / Capas", title: "Gestor de capas" },
   rag: { eyebrow: "Operación / Documentos", title: "Ingesta RAG" },
   apis: { eyebrow: "Operación / Integraciones", title: "Conexiones externas" },
   taxonomy: { eyebrow: "Operación / Taxonomía", title: "Dimensiones y capas" },
@@ -19,7 +20,12 @@ const VIEW_META = {
 const state = {
   view: "config",
   layers: [],
-  loaded: { config: false, rag: false, apis: false, taxonomy: false, chat: false, audit: false },
+  loaded: { config: false, layers: false, rag: false, apis: false, taxonomy: false, chat: false, audit: false },
+  layerManager: {
+    data: null,
+    loading: false,
+    pollTimer: null,
+  },
   rag: {
     data: null,
     loading: false,
@@ -223,12 +229,14 @@ function selectView(view) {
   setStatus("");
 
   if (view === "config" && !state.loaded.config) loadConfig();
+  if (view === "layers") loadLayerManager();
   if (view === "rag") loadRag();
   if (view === "apis") loadApis();
   if (view === "taxonomy") loadTaxonomy();
   if (view === "chat" && !state.loaded.chat) loadChat();
   if (view === "audit") loadAudit();
   if (view !== "rag") stopRagPolling();
+  if (view !== "layers") stopLayerPolling();
 }
 
 async function withAuth(promise) {
@@ -1114,6 +1122,385 @@ async function testApi(key, button) {
   }
 }
 
+// ── Gestor de capas ───────────────────────────────────────
+
+const LAYER_KEY_RE = /^[a-z][a-z0-9_]{1,60}$/;
+
+function layerSetStatus(message, kind = "ok") {
+  const node = $("#layersStatus");
+  if (!node) return;
+  node.textContent = message || "";
+  node.hidden = !message;
+  node.classList.toggle("is-error", kind === "error");
+}
+
+function layerImportSetStatus(message, kind = "ok") {
+  const node = $("#layerImportStatus");
+  if (!node) return;
+  node.textContent = message || "";
+  node.hidden = !message;
+  node.classList.toggle("is-error", kind === "error");
+}
+
+async function loadLayerManager({ silent = false } = {}) {
+  if (state.layerManager.loading) return;
+  state.layerManager.loading = true;
+  if (!silent) setStatus("Cargando capas…");
+  try {
+    const data = await withAuth(api.layersList());
+    if (!data) return;
+    state.layerManager.data = data;
+    state.loaded.layers = true;
+    renderLayerManager(data);
+    if (!silent) setStatus("");
+  } catch (err) {
+    setStatus(`No se pudieron cargar las capas: ${err.message}`, "error");
+  } finally {
+    state.layerManager.loading = false;
+  }
+}
+
+function renderLayerManager(data) {
+  const layers = Array.isArray(data.layers) ? data.layers : [];
+  const jobs = Array.isArray(data.jobs) ? data.jobs : [];
+  const activeJobs = jobs.filter((job) => job.status === "queued" || job.status === "running");
+
+  $("#layersMetricTotal").textContent = String(layers.length);
+  $("#layersMetricActive").textContent = String(layers.filter((layer) => layer.activo).length);
+  $("#layersMetricTiles").textContent = String(layers.filter((layer) => layer.has_tiles).length);
+  $("#layersMetricJobs").textContent = String(activeJobs.length);
+  $("#layersWorkerSeen").textContent = data.worker
+    ? `layer-worker activo ${relativeAge(data.worker.last_seen_at)}`
+    : "layer-worker sin heartbeat";
+
+  populateLayerSelects(layers, data.dimensions || []);
+  renderLayerTable(layers, data.placements || []);
+  renderLayerJobs(jobs);
+
+  if (activeJobs.length > 0) ensureLayerPolling();
+  else stopLayerPolling();
+}
+
+function populateLayerSelects(layers, dimensions) {
+  const importable = layers.filter(
+    (layer) => layer.activo !== false && LAYER_KEY_RE.test(layer.layer_key || "")
+  );
+  const currentLayer = $("#layerImportKey")?.value;
+  const layerSelect = $("#layerImportKey");
+  if (layerSelect) {
+    layerSelect.replaceChildren(
+      el("option", { text: "Seleccionar capa…", attrs: { value: "" } }),
+      ...importable.map((layer) =>
+        el("option", {
+          text: `${layer.nombre} (${layer.layer_key})`,
+          attrs: { value: layer.layer_key },
+        })
+      )
+    );
+    if ([...layerSelect.options].some((option) => option.value === currentLayer)) {
+      layerSelect.value = currentLayer;
+    }
+  }
+
+  const dimensionSelect = $("#layerImportDimension");
+  if (dimensionSelect) {
+    const currentDimension = dimensionSelect.value;
+    dimensionSelect.replaceChildren(
+      ...dimensions.map((dimension) =>
+        el("option", {
+          text: `${dimension.nombre} (${dimension.key})`,
+          attrs: { value: dimension.key },
+        })
+      )
+    );
+    if ([...dimensionSelect.options].some((option) => option.value === currentDimension)) {
+      dimensionSelect.value = currentDimension;
+    } else if ([...dimensionSelect.options].some((option) => option.value === "otros")) {
+      dimensionSelect.value = "otros";
+    }
+  }
+}
+
+function layerSourceLabel(layer) {
+  if (layer.has_tiles) return "PostGIS + tiles";
+  return layer.source_type || "—";
+}
+
+function renderLayerTable(layers, placements) {
+  const body = $("#layerManagerBody");
+  const empty = $("#layerManagerEmpty");
+  const term = ($("#layerSearch")?.value || "").trim().toLowerCase();
+  const countByLayer = new Map();
+  for (const placement of placements) {
+    const id = Number(placement.layer_id);
+    countByLayer.set(id, (countByLayer.get(id) || 0) + 1);
+  }
+
+  const rows = layers.filter((layer) => {
+    if (!term) return true;
+    return [layer.layer_key, layer.nombre, layer.tipo, layer.source_type]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(term));
+  });
+
+  const fragment = document.createDocumentFragment();
+  for (const layer of rows) {
+    const validKey = LAYER_KEY_RE.test(layer.layer_key || "");
+    const actions = [
+      el("button", {
+        className: "btn btn-secondary btn-mini",
+        text: "Editar",
+        attrs: { type: "button", "data-layer-action": "edit", "data-id": layer.id },
+      }),
+    ];
+    if (validKey) {
+      actions.push(
+        el("button", {
+          className: "btn btn-secondary btn-mini",
+          text: "Importar",
+          attrs: { type: "button", "data-layer-action": "import", "data-key": layer.layer_key },
+        })
+      );
+    }
+    if (layer.activo) {
+      actions.push(
+        el("button", {
+          className: "btn btn-secondary btn-mini",
+          text: "Archivar",
+          attrs: { type: "button", "data-layer-action": "archive", "data-id": layer.id },
+        })
+      );
+    }
+
+    fragment.appendChild(
+      el("tr", {}, [
+        el("td", {}, [el("code", { text: layer.layer_key })]),
+        el("td", { className: "layer-name", text: layer.nombre }),
+        el("td", { text: layer.tipo || "—" }),
+        el("td", { text: layerSourceLabel(layer) }),
+        el("td", {}, [
+          el("span", {
+            className: layer.has_tiles ? "badge badge-ok" : "badge",
+            text: layer.has_tiles ? "sí" : "no",
+          }),
+        ]),
+        el("td", { text: countByLayer.get(Number(layer.id)) || 0 }),
+        el("td", {}, [
+          el("span", {
+            className: layer.file?.exists ? "badge badge-ok" : "badge",
+            text: layer.file?.exists ? "subido" : "—",
+            title: layer.file?.file || "",
+          }),
+        ]),
+        el("td", {}, [el("div", { className: "row-actions" }, actions)]),
+      ])
+    );
+  }
+
+  body.replaceChildren(fragment);
+  empty.hidden = rows.length > 0;
+}
+
+function renderLayerJobs(jobs) {
+  const body = $("#layerJobsBody");
+  const empty = $("#layerJobsEmpty");
+  const fragment = document.createDocumentFragment();
+  for (const job of jobs) {
+    const badge = ragBadge(job.status);
+    const result = job.result || {};
+    const summary = result.version
+      ? `v${result.version}${result.tiles ? " · tiles" : ""}`
+      : job.error_code || job.error_message || "—";
+    const cancel = job.status === "queued"
+      ? el("button", {
+          className: "btn btn-secondary btn-mini",
+          text: "Cancelar",
+          attrs: { type: "button", "data-layer-cancel": job.id },
+        })
+      : null;
+    fragment.appendChild(
+      el("tr", {}, [
+        el("td", { text: `#${job.id}` }),
+        el("td", {}, [el("code", { text: job.layer_key })]),
+        el("td", { text: job.action }),
+        el("td", {}, [el("span", { className: badge.className, text: badge.label })]),
+        el("td", { text: formatDate(job.started_at || job.created_at) }),
+        el("td", { className: "dim", text: summary }),
+        el("td", {}, cancel ? [cancel] : []),
+      ])
+    );
+  }
+  body.replaceChildren(fragment);
+  empty.hidden = jobs.length > 0;
+}
+
+function stopLayerPolling() {
+  if (state.layerManager.pollTimer) {
+    clearInterval(state.layerManager.pollTimer);
+    state.layerManager.pollTimer = null;
+  }
+}
+
+function ensureLayerPolling() {
+  if (state.layerManager.pollTimer) return;
+  state.layerManager.pollTimer = setInterval(() => {
+    if (state.view === "layers" && !state.layerManager.loading) {
+      loadLayerManager({ silent: true });
+    }
+  }, 3000);
+}
+
+function editLayer(id) {
+  const layer = state.layerManager.data?.layers?.find(
+    (item) => Number(item.id) === Number(id)
+  );
+  if (!layer) return;
+  setDrawerOpen("layerFormDrawer", true, { focus: false });
+  $("#layerId").value = layer.id;
+  $("#layerKey").value = layer.layer_key;
+  $("#layerKey").readOnly = true;
+  $("#layerName").value = layer.nombre || "";
+  $("#layerType").value = layer.tipo || "polygon";
+  $("#layerSourceType").value = layer.source_type || "geojson";
+  $("#layerConfig").value = JSON.stringify(layer.config || {}, null, 2);
+  $("#layerActive").checked = layer.activo !== false;
+  $("#layerHasTiles").checked = layer.has_tiles === true;
+  layerSetStatus("");
+}
+
+function newLayer() {
+  setDrawerOpen("layerFormDrawer", true, { focus: false });
+  $("#layerForm").reset();
+  $("#layerId").value = "";
+  $("#layerKey").readOnly = false;
+  $("#layerType").value = "polygon";
+  $("#layerSourceType").value = "geojson";
+  $("#layerActive").checked = true;
+  $("#layerHasTiles").checked = false;
+  layerSetStatus("");
+}
+
+async function saveLayer(event) {
+  event.preventDefault();
+  const id = $("#layerId").value;
+  const key = $("#layerKey").value.trim().toLowerCase();
+  const nombre = $("#layerName").value.trim();
+  if (!LAYER_KEY_RE.test(key)) {
+    layerSetStatus("La clave debe empezar con minúscula y usar solo minúsculas, números y guion bajo.", "error");
+    return;
+  }
+  if (!nombre) {
+    layerSetStatus("El nombre es obligatorio.", "error");
+    return;
+  }
+  let config;
+  try {
+    config = $("#layerConfig").value.trim() ? JSON.parse($("#layerConfig").value) : {};
+  } catch {
+    layerSetStatus("La configuración debe ser JSON válido.", "error");
+    return;
+  }
+
+  try {
+    await api.layerSave({
+      id: id || undefined,
+      key,
+      nombre,
+      tipo: $("#layerType").value,
+      source_type: $("#layerSourceType").value,
+      has_tiles: $("#layerHasTiles").checked,
+      activo: $("#layerActive").checked,
+      config,
+    });
+    layerSetStatus("Capa guardada. Publica el snapshot para aplicarla al visor.");
+    setStatus("Capa guardada. Publica el snapshot para aplicarla al visor.");
+    setDrawerOpen("layerFormDrawer", false, { focus: false });
+    await loadLayerManager({ silent: true });
+  } catch (err) {
+    layerSetStatus(err.message, "error");
+  }
+}
+
+async function archiveLayer(id) {
+  if (!window.confirm("¿Archivar esta capa? No se borra la tabla PostGIS ni los tiles.")) return;
+  try {
+    await api.layerArchive(id);
+    layerSetStatus("Capa archivada. Publica el snapshot para quitarla del visor.");
+    await loadLayerManager({ silent: true });
+  } catch (err) {
+    layerSetStatus(err.message, "error");
+  }
+}
+
+function openLayerImport(key = "") {
+  setDrawerOpen("layerImportDrawer", true, { focus: false });
+  const select = $("#layerImportKey");
+  if (key && [...select.options].some((option) => option.value === key)) {
+    select.value = key;
+  }
+  const layer = state.layerManager.data?.layers?.find((item) => item.layer_key === key);
+  $("#layerImportName").value = layer?.nombre || "";
+  $("#layerImportFile").value = "";
+  layerImportSetStatus("");
+}
+
+async function submitLayerImport(event) {
+  event.preventDefault();
+  const key = $("#layerImportKey").value;
+  const file = $("#layerImportFile").files?.[0];
+  const dimension = $("#layerImportDimension").value;
+  const name = $("#layerImportName").value.trim();
+  const tiles = $("#layerImportTiles").checked;
+  if (!key) {
+    layerImportSetStatus("Elige una capa.", "error");
+    return;
+  }
+  if (!file) {
+    layerImportSetStatus("Selecciona un archivo GeoJSON.", "error");
+    return;
+  }
+
+  const button = $("#layerImportSubmit");
+  button.disabled = true;
+  layerImportSetStatus("Subiendo GeoJSON…");
+  try {
+    const uploaded = await api.layerUpload(key, file, name || key);
+    const job = await api.layerQueue({
+      layer_key: key,
+      dimension_key: dimension || "otros",
+      display_name: name || uploaded.item?.nombre || key,
+      tiles,
+    });
+    const message = `GeoJSON subido (${uploaded.features} features). Trabajo #${job.job.id} encolado.`;
+    layerImportSetStatus(message);
+    setStatus(message);
+    setDrawerOpen("layerImportDrawer", false, { focus: false });
+    await loadLayerManager({ silent: true });
+  } catch (err) {
+    layerImportSetStatus(err.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function publishLayers() {
+  const button = $("#layersPublishBtn");
+  button.disabled = true;
+  layerSetStatus("Publicando snapshot…");
+  try {
+    const result = await api.taxonomyPublish();
+    state.loaded.config = false;
+    const message = `Snapshot publicado. ${String(result.output || "").split("\n").slice(-2).join(" ").trim()}`;
+    layerSetStatus(message);
+    setStatus(message);
+    await loadLayerManager({ silent: true });
+  } catch (err) {
+    layerSetStatus(String(err.output || err.message).slice(0, 800), "error");
+  } finally {
+    button.disabled = false;
+  }
+}
+
 // ── RAG ───────────────────────────────────────────────────
 
 const RAG_STATUS = {
@@ -1888,6 +2275,60 @@ function bindEvents() {
       if (button) deleteTaxPlacement(Number(button.dataset.taxPlacement));
     });
   }
+
+  // Capas
+  $("#layerForm")?.addEventListener("submit", saveLayer);
+  $("#layerImportForm")?.addEventListener("submit", submitLayerImport);
+  $("#layersRefresh")?.addEventListener("click", () => loadLayerManager());
+  $("#layersPublishBtn")?.addEventListener("click", publishLayers);
+  $("#layerSearch")?.addEventListener("input", () => {
+    if (state.layerManager.data) {
+      renderLayerTable(state.layerManager.data.layers || [], state.layerManager.data.placements || []);
+    }
+  });
+
+  $("#layerAddToggle")?.addEventListener("click", (event) => {
+    event.stopImmediatePropagation();
+    const drawer = $("#layerFormDrawer");
+    if (drawer.hidden) newLayer();
+    else setDrawerOpen("layerFormDrawer", false, { focus: false });
+  });
+  $("#layerImportToggle")?.addEventListener("click", (event) => {
+    event.stopImmediatePropagation();
+    const drawer = $("#layerImportDrawer");
+    if (drawer.hidden) openLayerImport("");
+    else setDrawerOpen("layerImportDrawer", false, { focus: false });
+  });
+  $("#ragAddToggle")?.addEventListener("click", (event) => {
+    event.stopImmediatePropagation();
+    const panel = $("#ragFormPanel");
+    if (panel.hidden) {
+      resetRagForm();
+      setDrawerOpen("ragFormPanel", true);
+    } else {
+      setDrawerOpen("ragFormPanel", false, { focus: false });
+    }
+  });
+
+  $("#layersBody")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-layer-action]");
+    if (!button) return;
+    const action = button.dataset.layerAction;
+    if (action === "edit") editLayer(Number(button.dataset.id));
+    else if (action === "archive") archiveLayer(Number(button.dataset.id));
+    else if (action === "import") openLayerImport(button.dataset.key);
+  });
+
+  $("#layerJobsBody")?.addEventListener("click", async (event) => {
+    const button = event.target.closest("[data-layer-cancel]");
+    if (!button) return;
+    try {
+      await api.layerCancel(Number(button.dataset.layerCancel));
+      await loadLayerManager({ silent: true });
+    } catch (err) {
+      layerSetStatus(err.message, "error");
+    }
+  });
 }
 
 async function boot() {

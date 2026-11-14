@@ -48,7 +48,8 @@
     "admin:user": "node scripts/admin-user.mjs",
     "rag:worker": "node scripts/rag-worker.mjs",
     "taxonomy:seed": "node scripts/taxonomy-seed.mjs",
-    "taxonomy:compile": "node scripts/taxonomy-compile.mjs"
+    "taxonomy:compile": "node scripts/taxonomy-compile.mjs",
+    "layer:worker": "node scripts/layer-worker.mjs"
   },
   "devDependencies": {
     "eslint": "^8.57.0",

@@ -32,6 +32,13 @@ services:
     env_file:
       - .env.local
 
+  layer-worker:
+    userns_mode: keep-id
+    security_opt:
+      - label=disable
+    env_file:
+      - .env.local
+
   nginx:
     volumes:
       - ./deploy/nginx/woll.dev.conf:/etc/nginx/conf.d/default.conf:ro,Z

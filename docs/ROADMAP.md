@@ -102,7 +102,7 @@
 | 44 | Catálogo de indicadores satelitales Copernicus | ✅ done | media | 8-10h | proxy (2026-11-06) |
 | 45 | Panel admin: ingesta RAG + gestor de APIs | 🔶 local (45-A/45-B ✅; VPS pendiente) | alta | 24-30h | 14/15, 17, 19 |
 | 46 | Taxonomía normalizada + sidebar | 🔶 parcial (46-A/46-B ✅; 46-C pendiente) | alta | 20-26h | 14/15, 45 |
-| 47 | Gestor de capas geográficas | 📝 DRAFT (spec) | alta | 18-24h | 08-G, 46 |
+| 47 | Gestor de capas geográficas | 🔶 local (GeoJSON, worker y tiles ✅; VPS/Shapefile pendientes) | alta | 18-24h | 08-G, 46 |
 
 **Leyenda de estados:**
 - ✅ `done` — Completado y en producción.
@@ -1130,16 +1130,17 @@ panel. 46-C (sidebar nativo) queda pendiente.
 
 ### Sprint 47 — Gestor de capas geográficas
 
-**Estado**: 📝 DRAFT (spec escrita, pendiente de revisión) · **Prioridad**: alta · **Duración**: 18-24h · **Dependencias**: 08-G, 46
-**Spec**: `docs/specs/45-panel-admin-operaciones/00-spec-madre.md` §7
+**Estado**: 🔶 local (GeoJSON, worker y tiles ✅; VPS/Shapefile pendientes) · **Prioridad**: alta · **Duración**: 18-24h · **Dependencias**: 08-G, 46
+**Spec**: `docs/specs/45-panel-admin-operaciones/47-gestor-capas.md`
 
 **Objetivo**: CRUD de capas, upload GeoJSON, carga a PostGIS, generación de
 tiles, publicación y reversión.
 
 **Fase**:
-- **47-A** — Upload/validación GeoJSON y editor de metadatos.
-- **47-B** — Worker load-layer + tiles y publicación.
-- **47-C** — Vista previa y estado de capa.
+- **47-A** — Upload/validación GeoJSON y editor de metadatos. ✅
+- **47-B** — Worker load-layer + tiles y publicación. ✅
+- **47-C** — Vista previa y estado de capa. Parcial: estado y jobs; falta preview en mapa.
+- **47-D** — Shapefile/ZIP con `ogr2ogr` (pendiente).
 
 ---
 

@@ -68,6 +68,7 @@ services:
       CONFIG_API_MAX_AGE: ${CONFIG_API_MAX_AGE:-300}
     volumes:
       - ./rag:/app/rag:z
+      - ./geojson:/app/geojson:z
     expose:
       - "3000"
     healthcheck:
@@ -115,6 +116,30 @@ services:
       RAG_EMBED_BATCH: ${RAG_EMBED_BATCH:-32}
     volumes:
       - ./rag:/app/rag:z
+    networks:
+      - internal
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+
+  layer-worker:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    image: woll/api:latest
+    restart: unless-stopped
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Define DATABASE_URL_DOCKER en .env}
+      DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL_DOCKER:-${DATABASE_URL_DOCKER}}
+      PG_APPLICATION_NAME: woll-layer-worker
+    command: ["node", "scripts/layer-worker.mjs"]
+    volumes:
+      - ./geojson:/app/geojson:z
+      - ./tiles:/app/tiles:z
     networks:
       - internal
     logging: *default-logging
