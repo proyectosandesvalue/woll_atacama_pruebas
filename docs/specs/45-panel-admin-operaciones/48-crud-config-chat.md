@@ -41,6 +41,9 @@ de solo lectura.
   disponibles, golden set y herramientas) con el detalle de qué hace, para qué
   sirve y qué no cambiar.
 - Pistas junto a los campos críticos de los formularios.
+- Los popovers del chat se abren hacia arriba, por encima del header sticky,
+  con scroll interno y límite al espacio disponible; al cerrar vuelven a su
+  lugar en el panel.
 
 **Fuera**
 - Crear, borrar o reescribir tools desde el panel. Una tool es un archivo en

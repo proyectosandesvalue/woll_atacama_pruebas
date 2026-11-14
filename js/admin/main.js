@@ -121,10 +121,81 @@ function shortHash(value) {
   return String(value).slice(0, 16) + "…";
 }
 
+const HELP_MARGIN = 8;
+const HELP_MIN_HEIGHT_ABOVE = 220;
+
+function clearHelpPosition(popover) {
+  if (!popover) return;
+  for (const prop of [
+    "position",
+    "zIndex",
+    "width",
+    "left",
+    "right",
+    "top",
+    "bottom",
+    "maxHeight",
+  ]) {
+    popover.style[prop] = "";
+  }
+  const home = popover._helpHome;
+  if (home) {
+    delete popover._helpHome;
+    home.parent.insertBefore(popover, home.next);
+  }
+}
+
+/**
+ * Los popovers del chat se mueven al body mientras están abiertos para que
+ * position: fixed use el viewport y queden por encima del header sticky.
+ * Así se abren hacia arriba sin tapar la lista de abajo; si no hay espacio
+ * suficiente arriba, se abren abajo con scroll interno.
+ */
+function positionHelpPopover(button, popover) {
+  if (!popover.classList.contains("help-popover-chat")) return;
+
+  if (!popover._helpHome) {
+    popover._helpHome = {
+      parent: popover.parentElement,
+      next: popover.nextSibling,
+    };
+    document.body.appendChild(popover);
+  }
+
+  const rect = button.getBoundingClientRect();
+  const width = Math.min(360, window.innerWidth - 24);
+  const left = Math.max(
+    12,
+    Math.min(rect.right - width, window.innerWidth - width - 12)
+  );
+  const spaceAbove = rect.top - HELP_MARGIN;
+  const spaceBelow = window.innerHeight - rect.bottom - HELP_MARGIN;
+  const openAbove = spaceAbove >= HELP_MIN_HEIGHT_ABOVE || spaceAbove >= spaceBelow;
+  const available = Math.max(140, (openAbove ? spaceAbove : spaceBelow) - HELP_MARGIN);
+
+  popover.style.position = "fixed";
+  popover.style.zIndex = "1200";
+  popover.style.width = `${width}px`;
+  popover.style.left = `${left}px`;
+  popover.style.right = "auto";
+  popover.style.maxHeight = `${available}px`;
+  if (openAbove) {
+    popover.style.top = "auto";
+    popover.style.bottom = `${Math.max(
+      HELP_MARGIN,
+      window.innerHeight - rect.top + HELP_MARGIN
+    )}px`;
+  } else {
+    popover.style.bottom = "auto";
+    popover.style.top = `${rect.bottom + HELP_MARGIN}px`;
+  }
+}
+
 function closeHelpPopovers(exceptId = null) {
   for (const popover of document.querySelectorAll(".help-popover")) {
     if (popover.id === exceptId) continue;
     popover.hidden = true;
+    clearHelpPosition(popover);
   }
   for (const button of document.querySelectorAll("[data-help]")) {
     const open = exceptId !== null && button.dataset.help === exceptId;
@@ -142,16 +213,21 @@ function bindHelpPopovers() {
       const willOpen = popover.hidden;
       closeHelpPopovers(willOpen ? id : null);
       popover.hidden = !willOpen;
+      if (willOpen) positionHelpPopover(button, popover);
+      else clearHelpPosition(popover);
       button.setAttribute("aria-expanded", willOpen ? "true" : "false");
     });
   }
 
   document.addEventListener("click", (event) => {
-    if (!event.target.closest(".help-wrap")) closeHelpPopovers();
+    if (!event.target.closest(".help-wrap") && !event.target.closest(".help-popover")) {
+      closeHelpPopovers();
+    }
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeHelpPopovers();
   });
+  window.addEventListener("resize", () => closeHelpPopovers(), { passive: true });
 }
 
 function setDrawerOpen(id, open, { focus = true } = {}) {

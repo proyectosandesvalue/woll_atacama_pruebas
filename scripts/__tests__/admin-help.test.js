@@ -26,14 +26,14 @@ test("cada botón de ayuda tiene su popover y su aria-controls", () => {
     );
     assert.match(
       HTML,
-      new RegExp(`id="${id}"[^>]*class="help-popover"`),
+      new RegExp(`id="${id}"[^>]*class="help-popover[^"]*"`),
       `el botón ${id} no tiene popover`
     );
   }
 });
 
 test("no hay popovers de ayuda huérfanos", () => {
-  const popovers = [...HTML.matchAll(/id="([^"]+)" class="help-popover"/g)].map(
+  const popovers = [...HTML.matchAll(/id="([^"]+)" class="help-popover[^"]*"/g)].map(
     (match) => match[1]
   );
   for (const id of popovers) {
@@ -48,6 +48,10 @@ test("la vista Chat IA tiene ayuda en sus seis secciones", () => {
   for (const id of CHAT_HELP) {
     assert.ok(HTML.includes(`data-help="${id}"`), `falta el botón ${id}`);
     assert.ok(HTML.includes(`id="${id}"`), `falta el popover ${id}`);
+    assert.ok(
+      HTML.includes(`id="${id}" class="help-popover help-popover-chat"`),
+      `el popover ${id} no usa el posicionamiento del chat`
+    );
   }
 });
 

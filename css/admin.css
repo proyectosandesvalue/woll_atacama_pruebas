@@ -788,6 +788,10 @@ details.prompt[open] summary::before { content: "−"; }
   letter-spacing: 0;
 }
 .help-popover[hidden] { display: none !important; }
+.help-popover.help-popover-chat {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
 .help-popover strong {
   display: block;
   margin-bottom: 6px;

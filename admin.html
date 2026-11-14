@@ -1070,7 +1070,7 @@
                       aria-controls="help-chat-prompts">
                 <span class="material-symbols-outlined">help</span>
               </button>
-              <div id="help-chat-prompts" class="help-popover" hidden>
+              <div id="help-chat-prompts" class="help-popover help-popover-chat" hidden>
                 <strong>Prompts del asistente</strong>
                 <p>Son las instrucciones que el modelo recibe en cada consulta. Hay dos:</p>
                 <ul>
@@ -1121,7 +1121,7 @@
                         aria-controls="help-chat-settings">
                   <span class="material-symbols-outlined">help</span>
                 </button>
-                <div id="help-chat-settings" class="help-popover" hidden>
+                <div id="help-chat-settings" class="help-popover help-popover-chat" hidden>
                   <strong>Settings del chat</strong>
                   <p>Parámetros que el orquestador lee en cada consulta. El panel permite editar los que tienen <code>editable=true</code>; el resto se muestra para diagnóstico.</p>
                   <ul>
@@ -1178,7 +1178,7 @@
                         aria-controls="help-chat-messages">
                   <span class="material-symbols-outlined">help</span>
                 </button>
-                <div id="help-chat-messages" class="help-popover" hidden>
+                <div id="help-chat-messages" class="help-popover help-popover-chat" hidden>
                   <strong>Mensajes estándar</strong>
                   <p>Texto que devuelve el chat cuando no puede responder. Viven en <code>admin.messages</code> y el código tiene un fallback si faltan.</p>
                   <ul>
@@ -1227,7 +1227,7 @@
                       aria-controls="help-chat-unavailable">
                 <span class="material-symbols-outlined">help</span>
               </button>
-              <div id="help-chat-unavailable" class="help-popover" hidden>
+              <div id="help-chat-unavailable" class="help-popover help-popover-chat" hidden>
                 <strong>Datos no disponibles</strong>
                 <p>Catálogo de indicadores que el visor no tiene. El chat lo consulta para decir “no hay datos” en lugar de inventar una respuesta.</p>
                 <ul>
@@ -1301,7 +1301,7 @@
                         aria-controls="help-chat-golden">
                   <span class="material-symbols-outlined">help</span>
                 </button>
-                <div id="help-chat-golden" class="help-popover" hidden>
+                <div id="help-chat-golden" class="help-popover help-popover-chat" hidden>
                   <strong>Golden set</strong>
                   <p>Casos de regresión que se ejecutan con <code>npm run eval:chat</code> (o <code>node scripts/run-golden-set.mjs --all</code>). El runner lee esta tabla y cae al archivo <code>server/chat/__evals__/golden.json</code> si no hay BD o si usas <code>--from-json</code>.</p>
                   <ul>
@@ -1364,7 +1364,7 @@
                       aria-controls="help-chat-tools">
                 <span class="material-symbols-outlined">help</span>
               </button>
-              <div id="help-chat-tools" class="help-popover" hidden>
+              <div id="help-chat-tools" class="help-popover help-popover-chat" hidden>
                 <strong>Herramientas del chat</strong>
                 <p>Una tool es una función tipada que el orquestador puede invocar para consultar datos. El inventario es de <b>solo lectura</b>: las tools son código y RPCs, no configuración.</p>
                 <ul>
