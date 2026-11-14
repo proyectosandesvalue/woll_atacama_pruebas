@@ -772,6 +772,9 @@ details.prompt[open] summary::before { content: "−"; }
   right: 0;
   z-index: 80;
   width: min(360px, calc(100vw - 40px));
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 14px 16px;
   border: 1px solid var(--dialog-border);
   border-radius: var(--radius-md);

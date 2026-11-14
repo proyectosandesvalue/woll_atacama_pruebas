@@ -34,6 +34,14 @@ de solo lectura.
   runner desde la BD con fallback al JSON.
 - Tests de handlers, normalización/seed y fallback del runner.
 
+**Ayuda en la UI**
+- Banner al inicio de la vista con el resumen de cada bloque, la caché de 5
+  min y la advertencia de correr el golden set antes de activar cambios.
+- Botón de ayuda en cada sección (prompts, settings, mensajes, datos no
+  disponibles, golden set y herramientas) con el detalle de qué hace, para qué
+  sirve y qué no cambiar.
+- Pistas junto a los campos críticos de los formularios.
+
 **Fuera**
 - Crear, borrar o reescribir tools desde el panel. Una tool es un archivo en
   `server/chat/tools/` + una entrada en el registro; además invoca RPCs
@@ -159,7 +167,10 @@ Todas las mutaciones exigen sesión, `X-CSRF-Token` y escriben
 - UI **Chat IA** validada en navegador: crear/editar/activar/eliminar prompt,
   editar setting/mensaje/unavailable y crear/editar/eliminar golden.
 - `GET /api/admin/chat/tools`: 13 tools, `editable:false`.
-- Tests: 455 tests, 443 pasan, 12 omitidos, 0 fallos; lint 0 errores.
+- Tests: 459 tests, 447 pasan, 12 omitidos, 0 fallos; lint 0 errores.
+- Ayuda contextual validada en navegador: banner, seis popovers y pistas de
+  formulario; `scripts/__tests__/admin-help.test.js` cubre el enlace
+  botón/popover.
 - Datos de prueba eliminados al terminar.
 - Pendiente: validar el flujo en el VPS y decidir si el golden por tier
   reemplaza el baseline del archivo.
