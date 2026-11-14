@@ -100,7 +100,7 @@
 | 42 | Ingesta de fuentes externas (DGAC, ArClim) | 🔄 parcial (42-A y 42-C completados) | media | 18-28h | 24-A, 24-B |
 | 43 | Normativa urbana: BCN + planes reguladores | ⏳ pending | media | 20-32h | 17, 18, 41-A |
 | 44 | Catálogo de indicadores satelitales Copernicus | ✅ done | media | 8-10h | proxy (2026-11-06) |
-| 45 | Panel admin: ingesta RAG + gestor de APIs | 🔶 parcial (45-A ✅; 45-B pendiente) | alta | 24-30h | 14/15, 17, 19 |
+| 45 | Panel admin: ingesta RAG + gestor de APIs | 🔶 local (45-A/45-B ✅; VPS pendiente) | alta | 24-30h | 14/15, 17, 19 |
 | 46 | Taxonomía normalizada + sidebar | 📝 DRAFT (spec) | alta | 20-26h | 14/15, 45 |
 | 47 | Gestor de capas geográficas | 📝 DRAFT (spec) | alta | 18-24h | 08-G, 46 |
 
@@ -1091,7 +1091,7 @@ y eliminación.
 
 ### Sprint 45 — Panel admin: ingesta RAG + gestor de APIs
 
-**Estado**: 🔶 parcial (45-A implementado y validado local; 45-B pendiente) · **Prioridad**: alta · **Duración**: 24-30h · **Dependencias**: 14/15, 17, 19
+**Estado**: 🔶 local (45-A y 45-B implementados; falta validar en VPS) · **Prioridad**: alta · **Duración**: 24-30h · **Dependencias**: 14/15, 17, 19
 **Spec**: `docs/specs/45-panel-admin-operaciones/00-spec-madre.md`
 
 **Objetivo**: operar el RAG y las conexiones externas desde el panel, con
@@ -1100,11 +1100,12 @@ worker/cola, uploads, manifiesto, dry-run y auditoría.
 **Fases**:
 - **45-A (18-22h)** — Ingesta RAG: upload de PDFs, manifiesto, dry-run, cola,
   worker, documentos/chunks. ✅
-- **45-B (6-8h)** — APIs: inventario, test y edición de conexiones existentes.
+- **45-B (6-8h)** — APIs: inventario, test y edición de conexiones existentes. ✅
 
-**Implementado 45-A:** `/admin.html` → RAG, migración 043, API
-`/api/admin/rag/*`, worker `scripts/rag-worker.mjs` + imagen propia, 392
-tests. Pendiente: 45-B y validación con embeddings reales en VPS.
+**Implementado 45-A/45-B:** `/admin.html` → RAG y APIs, migraciones 043/044,
+API `/api/admin/rag/*` y `/api/admin/apis`, worker `scripts/rag-worker.mjs`
++ imagen propia, 401 tests. Pendiente: validar con embeddings reales y
+conexiones en el VPS.
 
 ---
 

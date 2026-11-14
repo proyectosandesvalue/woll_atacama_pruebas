@@ -992,6 +992,19 @@ npm run rag:worker -- --once  # una pasada (cron/tests)
   normal no hace falta; en el VPS el volumen debe pertenecer al usuario del
   contenedor.
 
+**Gestor de APIs (45-B)**
+
+- `/admin.html` → **APIs** lista las conexiones externas y muestra si faltan
+  variables de entorno.
+- **Probar** hace una petición controlada desde el servidor; no imprime
+  secretos ni descarga el cuerpo completo.
+- **Editar** permite cambiar nombre, timeout, rate limit y si está activa.
+  La URL base y los secretos viven en el entorno/registro de código.
+- Agregar una conexión nueva requiere editar
+  `server/admin/api-registry.js` y la allowlist de `server/proxy/services.js`,
+  luego deployar. El panel no acepta URLs arbitrarias.
+- Migración: `044_admin_api_connections.sql`.
+
 **Seguridad del frontend (28)**
 
 - No agregar `<script>` ni `<link rel="stylesheet">` externos sin versión fija,

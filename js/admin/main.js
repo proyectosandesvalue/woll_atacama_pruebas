@@ -10,6 +10,7 @@ import { api, setCsrfToken } from "./api.js";
 const VIEW_META = {
   config: { eyebrow: "Operación / Configuración", title: "Configuración del visor" },
   rag: { eyebrow: "Operación / Documentos", title: "Ingesta RAG" },
+  apis: { eyebrow: "Operación / Integraciones", title: "Conexiones externas" },
   chat: { eyebrow: "Operación / Chat IA", title: "Prompts y mensajes" },
   audit: { eyebrow: "Operación / Trazabilidad", title: "Auditoría" },
 };
@@ -17,13 +18,17 @@ const VIEW_META = {
 const state = {
   view: "config",
   layers: [],
-  loaded: { config: false, rag: false, chat: false, audit: false },
+  loaded: { config: false, rag: false, apis: false, chat: false, audit: false },
   rag: {
     data: null,
     loading: false,
     pollTimer: null,
     editingSlug: null,
     chunksDocumentId: null,
+  },
+  apis: {
+    data: null,
+    loading: false,
   },
 };
 
@@ -89,6 +94,39 @@ function shortHash(value) {
   return String(value).slice(0, 16) + "…";
 }
 
+function closeHelpPopovers(exceptId = null) {
+  for (const popover of document.querySelectorAll(".help-popover")) {
+    if (popover.id === exceptId) continue;
+    popover.hidden = true;
+  }
+  for (const button of document.querySelectorAll("[data-help]")) {
+    const open = exceptId !== null && button.dataset.help === exceptId;
+    button.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+}
+
+function bindHelpPopovers() {
+  for (const button of document.querySelectorAll("[data-help]")) {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const id = button.dataset.help;
+      const popover = document.getElementById(id);
+      if (!popover) return;
+      const willOpen = popover.hidden;
+      closeHelpPopovers(willOpen ? id : null);
+      popover.hidden = !willOpen;
+      button.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    });
+  }
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest(".help-wrap")) closeHelpPopovers();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeHelpPopovers();
+  });
+}
+
 function setStatus(message, kind = "ok") {
   const status = $("#globalStatus");
   if (!status) return;
@@ -142,6 +180,7 @@ function selectView(view) {
 
   if (view === "config" && !state.loaded.config) loadConfig();
   if (view === "rag") loadRag();
+  if (view === "apis") loadApis();
   if (view === "chat" && !state.loaded.chat) loadChat();
   if (view === "audit") loadAudit();
   if (view !== "rag") stopRagPolling();
@@ -253,6 +292,198 @@ function renderLayers() {
 
   body.replaceChildren(fragment);
   empty.hidden = rows.length > 0;
+}
+
+// ── APIs externas ─────────────────────────────────────────
+
+const API_KIND_LABELS = {
+  proxy: "Proxy cerrado",
+  http: "HTTP",
+  embeddings: "Embeddings",
+};
+
+function apiSetStatus(message, kind = "ok") {
+  const node = $("#apiEditorStatus");
+  if (!node) return;
+  node.textContent = message || "";
+  node.hidden = !message;
+  node.classList.toggle("is-error", kind === "error");
+}
+
+async function loadApis({ silent = false } = {}) {
+  if (state.apis.loading) return;
+  state.apis.loading = true;
+  if (!silent) setStatus("Cargando conexiones externas…");
+  try {
+    const data = await withAuth(api.apisList());
+    if (!data) return;
+    state.apis.data = data;
+    state.loaded.apis = true;
+    renderApis(data);
+    if (!silent) setStatus("");
+  } catch (err) {
+    setStatus(`No se pudieron cargar las APIs: ${err.message}`, "error");
+  } finally {
+    state.apis.loading = false;
+  }
+}
+
+function apiProbeBadge(item) {
+  if (!item.last_check_at) {
+    return { label: "Sin probar", className: "badge" };
+  }
+  if (item.last_status === null || item.last_status === undefined) {
+    return { label: "Error de red", className: "badge badge-fail" };
+  }
+  const ok = item.last_status >= 200 && item.last_status < 400;
+  return {
+    label: `HTTP ${item.last_status}`,
+    className: ok ? "badge badge-ok" : "badge badge-fail",
+  };
+}
+
+function renderApis(data) {
+  const items = Array.isArray(data.items) ? data.items : [];
+  const counts = data.counts || {};
+  $("#apisMetricTotal").textContent = String(counts.total ?? items.length);
+  $("#apisMetricActive").textContent = String(counts.active ?? 0);
+  $("#apisMetricEnv").textContent = String(counts.envReady ?? 0);
+  const failing = items.filter(
+    (item) => item.last_status && item.last_status >= 400
+  ).length;
+  $("#apisMetricError").textContent = failing > 0 ? `${failing} con error` : "Sin errores";
+
+  const body = $("#apisBody");
+  const empty = $("#apisEmpty");
+  const fragment = document.createDocumentFragment();
+
+  for (const item of items) {
+    const probe = apiProbeBadge(item);
+    const envBadges = (item.env || []).map((variable) =>
+      el("span", {
+        className: variable.present ? "badge badge-ok" : "badge badge-fail",
+        text: variable.name,
+        title: variable.present ? "Variable presente" : "Variable ausente",
+      })
+    );
+
+    const testButton = el("button", {
+      className: "btn btn-secondary btn-mini",
+      text: "Probar",
+      attrs: { type: "button", "data-api-test": item.key },
+    });
+    const editButton = el("button", {
+      className: "btn btn-secondary btn-mini",
+      text: "Editar",
+      attrs: { type: "button", "data-api-edit": item.key },
+    });
+
+    fragment.appendChild(
+      el("tr", {}, [
+        el("td", {}, [
+          el("strong", { className: "layer-name", text: item.label }),
+          el("small", { className: "item-meta", text: ` ${item.key}` }),
+          item.description
+            ? el("small", { className: "item-meta", text: ` · ${item.description}` })
+            : null,
+        ]),
+        el("td", {}, [
+          el("span", { className: "badge", text: API_KIND_LABELS[item.kind] || item.kind }),
+        ]),
+        el("td", {}, [
+          el("span", {
+            className: "dim",
+            text: item.baseUrl || "—",
+            title: item.baseUrl || "",
+          }),
+        ]),
+        el("td", {}, [
+          envBadges.length
+            ? el("div", { className: "env-badges" }, envBadges)
+            : el("span", { className: "dim", text: "sin variables" }),
+        ]),
+        el("td", {}, [
+          el("span", { text: item.last_check_at ? formatDate(item.last_check_at) : "—" }),
+          item.last_latency_ms !== null && item.last_latency_ms !== undefined
+            ? el("small", { className: "item-meta", text: ` · ${item.last_latency_ms} ms` })
+            : null,
+        ]),
+        el("td", {}, [
+          el("span", { className: probe.className, text: probe.label, title: item.last_error || "" }),
+        ]),
+        el("td", {}, [
+          el("div", { className: "row-actions" }, [testButton, editButton]),
+        ]),
+      ])
+    );
+  }
+
+  body.replaceChildren(fragment);
+  empty.hidden = items.length > 0;
+}
+
+function editApi(key) {
+  const item = state.apis.data?.items?.find((entry) => entry.key === key);
+  if (!item) return;
+  $("#apiEditorKey").value = item.key;
+  $("#apiEditorTitle").textContent = `Editar ${item.label}`;
+  $("#apiEditorLabel").value = item.label || "";
+  $("#apiEditorTimeout").value = String(item.timeout_ms || 15000);
+  $("#apiEditorRate").value = item.rate_limit || "";
+  $("#apiEditorActive").checked = item.activo !== false;
+  apiSetStatus("");
+  const editor = $("#apiEditor");
+  editor.hidden = false;
+  editor.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function saveApiEditor(event) {
+  event.preventDefault();
+  const key = $("#apiEditorKey").value;
+  const label = $("#apiEditorLabel").value.trim();
+  const timeout = Number.parseInt($("#apiEditorTimeout").value, 10);
+  const rate = $("#apiEditorRate").value.trim();
+  const activo = $("#apiEditorActive").checked;
+
+  if (!key || !label) {
+    apiSetStatus("Completá el nombre visible.", "error");
+    return;
+  }
+  if (!Number.isInteger(timeout) || timeout < 1000 || timeout > 120000) {
+    apiSetStatus("El timeout debe estar entre 1000 y 120000 ms.", "error");
+    return;
+  }
+
+  const button = $("#apiEditorSave");
+  button.disabled = true;
+  try {
+    await api.apisUpdate({ key, label, timeout_ms: timeout, rate_limit: rate, activo });
+    apiSetStatus("Conexión actualizada.");
+    await loadApis({ silent: true });
+  } catch (err) {
+    apiSetStatus(err.message, "error");
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function testApi(key, button) {
+  if (button) button.disabled = true;
+  setStatus(`Probando ${key}…`);
+  try {
+    const result = await api.apisTest(key);
+    setStatus(
+      result.ok
+        ? `${key}: OK (HTTP ${result.status}, ${result.latency_ms} ms).`
+        : `${key}: ${result.error || `HTTP ${result.status}`}.`,
+      result.ok ? "ok" : "error"
+    );
+    await loadApis({ silent: true });
+  } catch (err) {
+    setStatus(`No se pudo probar ${key}: ${err.message}`, "error");
+  } finally {
+    if (button) button.disabled = false;
+  }
 }
 
 // ── RAG ───────────────────────────────────────────────────
@@ -937,11 +1168,29 @@ function bindEvents() {
       ragSetStatus(err.message, "error");
     }
   });
+
+  // APIs
+  $("#apisRefresh")?.addEventListener("click", () => loadApis());
+  $("#apiEditorClose")?.addEventListener("click", () => {
+    const editor = $("#apiEditor");
+    if (editor) editor.hidden = true;
+  });
+  $("#apiEditorForm")?.addEventListener("submit", saveApiEditor);
+  $("#apisBody")?.addEventListener("click", async (event) => {
+    const testButton = event.target.closest("[data-api-test]");
+    if (testButton) {
+      await testApi(testButton.dataset.apiTest, testButton);
+      return;
+    }
+    const editButton = event.target.closest("[data-api-edit]");
+    if (editButton) editApi(editButton.dataset.apiEdit);
+  });
 }
 
 async function boot() {
   initTheme();
   bindEvents();
+  bindHelpPopovers();
   try {
     const session = await api.session();
     setCsrfToken(session.csrfToken);

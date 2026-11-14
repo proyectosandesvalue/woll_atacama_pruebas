@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprints (ROADMAP)** | 45 (RAG y APIs), 46 (taxonomía normalizada), 47 (capas) |
-| **Estado de la spec** | EN EJECUCIÓN — 45-A implementado y validado localmente; 45-B/46/47 pendientes |
+| **Estado de la spec** | EN EJECUCIÓN — 45-A/45-B implementados y validados localmente; 46/47 pendientes |
 | **Tamaño** | Grande (épica) |
 | **Duración estimada** | 56-72 h |
 | **Dependencias** | 08-G (tiles), 14/15 (panel/auth), 17 (RAG), 19 (APIs), 26 (VPS) |
@@ -265,7 +265,7 @@ La migración es aditiva. Las tablas se siembran desde el snapshot v1
 | Fase | Contenido | Horas | Estado |
 |---|---|---|---|
 | 45-A | RAG: migración, manifest, upload, cola, worker, UI y tests | 18-22 | ✅ |
-| 45-B | APIs: inventario, test y edición no secreta | 6-8 | ⏳ |
+| 45-B | APIs: inventario, test y edición no secreta | 6-8 | ✅ |
 | 46-A | Migración y seed de taxonomía; compilador de snapshot | 6-8 | ⏳ |
 | 46-B | CRUD de dimensiones/grupos/subgrupos y assignments | 8-10 | ⏳ |
 | 46-C | `/api/taxonomy` + adaptación del sidebar con flag | 6-8 | ⏳ |
@@ -329,9 +329,19 @@ R1 quedó aprobada y 45-A está implementado. R2 se decide al iniciar el Sprint 
 - Pendiente: configurar `EMBEDDINGS_*` reales en staging/VPS y validar PDFs
   con licencia (17-E).
 
-## 14. Cierre
+## 14. Resultados 45-B (2026-11-13)
 
-- Horas reales: 6 (45-A).
+- Migración `044_admin_api_connections.sql` aplicada y reaplicable.
+- Registro de 8 conexiones (Copernicus WMS/WFS/WMTS, Worldview, ARClim,
+  Agromet, MeteoChile y embeddings) con estado de variables de entorno.
+- Prueba real de ARClim: HTTP 200, ~180 ms; edición de timeout/rate limit y
+  persistencia en `admin.api_connections`.
+- UI **APIs** validada en navegador; no expone valores de secretos.
+- Tests: 401 tests, 389 pasan, 12 omitidos, 0 fallos; lint 0 errores.
+
+## 15. Cierre
+
+- Horas reales: 10 (45-A 6 h; 45-B 4 h).
 - Desvíos: hubo que separar `validateEntry` en `server/rag/manifest.js` para
   que el API no importe `pdfjs-dist`; el worker necesita `npm ci --include=dev`.
 - Lecciones: el worker debe ser una imagen separada; el volumen `rag/` necesita

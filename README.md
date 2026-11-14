@@ -95,7 +95,7 @@ El entorno de referencia desde 26-C es PostgreSQL propio en Docker/Podman:
 ```bash
 cp .env.example .env.local   # completar POSTGRES_PASSWORD, DATABASE_* y WOLL_*_PASSWORD
 npm run db:up                # docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d postgres
-npm run migrate              # aplica db/migrations/000-043
+npm run migrate              # aplica db/migrations/000-044
 npm run migrate:status       # pendientes / aplicadas / cambiadas
 npm run db:down
 ```
@@ -163,6 +163,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `server/handlers/config.js`, `server/handlers/admin.js` | Snapshot `/api/config` y endpoints del panel admin | Cambios de contrato o de auth |
 | `server/admin/auth.js` | Password scrypt, TOTP, sesión, CSRF y auditoría | Cambios de autenticación (ADR 007) |
 | `server/handlers/admin-rag.js`, `server/routes/admin-rag.js` | Ingesta RAG desde el panel: manifiesto, upload y cola | Cambios del flujo RAG (45-A) |
+| `server/handlers/admin-apis.js`, `server/admin/api-registry.js` | Inventario, prueba y edición de conexiones externas | Cambios del gestor de APIs (45-B) |
 | `server/admin/rag-manifest.js` | Lectura/escritura atómica del manifiesto y PDFs | Validación o almacenamiento de documentos |
 | `scripts/rag-worker.mjs`, `docker/rag-worker/` | Worker de extracción/embeddings y cola | Ingesta real de PDFs |
 | `server/db/drivers/postgres.js`, `server/db/rpc-signatures.js` | Driver `pg.Pool` y registro de RPCs | Cambiar transporte o agregar una RPC |

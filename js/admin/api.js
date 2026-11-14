@@ -88,6 +88,15 @@ export const api = {
       `/api/admin/rag/chunks?document_id=${encodeURIComponent(documentId)}` +
         `&limit=${limit}&offset=${offset}`
     ),
+  apisList: () => request("/api/admin/apis"),
+  apisUpdate: (payload) =>
+    request("/api/admin/apis", { method: "PUT", body: payload }),
+  apisTest: (key) =>
+    request(`/api/admin/apis/test?key=${encodeURIComponent(key)}`, {
+      method: "POST",
+      body: {},
+    }),
+
   ragUpload: async (slug, file) => {
     const headers = {
       Accept: "application/json",

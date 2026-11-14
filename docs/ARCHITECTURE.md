@@ -160,7 +160,7 @@ Limitaciones de esta etapa:
   `statement_timeout`/`query_timeout` y un registro cerrado de 48 RPCs en
   `server/db/rpc-signatures.js` (50 RPCs). `npm run check:rpcs` verifica que existan.
 - **Migraciones:** runner `scripts/migrate.mjs` con checksum y
-  `db/migrations/000-043`; `000_compat_roles.sql` crea extensiones, roles y
+  `db/migrations/000-044`; `000_compat_roles.sql` crea extensiones, roles y
   `search_path`.
 - **Schema `admin.*`**: configuración editable (prompts, settings, mensajes, datos no disponibles), snapshots de config, índice de capas, usuarios admin y auditoría. PostgREST no lo expone; se accede por RPCs `SECURITY DEFINER` o por el servidor con el rol `woll_api`.
 
@@ -416,7 +416,23 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
   chat siguen funcionando; los jobs quedan en cola o fallan con un mensaje
   claro.
 
-### 4.4. Tiles MVT pregenerados (Sprint 08)
+### 4.4. Gestor de APIs externas (Sprint 45-B)
+
+- **Registro:** `server/admin/api-registry.js` describe las conexiones
+  existentes (Copernicus WMS/WFS/WMTS, Worldview, ARClim, Agromet,
+  MeteoChile y embeddings). La allowlist real sigue en
+  `server/proxy/services.js`; el panel no acepta URLs arbitrarias.
+- **Datos editables:** `admin.api_connections` guarda label, timeout, rate
+  limit, activo y el resultado de la última prueba. Los secretos y las URLs
+  se referencian solo por nombre de variable de entorno.
+- **Prueba:** `POST /api/admin/apis/test` hace una petición controlada desde
+  el servidor, sin leer cuerpos grandes y con timeout; guarda HTTP, latencia
+  y error. Para embeddings consulta `/models` con la API key del entorno.
+- **UI:** `/admin.html` → APIs muestra entorno presente/ausente, última
+  prueba y permite editar parámetros no secretos. Una conexión nueva requiere
+  código y deploy.
+
+### 4.5. Tiles MVT pregenerados (Sprint 08)
 
 Las capas estáticas o por edición no se sirven desde PostgreSQL en runtime.
 El flujo es offline:
