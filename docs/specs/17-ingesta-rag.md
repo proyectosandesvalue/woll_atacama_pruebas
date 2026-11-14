@@ -3,11 +3,11 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 17 |
-| **Estado de la spec** | EN EJECUCIÓN (código y tests listos; falta aplicar la migración y validar con PDFs reales) |
+| **Estado de la spec** | EN EJECUCIÓN (código y tests listos; Vertex AI configurado; falta validar con PDFs reales) |
 | **Tamaño** | Mediano |
 | **Duración estimada** | 10-11 h |
 | **Dependencias** | Ninguna para la CLI. El panel del Sprint 15 solo consume el estado (`rag_list_documents` lógico). |
-| **Última revisión** | 2026-11-05 |
+| **Última revisión** | 2026-11-14 |
 
 > **Cambio respecto del borrador inicial.** El proyecto migra de Supabase a un VPS con PostgreSQL propio. La ingesta ya no usa RPCs ni wrappers `public.rag_*`: abre una conexión directa con `pg` y escribe en una única transacción. Esto elimina la necesidad de `NOTIFY pgrst`, de `SECURITY DEFINER` y de mantener una transacción abierta mientras se llama por HTTP al proveedor de embeddings.
 
@@ -114,7 +114,32 @@ Si cualquier paso falla, la versión `ready` anterior queda intacta. No existen 
 
 ### 4.4. Variables de entorno (solo CLI hasta el Sprint 18)
 
+**Vertex AI (ADR 026, recomendado si el LLM usa Vertex):**
+
+```env
+DATABASE_URL=postgres://rag_ingest:***@127.0.0.1:5432/woll
+EMBEDDINGS_PROVIDER=vertex
+GOOGLE_CLOUD_PROJECT=tu-proyecto
+GOOGLE_CLOUD_LOCATION=us-central1
+EMBEDDINGS_LOCATION=us-central1
+EMBEDDINGS_MODEL=gemini-embedding-001
+EMBEDDINGS_TASK_TYPE=RETRIEVAL_DOCUMENT
+EMBEDDINGS_DIM=1024
+EMBEDDINGS_PRICE_PER_MTOK=0
+RAG_EMBED_BATCH=32
+RAG_CHUNK_TOKENS=450
+RAG_CHUNK_OVERLAP=60
+RAG_MAX_PDF_MB=25
+RAG_MAX_PAGES=300
 ```
+
+Credenciales: ADC local (`gcloud auth application-default login`) o
+`GOOGLE_APPLICATION_CREDENTIALS_JSON` con una service account. En el VPS, la
+service account necesita `roles/aiplatform.user`.
+
+**OpenAI-compatible (autoalojado o API externa):**
+
+```env
 DATABASE_URL=postgres://rag_ingest:***@127.0.0.1:5432/woll
 EMBEDDINGS_PROVIDER=openai-compatible
 EMBEDDINGS_BASE_URL=http://127.0.0.1:8080/v1
@@ -164,7 +189,7 @@ RAG_MAX_PAGES=300
 | 17-0 | Cerrar ADR 022, confirmar nº de migración (036), excluir `rag/**` de Vercel y de git | ✅ |
 | 17-A | Migración `036` (DDL, RLS, roles, grants) | ✅ (pendiente aplicar en VPS) |
 | 17-B | `server/rag/{config,errors,extract,normalize,chunker}.js` + tests | ✅ |
-| 17-C | `server/embeddings/{config,provider}.js` + tests | ✅ |
+| 17-C | `server/embeddings/{config,provider}.js` + tests; driver Vertex AI (ADR 026) | ✅ |
 | 17-D | `scripts/ingest_docs.mjs`, manifiesto, `ingestion_runs`, dry-run | ✅ |
 | 17-E | Ingesta de 3 PDFs reales + reporte CA-12 + docs | ⏳ pendiente de PDFs con licencia |
 

@@ -50,7 +50,8 @@
     "taxonomy:seed": "node scripts/taxonomy-seed.mjs",
     "taxonomy:compile": "node scripts/taxonomy-compile.mjs",
     "layer:worker": "node scripts/layer-worker.mjs",
-    "golden:seed": "node scripts/golden-seed.mjs"
+    "golden:seed": "node scripts/golden-seed.mjs",
+    "embeddings:check": "node --env-file=.env.local scripts/check-embeddings.mjs"
   },
   "devDependencies": {
     "eslint": "^8.57.0",

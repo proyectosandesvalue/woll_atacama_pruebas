@@ -998,6 +998,73 @@ npm run admin:user -- --new-totp
   reactivar, configurar `ADMIN_TOTP_REQUIRED=1` y `ADMIN_TOTP_SECRET`.
 - La demo Vercel/Supabase no expone el panel: usa el fallback local.
 
+**Configurar el proveedor de embeddings (local y producción)**
+
+La configuración vive en el **entorno**, no en el panel: `.env.local` en local
+y el `.env` del VPS en producción. No copies `.env.local` al servidor; usa un
+archivo de producción con permisos 600 o variables del sistema.
+
+Hay dos modos:
+
+**Vertex AI (recomendado si el LLM usa Vertex):**
+
+```env
+LLM_PROVIDER=vertex-ai
+GOOGLE_CLOUD_PROJECT=tu-proyecto
+GOOGLE_CLOUD_LOCATION=us-central1
+LLM_MODEL=gemini-3.1-flash-lite
+EMBEDDINGS_PROVIDER=vertex
+EMBEDDINGS_MODEL=gemini-embedding-001
+EMBEDDINGS_DIM=1024
+EMBEDDINGS_LOCATION=us-central1
+EMBEDDINGS_TASK_TYPE=RETRIEVAL_DOCUMENT
+```
+
+- En local usa ADC: `gcloud auth application-default login`. El contenedor no
+  hereda el ADC del host; pásale `GOOGLE_APPLICATION_CREDENTIALS_JSON` o monta
+  el archivo y define `GOOGLE_APPLICATION_CREDENTIALS`.
+- En el VPS usa una service account con `roles/aiplatform.user` y
+  `GOOGLE_APPLICATION_CREDENTIALS_JSON` (o un archivo montado). La misma cuenta
+  sirve para el LLM y los embeddings.
+- Vertex no tiene una instancia local: el proyecto, la región y el modelo se
+  configuran por entorno. Un solo proyecto con dos service accounts (dev/prod)
+  es suficiente para empezar.
+- `EMBEDDINGS_LOCATION` permite una región distinta para embeddings si el LLM
+  usa `global`.
+
+**OpenAI-compatible (autoalojado o API externa):**
+
+```env
+EMBEDDINGS_PROVIDER=openai-compatible
+EMBEDDINGS_BASE_URL=http://127.0.0.1:8080/v1
+EMBEDDINGS_MODEL=BAAI/bge-m3
+EMBEDDINGS_API_KEY=
+EMBEDDINGS_DIM=1024
+EMBEDDINGS_SEND_DIMENSIONS=0
+```
+
+- La dimensión es fija: `rag.chunks.embedding vector(1024)`. Un modelo de 768
+  u otra dimensión exige una migración nueva y reingesta total (ADR 022).
+- Modelos compatibles: `BAAI/bge-m3` (1024, autoalojado),
+  `gemini-embedding-2` con `dimensions=1024`, `text-embedding-3-small` con
+  `dimensions=1024`. Evita modelos de 768 como `nomic-embed-text`.
+- **Local y producción pueden ser distintos**, pero conviene mantener el mismo
+  modelo y dimensión para que los vectores sean comparables. Usa una API key
+  o service account separada por entorno; si cambias de modelo, reindexa el
+  corpus.
+- Hoy las usa el `rag-worker`; en 18-D el API también las necesitará para
+  embeber la pregunta.
+- Verifica sin ingerir nada:
+
+```bash
+npm run embeddings:check
+```
+
+El comando no imprime la API key ni el texto de prueba; valida modelo, URL o
+proyecto/región, dimensión y latencia. En Docker Compose, las variables se
+pasan al `api` y al `rag-worker` desde el `.env` con el que se levanta el
+stack; recrea esos servicios después de cambiarlas.
+
 **Ingesta RAG desde el panel (45-A)**
 
 - Entrar a `/admin.html` → pestaña **RAG**.
