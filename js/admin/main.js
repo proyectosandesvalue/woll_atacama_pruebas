@@ -439,6 +439,9 @@ function renderTaxDimensions(dimensions) {
 }
 
 function renderTaxLayerSelects(layers) {
+  const select = $("#taxAssignLayer");
+  if (!select) return;
+  const current = select.value;
   const options = layers
     .filter((layer) => layer.activo !== false)
     .map((layer) =>
@@ -447,12 +450,46 @@ function renderTaxLayerSelects(layers) {
         attrs: { value: layer.id },
       })
     );
-  for (const selector of ["#taxPlacementLayer", "#taxMasterLayer"]) {
-    const select = $(selector);
-    if (!select) continue;
-    const current = select.value;
-    select.replaceChildren(el("option", { text: "Seleccionar capa…", attrs: { value: "" } }), ...options.map((node) => node.cloneNode(true)));
-    if ([...select.options].some((option) => option.value === current)) select.value = current;
+  select.replaceChildren(
+    el("option", { text: "Seleccionar capa…", attrs: { value: "" } }),
+    ...options
+  );
+  if ([...select.options].some((option) => option.value === current)) {
+    select.value = current;
+  }
+}
+
+function renderTaxAssignDestinations(dimension) {
+  const select = $("#taxAssignDestination");
+  if (!select) return;
+  const current = select.value;
+  const options = [
+    el("option", {
+      text: "Dimensión general (nivel superior)",
+      attrs: { value: "master" },
+    }),
+  ];
+
+  for (const group of taxGroupRows(dimension.id)) {
+    options.push(
+      el("option", {
+        text: `Grupo · ${group.nombre}`,
+        attrs: { value: `group:${group.id}` },
+      })
+    );
+    for (const subgroup of taxSubgroupRows(group.id)) {
+      options.push(
+        el("option", {
+          text: `Subgrupo · ${group.nombre} / ${subgroup.nombre}`,
+          attrs: { value: `subgroup:${subgroup.id}` },
+        })
+      );
+    }
+  }
+
+  select.replaceChildren(...options);
+  if ([...select.options].some((option) => option.value === current)) {
+    select.value = current;
   }
 }
 
@@ -469,6 +506,7 @@ function renderTaxDetail() {
     : `${dimension.nombre} · ${dimension.key}`;
 
   const groups = taxGroupRows(dimension.id);
+  renderTaxAssignDestinations(dimension);
   if (
     state.taxonomy.selectedGroupId &&
     !groups.some((group) => Number(group.id) === Number(state.taxonomy.selectedGroupId))
@@ -556,21 +594,6 @@ function renderTaxGroupDetail() {
   }
   subgroupBody.replaceChildren(fragment);
   subgroupEmpty.hidden = subgroups.length > 0;
-
-  const scope = $("#taxPlacementScope");
-  const currentScope = scope.value;
-  scope.replaceChildren(
-    el("option", { text: "Grupo directo", attrs: { value: "group" } }),
-    ...subgroups.map((subgroup) =>
-      el("option", {
-        text: `Subgrupo · ${subgroup.nombre}`,
-        attrs: { value: `subgroup:${subgroup.id}` },
-      })
-    )
-  );
-  if ([...scope.options].some((option) => option.value === currentScope)) {
-    scope.value = currentScope;
-  }
 
   const placements = (state.taxonomy.data.placements || []).filter(
     (item) => Number(item.group_id) === Number(group.id)
@@ -753,51 +776,51 @@ async function saveTaxSubgroup(event) {
   }
 }
 
-async function saveTaxPlacement(event) {
+async function saveTaxAssignment(event) {
   event.preventDefault();
   const dimension = taxDimension();
-  const group = taxGroup();
-  const layerId = $("#taxPlacementLayer").value;
-  const scopeValue = $("#taxPlacementScope").value;
-  if (!dimension || !group || !layerId) {
-    taxSetStatus("Elegí una capa y una ubicación.", "error");
+  const layerId = $("#taxAssignLayer").value;
+  const destination = $("#taxAssignDestination").value;
+  if (!dimension || !layerId || !destination) {
+    taxSetStatus("Elegí una capa y un destino.", "error");
     return;
   }
-  const subgroupId = scopeValue.startsWith("subgroup:")
-    ? scopeValue.slice("subgroup:".length)
-    : null;
-  try {
-    await api.taxonomySavePlacement({
-      layer_id: layerId,
-      dimension_id: dimension.id,
-      group_id: group.id,
-      subgroup_id: subgroupId,
-      scope: subgroupId ? "subgroup" : "group",
-      orden: Number.parseInt($("#taxPlacementOrder").value, 10) || 0,
-    });
-    taxSetStatus("Capa asignada. Publicá el snapshot para aplicarla.");
-    await loadTaxonomy({ silent: true });
-  } catch (err) {
-    taxSetStatus(err.message, "error");
-  }
-}
 
-async function saveTaxMaster(event) {
-  event.preventDefault();
-  const dimension = taxDimension();
-  const layerId = $("#taxMasterLayer").value;
-  if (!dimension || !layerId) {
-    taxSetStatus("Elegí una capa.", "error");
+  let scope = "master";
+  let groupId = null;
+  let subgroupId = null;
+
+  if (destination.startsWith("group:")) {
+    scope = "group";
+    groupId = Number(destination.slice("group:".length));
+  } else if (destination.startsWith("subgroup:")) {
+    scope = "subgroup";
+    subgroupId = Number(destination.slice("subgroup:".length));
+    const subgroup = (state.taxonomy.data?.subgroups || []).find(
+      (item) => Number(item.id) === subgroupId
+    );
+    groupId = subgroup ? Number(subgroup.group_id) : null;
+  }
+
+  if (scope !== "master" && !groupId) {
+    taxSetStatus("El destino no tiene un grupo válido.", "error");
     return;
   }
+  if (scope === "subgroup" && !subgroupId) {
+    taxSetStatus("El destino no tiene un subgrupo válido.", "error");
+    return;
+  }
+
   try {
     await api.taxonomySavePlacement({
       layer_id: layerId,
       dimension_id: dimension.id,
-      scope: "master",
-      orden: Number.parseInt($("#taxMasterOrder").value, 10) || 0,
+      group_id: groupId,
+      subgroup_id: subgroupId,
+      scope,
+      orden: Number.parseInt($("#taxAssignOrder").value, 10) || 0,
     });
-    taxSetStatus("Capa agregada al maestro. Publicá el snapshot para aplicarla.");
+    taxSetStatus("Capa ubicada. Publicá el snapshot para verla en el sidebar.");
     await loadTaxonomy({ silent: true });
   } catch (err) {
     taxSetStatus(err.message, "error");
@@ -1753,8 +1776,7 @@ function bindEvents() {
   $("#taxDimensionForm")?.addEventListener("submit", saveTaxDimension);
   $("#taxGroupForm")?.addEventListener("submit", saveTaxGroup);
   $("#taxSubgroupForm")?.addEventListener("submit", saveTaxSubgroup);
-  $("#taxPlacementForm")?.addEventListener("submit", saveTaxPlacement);
-  $("#taxMasterForm")?.addEventListener("submit", saveTaxMaster);
+  $("#taxAssignForm")?.addEventListener("submit", saveTaxAssignment);
   $("#taxDimNew")?.addEventListener("click", newTaxDimension);
   $("#taxGroupNew")?.addEventListener("click", newTaxGroup);
   $("#taxSubgroupNew")?.addEventListener("click", newTaxSubgroup);

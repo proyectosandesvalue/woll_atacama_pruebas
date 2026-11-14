@@ -1006,8 +1006,17 @@ npm run taxonomy:compile -- --publish --notes "cambio de grupos"
 npm run taxonomy:compile -- --check
 ```
 
-- El panel **Taxonomía** edita dimensiones, grupos, subgrupos y asignaciones;
-  **Publicar snapshot** ejecuta el compilador y activa la versión nueva.
+- El panel **Taxonomía** arma el sidebar de capas del geoportal:
+  - **Dimensión:** tema principal.
+  - **Grupo / subdimensión:** bloque dentro del tema.
+  - **Subgrupo:** bloque anidado.
+  - **Dimensión general:** nivel superior; una capa puede repetirse en grupos.
+- Para ubicar una capa: seleccionar la dimensión → **Ubicar una capa en esta
+  dimensión** → elegir capa y destino (general, grupo o subgrupo) → **Asignar
+  capa**.
+- Los cambios se guardan en la taxonomía, pero el sidebar no cambia hasta
+  **Publicar snapshot**. Si la validación falla, el snapshot anterior sigue
+  activo.
 - El seed es fiel al snapshot v1 (mismo checksum). Si se edita una capa común
   con estilos distintos por dimensión, se conserva la variante en
   `layer_placements.config`.

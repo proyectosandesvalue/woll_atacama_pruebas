@@ -557,6 +557,24 @@
 
       <!-- TAXONOMIA -->
       <section id="view-taxonomy" class="view" aria-labelledby="viewTitle" hidden>
+        <div class="info-banner" role="note">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          <div>
+            <strong>Esta sección es la que arma el sidebar de capas del geoportal</strong>
+            <p>
+              <b>Dimensión</b> = tema principal (Agua, Clima, etc.). <b>Grupo</b> = subdimensión
+              que se muestra como bloque dentro de ese tema. <b>Subgrupo</b> = bloque anidado,
+              por ejemplo “Estaciones en vivo”. Una capa puede estar en el nivel general y
+              repetirse dentro de uno o más grupos.
+            </p>
+            <p>
+              Los cambios se guardan en la taxonomía, pero <b>el sidebar no cambia hasta publicar
+              el snapshot</b>. Usá “Publicar snapshot” al terminar; si la validación falla, el
+              snapshot anterior sigue activo.
+            </p>
+          </div>
+        </div>
+
         <div class="metrics">
           <article class="metric">
             <span class="metric-label">Dimensiones</span>
@@ -594,14 +612,15 @@
                   <span class="material-symbols-outlined">help</span>
                 </button>
                 <div id="help-taxonomy" class="help-popover" hidden>
-                  <strong>Cómo funciona</strong>
+                  <strong>Cómo se arma el sidebar</strong>
                   <ul>
                     <li><b>Dimensión:</b> tema principal del sidebar (Agua, Clima…).</li>
-                    <li><b>Grupo:</b> bloque dentro de la dimensión.</li>
-                    <li><b>Subgrupo:</b> división opcional, por ejemplo estaciones en vivo.</li>
-                    <li><b>Asignación:</b> ubica una capa en el nivel maestro, grupo o subgrupo.</li>
+                    <li><b>Grupo / subdimensión:</b> bloque que aparece dentro del tema.</li>
+                    <li><b>Subgrupo:</b> bloque anidado, por ejemplo “Estaciones en vivo”.</li>
+                    <li><b>Dimensión general:</b> capa disponible en el nivel superior; puede repetirse en grupos.</li>
                   </ul>
-                  <p>Los cambios no llegan al visor hasta que uses <b>Publicar snapshot</b>. Si la validación falla, el snapshot anterior queda activo.</p>
+                  <p>Para ubicar una capa usá <b>“Ubicar una capa en esta dimensión”</b>, elegí la capa y el destino (dimensión, grupo o subgrupo) y asignala. Después usá <b>Publicar snapshot</b> para que el sidebar del geoportal lo refleje.</p>
+                  <p>Si la validación falla, el snapshot anterior queda activo y el visor no se rompe.</p>
                 </div>
               </div>
               <button id="taxPublishBtn" class="btn btn-primary" type="button">
@@ -654,7 +673,33 @@
               </div>
 
               <div class="tax-block">
-                <div class="tax-block-head"><h3>Grupos</h3></div>
+                <div class="tax-block-head"><h3>Ubicar una capa en esta dimensión</h3></div>
+                <p class="muted">
+                  Elegí la capa y el destino. “Dimensión general” la deja en el nivel superior;
+                  un grupo la muestra dentro de esa subdimensión del sidebar; un subgrupo la
+                  muestra dentro del bloque anidado.
+                </p>
+                <form id="taxAssignForm" class="tax-form" novalidate>
+                  <div class="field-grid">
+                    <div>
+                      <label for="taxAssignLayer">Capa</label>
+                      <select id="taxAssignLayer"></select>
+                    </div>
+                    <div>
+                      <label for="taxAssignDestination">Destino en el sidebar</label>
+                      <select id="taxAssignDestination"></select>
+                    </div>
+                  </div>
+                  <label for="taxAssignOrder">Orden dentro del destino</label>
+                  <input id="taxAssignOrder" type="number" value="0" />
+                  <div class="rag-actions">
+                    <button class="btn btn-primary" type="submit">Asignar capa</button>
+                  </div>
+                </form>
+              </div>
+
+              <div class="tax-block">
+                <div class="tax-block-head"><h3>Grupos / subdimensiones</h3></div>
                 <div class="table-wrap">
                   <table class="data-table">
                     <thead><tr><th>Clave</th><th>Nombre</th><th>Orden</th><th>Activo</th><th>Acciones</th></tr></thead>
@@ -704,41 +749,34 @@
                   </div>
                 </form>
 
-                <h4>Capas del grupo</h4>
+                <h4>Capas dentro de este grupo</h4>
+                <p class="muted">
+                  Para agregar una capa a este grupo, usá el bloque “Ubicar una capa” de arriba
+                  y elegí este grupo o uno de sus subgrupos como destino. Acá solo se listan y
+                  quitan las asignaciones existentes.
+                </p>
                 <div class="table-wrap">
                   <table class="data-table">
                     <thead><tr><th>Capa</th><th>Ubicación</th><th>Orden</th><th>Acciones</th></tr></thead>
                     <tbody id="taxPlacementsBody"></tbody>
                   </table>
                 </div>
-                <p id="taxPlacementsEmpty" class="empty" hidden>Sin capas asignadas.</p>
-                <form id="taxPlacementForm" class="tax-form" novalidate>
-                  <div class="field-grid">
-                    <div><label for="taxPlacementLayer">Capa</label><select id="taxPlacementLayer"></select></div>
-                    <div><label for="taxPlacementScope">Ubicación</label><select id="taxPlacementScope"></select></div>
-                  </div>
-                  <label for="taxPlacementOrder">Orden</label>
-                  <input id="taxPlacementOrder" type="number" value="0" />
-                  <div class="rag-actions"><button class="btn btn-primary" type="submit">Asignar capa</button></div>
-                </form>
+                <p id="taxPlacementsEmpty" class="empty" hidden>Sin capas en este grupo.</p>
               </div>
 
               <div class="tax-block">
-                <div class="tax-block-head"><h3>Capas maestras de la dimensión</h3></div>
+                <div class="tax-block-head"><h3>Capas a nivel general de la dimensión</h3></div>
+                <p class="muted">
+                  Es la lista completa de la dimensión. Para sumar una capa acá usá “Dimensión
+                  general” en el bloque “Ubicar una capa”.
+                </p>
                 <div class="table-wrap">
                   <table class="data-table">
                     <thead><tr><th>Capa</th><th>Orden</th><th>Acciones</th></tr></thead>
                     <tbody id="taxMasterBody"></tbody>
                   </table>
                 </div>
-                <p id="taxMasterEmpty" class="empty" hidden>Sin capas maestras.</p>
-                <form id="taxMasterForm" class="tax-form" novalidate>
-                  <div class="field-grid">
-                    <div><label for="taxMasterLayer">Capa</label><select id="taxMasterLayer"></select></div>
-                    <div><label for="taxMasterOrder">Orden</label><input id="taxMasterOrder" type="number" value="0" /></div>
-                  </div>
-                  <div class="rag-actions"><button class="btn btn-primary" type="submit">Agregar al maestro</button></div>
-                </form>
+                <p id="taxMasterEmpty" class="empty" hidden>Sin capas a nivel general.</p>
               </div>
             </div>
           </div>
