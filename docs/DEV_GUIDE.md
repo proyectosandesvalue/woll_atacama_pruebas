@@ -1171,6 +1171,29 @@ npm run layer:worker -- --once
   que Probar, Editar y Archivar estén siempre visibles.
 - Migración: `044_admin_api_connections.sql`.
 
+**Demanda no satisfecha (50)**
+
+- `/admin.html` → **Demanda**. Muestra las preguntas que el chat no pudo
+  responder, agrupadas por fingerprint y con el número de ocurrencias.
+- Filtros por estado, razón, prioridad, decisión y texto; orden por última
+  aparición, ocurrencias, fecha o prioridad.
+- El detalle permite cambiar estado, prioridad, decisión, sprint destino y
+  notas. Las acciones rápidas resuelven, rechazan o archivan.
+- **Descargar brief** genera un Markdown con la pregunta, el tipo, la ruta y
+  una propuesta de tool/RPC, criterios de aceptación y caso de golden. El panel
+  no crea tools: el brief se implementa en el sprint indicado (18, 19,
+  40-D.3, 42 o 43).
+- No se guardan datos personales: email, sesión e historial quedan fuera. La
+  migración 053 limpia los registros existentes.
+- Tabla: `admin.unanswered_questions`. RPCs: `chat_log_unanswered` (upsert),
+  `admin_list_unanswered`, `admin_update_unanswered`, `admin_unanswered_stats`.
+- Al cerrar una demanda, marcar `resolved` con `resolution_type` y
+  `resolution_note`; el caso del golden set debe pasar.
+- Revisión semanal; prioriza las preguntas con 2+ ocurrencias o las que
+  bloquean un flujo completo.
+- Migraciones: `053_unanswered_demand.sql`,
+  `054_unanswered_resolution_fields.sql` y `055_unanswered_rls.sql`.
+
 **Configuración del chat (48)**
 
 - `/admin.html` → **Chat IA**.

@@ -14,13 +14,14 @@ const VIEW_META = {
   apis: { eyebrow: "Operación / Integraciones", title: "Conexiones externas", mode: "editable" },
   taxonomy: { eyebrow: "Operación / Taxonomía", title: "Dimensiones y capas", mode: "editable" },
   chat: { eyebrow: "Operación / Chat IA", title: "Prompts y mensajes", mode: "editable" },
+  demand: { eyebrow: "Operación / Demanda", title: "Preguntas sin respuesta", mode: "editable" },
   audit: { eyebrow: "Operación / Trazabilidad", title: "Auditoría", mode: "solo lectura" },
 };
 
 const state = {
   view: "config",
   layers: [],
-  loaded: { config: false, layers: false, rag: false, apis: false, taxonomy: false, chat: false, audit: false },
+  loaded: { config: false, layers: false, rag: false, apis: false, taxonomy: false, chat: false, demand: false, audit: false },
   layerManager: {
     data: null,
     loading: false,
@@ -51,6 +52,14 @@ const state = {
     loading: false,
     selectedDimensionId: null,
     selectedGroupId: null,
+  },
+  demand: {
+    items: [],
+    total: 0,
+    stats: null,
+    loading: false,
+    reload: false,
+    selectedId: null,
   },
 };
 
@@ -299,6 +308,7 @@ function showApp(session) {
     : "—";
   setStatus("");
   selectView("config");
+  loadDemandBadge().catch(() => {});
 }
 
 function selectView(view) {
@@ -332,6 +342,7 @@ function selectView(view) {
   if (view === "apis") loadApis();
   if (view === "taxonomy") loadTaxonomy();
   if (view === "chat" && !state.loaded.chat) loadChat();
+  if (view === "demand") loadDemand();
   if (view === "audit") loadAudit();
   if (view !== "rag") stopRagPolling();
   if (view !== "layers") stopLayerPolling();
@@ -1260,6 +1271,323 @@ async function toggleApi(key, button) {
   } finally {
     if (button) button.disabled = false;
   }
+}
+
+// ── Demanda no satisfecha (Sprint 50) ─────────────────────
+
+const DEMAND_STATUS = {
+  pending: "Pendiente",
+  reviewing: "En revisión",
+  in_progress: "En revisión",
+  accepted: "Aceptada",
+  planned: "Planificada",
+  resolved: "Resuelta",
+  rejected: "Rechazada",
+  wont_fix: "Rechazada",
+  duplicate: "Duplicada",
+  archived: "Archivada",
+};
+
+const DEMAND_REASON = {
+  no_data: "Sin dato",
+  no_recipe: "Sin receta",
+  no_tool: "Sin tool",
+  no_document: "Sin documento",
+  out_of_scope: "Fuera de alcance",
+  unknown: "Desconocida",
+};
+
+const DEMAND_PRIORITY = { alta: "Alta", media: "Media", baja: "Baja" };
+
+const DEMAND_DECISION = {
+  new_tool: "Nueva tool",
+  new_layer: "Nueva capa",
+  new_document: "Nuevo documento RAG",
+  improve_prompt: "Mejorar prompt",
+  unavailable: "Dato inexistente",
+  out_of_scope: "Fuera de alcance",
+  wont_fix: "No se hará",
+  duplicate: "Duplicada",
+};
+
+function demandStatusBadge(status) {
+  if (status === "pending") return "badge badge-warn";
+  if (["reviewing", "in_progress"].includes(status)) return "badge";
+  if (["accepted", "planned", "resolved"].includes(status)) return "badge badge-ok";
+  return "badge";
+}
+
+function demandPriorityBadge(priority) {
+  if (priority === "alta") return "badge badge-fail";
+  if (priority === "media") return "badge badge-warn";
+  return "badge";
+}
+
+function setDemandBadge(count) {
+  const badge = $("#demandBadge");
+  if (!badge) return;
+  const value = Number(count) || 0;
+  badge.textContent = value > 99 ? "99+" : String(value);
+  badge.hidden = value === 0;
+}
+
+async function loadDemandBadge() {
+  const stats = await withAuth(api.unansweredStats());
+  if (stats) setDemandBadge(stats.pending ?? 0);
+}
+
+function demandFilters() {
+  return {
+    q: $("#demandSearch")?.value.trim() || "",
+    status: $("#demandStatus")?.value || "all",
+    reason: $("#demandReason")?.value || "all",
+    priority: $("#demandPriority")?.value || "all",
+    sort: $("#demandSort")?.value || "last_seen_at",
+    limit: 100,
+    offset: 0,
+  };
+}
+
+async function loadDemand({ silent = false } = {}) {
+  if (state.demand.loading) {
+    state.demand.reload = true;
+    return;
+  }
+  state.demand.loading = true;
+  if (!silent) setStatus("Cargando demanda…");
+  try {
+    const params = demandFilters();
+    const [list, stats] = await Promise.all([
+      withAuth(api.unansweredList(params)),
+      withAuth(api.unansweredStats()),
+    ]);
+    if (!list || !stats) return;
+
+    state.demand.items = list.items || [];
+    state.demand.total = list.total ?? 0;
+    state.demand.stats = stats;
+    state.loaded.demand = true;
+    renderDemand();
+    setDemandBadge(stats.pending ?? 0);
+    if (!silent) setStatus("");
+  } catch (err) {
+    setStatus(`No se pudo cargar la demanda: ${err.message}`, "error");
+  } finally {
+    state.demand.loading = false;
+    if (state.demand.reload) {
+      state.demand.reload = false;
+      loadDemand({ silent: true });
+    }
+  }
+}
+
+function renderDemand() {
+  const stats = state.demand.stats || {};
+  $("#demandMetricPending").textContent = String(stats.pending ?? 0);
+  $("#demandMetricReviewing").textContent = String(stats.reviewing ?? 0);
+  $("#demandMetricAccepted").textContent = String(
+    (stats.accepted ?? 0) + (stats.planned ?? 0)
+  );
+  $("#demandMetricResolved").textContent = String(stats.resolved ?? 0);
+
+  const body = $("#demandBody");
+  const empty = $("#demandEmpty");
+  const meta = $("#demandMeta");
+  const items = state.demand.items || [];
+  const fragment = document.createDocumentFragment();
+  for (const item of items) fragment.appendChild(demandRow(item));
+  body.replaceChildren(fragment);
+  empty.hidden = items.length > 0;
+  if (meta) {
+    meta.hidden = items.length === 0;
+    meta.textContent = `Mostrando ${items.length} de ${state.demand.total} preguntas.`;
+  }
+}
+
+function demandRow(item) {
+  const pipeline = item.route?.pipeline;
+  return el("tr", {}, [
+    el("td", {}, [
+      el("span", {
+        className: "demand-question",
+        text: item.question || "—",
+        title: item.question || "",
+      }),
+    ]),
+    el("td", {}, [
+      el("span", { className: "badge", text: `×${item.occurrences ?? 1}` }),
+    ]),
+    el("td", {}, [
+      el("span", { text: DEMAND_REASON[item.reason] || item.reason || "—" }),
+    ]),
+    el("td", {}, [
+      el("span", { text: item.classification?.intent || "—" }),
+      pipeline
+        ? el("small", { className: "item-meta", text: ` · ${pipeline}` })
+        : null,
+    ]),
+    el("td", {}, [
+      el("span", {
+        className: demandStatusBadge(item.status),
+        text: DEMAND_STATUS[item.status] || item.status || "—",
+      }),
+    ]),
+    el("td", {}, [
+      item.priority
+        ? el("span", {
+            className: demandPriorityBadge(item.priority),
+            text: DEMAND_PRIORITY[item.priority] || item.priority,
+          })
+        : el("span", { className: "dim", text: "—" }),
+    ]),
+    el("td", {}, [
+      el("span", {
+        text: DEMAND_DECISION[item.decision] || item.decision || "—",
+      }),
+    ]),
+    el("td", {}, [
+      el("span", {
+        text: item.last_seen_at ? formatDate(item.last_seen_at) : "—",
+      }),
+    ]),
+    el("td", {}, [
+      el("div", { className: "row-actions" }, [
+        el("button", {
+          className: "btn btn-secondary btn-mini",
+          text: "Ver",
+          attrs: { type: "button", "data-demand-view": item.id },
+        }),
+        el("button", {
+          className: "btn btn-secondary btn-mini",
+          text: "Brief",
+          attrs: { type: "button", "data-demand-brief": item.id },
+        }),
+      ]),
+    ]),
+  ]);
+}
+
+function demandFormStatus(message, kind = "ok") {
+  const node = $("#demandFormMsg");
+  if (!node) return;
+  node.textContent = message || "";
+  node.hidden = !message;
+  node.classList.toggle("is-error", kind === "error");
+}
+
+function openDemandDetail(id) {
+  const item = state.demand.items.find((entry) => entry.id === id);
+  if (!item) return;
+
+  state.demand.selectedId = id;
+  $("#demandId").value = item.id;
+  $("#demandDetailSubtitle").textContent = `ID ${item.id}`;
+  $("#demandDetailQuestion").textContent = item.question || "—";
+
+  const entries = [
+    ["Ocurrencias", String(item.occurrences ?? 1)],
+    ["Primera vez", item.first_seen_at ? formatDate(item.first_seen_at) : "—"],
+    ["Última vez", item.last_seen_at ? formatDate(item.last_seen_at) : "—"],
+    ["Razón", DEMAND_REASON[item.reason] || item.reason || "—"],
+    ["Estado", DEMAND_STATUS[item.status] || item.status || "—"],
+    ["Prioridad", item.priority ? DEMAND_PRIORITY[item.priority] : "sin definir"],
+    ["Decisión", item.decision ? DEMAND_DECISION[item.decision] : "sin definir"],
+    ["Sprint", item.sprint_target || "sin definir"],
+  ];
+  $("#demandDetailMeta").replaceChildren(
+    ...entries.map(([label, value]) =>
+      el("div", { className: "demand-meta-item" }, [
+        el("span", { className: "demand-meta-label", text: label }),
+        el("span", { text: value }),
+      ])
+    )
+  );
+
+  $("#demandDetailTechnical").textContent = JSON.stringify(
+    { classification: item.classification || {}, route: item.route || {} },
+    null,
+    2
+  );
+
+  const statusValue =
+    item.status === "in_progress"
+      ? "reviewing"
+      : item.status === "wont_fix"
+        ? "rejected"
+        : item.status || "pending";
+  $("#demandFormStatus").value = statusValue;
+  $("#demandFormPriority").value = item.priority || "";
+  $("#demandFormDecision").value = item.decision || "";
+  $("#demandFormSprint").value = item.sprint_target || "";
+  $("#demandFormNotes").value = item.notes || "";
+  $("#demandFormResolutionType").value = item.resolution_type || "";
+  $("#demandFormResolutionNote").value = item.resolution_note || "";
+  demandFormStatus("");
+
+  const panel = $("#demandDetail");
+  panel.hidden = false;
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function saveDemand(event) {
+  if (event) event.preventDefault();
+  const id = $("#demandId").value;
+  if (!id) return;
+
+  const payload = {
+    id,
+    status: $("#demandFormStatus").value,
+    priority: $("#demandFormPriority").value || null,
+    decision: $("#demandFormDecision").value || null,
+    sprint_target: $("#demandFormSprint").value.trim() || null,
+    notes: $("#demandFormNotes").value.trim() || null,
+    resolution_type: $("#demandFormResolutionType").value || null,
+    resolution_note: $("#demandFormResolutionNote").value.trim() || null,
+  };
+
+  const button = $("#demandForm button[type=submit]");
+  if (button) button.disabled = true;
+  demandFormStatus("Guardando…");
+  try {
+    await api.unansweredUpdate(payload);
+    demandFormStatus("Triage guardado.");
+    setStatus("Triage guardado.");
+    await loadDemand({ silent: true });
+    openDemandDetail(id);
+  } catch (err) {
+    demandFormStatus(err.message, "error");
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function downloadDemandBrief(id) {
+  try {
+    const data = await withAuth(api.unansweredBrief(id));
+    if (!data?.markdown) return;
+    const blob = new Blob([data.markdown], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = data.filename || `demanda-${id}.md`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setStatus("Brief descargado.");
+  } catch (err) {
+    setStatus(`No se pudo descargar el brief: ${err.message}`, "error");
+  }
+}
+
+async function demandQuick(status, decision) {
+  const id = $("#demandId").value;
+  if (!id) return;
+  $("#demandFormStatus").value = status;
+  if (decision !== undefined) $("#demandFormDecision").value = decision;
+  await saveDemand();
 }
 
 // ── Gestor de capas ───────────────────────────────────────
@@ -2983,6 +3311,53 @@ function bindEvents() {
     const button = event.target.closest("[data-golden-action]");
     if (button) goldenAction(button.dataset.goldenAction, button.dataset.id);
   });
+
+  // Demanda
+  $("#demandRefresh")?.addEventListener("click", () => loadDemand());
+  $("#demandClear")?.addEventListener("click", () => {
+    const search = $("#demandSearch");
+    if (search) search.value = "";
+    for (const id of ["demandStatus", "demandReason", "demandPriority"]) {
+      const select = document.getElementById(id);
+      if (select) select.value = "all";
+    }
+    const sort = $("#demandSort");
+    if (sort) sort.value = "last_seen_at";
+    loadDemand({ silent: true });
+  });
+
+  let demandSearchTimer = null;
+  $("#demandSearch")?.addEventListener("input", () => {
+    clearTimeout(demandSearchTimer);
+    demandSearchTimer = setTimeout(() => loadDemand({ silent: true }), 300);
+  });
+  for (const id of ["demandStatus", "demandReason", "demandPriority", "demandSort"]) {
+    document.getElementById(id)?.addEventListener("change", () => loadDemand({ silent: true }));
+  }
+
+  $("#demandBody")?.addEventListener("click", async (event) => {
+    const view = event.target.closest("[data-demand-view]");
+    if (view) {
+      openDemandDetail(view.dataset.demandView);
+      return;
+    }
+    const brief = event.target.closest("[data-demand-brief]");
+    if (brief) await downloadDemandBrief(brief.dataset.demandBrief);
+  });
+
+  $("#demandDetailClose")?.addEventListener("click", () => {
+    const panel = $("#demandDetail");
+    if (panel) panel.hidden = true;
+    state.demand.selectedId = null;
+  });
+  $("#demandForm")?.addEventListener("submit", saveDemand);
+  $("#demandBriefBtn")?.addEventListener("click", () => {
+    const id = $("#demandId").value;
+    if (id) downloadDemandBrief(id);
+  });
+  $("#demandQuickResolve")?.addEventListener("click", () => demandQuick("resolved"));
+  $("#demandQuickReject")?.addEventListener("click", () => demandQuick("rejected", "wont_fix"));
+  $("#demandQuickArchive")?.addEventListener("click", () => demandQuick("archived"));
 }
 
 async function boot() {

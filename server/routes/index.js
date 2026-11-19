@@ -10,6 +10,7 @@ import { adminChatConfigRoutes } from "./admin-chat-config.js";
 import { adminLayerRoutes } from "./admin-layers.js";
 import { adminRagRoutes } from "./admin-rag.js";
 import { adminTaxonomyRoutes } from "./admin-taxonomy.js";
+import { adminUnansweredRoutes } from "./admin-unanswered.js";
 import { arclimRoute } from "./arclim.js";
 import { chatRoute } from "./chat.js";
 import { configRoutes } from "./config.js";
@@ -27,6 +28,7 @@ export const routes = [
   ...adminTaxonomyRoutes,
   ...adminLayerRoutes,
   ...adminChatConfigRoutes,
+  ...adminUnansweredRoutes,
   proxyRoute,
   arclimRoute,
   ...layerRoutes,

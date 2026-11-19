@@ -22,6 +22,10 @@ import { getCatalog } from "../chat/catalog.js";
 import { fastClassify } from "../chat/classifier-fast.js";
 import { retrieveLayers } from "../chat/layer-retrieval.js";
 import { detectUnavailable, buildUnavailableNotice,} from "../chat/unavailable.js";
+import {
+  fingerprintQuestion,
+  sanitizeQuestion,
+} from "../chat/unanswered-fingerprint.js";
 import { checkCostGuard, recordLLMCall } from "../chat/cost-guard.js";
 import { createTiming } from "../chat/timing.js";
 import { randomBytes } from "node:crypto";
@@ -232,7 +236,7 @@ export async function handleChat(body, ctx = {}) {
 
     if (!ctx.skipUnansweredLog) {
       await maybeLogUnanswered({
-        text, history, sessionId, ctx, classification, routed,
+        text, ctx, classification, routed,
         reply: payload?.reply, unavailableMatches,
       });
     }
@@ -527,8 +531,6 @@ function buildPayloadFromPipeline(
  */
 async function maybeLogUnanswered({
   text,
-  history,
-  sessionId,
   ctx,
   classification,
   routed,
@@ -571,12 +573,6 @@ async function maybeLogUnanswered({
       reasonDetail = "El orquestador no encontró una tool para responder.";
     }
 
-    // Armar contexto (últimos 2 turnos del historial).
-    const context =
-      Array.isArray(history) && history.length > 0
-        ? history.slice(-2)
-        : null;
-
     // Armar la clasificación (sin los slots crudos, por privacidad).
     const classificationSafe = classification
       ? {
@@ -593,17 +589,19 @@ async function maybeLogUnanswered({
 
     const db = await getDB();
     const id = await db.rpc("chat_log_unanswered", {
-      p_question: text.slice(0, 1000),
-      p_context: context ? JSON.stringify(context) : null,
+      p_question: sanitizeQuestion(text),
+      p_context: null,
       p_classification: classificationSafe
         ? JSON.stringify(classificationSafe)
         : null,
       p_route: routeSafe ? JSON.stringify(routeSafe) : null,
       p_user_role: ctx?.userRole || "publico",
-      p_user_email: ctx?.userEmail || null,
-      p_session_id: sessionId || null,
+      // Privacidad: no se guardan email, sesión ni historial.
+      p_user_email: null,
+      p_session_id: null,
       p_reason: reason,
       p_reason_detail: reasonDetail,
+      p_fingerprint: fingerprintQuestion(text),
     });
 
     if (id) {

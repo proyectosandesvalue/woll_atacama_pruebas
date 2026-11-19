@@ -22,6 +22,7 @@ Si el código contradice el CONTRACT, no decidas por tu cuenta: señálalo y dej
 |---|---|
 | Reglas que no se rompen | `docs/CONTRACT.md` |
 | Reglas de calidad del chat (rutas, evidencia, abstención, evaluación) | `docs/CONTRACT.md` §6.7 + `docs/DECISIONS/025-calidad-chat-orquestador-fuentes.md` |
+| Demanda del chat (preguntas sin respuesta, triage y brief) | `docs/specs/50-demanda-no-satisfecha.md` + `server/handlers/admin-unanswered.js` |
 | Cómo está armado el sistema hoy | `docs/ARCHITECTURE.md` |
 | Qué sprint sigue o está activo | `docs/ROADMAP.md` |
 | Cómo hacer una tarea habitual | `docs/DEV_GUIDE.md` |
@@ -97,6 +98,7 @@ Reglas:
 - **Tests:** toda feature nueva trae al menos un test (`node:test`).
 - **Configuración del visor**: el runtime lee el snapshot activo por `GET /api/config`; publicar con `npm run config:snapshot -- --publish` y verificar con `--check`. El fallback es `allTemasConfig` (INV-5). Panel admin en `/admin.html` con contraseña y sesión; TOTP opcional para flujos sensibles (ADR 007).
 - **Capas (47)**: el panel sube GeoJSON a `geojson/uploads/`, encola en `admin.layer_jobs` y `npm run layer:worker` carga a PostGIS/genera tiles. Luego se asigna en Taxonomía y se publica el snapshot. El borrado es lógico.
+- **Ráster (49, spec DRAFT)**: se produce offline en QGIS/GDAL/GRASS y se publica como COG privado + tiles WebP/PNG + manifest + índice + estadísticas por comuna desde CSV de QGIS. El servidor no calcula pendientes, sombras ni MCDA en runtime. No se adopta GeoServer (ADR 027). Ver `docs/specs/49-publicador-raster.md`.
 - **Taxonomía (46)**: las dimensiones/grupos/subgrupos/capas viven en `admin.*`; el panel las edita y `npm run taxonomy:compile -- --publish` genera el snapshot que lee el visor. El seed reproduce el snapshot v1 con el mismo checksum.
 - **Panel RAG (45-A)**: la UI sube PDFs a `rag/inbox/`, edita `rag/manifest.json` y encola en `admin.rag_jobs`. El worker `npm run rag:worker` (imagen `docker/rag-worker`) extrae, embebe y escribe `rag.*`. El API nunca importa `pdfjs-dist`.
 - **Configuración del chat**: los prompts y settings viven en `admin.*` (migración 024). Antes de activar un cambio, correr el golden set. Ver "Gobierno de la configuración del chat".
@@ -221,6 +223,10 @@ PostGIS, no con el GeoJSON.
 - **Antes de tocar cualquier componente del chat**, lee `docs/CONTRACT.md` §6.7
   y el checklist `docs/DEV_GUIDE.md` §3.6.1. La calidad se mide por ruta
   (tool/RAG/mixta), por evidencia y por abstención, no solo por la respuesta.
+- Las preguntas que el chat no puede responder se registran en
+  `admin.unanswered_questions` y se gestionan en el panel → **Demanda**. El
+  panel no crea tools: genera un brief Markdown para el sprint que corresponda.
+  No se guardan datos personales.
 - Endpoint `api/chat.js`: handler delgado. Capas de defensa previas al orquestador: `input-validator`, `rate-limiter` (en memoria), `geo-filter`, `scope-filter` y `domain-classifier`.
 - Orquestador: L1 (tool calling) + L2 (síntesis forzada). `ORCHESTRATOR_MAX_ITERATIONS` controla las rondas de tools (default 1, mínimo 1). Presupuesto: `ORCHESTRATOR_BUDGET_MS` (default 8000).
 - **13 tools**, una por archivo en `server/chat/tools/`: 9 de capas (`get_layer_stats`, `get_layer_schema`, `query_layer`, `aggregate_layer`, `aggregate_by_admin`, `aggregate_by_admin_and_column`, `count_near_layer`, `aggregate_near_layer`, `get_layer_features`) y 4 de clima (`get_station_weather`, `get_historical_climate`, `list_climate_stations`, `get_arclim_forecast`). `normalizeArgs` y `withTimeout` en `tools/_helpers.js`. Las RPCs tienen timeout de 6 s. El router determinístico solo conoce las 9 de capas (`server/chat/capabilities/registry.js`); las de clima las invoca el orquestador.

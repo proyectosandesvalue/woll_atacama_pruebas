@@ -387,8 +387,9 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
   snapshot o la BD falla, responde `503` y el visor usa `allTemasConfig`
   (INV-5). `js/config/loader.js` hace el fetch y el fallback.
 - **Panel:** `admin.html` + `js/admin/*` sin framework. Secciones: Configuración
-  (solo lectura), Capas, RAG, APIs, Taxonomía, Chat IA (CRUD) y Auditoría
-  (solo lectura). El chip del encabezado indica `editable` o `solo lectura`.
+  (solo lectura), Capas, RAG, APIs, Taxonomía, Chat IA (CRUD), Demanda (triage)
+  y Auditoría (solo lectura). El chip del encabezado indica `editable` o
+  `solo lectura`.
 - **Auth (ADR 007):** password scrypt, cookie `woll_admin`
   HttpOnly/SameSite=Strict firmada con HMAC, CSRF y rate limit. El secreto
   El login no exige TOTP; la lógica queda disponible para flujos sensibles y `ADMIN_TOTP_SECRET` nunca vive en la BD.
@@ -554,6 +555,56 @@ Navegador (cliente de tiles, Sprint 08-B)
 - Detalle: `docs/specs/08-postgis-fuente-principal/08-A-pipeline-tiles.md`,
   `08-B-piloto.md` y `08-G-ciclo-vida-capas.md`.
 
+### 4.8. Ráster precalculado (Sprint 49 — diseño aprobado, implementación pendiente)
+
+El visor no calcula rásteres. La pendiente, la orientación, la sombra y los
+modelos de aptitud se producen **offline** en QGIS/GDAL/GRASS y se publican
+como un artefacto versionado. El servidor solo valida, publica y sirve.
+
+```
+QGIS/GDAL/GRASS (equipo del analista)
+   │  GeoTIFF/COG + CSV de estadísticas
+   ▼
+raster:publish (CLI, offline)
+   ├─ data/raster/<layer>/<version>/source.tif   (privado; data/ denegado)
+   ├─ raster/<layer>/<version>/<z>/<x>/<y>.webp (público, inmutable)
+   ├─ raster/<layer>/<version>/manifest.json
+   └─ raster/index.json
+   │
+   ├─ Nginx /raster/ (Cache-Control: immutable)
+   └─ public.raster_stats (solo lectura; API y futuro chat)
+```
+
+- **No se adopta GeoServer** ni WMS/WCS propios: no resuelven el análisis y
+  agregan un JVM, un catálogo paralelo y superficie de ataque. Ver ADR 027.
+- La versión es inmutable: actualizar = publicar una versión nueva y cambiar la
+  config. La anterior queda para rollback hasta `raster:sync --prune`.
+- El visor carga la capa con `L.tileLayer` (`source.type: "raster"`); no tiene
+  tabla, filtros por atributo ni popup de feature, sino una ficha metodológica.
+- Las estadísticas por comuna/provincia/región se calculan en QGIS y se
+  importan como CSV; el servidor solo las lee. El LLM nunca hace álgebra de
+  ráster.
+- El análisis multicriterio (criterios y pesos) vive en el Sprint 41 (ADR 017).
+- Detalle: `docs/specs/49-publicador-raster.md`.
+
+### 4.9. Demanda no satisfecha (Sprint 50)
+
+- **Tabla:** `admin.unanswered_questions` (migración 026 + 053/054/055). Guarda la
+  pregunta, razón, clasificación, ruta, ocurrencias, prioridad, decisión,
+  sprint y notas. No guarda email, sesión ni historial.
+- **Registro:** `maybeLogUnanswered` en `server/handlers/chat.js` registra solo
+  preguntas del dominio que el chat no pudo responder; deduplica por fingerprint
+  y suma ocurrencias.
+- **Panel:** `/admin.html` → Demanda. Vista propia con filtros, detalle, triage
+  y brief Markdown descargable. El panel no crea tools.
+- **API:** `GET /api/admin/unanswered`, `/stats` y `/brief`; `PUT` para el
+  triage. Todas exigen sesión; el `PUT` exige CSRF y audita.
+- **RPCs:** `chat_log_unanswered` (upsert), `admin_list_unanswered`,
+  `admin_update_unanswered`, `admin_unanswered_stats`.
+- **Brief:** pregunta, tipo, ruta, propuesta de tool/RPC, criterios y caso de
+  golden. Se implementa en el sprint destino (18, 19, 40-D.3, 42 o 43).
+
+---
 
 5. Base de datos — schemas chat, admin y rag
 5.1. Schema chat — tablas

@@ -96,6 +96,18 @@ export const api = {
   goldenDelete: (id) =>
     request(`/api/admin/golden?id=${encodeURIComponent(id)}`, { method: "DELETE" }),
 
+  unansweredList: (params = {}) => {
+    const query = new URLSearchParams(
+      Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== "")
+    ).toString();
+    return request(`/api/admin/unanswered${query ? `?${query}` : ""}`);
+  },
+  unansweredStats: () => request("/api/admin/unanswered/stats"),
+  unansweredUpdate: (payload) =>
+    request("/api/admin/unanswered", { method: "PUT", body: payload }),
+  unansweredBrief: (id) =>
+    request(`/api/admin/unanswered/brief?id=${encodeURIComponent(id)}`),
+
   layersList: () => request("/api/admin/layers"),
   layerSave: (payload) =>
     request("/api/admin/layers", {

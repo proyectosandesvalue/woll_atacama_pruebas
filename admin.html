@@ -114,6 +114,11 @@
           <span class="material-symbols-outlined">forum</span>
           <span>Chat IA</span>
         </button>
+        <button class="nav-item" type="button" data-view="demand">
+          <span class="material-symbols-outlined">inbox</span>
+          <span>Demanda</span>
+          <span id="demandBadge" class="nav-badge" hidden>0</span>
+        </button>
         <button class="nav-item" type="button" data-view="audit">
           <span class="material-symbols-outlined">history</span>
           <span>Auditoría</span>
@@ -1414,6 +1419,245 @@
             </div>
           </div>
           <div id="toolsList" class="stack"></div>
+        </div>
+      </section>
+
+      <!-- DEMANDA -->
+      <section id="view-demand" class="view" aria-labelledby="viewTitle" hidden>
+        <div class="info-banner" role="note">
+          <span class="material-symbols-outlined" aria-hidden="true">inbox</span>
+          <div>
+            <strong>Preguntas que el chat no pudo responder</strong>
+            <p>
+              Revisa la demanda real, selecciona las preguntas válidas y genera un
+              <b>brief</b> para que el desarrollador implemente la tool, capa o documento
+              en el sprint que corresponda. <b>El panel no crea tools ni código.</b>
+            </p>
+            <p>
+              No se guardan datos personales: solo la pregunta, la razón, el tipo de
+              pregunta y la ruta. El brief se puede usar después como contexto para la IA.
+            </p>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <article class="metric">
+            <span class="metric-label">Pendientes</span>
+            <strong class="metric-value" id="demandMetricPending">—</strong>
+            <small>sin revisar</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">En revisión</span>
+            <strong class="metric-value" id="demandMetricReviewing">—</strong>
+            <small>en triage</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Aceptadas / planificadas</span>
+            <strong class="metric-value" id="demandMetricAccepted">—</strong>
+            <small>con brief</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Resueltas</span>
+            <strong class="metric-value" id="demandMetricResolved">—</strong>
+            <small>implementadas</small>
+          </article>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Cola de demanda</h2>
+              <p class="muted">Hasta 100 preguntas por vista. Ordena por ocurrencias o última aparición.</p>
+            </div>
+            <div class="panel-head-actions">
+              <div class="help-wrap">
+                <button class="help-btn" type="button" data-help="help-demand"
+                        aria-label="Ayuda sobre la cola de demanda" aria-expanded="false"
+                        aria-controls="help-demand">
+                  <span class="material-symbols-outlined">help</span>
+                </button>
+                <div id="help-demand" class="help-popover" hidden>
+                  <strong>Cola de demanda</strong>
+                  <p>Son las preguntas que el chat registró porque no pudo responder. La tabla agrupa preguntas idénticas y cuenta ocurrencias.</p>
+                  <ul>
+                    <li><b>Pendiente:</b> sin revisar.</li>
+                    <li><b>En revisión:</b> alguien la está evaluando.</li>
+                    <li><b>Aceptada / planificada:</b> se implementará en un sprint.</li>
+                    <li><b>Resuelta:</b> la tool, capa o documento ya está publicado.</li>
+                    <li><b>Rechazada / duplicada / archivada:</b> no se trabajará.</li>
+                  </ul>
+                  <p>El panel no crea tools. <b>Descargar brief</b> genera un Markdown con la pregunta, el tipo, la ruta y una propuesta para el sprint. No incluye datos personales.</p>
+                </div>
+              </div>
+              <button id="demandRefresh" class="btn btn-secondary" type="button">
+                <span class="material-symbols-outlined">refresh</span>
+                Actualizar
+              </button>
+            </div>
+          </div>
+
+          <div class="demand-filters">
+            <label class="filter-field"><span>Buscar</span>
+              <input id="demandSearch" type="search" placeholder="Pregunta…" />
+            </label>
+            <label class="filter-field"><span>Estado</span>
+              <select id="demandStatus">
+                <option value="all">Todos</option>
+                <option value="pending">Pendiente</option>
+                <option value="reviewing">En revisión</option>
+                <option value="accepted">Aceptada</option>
+                <option value="planned">Planificada</option>
+                <option value="resolved">Resuelta</option>
+                <option value="rejected">Rechazada</option>
+                <option value="duplicate">Duplicada</option>
+                <option value="archived">Archivada</option>
+              </select>
+            </label>
+            <label class="filter-field"><span>Razón</span>
+              <select id="demandReason">
+                <option value="all">Todas</option>
+                <option value="no_data">Sin dato</option>
+                <option value="no_recipe">Sin receta</option>
+                <option value="no_tool">Sin tool</option>
+                <option value="no_document">Sin documento</option>
+                <option value="out_of_scope">Fuera de alcance</option>
+                <option value="unknown">Desconocida</option>
+              </select>
+            </label>
+            <label class="filter-field"><span>Prioridad</span>
+              <select id="demandPriority">
+                <option value="all">Todas</option>
+                <option value="alta">Alta</option>
+                <option value="media">Media</option>
+                <option value="baja">Baja</option>
+              </select>
+            </label>
+            <label class="filter-field"><span>Orden</span>
+              <select id="demandSort">
+                <option value="last_seen_at">Última aparición</option>
+                <option value="occurrences">Ocurrencias</option>
+                <option value="created_at">Más reciente</option>
+                <option value="priority">Prioridad</option>
+              </select>
+            </label>
+            <button id="demandClear" class="btn btn-secondary btn-mini" type="button">Limpiar</button>
+          </div>
+
+          <div class="table-wrap">
+            <table class="data-table api-table demand-table">
+              <thead>
+                <tr>
+                  <th scope="col">Pregunta</th>
+                  <th scope="col">Veces</th>
+                  <th scope="col">Razón</th>
+                  <th scope="col">Tipo</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Prioridad</th>
+                  <th scope="col">Decisión</th>
+                  <th scope="col">Última vez</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="demandBody"></tbody>
+            </table>
+          </div>
+          <p id="demandEmpty" class="empty" hidden>No hay preguntas con esos filtros.</p>
+          <p id="demandMeta" class="table-hint" hidden></p>
+        </div>
+
+        <div id="demandDetail" class="panel" hidden>
+          <div class="panel-head">
+            <div>
+              <h2>Detalle de la demanda</h2>
+              <p class="muted" id="demandDetailSubtitle">—</p>
+            </div>
+            <button id="demandDetailClose" class="btn btn-secondary" type="button">Cerrar</button>
+          </div>
+
+          <div id="demandDetailQuestion" class="demand-question-full"></div>
+          <div id="demandDetailMeta" class="demand-meta-grid"></div>
+
+          <details class="demand-technical">
+            <summary>Clasificación y ruta</summary>
+            <pre id="demandDetailTechnical"></pre>
+          </details>
+
+          <form id="demandForm" class="rag-form" novalidate>
+            <input id="demandId" type="hidden" />
+            <div class="field-grid">
+              <div><label for="demandFormStatus">Estado</label>
+                <select id="demandFormStatus">
+                  <option value="pending">Pendiente</option>
+                  <option value="reviewing">En revisión</option>
+                  <option value="accepted">Aceptada</option>
+                  <option value="planned">Planificada</option>
+                  <option value="resolved">Resuelta</option>
+                  <option value="rejected">Rechazada</option>
+                  <option value="duplicate">Duplicada</option>
+                  <option value="archived">Archivada</option>
+                </select>
+              </div>
+              <div><label for="demandFormPriority">Prioridad</label>
+                <select id="demandFormPriority">
+                  <option value="">Sin prioridad</option>
+                  <option value="alta">Alta</option>
+                  <option value="media">Media</option>
+                  <option value="baja">Baja</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-grid">
+              <div><label for="demandFormDecision">Decisión</label>
+                <select id="demandFormDecision">
+                  <option value="">Sin decisión</option>
+                  <option value="new_tool">Nueva tool</option>
+                  <option value="new_layer">Nueva capa</option>
+                  <option value="new_document">Nuevo documento RAG</option>
+                  <option value="improve_prompt">Mejorar prompt</option>
+                  <option value="unavailable">Dato inexistente</option>
+                  <option value="out_of_scope">Fuera de alcance</option>
+                  <option value="wont_fix">No se hará</option>
+                  <option value="duplicate">Duplicada</option>
+                </select>
+              </div>
+              <div><label for="demandFormSprint">Sprint destino</label>
+                <input id="demandFormSprint" list="demandSprints" maxlength="80" placeholder="18, 19, 40-D.3…" />
+                <datalist id="demandSprints">
+                  <option value="18">RAG en el chat</option>
+                  <option value="19">APIs externas</option>
+                  <option value="40-D.3">Casos del golden</option>
+                  <option value="42">Fuentes externas</option>
+                  <option value="43">Normativa urbana</option>
+                  <option value="50">Demanda</option>
+                </datalist>
+              </div>
+            </div>
+            <label for="demandFormNotes">Notas de triage / brief</label>
+            <textarea id="demandFormNotes" rows="4" maxlength="4000" placeholder="Qué falta, qué datos se necesitan, decisiones…"></textarea>
+            <div class="field-grid">
+              <div><label for="demandFormResolutionType">Tipo de resolución</label>
+                <select id="demandFormResolutionType">
+                  <option value="">Sin tipo</option>
+                  <option value="data_added">Dato agregado</option>
+                  <option value="recipe_created">Receta creada</option>
+                  <option value="tool_added">Tool agregada</option>
+                  <option value="document_added">Documento agregado</option>
+                  <option value="wont_fix">No se hará</option>
+                </select>
+              </div>
+              <div><label for="demandFormResolutionNote">Nota de resolución</label>
+                <input id="demandFormResolutionNote" maxlength="2000" placeholder="Commit, sprint o detalle" />
+              </div>
+            </div>
+            <div class="rag-actions">
+              <button class="btn btn-primary" type="submit">Guardar triage</button>
+              <button id="demandBriefBtn" class="btn btn-secondary" type="button">Descargar brief</button>
+              <button id="demandQuickResolve" class="btn btn-secondary" type="button">Marcar resuelta</button>
+              <button id="demandQuickReject" class="btn btn-secondary" type="button">Rechazar</button>
+              <button id="demandQuickArchive" class="btn btn-secondary" type="button">Archivar</button>
+            </div>
+            <p id="demandFormMsg" class="status-line" role="status" aria-live="polite" hidden></p>
+          </form>
         </div>
       </section>
 

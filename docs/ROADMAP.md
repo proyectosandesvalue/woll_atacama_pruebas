@@ -1,7 +1,7 @@
 # ROADMAP.md — Plan de sprints
 
 > **Fuente de verdad del roadmap.** Se actualiza al inicio y al cierre de cada sesión de trabajo.
-> Última actualización: 2026-11-14.
+> Última actualización: 2026-11-19.
 >
 > **Infraestructura (2026-11-10):** el destino final es un **VPS propio** (Node persistente + PostgreSQL/PostGIS/pgvector + Nginx/Caddy + proxy persistente). **Vercel + Supabase son solo demo/staging**: Supabase alcanzó su límite de almacenamiento y Vercel Hobby no alcanza para producción. Las optimizaciones serverless son para la demo; no invertir en Upstash/Redis/cron para Vercel salvo que sea portable. **Sprint 26 es la prioridad de producción.** Ver ADR 005.
 > **Disparador de migración:** la creación de la **imagen Docker de PostgreSQL (PostGIS + pgvector)** marca el inicio de la migración. Desde ese commit, el entorno de desarrollo es Docker Compose/VPS, Vercel + Supabase quedan congelados para demo, y todo cambio debe funcionar primero en la imagen local y luego replicarse en el servidor.
@@ -104,6 +104,8 @@
 | 46 | Taxonomía normalizada + sidebar | 🔶 parcial (46-A/46-B ✅; 46-C pendiente) | alta | 20-26h | 14/15, 45 |
 | 47 | Gestor de capas geográficas | 🔶 local (GeoJSON, worker y tiles ✅; VPS/Shapefile pendientes) | alta | 18-24h | 08-G, 46 |
 | 48 | CRUD de configuración del chat | ✅ local (prompts, settings, mensajes, unavailable y golden; tools read-only) | alta | 8-10h | 40-D.2, 45 |
+| 49 | Publicador de ráster precalculado | ⏳ pending (nuevo, 2026-11-19) | media | 10-12h | 08-G, 26-D, 47; 41 |
+| 50 | Demanda no satisfecha | ✅ done (2026-11-19) | media | 12-16h | 40-D.2, 40-E |
 
 **Leyenda de estados:**
 - ✅ `done` — Completado y en producción.
@@ -985,7 +987,7 @@ y eliminación.
 
 ### Sprint 41 — Recetas de análisis (épica)
 
-**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 14-20h + validación experta · **Dependencias**: 40-C
+**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 14-20h + validación experta · **Dependencias**: 40-C, 49
 
 **Objetivo**: análisis multicriterio (aptitud para jojoba, etc.) como dato versionado que el código ejecuta con operaciones fijas (ADR 017).
 
@@ -994,6 +996,8 @@ y eliminación.
 - 41-B: validador de registro y fichas.
 - 41-C: primera receta (jojoba).
 - 41-D: validación experta.
+
+**Ráster:** las recetas que usen pendiente, orientación, sombra o aptitud consumen el publicador del Sprint 49. El cálculo del ráster sigue siendo offline (QGIS/GDAL/GRASS); el servidor solo publica y consulta estadísticas (ADR 027).
 
 **Además**: en 41 se retiran las reglas 13, 19, 20 del prompt y los parches `shouldFetchFeatures`, `maybeFetchFeaturesForStyle`, `detectStyleHint` (diferidos de 40-C.4).
 
@@ -1195,9 +1199,106 @@ RPCs tipadas (CONTRACT §6.2/§6.3).
 
 ---
 
+### Sprint 49 — Publicador de ráster precalculado
+
+**Estado**: ⏳ pending (nuevo, 2026-11-19) · **Prioridad**: media · **Duración**: 10-12h · **Dependencias**: 08-G, 26-D, 47; 41 para el consumo MCDA
+**Spec**: `docs/specs/49-publicador-raster.md` (DRAFT)
+**ADR**: `docs/DECISIONS/027-raster-precalculado-sin-geoserver.md`
+
+**Objetivo**: publicar como capa del visor un ráster ya calculado en QGIS,
+GDAL o GRASS (pendiente, orientación, sombra, aptitud), con versión inmutable,
+manifiesto, tiles WebP/PNG, ficha metodológica y estadísticas por comuna desde
+CSV de QGIS. El servidor no calcula rásteres ni adopta GeoServer.
+
+**Tramos**:
+- [ ] **49-A (1h).** Contrato de directorios, `.gitignore`, decisión GDAL
+  (host o contenedor efímero) y formato de tile.
+- [ ] **49-B (2h).** `scripts/raster-publish.mjs`: validación, manifest, índice
+  y versionado.
+- [ ] **49-C (2-3h).** Tiles con GDAL, límite de 20.000, `raster:sync
+  --check/--prune`.
+- [ ] **49-D (2h).** Nginx `/raster/`, config `source.raster`,
+  `js/utils/rasterUtils.js`, ficha y ocultamiento de tabla/filtros.
+- [ ] **49-E (2h).** Migración `052_raster_stats.sql`, CSV de estadísticas y
+  `GET /api/raster-stats`.
+- [ ] **49-F (1-2h).** Tests, docs, smoke de publicación y carga de 50 usuarios.
+
+**Criterios**:
+- **CA-1** Un COG con licencia y metadatos se publica con tiles, manifest e
+  índice.
+- **CA-2** Una versión publicada no se sobrescribe sin `--force`; la anterior
+  sigue disponible para rollback.
+- **CA-3** Los tiles se sirven desde Nginx con caché inmutable y funcionan con
+  PostgreSQL detenido.
+- **CA-4** El visor carga la capa como `L.tileLayer`, muestra la ficha y no
+  ofrece tabla/filtros por atributo.
+- **CA-5** No hay GeoServer ni JVM en el stack.
+
+**Reversión**: cambiar la config a la versión anterior; los tiles viejos se
+conservan hasta `--prune`.
+
+---
+
+### Sprint 50 — Demanda no satisfecha
+
+**Estado**: ✅ done (2026-11-19) · **Prioridad**: media · **Duración**: 12-16h · **Dependencias**: 40-D.2, 40-E
+**Spec**: `docs/specs/50-demanda-no-satisfecha.md`
+
+**Objetivo**: convertir `admin.unanswered_questions` en una cola de triage
+desde el panel: ver la demanda real, seleccionar las preguntas válidas,
+priorizarlas y generar un brief para que el desarrollador implemente la tool,
+capa o documento en un sprint posterior. El panel no crea tools.
+
+**Tramos**:
+- [X] **50-A (4h).** Migración `053_unanswered_demand.sql`: fingerprint,
+  ocurrencias, prioridad, decisión, sprint, notas, estados y RPCs.
+- [X] **50-B (4h).** Handlers, rutas, brief Markdown y tests.
+- [X] **50-C (4h).** Vista propia **Demanda**, tabla, filtros, detalle y
+  acciones de triage.
+- [X] **50-D (2-4h).** Badge de pendientes, brief descargable, documentación y
+  cierre.
+
+**Criterios**:
+- **CA-1** Las preguntas no respondidas se ven con su razón, tipo y ocurrencias.
+- **CA-2** Se pueden aceptar, planificar, resolver, rechazar, duplicar y
+  archivar sin crear tools desde el panel.
+- **CA-3** El brief Markdown se descarga y no contiene datos personales.
+- **CA-4** No se guardan email, sesión ni historial; los datos existentes se
+  limpian.
+- **CA-5** Migración y RPCs son idempotentes y `check:rpcs` pasa.
+
+**Resultados:** vista **Demanda** con las 4 preguntas reales de la base (una
+con 2 ocurrencias), filtros, detalle, triage y brief Markdown descargable.
+Migraciones 053/054/055, API, RPCs, limpieza de PII y tests. 491 tests (479 pasan,
+12 omitidos, 0 fallos), lint 0 errores y `check:rpcs` 51/51. Quedan las 4
+preguntas pendientes para triage operativo.
+
+---
+
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-11-19
+- ✅ **Sprint 50 completado:** módulo **Demanda** para gestionar
+  `admin.unanswered_questions`. Vista propia, sin datos personales, brief
+  Markdown descargable y triage de estados/prioridad/decisión/sprint.
+  Migraciones 053/054/055, endpoints y tests. El panel no crea tools; solo prepara
+  el brief para el sprint que corresponda. 491 tests (479 pasan, 12 omitidos,
+  0 fallos), lint 0 errores y `check:rpcs` 51/51. Quedan 4 preguntas reales
+  pendientes de triage.
+- ✅ **Decisión de arquitectura (ADR 027):** se descarta GeoServer como motor de
+  capas. El VPS R3 (4 vCPU/16 GB/100 GB) confirma el pipeline actual:
+  MVT pregenerado + Nginx + PostGIS. El ráster se produce offline en
+  QGIS/GDAL/GRASS y el servidor solo valida, versiona, publica y sirve.
+- ✅ **Spec 49 (DRAFT):** publicador de ráster precalculado (COG privado + tiles
+  WebP/PNG + manifest + índice + ficha + estadísticas por comuna). Sin cálculo
+  de pendientes, sombras ni MCDA en runtime. El MCDA queda en el Sprint 41
+  (ADR 017).
+- 📝 **Roadmap:** se agrega el Sprint 49 y se actualiza la dependencia del
+  Sprint 41. Sin cambios de código.
+- 📝 Próximo: aprobar la spec 49 y resolver las preguntas abiertas (GDAL,
+  formato de tile, maxzoom y origen de las estadísticas).
 
 ### 2026-11-14
 - ✅ **Login del panel sin TOTP** (`98ae91d`): usuario + contraseña con scrypt,

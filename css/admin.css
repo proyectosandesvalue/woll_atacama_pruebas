@@ -1148,6 +1148,104 @@ details.prompt[open] summary::before { content: "−"; }
   .chip-neutral { display: none; }
 }
 
+/* ── Demanda no satisfecha (Sprint 50) ───────────────────── */
+
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.nav-badge[hidden] { display: none !important; }
+
+.demand-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 0 20px 12px;
+}
+.filter-field {
+  display: grid;
+  gap: 4px;
+  color: var(--text-tertiary);
+  font-size: 0.66rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.filter-field input,
+.filter-field select {
+  width: auto;
+  min-width: 150px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.78rem;
+}
+.demand-table { min-width: 1200px; }
+.demand-question {
+  display: block;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.demand-question-full {
+  padding: 0 20px 12px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.demand-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  padding: 0 20px 12px;
+}
+.demand-meta-item {
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--bg-surface-2);
+}
+.demand-meta-label {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--text-tertiary);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.demand-meta-item code { font-size: 0.72rem; }
+.demand-technical {
+  margin: 0 20px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--bg-surface-2);
+}
+.demand-technical summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+.demand-technical pre {
+  margin: 8px 0 0;
+  max-height: 260px;
+  overflow: auto;
+  font-size: 0.72rem;
+}
+
 @media (max-width: 980px) {
   .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .metric-wide { grid-column: span 2; }

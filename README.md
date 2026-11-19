@@ -148,7 +148,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | Archivo / carpeta | Para qué sirve | Cuándo tocarlo |
 |---|---|---|
 | `index.html`, `help.html` | Entry point de la SPA y manual de ayuda | Cambios de shell, carga de scripts o UI global |
-| `admin.html`, `css/admin.css`, `js/admin/` | Panel admin de solo lectura (Sprint 15) | Configuración, chat, auditoría o login |
+| `admin.html`, `css/admin.css`, `js/admin/` | Panel admin: configuración, capas, RAG, APIs, taxonomía, Chat IA, Demanda y auditoría | Configuración, chat, demanda o login |
 | `api/chat.js` | Vercel Function del chat (adapter delgado) | Cambios de CORS/método del endpoint, no de lógica |
 | `api/proxy.js` | Proxy cerrado de servicios externos | Agregar un servicio o ajustar CORS/timeout |
 | `api/arclim-geojson.js`, `api/stations-*.js`, `api/variable-*.js` | Adapters Vercel de datos climáticos/estaciones | Cambios de CORS/método, no de lógica |
@@ -168,6 +168,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `scripts/layer-worker.mjs`, `docker/api/Dockerfile` | Carga a PostGIS y generación de tiles en worker | Importación de capas (47) |
 | `server/handlers/admin-taxonomy.js`, `scripts/taxonomy-*.mjs` | CRUD de dimensiones/grupos/subgrupos y compilación del snapshot | Cambios de taxonomía (46) |
 | `server/handlers/admin-chat-config.js`, `server/routes/admin-chat-config.js` | CRUD de prompts/settings/mensajes/unavailable/golden y tools read-only | Configuración del chat (48) |
+| `server/handlers/admin-unanswered.js`, `server/routes/admin-unanswered.js` | Cola de demanda: preguntas sin respuesta, triage y brief | Demanda del chat (50) |
 | `scripts/golden-seed.mjs`, `scripts/lib/golden-source.mjs` | Seed del golden y lectura BD → JSON con fallback | Cambios del golden set (48) |
 | `server/admin/rag-manifest.js` | Lectura/escritura atómica del manifiesto y PDFs | Validación o almacenamiento de documentos |
 | `scripts/rag-worker.mjs`, `docker/rag-worker/` | Worker de extracción/embeddings y cola | Ingesta real de PDFs |
