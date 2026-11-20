@@ -189,6 +189,9 @@ email, sesión ni historial.
 - **45-D.2:** `admin.unavailable_data` sigue siendo el catálogo curado; una
   pregunta con decisión `unavailable` puede inspirar un registro allí.
 - **Sprint 31:** métricas de demanda y retención.
+- **Ayuda del panel:** `docs/help/demanda-no-satisfecha.md` deja el contenido
+  listo para publicarlo en la futura página de ayuda del panel. `help.html`
+  sigue siendo el manual del visor público.
 
 ## 12. Cierre
 
