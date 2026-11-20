@@ -25,6 +25,7 @@
   },
   "ignorePatterns": [
     "node_modules/",
+    "js/lib/",
     "js/lib/glify-browser.js",
     "js/utils/webgl-heatmap.js",
     "js/utils/leaflet-webgl-heatmap.js",

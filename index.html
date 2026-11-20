@@ -7,26 +7,15 @@
   <title>Plataforma Woll Atacama</title>
   <meta name="description" content="Visor territorial de la Región de Atacama: recursos hídricos, clima, energía, minería y planificación con capas geográficas interactivas." />
 
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" />
-  <!-- MarkerCluster -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" integrity="sha384-pmjIAcz2bAn0xukfxADbZIb3t8oRT9Sv0rvO+BR5Csr6Dhqq+nZs59P0pPKQJkEV" crossorigin="anonymous" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" integrity="sha384-wgw+aLYNQ7dlhK47ZPK7FRACiq7ROZwgFNg0m04avm4CaXS+Z9Y7nMu8yNjBKYC+" crossorigin="anonymous" />
-
-  <!-- Tipografía -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
-
-  <!-- DOMPurify para sanitización XSS -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.3/purify.min.js" integrity="sha384-P00jmvqaN0eGBigZZV13Uwz/H1F8rCioMENGo4uFDs538iAm+CDDbPEkY09MR7G8" crossorigin="anonymous"></script>
-
-  <!-- Material Symbols Outlined -->
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/es.js" integrity="sha384-j/aEP2b+3OKmGqank2qCSosSrlrF9jpIpdgApXq2ryJYBpLSbEi63/PDdL+rKmcQ" crossorigin="anonymous"></script>
+  <!-- Assets vendorizados (Sprint 28-A) -->
+  <link rel="stylesheet" href="js/lib/leaflet/leaflet.css" />
+  <link rel="stylesheet" href="js/lib/leaflet.markercluster/MarkerCluster.css" />
+  <link rel="stylesheet" href="js/lib/leaflet.markercluster/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="js/lib/flatpickr/flatpickr.min.css" />
+  <link rel="stylesheet" href="css/fonts.css" />
+  <script src="js/lib/dompurify/purify.min.js"></script>
+  <script src="js/lib/flatpickr/flatpickr.min.js"></script>
+  <script src="js/lib/flatpickr/es.js"></script>
 
   <!-- Estilos propios -->
     <link rel="stylesheet" href="css/base.css?v=20261007" />
@@ -538,9 +527,9 @@
   <!-- ════════════════════════════════════════════════════════════
        SCRIPTS
        ════════════════════════════════════════════════════════════ -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" integrity="sha384-eXVCORTRlv4FUUgS/xmOyr66XBVraen8ATNLMESp92FKXLAMiKkerixTiBvXriZr" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
+  <script src="js/lib/leaflet/leaflet.js"></script>
+  <script src="js/lib/leaflet.markercluster/leaflet.markercluster.js"></script>
+  <script src="js/lib/chart.js/chart.umd.min.js"></script>
   <script src="./js/utils/webgl-heatmap.js"></script>
   <script src="./js/utils/leaflet-webgl-heatmap.js"></script>
   <script src="./js/lib/glify-browser.js"></script>

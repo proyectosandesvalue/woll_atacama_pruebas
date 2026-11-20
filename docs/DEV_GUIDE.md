@@ -1432,6 +1432,39 @@ Nginx sirve `/raster/` con caché inmutable y `/raster/index.json` sin caché. L
 fuente bajo `data/raster/` responde 404. Ver ADR 027 y
 `docs/specs/49-publicador-raster.md`.
 
+### 2.13. Actualizar un asset vendorizado (28-A)
+
+El visor no usa CDN. Leaflet, markercluster, flatpickr, DOMPurify, Chart.js y
+las tipografías se sirven desde el repositorio:
+
+| Asset | Ruta |
+|---|---|
+| Leaflet 1.9.4 | `js/lib/leaflet/` (`leaflet.js`, `leaflet.css`, `images/`) |
+| markercluster 1.5.3 | `js/lib/leaflet.markercluster/` |
+| flatpickr 4.6.13 | `js/lib/flatpickr/` (`flatpickr.min.js`, `.css`, `es.js`) |
+| DOMPurify 3.0.3 | `js/lib/dompurify/purify.min.js` |
+| Chart.js 4.4.0 | `js/lib/chart.js/chart.umd.min.js` |
+| Tipografías | `css/fonts.css` + `css/fonts/*.woff2` |
+
+Pasos:
+
+1. Descarga el archivo de la versión nueva y reemplaza el existente.
+2. Si cambia la API o los nombres de archivo, ajusta `index.html`, `help.html`
+   o `admin.html`. No agregues CDN ni `integrity`/`crossorigin` para assets
+   locales.
+3. Para tipografías, actualiza `css/fonts.css` y los `.woff2`; conserva la
+   clase `.material-symbols-outlined` o los iconos dejan de renderizar.
+4. Verifica en navegador el visor, la ayuda y el panel, y corre:
+
+   ```bash
+   node --test scripts/__tests__/security-frontend.test.js
+   ```
+
+   El test falla si aparece un recurso externo o si falta un asset local.
+
+No edites archivos minificados a mano: reemplaza el archivo completo y deja la
+versión anotada en la spec 28 o en el CHANGELOG.
+
 ## Verificación después de reemplazar
 
 ```bash

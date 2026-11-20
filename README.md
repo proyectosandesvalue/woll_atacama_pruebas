@@ -152,6 +152,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `index.html`, `help.html` | Entry point de la SPA y manual de ayuda | Cambios de shell, carga de scripts o UI global |
 | `raster/`, `data/raster/`, `scripts/raster-*.mjs` | Ráster precalculado: tiles públicos, COG privado, publicación y retención | Publicar o actualizar un ráster (Sprint 49) |
 | `admin.html`, `css/admin.css`, `js/admin/` | Panel admin: configuración, capas, RAG, APIs, taxonomía, Chat IA, Demanda y auditoría | Configuración, chat, demanda o login |
+| `js/lib/`, `css/fonts/`, `css/fonts.css` | Librerías y tipografías vendorizadas (Leaflet, markercluster, flatpickr, DOMPurify, Chart.js) | Actualizar una versión o agregar un asset local (28-A) |
 | `api/chat.js` | Vercel Function del chat (adapter delgado) | Cambios de CORS/método del endpoint, no de lógica |
 | `api/proxy.js` | Proxy cerrado de servicios externos | Agregar un servicio o ajustar CORS/timeout |
 | `api/arclim-geojson.js`, `api/stations-*.js`, `api/variable-*.js` | Adapters Vercel de datos climáticos/estaciones | Cambios de CORS/método, no de lógica |

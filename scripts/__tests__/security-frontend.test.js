@@ -4,21 +4,35 @@ import { readFileSync } from "node:fs";
 
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
 
-test("index.html carga los CDN con SRI y sin handlers inline", () => {
-  const html = read("index.html");
-
-  const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="(https?:\/\/[^"]+)"[^>]*>/g)];
-  const styles = [...html.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*\bhref="(https?:\/\/[^"]+)"[^>]*>/g)];
-
-  assert.ok(scripts.length > 0, "debe haber scripts externos");
-  assert.ok(styles.length > 0, "debe haber estilos externos");
-
-  for (const [tag, url] of [...scripts, ...styles].map((match) => [match[0], match[1]])) {
-    assert.match(tag, /\bintegrity="sha(256|384|512)-/, `falta integrity en ${url}`);
-    assert.match(tag, /\bcrossorigin="anonymous"/, `falta crossorigin en ${url}`);
+test("index.html y help.html usan assets locales, sin CDN", () => {
+  for (const file of ["index.html", "help.html", "admin.html"]) {
+    const html = read(file);
+    const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map((m) => m[1]);
+    const styles = [...html.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*\bhref="([^"]+)"/g)].map((m) => m[1]);
+    for (const url of [...scripts, ...styles]) {
+      assert.equal(
+        /^https?:\/\//.test(url),
+        false,
+        `${file} carga un recurso externo: ${url}`
+      );
+    }
   }
 
-  assert.equal(html.includes("onclick="), false, "index.html no debe tener onclick inline");
+  for (const file of [
+    "js/lib/leaflet/leaflet.js",
+    "js/lib/leaflet/leaflet.css",
+    "js/lib/leaflet.markercluster/leaflet.markercluster.js",
+    "js/lib/leaflet.markercluster/MarkerCluster.css",
+    "js/lib/flatpickr/flatpickr.min.js",
+    "js/lib/flatpickr/flatpickr.min.css",
+    "js/lib/dompurify/purify.min.js",
+    "js/lib/chart.js/chart.umd.min.js",
+    "css/fonts.css",
+  ]) {
+    assert.ok(read(file).length > 0, `falta el asset vendorizado ${file}`);
+  }
+
+  assert.equal(read("index.html").includes("onclick="), false, "index.html no debe tener onclick inline");
 });
 
 test("help.html no usa handlers inline", () => {
@@ -41,6 +55,15 @@ test("Nginx define una CSP sin unsafe-eval ni unsafe-inline en scripts", () => {
       false,
       `${file}: script-src no debe permitir unsafe-inline`
     );
+    for (const domain of [
+      "unpkg.com",
+      "cdnjs.cloudflare.com",
+      "cdn.jsdelivr.net",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com",
+    ]) {
+      assert.equal(csp.includes(domain), false, `${file}: CSP no debe permitir ${domain}`);
+    }
   }
 });
 

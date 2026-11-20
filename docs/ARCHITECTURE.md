@@ -113,19 +113,22 @@ Limitaciones de esta etapa:
 
 #### Seguridad del frontend (Sprint 28)
 
-- **SRI:** los 11 recursos CDN de `index.html` (Leaflet, markercluster,
-  flatpickr, DOMPurify, Chart.js) llevan `integrity="sha384-…"` y
-  `crossorigin="anonymous"`. Actualizar una versión exige recalcular el hash.
+- **Assets vendorizados:** Leaflet 1.9.4, markercluster 1.5.3, flatpickr
+  4.6.13, DOMPurify 3.0.3 y Chart.js 4.4.0 viven en `js/lib/`; Montserrat,
+  Open Sans, Space Grotesk y Material Symbols en `css/fonts/`. `index.html`,
+  `help.html` y `admin.html` no cargan CDN. Actualizar una versión exige
+  reemplazar el archivo y probar el visor, el panel y la ayuda.
 - **CSP:** definida en `deploy/nginx/woll.conf` y `woll.dev.conf`; sin
-  `unsafe-eval` ni `unsafe-inline` en `script-src`. `style-src` conserva
-  `'unsafe-inline'` por los estilos de Leaflet/glify.
+  `unsafe-eval` ni `unsafe-inline` en `script-src`, y sin dominios CDN.
+  `style-src` conserva `'unsafe-inline'` por los estilos de Leaflet/glify;
+  `font-src 'self' data:`.
 - **Sin handlers inline:** `help.html` usa `data-target` y listeners en
   `js/ui/help.js`.
 - **XSS:** todo dato de API/GeoJSON se escapa con `escapeHtml` antes de
   `innerHTML` (estaciones, gráficos, tabla server-side, ARClim, popups/WMS).
 - **Dependencias:** `npm audit` en 0; CI ejecuta
   `npm audit --omit=dev --audit-level=high`.
-- **Pendiente:** vendorizar CDN/tipografías, ZAP y `security.txt` (VPS).
+- **Pendiente:** capa base con licencia (28-C), ZAP y `security.txt` (28-E, VPS).
 
 #### Capas satelitales Copernicus
 

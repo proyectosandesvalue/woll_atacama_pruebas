@@ -49,13 +49,14 @@
 
 ### Security
 - **Sprint 28:** `npm audit` en 0 (`@vercel/functions@3.11.2` y `overrides.uuid@^11.1.1`); gate de auditoría en CI.
-- **SRI:** 11 recursos CDN de `index.html` con `integrity` sha384 y `crossorigin`; flatpickr fijado en 4.6.13.
+- **Assets vendorizados (28-A):** Leaflet 1.9.4, markercluster 1.5.3, flatpickr 4.6.13, DOMPurify 3.0.3, Chart.js 4.4.0 y tipografías (Montserrat, Open Sans, Space Grotesk y Material Symbols) se sirven desde `js/lib/` y `css/fonts/`. `index.html`, `help.html` y `admin.html` ya no cargan CDN; la CSP no permite dominios externos.
 - **CSP:** activa en Nginx de producción y desarrollo, sin `unsafe-eval` ni `unsafe-inline` en scripts; headers HSTS, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy`.
 - **Turf.js eliminado:** `js/utils/geoUtils.js` implementa `getBbox`; ya no se necesita `unsafe-eval`.
 - **XSS:** escapados nombre/comuna/tipo/período/tooltips de estaciones, nombres y unidades del modal de gráficos, errores de la tabla server-side y datos ARClim. `help.html` sin `onclick` inline.
 - **Tests:** `scripts/__tests__/geo-utils.test.js` y `scripts/__tests__/security-frontend.test.js`.
 
 ### Changed
+- **Seguridad frontend (28-A):** se retiraron unpkg, cdnjs, jsdelivr y Google Fonts de `index.html`, `help.html` y `admin.html`; los recursos viven en el repositorio. `security-frontend.test.js` verifica que no haya CDN y que existan los assets locales. Verificado en navegador: visor, ayuda y panel cargan fuentes y librerías locales sin violaciones CSP.
 - **Documentación (22-F):** auditoría de coherencia entre README, ARCHITECTURE, DEV_GUIDE, CHANGELOG, ROADMAP, AGENTS y specs. Se alinearon 46-C, 47-D, 49 y 50, se corrigieron estados y el mapa de archivos.
 - **Login del panel sin TOTP:** se retiró el código TOTP del formulario de ingreso; queda usuario + contraseña con scrypt, bloqueo por intentos y auditoría. La generación/verificación TOTP se conserva para cambios de contraseña u otros flujos sensibles y puede reactivarse con `ADMIN_TOTP_REQUIRED=1`.
 - **Idioma:** se reemplazó el voseo rioplatense por español neutro en la UI, documentación, prompts del chat, mensajes de error y scripts. La regla queda registrada en `AGENTS.md` y `CONTRACT.md` §7.5.

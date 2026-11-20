@@ -27,7 +27,7 @@
 | [14-15-panel-admin](14-15-panel-admin.md) | 14-15 | Mediano | EN EJECUCIÓN |
 | [17-ingesta-rag](17-ingesta-rag.md) | 17 | Mediano | EN EJECUCIÓN |
 | [26-plataforma](26-plataforma/00-spec-madre.md) | 26 | Grande | EN EJECUCIÓN |
-| [28-seguridad-frontend](28-seguridad-frontend.md) | 28 | Mediano | PARCIAL CERRADA |
+| [28-seguridad-frontend](28-seguridad-frontend.md) | 28 | Mediano | PARCIAL CERRADA (ZAP/capa base pendientes) |
 | [30-aceptacion](30-aceptacion.md) | 30 | Grande | EN EJECUCIÓN |
 | [44-indicadores-copernicus](44-indicadores-copernicus.md) | 44 | Mediano | CERRADA |
 | [45-panel-admin-operaciones](45-panel-admin-operaciones/00-spec-madre.md) | 45-48 | Grande | EN EJECUCIÓN (47-C/VPS pendientes) |

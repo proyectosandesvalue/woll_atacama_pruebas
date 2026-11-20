@@ -85,7 +85,7 @@
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
 | 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 parcial (26-E v1 ✅, 26-G ✅, 26-J ✅, 26-K diferido; 26-F/H/I pendientes) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | 🔶 parcial (CI base ✅; deploy/rollback pendientes) | alta | 7-8h | 26-D |
-| 28 | Seguridad del frontend y dependencias | 🔶 parcial (dependencias 0, SRI, CSP y XSS ✅; vendorización/ZAP/capa base pendientes) | alta | 9-10h | 26-D |
+| 28 | Seguridad del frontend y dependencias | 🔶 parcial (dependencias 0, CSP, XSS y vendorización ✅; ZAP/capa base pendientes) | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
 | 30 | Pruebas de aceptación técnica | 🔶 parcial (gate 08 ✅ y carga 25/50 local ✅; VPS/E2E pendientes) | alta | 16h | 26, 27 |
 | 31 | Observabilidad y operación | ⏳ pending | alta | 7-8h | 26 |
@@ -675,18 +675,18 @@ tiene Recall@5 medido y el chat se abstiene cuando no hay evidencia.
 
 ### Sprint 28 — Seguridad del frontend y dependencias
 
-**Estado**: 🔶 parcial · **Prioridad**: alta · **Duración**: 9-10h · **Dependencias**: 26-D, 30
+**Estado**: 🔶 parcial (28-A/B/D/F ✅; 28-C/E pendientes) · **Prioridad**: alta · **Duración**: 9-10h · **Dependencias**: 26-D, 30
 
 **Sub-sprints**:
-- [x] **A (1h) — H14 (parcial).** Dependencias auditadas: `@vercel/functions@3.11.2`, `overrides.uuid@^11.1.1`, `npm audit` en 0. Vendorización de Leaflet/markercluster/Chart.js/DOMPurify y tipografías locales: pendiente.
+- [x] **A (4h) — H14.** Dependencias auditadas: `@vercel/functions@3.11.2`, `overrides.uuid@^11.1.1`, `npm audit` en 0. Leaflet 1.9.4, markercluster 1.5.3, flatpickr 4.6.13, DOMPurify 3.0.3, Chart.js 4.4.0 y las tipografías se sirven desde `js/lib/` y `css/fonts/`; sin CDN.
 - [x] **B (2h) — H15.** CSP activa en Nginx de producción y desarrollo; HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`; `onclick` inline retirados de `help.html`.
 - [ ] **C (2h) — H5.** Capa base con licencia: elegir proveedor (ADR 010), reemplazar `mt1.google.com`, atribuciones, revisar la política de uso de OSM.
 - [x] **D (1h).** Auditoría de `innerHTML`: estaciones, gráficos, tabla de servidor y ARClim escapados; popups/WMS ya lo estaban.
 - [ ] **E (2h).** Análisis OWASP ZAP contra staging, correcciones, `security.txt` (requiere VPS y contacto institucional).
-- [x] **F (1h).** SRI + `crossorigin` en 11 recursos CDN; flatpickr fijado en 4.6.13; Turf eliminado (`getBbox` local, sin `unsafe-eval`); tests de seguridad en CI.
+- [x] **F (1h).** flatpickr fijado en 4.6.13; Turf eliminado (`getBbox` local, sin `unsafe-eval`); assets locales y CSP sin CDN verificados en `security-frontend.test.js`; `npm audit` en CI.
 
 **Criterios**:
-- **CA-1** Dado el visor, entonces no carga ningún script ni hoja de estilo desde dominios externos. **Pendiente:** hoy los CDN externos llevan SRI y versión fija; la vendorización queda para el VPS.
+- **CA-1** Dado el visor, entonces no carga ningún script, hoja de estilo ni fuente desde dominios externos. ✅ (28-A)
 - **CA-2** Dado el CSP activo, entonces no hay violaciones en el uso normal. ✅
 - **CA-3** Dada la capa base por defecto, entonces su licencia permite uso institucional. **Pendiente (28-C).**
 - **CA-4** El informe ZAP no tiene hallazgos altos abiertos. **Pendiente (26-F).**
@@ -1284,6 +1284,14 @@ preguntas pendientes para triage operativo.
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
 ### 2026-11-19
+- ✅ **28-A (vendorización):** Leaflet 1.9.4, markercluster 1.5.3, flatpickr
+  4.6.13, DOMPurify 3.0.3, Chart.js 4.4.0 y las tipografías (Montserrat, Open
+  Sans, Space Grotesk y Material Symbols) se sirven desde `js/lib/` y
+  `css/fonts/`. `index.html`, `help.html` y `admin.html` no cargan recursos
+  externos; la CSP queda en `'self'` para scripts, `'self' 'unsafe-inline'`
+  para estilos y `'self' data:` para fuentes. Verificado en navegador sin
+  violaciones CSP; `security-frontend.test.js` cubre assets locales y ausencia
+  de CDN. Quedan 28-C (capa base) y 28-E (ZAP/`security.txt`).
 - ✅ **22-F (documentación):** auditoría de coherencia entre README,
   ARCHITECTURE, DEV_GUIDE, CHANGELOG, ROADMAP, AGENTS y specs. Se alinearon
   46-C, 47-D, 49 y 50, se corrigieron estados y el mapa de archivos.
