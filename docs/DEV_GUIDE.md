@@ -1126,16 +1126,19 @@ npm run taxonomy:compile -- --check
 - El seed es fiel al snapshot v1 (mismo checksum). Si se edita una capa común
   con estilos distintos por dimensión, se conserva la variante en
   `layer_placements.config`.
-- El sidebar sigue leyendo `/api/config`; la lectura nativa de
-  `/api/taxonomy` queda para 46-C.
+- El sidebar usa `/api/taxonomy` con `TAXONOMY_API_ENABLED=1` y
+  `?taxonomy=1`/`WOLL_TAXONOMY_API`; si falla, cae a `/api/config` y luego a
+  `allTemasConfig` (INV-5). Ver §2.11.2.
 
-**Gestor de capas (47, GeoJSON)**
+**Gestor de capas (47, GeoJSON y Shapefile)**
 
 - `/admin.html` → **Capas**.
 - **Agregar capa** crea los metadatos (clave, nombre, tipo, fuente y JSON de
   estilo/popup/alias).
 - **Importar GeoJSON** sube el archivo, lo guarda en `geojson/uploads/`,
   encola la importación y, si se marca, genera tiles MVT.
+- **Importar Shapefile (ZIP)** sigue el flujo de §2.11.1: ZIP privado, worker
+  con GDAL, GeoJSON de respaldo y carga a PostGIS.
 - El worker se ejecuta con:
 
 ```bash
@@ -1253,6 +1256,83 @@ npm run golden:seed -- --dry-run
 - La caché no se purga: cambia la URL al cambiar la versión.
 
 ---
+
+### 2.11.1. Importar Shapefile (ZIP) desde el panel (47-D)
+
+El panel acepta un ZIP con un Shapefile. Requisitos:
+
+- `.shp`, `.dbf`, `.shx` y `.prj` con el mismo nombre base; `.cpg` opcional.
+- Máximo **200 MB** de ZIP y **1 GB** descomprimido; hasta 100 entradas.
+- Sin paths absolutos, `..`, backslashes ni symlinks.
+- Un solo `.shp` por ZIP.
+
+Flujo:
+
+1. **Capas → Importar capa**, elige la capa, la dimensión y el ZIP.
+2. El ZIP queda privado en `geojson/private/<key>.zip` (Nginx responde 404).
+3. El worker `layer-worker` lo descomprime, exige los componentes, genera
+   `geojson/uploads/<key>.geojson` con `ogr2ogr` y carga a PostGIS con
+   `load-layer --force --tiles`.
+4. El panel muestra el job y, al terminar, `source.tiles` y el fallback.
+
+La imagen del worker es `docker/layer-worker` (GDAL + `unzip`); la API no
+incorpora GDAL. Si cambias el Dockerfile:
+
+```bash
+podman-compose -p woll_local --env-file .env.local \
+  -f docker-compose.yml -f docker-compose.dev.yml build layer-worker
+npm run stack:up
+```
+
+Para procesar un job manualmente:
+
+```bash
+npm run layer:worker -- --once
+```
+
+En Podman/SELinux, el compose de desarrollo usa `label=disable` para el worker;
+no montes `geojson/` con `:Z` a mano o Nginx puede quedar sin permiso de
+lectura. En Docker/VPS (sin SELinux) no aplica.
+
+### 2.11.2. Activar la taxonomía nativa (46-C)
+
+El sidebar puede leer las tablas normalizadas sin esperar a publicar un
+snapshot. El endpoint devuelve el mismo shape de `allTemasConfig`.
+
+1. Habilita el endpoint en el servidor:
+
+   ```env
+   TAXONOMY_API_ENABLED=1
+   ```
+
+2. Abre el visor con el flag de cliente:
+
+   ```text
+   https://tu-dominio/?taxonomy=1
+   ```
+
+   También puedes activarlo en consola con
+   `globalThis.WOLL_TAXONOMY_API = true` antes de cargar la app.
+
+3. Verifica el endpoint:
+
+   ```bash
+   curl -i https://tu-dominio/api/taxonomy
+   ```
+
+   Debe devolver `200`, `ETag` y un `config` con las dimensiones. Un segundo
+   request con `If-None-Match` debe devolver `304`.
+
+4. Fallback: si `/api/taxonomy` falla, el loader intenta `/api/config` y, si
+   también falla, usa `allTemasConfig` (INV-5). El visor nunca se queda sin
+   configuración.
+
+5. Rollback: pon `TAXONOMY_API_ENABLED=0` y quita `?taxonomy=1`. No hace falta
+   deploy del frontend; el sidebar vuelve a `/api/config`.
+
+El endpoint compila `admin.dimensions/groups/subgroups/layers/placements` en
+cada request (seis consultas) y cachea 60 s por HTTP. No publica snapshots ni
+escribe en la BD. Ver `docs/specs/45-panel-admin-operaciones/46-C-taxonomy-api.md`.
 
 ### 2.12. Ráster precalculado (Sprint 49)
 

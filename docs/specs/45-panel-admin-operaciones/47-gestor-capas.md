@@ -1,20 +1,20 @@
-# Spec 47 — Gestor e importador de capas (GeoJSON)
+# Spec 47 — Gestor e importador de capas (GeoJSON y Shapefile)
 
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 47 |
-| **Estado de la spec** | EN EJECUCIÓN |
+| **Estado de la spec** | EN EJECUCIÓN — 47-A/B/D implementados; 47-C y VPS pendientes |
 | **Tamaño** | Grande |
 | **Duración estimada** | 16-20 h |
 | **Dependencias** | 08-G (tiles), 45 (panel), 46 (taxonomía) |
-| **Última revisión** | 2026-11-14 |
+| **Última revisión** | 2026-11-19 |
 
 ## 1. Objetivo
 
-Gestionar capas geográficas desde el panel: metadatos, archivo GeoJSON,
-carga a PostGIS, generación de tiles y publicación del snapshot que usa el
-visor. En esta fase solo se importa **GeoJSON**; Shapefile/ZIP queda para
-47-D.
+Gestionar capas geográficas desde el panel: metadatos, archivo GeoJSON o
+Shapefile (ZIP), carga a PostGIS, generación de tiles y publicación del
+snapshot que usa el visor. La importación Shapefile se especifica en
+`47-D-shapefile.md`.
 
 ## 2. Alcance
 
@@ -23,8 +23,11 @@ visor. En esta fase solo se importa **GeoJSON**; Shapefile/ZIP queda para
   activo). La clave no cambia después de crear.
 - Subida de GeoJSON (máx. 100 MB) con validación de `FeatureCollection`,
   geometrías y conteo de features.
+- Subida de ZIP Shapefile (máx. 200 MB, 1 GB descomprimido) a
+  `geojson/private/<key>.zip` (Nginx 404), con validación de `.shp/.dbf/.shx/
+  .prj` y `.cpg` opcional.
 - Archivo en `geojson/uploads/<key>.geojson`; el GeoJSON original queda como
-  fallback.
+  fallback. Para Shapefile, el worker genera el GeoJSON con `ogr2ogr`.
 - Cola `admin.layer_jobs` y worker `scripts/layer-worker.mjs`.
 - Importación: `load-layer --force --tiles`, tabla PostGIS y tiles MVT.
 - Actualización de `admin.layers.config.source.tiles` al terminar.
@@ -33,7 +36,6 @@ visor. En esta fase solo se importa **GeoJSON**; Shapefile/ZIP queda para
 - Tests de validación, handlers y worker.
 
 **Fuera**
-- Shapefile/ZIP y `ogr2ogr` (47-D).
 - Edición geométrica en mapa.
 - Borrado físico de tablas PostGIS; se archiva la capa.
 - Edición de estilos por formulario estructurado: el campo avanzado es JSON.
@@ -64,7 +66,7 @@ Un job activo por capa (índice parcial).
 | `POST` | `/api/admin/layers` | crear metadatos |
 | `PUT` | `/api/admin/layers` | editar nombre/tipo/config/activo |
 | `DELETE` | `/api/admin/layers?id=` | archivar (activo=false) |
-| `POST` | `/api/admin/layers/upload?key=` | GeoJSON binario |
+| `POST` | `/api/admin/layers/upload?key=&format=` | GeoJSON o ZIP Shapefile binario (`format=geojson|shapefile`) |
 | `POST` | `/api/admin/layers/jobs` | encolar importación |
 | `GET` | `/api/admin/layers/jobs?id=` | estado de jobs |
 | `POST` | `/api/admin/layers/jobs/cancel` | cancelar job `queued` |
@@ -83,8 +85,11 @@ Un job activo por capa (índice parcial).
 4. Guarda resultado, heartbeat y estado.
 5. `--once` para tests/cron; loop con `--poll`.
 
-Imagen: reutiliza la imagen del API; volúmenes `./geojson` y `./tiles`.
-Requiere `DATABASE_ADMIN_URL` para DDL y `DATABASE_URL` para la cola.
+Imagen: `docker/layer-worker` (GDAL + `unzip`); la API no incorpora GDAL.
+Volúmenes `./geojson` y `./tiles`. Para Shapefile, descomprime el ZIP, valida
+los componentes, genera `geojson/uploads/<key>.geojson` con `ogr2ogr` y luego
+ejecuta `load-layer`. Requiere `DATABASE_ADMIN_URL` para DDL y `DATABASE_URL`
+para la cola.
 
 ## 6. Criterios de aceptación
 
@@ -98,6 +103,7 @@ Requiere `DATABASE_ADMIN_URL` para DDL y `DATABASE_URL` para la cola.
 | CA-6 | job `queued` | cancelo | `cancelled` |
 | CA-7 | capa publicada | abro el visor | tiles y fallback GeoJSON funcionan |
 | CA-8 | migración | aplico dos veces | sin error |
+| CA-9 | ZIP Shapefile válido | subo y encolo | job `succeeded`; GeoJSON de respaldo, tabla y tiles (ver 47-D) |
 
 ## 7. Seguridad
 

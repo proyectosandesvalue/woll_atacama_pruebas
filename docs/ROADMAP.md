@@ -79,7 +79,7 @@
 | 19 | APIs externas + CRUD | ⏳ pending | media | 15-25h | 16 |
 | 20 | Adapter real: meteorología | ⏳ pending | baja | 4-6h | 19 |
 | 21 | Adapter real: leyes (BCN) | ⏳ pending | baja | 6-8h | 19 |
-| 22 | Alineación de documentación | 🔶 parcial (A-E cerrados; F y ajustes pendientes) | alta | 3-4h | — |
+| 22 | Alineación de documentación | 🔶 parcial (A-F cerrados; ajustes pendientes) | alta | 3-4h | — |
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
@@ -101,8 +101,8 @@
 | 43 | Normativa urbana: BCN + planes reguladores | ⏳ pending | media | 20-32h | 17, 18, 41-A |
 | 44 | Catálogo de indicadores satelitales Copernicus | ✅ done | media | 8-10h | proxy (2026-11-06) |
 | 45 | Panel admin: ingesta RAG + gestor de APIs | 🔶 local (45-A/45-B ✅; VPS pendiente) | alta | 24-30h | 14/15, 17, 19 |
-| 46 | Taxonomía normalizada + sidebar | 🔶 parcial (46-A/46-B ✅; 46-C pendiente) | alta | 20-26h | 14/15, 45 |
-| 47 | Gestor de capas geográficas | 🔶 local (GeoJSON, worker y tiles ✅; VPS/Shapefile pendientes) | alta | 18-24h | 08-G, 46 |
+| 46 | Taxonomía normalizada + sidebar | 🔶 local (46-A/46-B/46-C ✅; VPS pendiente) | alta | 20-26h | 14/15, 45 |
+| 47 | Gestor de capas geográficas | 🔶 local (GeoJSON, Shapefile/ZIP, worker y tiles ✅; VPS pendiente) | alta | 18-24h | 08-G, 46 |
 | 48 | CRUD de configuración del chat | ✅ local (prompts, settings, mensajes, unavailable y golden; tools read-only) | alta | 8-10h | 40-D.2, 45 |
 | 49 | Publicador de ráster precalculado | ✅ local (publicación, API, visor y tests; VPS/carga pendientes) | media | 10-12h | 08-G, 26-D, 47; 41 |
 | 50 | Demanda no satisfecha | ✅ done (2026-11-19) | media | 12-16h | 40-D.2, 40-E |
@@ -488,7 +488,7 @@ tiene Recall@5 medido y el chat se abstiene cuando no hay evidencia.
 
 ### Sprint 22 — Alineación de documentación
 
-**Estado**: 🔶 parcial (A-E cerrados; F y ajustes pendientes) · **Prioridad**: alta · **Duración**: 3-4h · **Dependencias**: ninguna
+**Estado**: 🔶 parcial (A-F cerrados; ajustes adicionales pendientes) · **Prioridad**: alta · **Duración**: 3-4h · **Dependencias**: ninguna
 
 **Objetivo**: Dejar todos los documentos coherentes entre sí y con el código actual.
 
@@ -498,7 +498,7 @@ tiene Recall@5 medido y el chat se abstiene cuando no hay evidencia.
 - [X] **C** — Actualizar `CONTRACT.md §6.2` y `§9.1` (30 min)
 - [X] **D** — Actualizar `DEV_GUIDE.md §8` (30 min)
 - [X] **E** — Actualizar `README.md` si tiene desalineaciones de conteos (30 min)
-- [ ] **F** — Verificar coherencia entre todos los documentos (30 min)
+- [X] **F** — Verificar coherencia entre todos los documentos (30 min)
 
 **Ajustes adicionales (agregados 2026-10-05)**:
 - [ ] Reparar ADR 004 (texto pegado, reemplazar por ADR 008).
@@ -1142,36 +1142,38 @@ conexiones en el VPS.
 
 ### Sprint 46 — Taxonomía normalizada + sidebar
 
-**Estado**: 🔶 parcial (modelo, seed, compilador y CRUD ✅; sidebar nativo 46-C pendiente) · **Prioridad**: alta · **Duración**: 20-26h · **Dependencias**: 14/15, 45
+**Estado**: 🔶 local (modelo, seed, compilador, CRUD y sidebar nativo ✅; VPS pendiente) · **Prioridad**: alta · **Duración**: 20-26h · **Dependencias**: 14/15, 45
 **Spec**: `docs/specs/45-panel-admin-operaciones/00-spec-madre.md` §6
 
 **Objetivo**: mover dimensiones, grupos, subgrupos, capas y asignaciones a
 tablas normalizadas; compilar el snapshot para el visor y adaptar el sidebar.
 
-**Implementado 46-A/46-B:** migraciones 045-047, seed fiel al snapshot v1
+**Implementado 46-A/46-B/46-C:** migraciones 045-047, seed fiel al snapshot v1
 (mismo checksum), compilador `taxonomy:compile`, CRUD y publicación desde el
-panel. 46-C (sidebar nativo) queda pendiente.
+panel. `GET /api/taxonomy` compila las tablas al shape de `allTemasConfig` y el
+sidebar lo consume con `TAXONOMY_API_ENABLED=1` + `?taxonomy=1`, con fallback a
+`/api/config` y al archivo local.
 
 **Fases**:
 - **46-A** — Migración, seed desde snapshot v1 y compilador. ✅
 - **46-B** — CRUD de dimensiones/grupos/subgrupos y assignments. ✅
-- **46-C** — `/api/taxonomy` + adaptación del sidebar con flag. ⏳
+- **46-C** — `/api/taxonomy` + adaptación del sidebar con flag. ✅ local; falta VPS.
 
 ---
 
 ### Sprint 47 — Gestor de capas geográficas
 
-**Estado**: 🔶 local (GeoJSON, worker y tiles ✅; VPS/Shapefile pendientes) · **Prioridad**: alta · **Duración**: 18-24h · **Dependencias**: 08-G, 46
-**Spec**: `docs/specs/45-panel-admin-operaciones/47-gestor-capas.md`
+**Estado**: 🔶 local (GeoJSON, Shapefile/ZIP, worker y tiles ✅; VPS pendiente) · **Prioridad**: alta · **Duración**: 18-24h · **Dependencias**: 08-G, 46
+**Spec**: `docs/specs/45-panel-admin-operaciones/47-gestor-capas.md` y `47-D-shapefile.md`
 
-**Objetivo**: CRUD de capas, upload GeoJSON, carga a PostGIS, generación de
-tiles, publicación y reversión.
+**Objetivo**: CRUD de capas, upload GeoJSON o Shapefile (ZIP), carga a PostGIS,
+generación de tiles, publicación y reversión.
 
 **Fase**:
 - **47-A** — Upload/validación GeoJSON y editor de metadatos. ✅
 - **47-B** — Worker load-layer + tiles y publicación. ✅
 - **47-C** — Vista previa y estado de capa. Parcial: estado y jobs; falta preview en mapa.
-- **47-D** — Shapefile/ZIP con `ogr2ogr` (pendiente).
+- **47-D** — Shapefile/ZIP con `ogr2ogr` y worker con GDAL. ✅ local; falta VPS.
 
 ---
 
@@ -1282,6 +1284,9 @@ preguntas pendientes para triage operativo.
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
 ### 2026-11-19
+- ✅ **22-F (documentación):** auditoría de coherencia entre README,
+  ARCHITECTURE, DEV_GUIDE, CHANGELOG, ROADMAP, AGENTS y specs. Se alinearon
+  46-C, 47-D, 49 y 50, se corrigieron estados y el mapa de archivos.
 - ✅ **Sprint 50 completado:** módulo **Demanda** para gestionar
   `admin.unanswered_questions`. Vista propia, sin datos personales, brief
   Markdown descargable y triage de estados/prioridad/decisión/sprint.
@@ -1309,9 +1314,25 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 - 📝 **Pendiente:** validación visual en un navegador visible y prueba de carga
   de 50 usuarios en el VPS. `--force` republica una versión; el rollback se
   hace en la config.
-- 📝 **Roadmap:** se agrega el Sprint 49 y se actualiza la dependencia del
-  Sprint 41.
-- 📝 Próximo: **49-F** (carga/VPS) o pasar al **Sprint 41** (recetas MCDA).
+- ✅ **Sprint 47-D (Shapefile/ZIP):** upload de ZIP a `geojson/private/`,
+  validación de componentes (`.shp/.dbf/.shx/.prj`), worker con GDAL/`unzip`
+  (`docker/layer-worker`), GeoJSON de respaldo y carga a PostGIS con `ogr2ogr`.
+  Nginx deniega el ZIP privado; la API sigue sin GDAL. Spec
+  `docs/specs/45-panel-admin-operaciones/47-D-shapefile.md`.
+- ✅ **Verificación 47-D:** ZIP con un polígono → job `succeeded`, tabla con 1
+  feature, GeoJSON de respaldo, 71 tiles MVT y `source.tiles` actualizado.
+  Nginx: ZIP privado 404, GeoJSON y tiles 200.
+- ✅ **Sprint 46-C (sidebar nativo):** `GET /api/taxonomy` compila
+  `admin.dimensions/groups/subgroups/layers/placements` al shape de
+  `allTemasConfig`; flags `TAXONOMY_API_ENABLED=1` y `?taxonomy=1`; el loader
+  cae a `/api/config` y luego al archivo local. Checksum local idéntico al
+  snapshot v2 (`f85f8027…`) y ETag/304 verificados. Spec
+  `docs/specs/45-panel-admin-operaciones/46-C-taxonomy-api.md`.
+- 📝 **Roadmap:** se agrega el Sprint 49, se actualiza la dependencia del
+  Sprint 41 y se cierran 47-D y 46-C a nivel local.
+- 📝 Próximo: cuando haya acceso al VPS, validar 47-D, 46-C y 49 (migración
+  `052`, flag `TAXONOMY_API_ENABLED=1`, `?taxonomy=1`, carga de 50 usuarios).
+  Mientras tanto, seguir con **Sprint 41 (MCDA)** o **Sprint 18 (RAG)**.
 
 ### 2026-11-14
 - ✅ **Login del panel sin TOTP** (`98ae91d`): usuario + contraseña con scrypt,
@@ -1339,8 +1360,9 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   checklist DEV_GUIDE §3.6.1). Aplica a todo cambio en prompts, tools, router,
   RAG, settings y golden set. El Sprint 18 queda ordenado en fases con mapa de
   fuentes, retrieval híbrido, tool documental y evaluación por ruta.
-- 📝 Próximo: **47-C** (vista previa en mapa), **47-D** (Shapefile/ZIP),
-  **46-C** (sidebar nativo) o **18** (RAG en el chat), según prioridad.
+- 📝 Próximo: **47-C** (vista previa en mapa), **49-F** (validación VPS),
+  **Demanda** (triage cuando esté en línea) o **18-B** (RAG, cuando Vertex esté
+  configurado).
 
 ### 2026-11-10
 - ✅ **Fix de proximidad (migración 037)**.

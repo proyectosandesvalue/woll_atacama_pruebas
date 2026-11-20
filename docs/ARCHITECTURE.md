@@ -386,6 +386,12 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
   `Cache-Control: public, max-age=300` y `304` si no cambió. Si no hay
   snapshot o la BD falla, responde `503` y el visor usa `allTemasConfig`
   (INV-5). `js/config/loader.js` hace el fetch y el fallback.
+- **Taxonomía nativa (46-C):** `GET /api/taxonomy` compila
+  `admin.dimensions/groups/subgroups/layers/placements` al mismo shape de
+  `allTemasConfig`, valida con `configValidator` y responde con ETag/caché de
+  60 s. Se habilita con `TAXONOMY_API_ENABLED=1`; el cliente lo intenta con
+  `?taxonomy=1` o `WOLL_TAXONOMY_API` y, si falla, cae a `/api/config` y al
+  archivo local.
 - **Panel:** `admin.html` + `js/admin/*` sin framework. Secciones: Configuración
   (solo lectura), Capas, RAG, APIs, Taxonomía, Chat IA (CRUD), Demanda (triage)
   y Auditoría (solo lectura). El chip del encabezado indica `editable` o
@@ -460,28 +466,36 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
   `validarConfiguracionGlobal` y publica un `admin.config_snapshots`.
 - **Fidelidad:** el seed del snapshot v1 produce exactamente el mismo
   checksum (`f85f80273f3b…`), incluyendo `leyenda` y variantes por dimensión.
+- **API nativa (46-C):** `GET /api/taxonomy` compila las tablas normalizadas al
+  shape de `allTemasConfig`, valida la config y devuelve `config`, `checksum`,
+  `source`, `generated_at` y `warnings`. Cachea 60 s y soporta `ETag/304`.
+  Se habilita con `TAXONOMY_API_ENABLED=1`; el cliente la usa con
+  `?taxonomy=1`/`WOLL_TAXONOMY_API`. Fallback: `/api/taxonomy` →
+  `/api/config` → `allTemasConfig` (INV-5).
 - **Panel:** `/admin.html` → Taxonomía permite CRUD de dimensiones, grupos,
-  subgrupos y asignaciones, y publicar el snapshot. El sidebar sigue
-  leyendo `/api/config`; el endpoint nativo `/api/taxonomy` queda para 46-C.
+  subgrupos y asignaciones, y publicar el snapshot.
 - **Migraciones:** 045 (modelo), 046 (updated_by), 047 (extra).
 
 ### 4.5. Gestor de capas (Sprint 47)
 
-- **UI:** `/admin.html` → Capas. CRUD de `admin.layers`, upload de GeoJSON y
-  listado de trabajos.
-- **Archivos:** `geojson/uploads/<key>.geojson` (ignorado por git); el
-  GeoJSON original queda como fallback.
-- **Cola:** `admin.layer_jobs`; un job activo por capa.
-- **Worker:** `scripts/layer-worker.mjs` ejecuta
-  `load-layer --force --tiles`, actualiza
-  `admin.layers.config.source.tiles` con la versión publicada y deja el
-  `fallback` GeoJSON. Reutiliza la imagen del API y los volúmenes `geojson/` y
-  `tiles/`.
+- **UI:** `/admin.html` → Capas. CRUD de `admin.layers`, upload de GeoJSON o
+  ZIP de Shapefile y listado de trabajos.
+- **Archivos:** `geojson/uploads/<key>.geojson` (público, ignorado por git)
+  como fallback; `geojson/private/<key>.zip` (privado, Nginx 404) como fuente
+  Shapefile.
+- **Cola:** `admin.layer_jobs`; un job activo por capa. El payload distingue
+  `format: "geojson"` o `"shapefile"`.
+- **Worker:** `scripts/layer-worker.mjs` ejecuta `load-layer --force --tiles`,
+  actualiza `admin.layers.config.source.tiles` con la versión publicada y deja
+  el `fallback` GeoJSON. Para Shapefile, descomprime, valida `.shp/.dbf/.shx/
+  .prj`, genera el GeoJSON con `ogr2ogr` y carga con `load-layer`.
+- **Imagen:** `docker/layer-worker` incluye GDAL y `unzip`; la API queda sin
+  GDAL. Volúmenes `geojson/` y `tiles/`.
 - **Publicación:** se hace con el compilador de taxonomía; la capa debe
   asignarse a dimensión/grupo/subgrupo antes de publicar.
 - **Borrado:** lógico (`activo=false`); no elimina la tabla PostGIS ni los
   tiles.
-- **Shapefile/ZIP:** fuera de esta fase.
+- **Detalle Shapefile:** `docs/specs/45-panel-admin-operaciones/47-D-shapefile.md`.
 
 ### 4.6. Gestor de APIs externas (Sprint 45-B)
 

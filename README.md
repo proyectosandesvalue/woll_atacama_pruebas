@@ -160,15 +160,17 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `deploy/nginx/` | TLS, estáticos, caché de proxy y `limit_req` | Cambios de borde, rutas o headers |
 | `server/index.js`, `server/app.js` | Servidor Node persistente y app HTTP (VPS) | Cambios de arranque, timeouts o router |
 | `server/http/` | Router, body, respuestas, errores y adapter Vercel | Cambios transversales de HTTP |
-| `server/routes/` | Rutas Node de chat, config, admin, proxy, ARClim, estaciones y health | Agregar o cambiar una ruta |
+| `server/routes/` | Rutas Node de chat, config, admin, proxy, taxonomía, ráster, ARClim, estaciones y health | Agregar o cambiar una ruta |
 | `server/handlers/chat.js` | Pipeline completo de `handleChat()` | Cambios de flujo del chat |
 | `server/handlers/arclim.js`, `server/handlers/stations.js` | Lógica compartida Vercel/VPS | Cambios de contrato o consultas |
 | `server/handlers/config.js`, `server/handlers/admin.js` | Snapshot `/api/config` y endpoints del panel admin | Cambios de contrato o de auth |
 | `server/admin/auth.js` | Password scrypt, sesión, CSRF, auditoría y TOTP reutilizable | Cambios de autenticación (ADR 007) |
 | `server/handlers/admin-rag.js`, `server/routes/admin-rag.js` | Ingesta RAG desde el panel: manifiesto, upload y cola | Cambios del flujo RAG (45-A) |
 | `server/handlers/admin-apis.js`, `server/admin/api-registry.js` | Inventario, prueba y edición de conexiones externas | Cambios del gestor de APIs (45-B) |
-| `server/handlers/admin-layers.js`, `server/admin/layer-files.js` | CRUD de capas, upload GeoJSON y cola de importación | Cambios del gestor de capas (47) |
-| `scripts/layer-worker.mjs`, `docker/api/Dockerfile` | Carga a PostGIS y generación de tiles en worker | Importación de capas (47) |
+| `server/handlers/admin-layers.js`, `server/admin/layer-files.js` | CRUD de capas, upload GeoJSON/ZIP Shapefile y cola de importación | Cambios del gestor de capas (47) |
+| `scripts/layer-worker.mjs`, `docker/layer-worker/` | Carga a PostGIS con GDAL y generación de tiles en worker | Importación de capas (47-D) |
+| `server/handlers/taxonomy.js`, `server/routes/taxonomy.js` | Compilación de la taxonomía nativa para el sidebar (46-C) | Cambios de `/api/taxonomy` |
+| `server/handlers/raster-stats.js`, `server/routes/raster.js`, `js/utils/rasterUtils.js` | Estadísticas, API y capa Leaflet del ráster precalculado | Cambios del publicador de ráster (49) |
 | `server/handlers/admin-taxonomy.js`, `scripts/taxonomy-*.mjs` | CRUD de dimensiones/grupos/subgrupos y compilación del snapshot | Cambios de taxonomía (46) |
 | `server/handlers/admin-chat-config.js`, `server/routes/admin-chat-config.js` | CRUD de prompts/settings/mensajes/unavailable/golden y tools read-only | Configuración del chat (48) |
 | `server/handlers/admin-unanswered.js`, `server/routes/admin-unanswered.js` | Cola de demanda: preguntas sin respuesta, triage y brief | Demanda del chat (50) |
@@ -216,6 +218,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `rag/` | Manifiesto y PDFs del corpus RAG | Agregar documentos |
 | `docs/` | CONTRACT, ARCHITECTURE, DEV_GUIDE, ROADMAP, CHANGELOG, DECISIONS, specs | Antes de cambios estructurales |
 | `css/`, `geojson/`, `assets/` | Estilos, capas estáticas e iconos | Cambios visuales o de datos locales |
+| `geojson/uploads/`, `geojson/private/` | GeoJSON de respaldo y ZIP privado del gestor de capas | Importar capas desde el panel (Sprint 47-D) |
 | `vercel.json` | Functions, rewrites y `excludeFiles` | Cambios de deploy o endpoints |
 | `package.json`, `.env.example` | Scripts/dependencias y variables de entorno | Nuevas tareas o configuración |
 

@@ -1,5 +1,9 @@
 # Spec 14-15 — Configuración en BD y panel admin de solo lectura
 
+> **Nota (2026-11-19):** este documento describe el alcance original de solo
+> lectura (Sprints 14-15). El panel evolucionó a una consola editable en los
+> Sprints 45-50; ver `docs/specs/45-panel-admin-operaciones/`.
+
 | Campo | Valor |
 |---|---|
 | **Sprints (ROADMAP)** | 14 (config a `admin.*`) y 15 (panel de solo lectura) |

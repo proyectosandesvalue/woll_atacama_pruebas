@@ -3,11 +3,11 @@
 | Campo | Valor |
 |---|---|
 | **Sprints (ROADMAP)** | 45 (RAG y APIs), 46 (taxonomía normalizada), 47 (capas), 48 (configuración del chat) |
-| **Estado de la spec** | EN EJECUCIÓN — 45, 46-A/B, 47-A/B y 48 implementados; 46-C y 47-C/D pendientes |
+| **Estado de la spec** | EN EJECUCIÓN — 45, 46-A/B/C, 47-A/B/D y 48 implementados; 47-C y validación VPS pendientes |
 | **Tamaño** | Grande (épica) |
 | **Duración estimada** | 56-72 h |
 | **Dependencias** | 08-G (tiles), 14/15 (panel/auth), 17 (RAG), 19 (APIs), 26 (VPS) |
-| **Última revisión** | 2026-11-14 |
+| **Última revisión** | 2026-11-19 |
 
 ## 1. Objetivo
 
@@ -229,6 +229,9 @@ mantiene como contrato estable y fallback.
 **46-B:** CRUD de dimensiones/grupos/subgrupos y asignaciones en el panel.
 **46-C:** `GET /api/taxonomy` con el árbol normalizado y adaptación del
 sidebar/`dimensionBuilder` con feature flag. Fallback al snapshot si falla.
+Implementado localmente: el endpoint devuelve el shape compilado de
+`allTemasConfig`; flags `TAXONOMY_API_ENABLED=1` (servidor) y `?taxonomy=1`
+(cliente). Detalle en `46-C-taxonomy-api.md`.
 
 La migración es aditiva. Las tablas se siembran desde el snapshot v1
 (`scripts/taxonomy-seed.mjs`) para no perder la config actual.
@@ -251,9 +254,10 @@ La migración es aditiva. Las tablas se siembran desde el snapshot v1
 **Dentro**
 - CRUD de `admin.layers`: clave, nombre, tipo, estilo, popup, alias, leyenda,
   fuente y placements.
-- Subir GeoJSON (MVP) o ZIP Shapefile (fase 2) con validación y límite.
+- Subir GeoJSON o ZIP Shapefile con validación y límite.
 - Cargar a PostGIS con `scripts/load-layer` y generar tiles con
-  `scripts/build-tiles` en worker.
+  `scripts/build-tiles` en worker. Para Shapefile, el worker `docker/layer-worker`
+  usa GDAL + `unzip`; la API no incorpora GDAL.
 - Editar/duplicar/archivar/reordenar capas.
 - Publicar snapshot y revertir.
 - Estado de tabla física, tiles, manifest y conteo de features.
@@ -261,7 +265,7 @@ La migración es aditiva. Las tablas se siembran desde el snapshot v1
 **Fuera del MVP**
 - Edición geométrica en mapa.
 - Borrado físico de tablas PostGIS desde el panel (solo archivar).
-- Shapefile/GeoPackage si no hay `ogr2ogr` en la imagen.
+- GeoPackage y otros formatos vectoriales distintos de Shapefile.
 
 **Endpoints:** `/api/admin/layers` (GET/POST/PUT/DELETE),
 `/api/admin/layers/upload`, `/api/admin/layers/jobs`,
@@ -275,7 +279,7 @@ La migración es aditiva. Las tablas se siembran desde el snapshot v1
 | 45-B | APIs: inventario, test y edición no secreta | 6-8 | ✅ |
 | 46-A | Migración y seed de taxonomía; compilador de snapshot | 6-8 | ✅ |
 | 46-B | CRUD de dimensiones/grupos/subgrupos y assignments | 8-10 | ✅ |
-| 46-C | `/api/taxonomy` + adaptación del sidebar con flag | 6-8 | ⏳ |
+| 46-C | `/api/taxonomy` + adaptación del sidebar con flag | 6-8 | ✅ local; falta VPS |
 | 47 | Capas: CRUD, upload GeoJSON, load/tiles worker, UI | 18-24 | 🔶 local |
 | 48 | Chat: CRUD de prompts/settings/mensajes/unavailable/golden; tools read-only | 8-10 | ✅ |
 
@@ -299,7 +303,7 @@ Cada fase es un commit y actualiza ROADMAP/CHANGELOG.
 | R1 | ¿Sprint 45 = RAG + APIs y Sprint 46 = taxonomía + sidebar? | **aprobado 2026-11-13** | no (resuelto) |
 | R2 | ¿El sidebar sigue leyendo el snapshot compilado o pasa a `/api/taxonomy`? | snapshot en 46-A; nativo con flag en 46-C | no para 45-A; sí para 46 |
 | R3 | ¿El manifiesto RAG se versiona en git y se edita desde el panel? | sí, escritura atómica | no |
-| R4 | ¿Capas arranca con GeoJSON y Shapefile queda para fase 2? | sí | no |
+| R4 | ¿Capas arranca con GeoJSON y Shapefile queda para fase 2? | **resuelto:** GeoJSON y Shapefile implementados (47-A/B/D) | no |
 | R5 | ¿El gestor de APIs solo edita conexiones existentes? | sí; nuevas requieren deploy | no |
 
 R1 quedó aprobada y 45-A está implementado. R2 se decide al iniciar el Sprint 46 (recomendado: snapshot en 46-A y nativo con flag en 46-C).
@@ -355,9 +359,27 @@ R1 quedó aprobada y 45-A está implementado. R2 se decide al iniciar el Sprint 
 - Compilador `taxonomy:compile -- --check` valida el snapshot activo.
 - Panel **Taxonomía** con CRUD de dimensiones/grupos/subgrupos y asignaciones;
   publicación de snapshot desde el panel (v2 validado).
-- El sidebar sigue leyendo `/api/config`; `/api/taxonomy` nativo queda para
-  46-C.
+- En 46-A/B el sidebar seguía leyendo `/api/config`; 46-C agregó el endpoint
+  nativo con flag y fallback (ver 15.1).
 - Tests: 408 tests, 396 pasan, 12 omitidos, 0 fallos; lint 0 errores.
+
+## 15.1. Resultados 46-C (2026-11-19)
+
+- `GET /api/taxonomy` compila las tablas normalizadas al shape de
+  `allTemasConfig`; flag de servidor `TAXONOMY_API_ENABLED=1` y de cliente
+  `?taxonomy=1`/`WOLL_TAXONOMY_API`.
+- Checksum local idéntico al snapshot v2 (`f85f8027…`), 9 dimensiones;
+  ETag/`304` verificados.
+- Loader con fallback `/api/taxonomy` → `/api/config` → `allTemasConfig`
+  (INV-5). Tests de handler y loader.
+- Pendiente: validación en el VPS.
+
+## 15.2. Resultados 47-D (2026-11-19)
+
+- ZIP Shapefile privado en `geojson/private/`, worker `docker/layer-worker`
+  (GDAL + `unzip`), GeoJSON de respaldo con `ogr2ogr`, carga a PostGIS y tiles.
+- Smoke local con un polígono: 1 feature, 71 tiles, ZIP privado 404.
+- Detalle: `47-D-shapefile.md`. Pendiente: validación en VPS.
 
 ## 16. Cierre
 
