@@ -98,7 +98,7 @@ export function flattenLayers(config) {
         nombre: layerConfig.nombrePersonalizado || layerKey,
         tipo: layerConfig.type || layerConfig.tipo || null,
         source_type: layerConfig.source?.type || null,
-        has_tiles: Boolean(layerConfig.source?.tiles),
+        has_tiles: Boolean(layerConfig.source?.tiles || layerConfig.source?.raster),
         ordinal,
         config: layerConfig,
       });

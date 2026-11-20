@@ -33,6 +33,8 @@
     "tiles:build": "node --env-file=.env.local scripts/build-tiles.mjs",
     "tiles:sync": "node --env-file=.env.local scripts/tiles-sync.mjs",
     "tiles:check": "node --env-file=.env.local scripts/tiles-sync.mjs --check",
+    "raster:publish": "node scripts/raster-publish.mjs",
+    "raster:sync": "node scripts/raster-sync.mjs",
     "db:up": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d postgres",
     "db:down": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml down",
     "stack:up": "docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d",

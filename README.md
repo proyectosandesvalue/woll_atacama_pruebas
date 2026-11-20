@@ -136,6 +136,8 @@ woll_atacama_pruebas/
 │   └── workers/                # Web Workers
 ├── css/                        # base, components, desktop, mobile
 ├── geojson/                    # capas estáticas (~71)
+├── raster/                     # tiles ráster pregenerados (Sprint 49, fuera de git)
+├── data/raster/                # COG fuente privado (fuera de git)
 ├── assets/                     # iconos e imágenes
 ├── docs/                       # CONTRACT, ARCHITECTURE, DEV_GUIDE, ROADMAP, CHANGELOG, DECISIONS/
 └── vercel.json, package.json
@@ -148,6 +150,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | Archivo / carpeta | Para qué sirve | Cuándo tocarlo |
 |---|---|---|
 | `index.html`, `help.html` | Entry point de la SPA y manual de ayuda | Cambios de shell, carga de scripts o UI global |
+| `raster/`, `data/raster/`, `scripts/raster-*.mjs` | Ráster precalculado: tiles públicos, COG privado, publicación y retención | Publicar o actualizar un ráster (Sprint 49) |
 | `admin.html`, `css/admin.css`, `js/admin/` | Panel admin: configuración, capas, RAG, APIs, taxonomía, Chat IA, Demanda y auditoría | Configuración, chat, demanda o login |
 | `api/chat.js` | Vercel Function del chat (adapter delgado) | Cambios de CORS/método del endpoint, no de lógica |
 | `api/proxy.js` | Proxy cerrado de servicios externos | Agregar un servicio o ajustar CORS/timeout |
@@ -169,6 +172,7 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `server/handlers/admin-taxonomy.js`, `scripts/taxonomy-*.mjs` | CRUD de dimensiones/grupos/subgrupos y compilación del snapshot | Cambios de taxonomía (46) |
 | `server/handlers/admin-chat-config.js`, `server/routes/admin-chat-config.js` | CRUD de prompts/settings/mensajes/unavailable/golden y tools read-only | Configuración del chat (48) |
 | `server/handlers/admin-unanswered.js`, `server/routes/admin-unanswered.js` | Cola de demanda: preguntas sin respuesta, triage y brief | Demanda del chat (50) |
+| `docs/help/demanda-no-satisfecha.md` | Contenido de ayuda de Demanda para la futura página del panel | Textos de ayuda o privacidad |
 | `scripts/golden-seed.mjs`, `scripts/lib/golden-source.mjs` | Seed del golden y lectura BD → JSON con fallback | Cambios del golden set (48) |
 | `server/admin/rag-manifest.js` | Lectura/escritura atómica del manifiesto y PDFs | Validación o almacenamiento de documentos |
 | `scripts/rag-worker.mjs`, `docker/rag-worker/` | Worker de extracción/embeddings y cola | Ingesta real de PDFs |

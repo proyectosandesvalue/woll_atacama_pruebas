@@ -1193,6 +1193,9 @@ npm run layer:worker -- --once
   bloquean un flujo completo.
 - Migraciones: `053_unanswered_demand.sql`,
   `054_unanswered_resolution_fields.sql` y `055_unanswered_rls.sql`.
+- Contenido de ayuda para la futura página del panel:
+  `docs/help/demanda-no-satisfecha.md`. `help.html` sigue siendo el manual del
+  visor público.
 
 **Configuración del chat (48)**
 
@@ -1250,6 +1253,104 @@ npm run golden:seed -- --dry-run
 - La caché no se purga: cambia la URL al cambiar la versión.
 
 ---
+
+### 2.12. Ráster precalculado (Sprint 49)
+
+El servidor **no calcula** pendientes, sombras, orientación ni MCDA. El ráster
+se produce offline en QGIS/GDAL/GRASS y se publica como:
+
+```
+data/raster/<layer>/<version>/source.tif      # COG privado (data/ está denegado)
+raster/<layer>/<version>/<z>/<x>/<y>.webp     # tiles públicos
+raster/<layer>/<version>/manifest.json
+raster/index.json
+```
+
+Requiere **Podman o Docker** para ejecutar GDAL en un contenedor efímero; no se
+instala GDAL en el host ni en la imagen de la API.
+
+**Publicar**
+
+```bash
+npm run raster:publish -- \
+  --file ./aptitud_jojoba.tif \
+  --layer aptitud_jojoba \
+  --version 2026-11 \
+  --name "Aptitud para jojoba" \
+  --license "Uso institucional; DEM Copernicus 30 m" \
+  --producer "QGIS 3.40 / GDAL 3.9" \
+  --method "Weighted overlay: pendiente 30%, orientación 20%, suelo 20%, clima 20%, restricciones 10%." \
+  --minzoom 8 --maxzoom 13 \
+  --stats-csv ./aptitud_jojoba_stats.csv
+```
+
+- El GeoTIFF debe estar en **EPSG:4326 o EPSG:3857**.
+- `--dry-run` valida y estima tiles sin escribir.
+- Una versión publicada no se sobrescribe; usa otra `--version` o `--force`.
+  Si republicas con `--force` y cambian las estadísticas, vuelve a pasar
+  `--stats-csv`.
+- WebP se usa para RGB/RGBA; un ráster de 1 banda o paleta se publica como PNG
+  automáticamente (GDAL 3.14 no genera WebP de 1 banda). `--format` permite
+  forzar.
+- Para clases o categóricos usa `--resampling near`; para variables continuas,
+  el default `bilinear`.
+- Si el ráster supera 20.000 tiles, baja un zoom y lo registra en el manifest.
+
+**Estadísticas por comuna (opcional)**
+
+El CSV se calcula en QGIS y debe traer:
+
+```
+admin_level,admin_code,admin_name,class_id,class_label,class_min,class_max,hectares,mean,min,max,p10,p90
+```
+
+`--stats-csv` carga `public.raster_stats` (migración `052`). Necesita
+`DATABASE_ADMIN_URL` en el entorno:
+
+```bash
+DATABASE_ADMIN_URL=postgres://postgres:CLAVE@127.0.0.1:5432/woll \
+  npm run raster:publish -- ... --stats-csv ./stats.csv
+```
+
+Sin CSV, la capa se publica igual y la ficha muestra “Sin estadísticas
+publicadas”.
+
+**Verificar y retener**
+
+```bash
+npm run raster:sync -- --check
+npm run raster:sync -- --prune --keep 2 --dry-run
+npm run raster:sync -- --prune --keep 2
+```
+
+`--check` verifica tiles, bytes y checksum contra el manifest. `--prune` borra
+versiones de tiles; las fuentes COG se conservan salvo `--prune-sources`.
+
+**Config del visor**
+
+El comando imprime un snippet `source.raster`. Se copia a
+`js/config/<dimension>.js`, se agrega la capa a `capas`/`grupos` y se publica el
+snapshot:
+
+```bash
+npm run config:snapshot -- --publish
+npm run config:snapshot -- --check
+```
+
+La capa se carga con `L.tileLayer`, muestra una **ficha metodológica** y no
+ofrece tabla, filtros por atributo ni descarga. La leyenda sale del `legend` del
+manifest; `rasterLegend` en la config es solo un fallback.
+
+**Servir en local**
+
+```bash
+npm run stack:up
+curl -I http://localhost:8090/raster/aptitud_jojoba/2026-11/8/77/149.webp
+```
+
+Nginx sirve `/raster/` con caché inmutable y `/raster/index.json` sin caché. La
+fuente bajo `data/raster/` responde 404. Ver ADR 027 y
+`docs/specs/49-publicador-raster.md`.
 
 ## Verificación después de reemplazar
 

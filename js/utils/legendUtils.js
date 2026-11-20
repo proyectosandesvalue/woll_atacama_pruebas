@@ -7,6 +7,7 @@ import leyendaAliasesGlobales from "../config/leyendaAliases.js";
 import { normalizeIconFilename } from "./styleUtils.js";
 import { createContextLogger } from "./logger.js";
 import { appState } from "../store/appState.js";
+import { renderRasterLegend } from "./rasterUtils.js";
 
 const log = createContextLogger('LegendUtils');
 
@@ -177,8 +178,14 @@ function generarLeyendaAutomatica(tema, temasConfig, container) {
 
     let itemsAgregados = 0;
 
+    // Leyenda de un ráster precalculado: manifest primero, config como fallback.
+    const layer = appState.layers.byName.get(capaNombre);
+    const rasterLegend = layer?._rasterManifest?.legend || capaConfig.rasterLegend;
+
     // Generar items de leyenda basados en colores definidos
-    if (capaConfig.colores) {
+    if (rasterLegend && renderRasterLegend(legendContainer, rasterLegend)) {
+      itemsAgregados++;
+    } else if (capaConfig.colores) {
       Object.entries(capaConfig.colores).forEach(([valor, color]) => {
         // Sistema de prioridad: local > global > original
         const labelTexto = obtenerLabelConAlias(

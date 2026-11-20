@@ -555,7 +555,7 @@ Navegador (cliente de tiles, Sprint 08-B)
 - Detalle: `docs/specs/08-postgis-fuente-principal/08-A-pipeline-tiles.md`,
   `08-B-piloto.md` y `08-G-ciclo-vida-capas.md`.
 
-### 4.8. Ráster precalculado (Sprint 49 — diseño aprobado, implementación pendiente)
+### 4.8. Ráster precalculado (Sprint 49 — implementado localmente)
 
 El visor no calcula rásteres. La pendiente, la orientación, la sombra y los
 modelos de aptitud se producen **offline** en QGIS/GDAL/GRASS y se publican
@@ -565,27 +565,35 @@ como un artefacto versionado. El servidor solo valida, publica y sirve.
 QGIS/GDAL/GRASS (equipo del analista)
    │  GeoTIFF/COG + CSV de estadísticas
    ▼
-raster:publish (CLI, offline)
-   ├─ data/raster/<layer>/<version>/source.tif   (privado; data/ denegado)
-   ├─ raster/<layer>/<version>/<z>/<x>/<y>.webp (público, inmutable)
+raster:publish (CLI offline; GDAL en Podman/Docker)
+   ├─ data/raster/<layer>/<version>/source.tif      (privado; data/ denegado)
+   ├─ raster/<layer>/<version>/<z>/<x>/<y>.webp|png (público, inmutable)
    ├─ raster/<layer>/<version>/manifest.json
    └─ raster/index.json
    │
    ├─ Nginx /raster/ (Cache-Control: immutable)
-   └─ public.raster_stats (solo lectura; API y futuro chat)
+   ├─ GET /api/raster-stats (public.raster_stats, solo lectura)
+   └─ Sprint 41: recetas MCDA consumen las estadísticas por RPC
 ```
 
 - **No se adopta GeoServer** ni WMS/WCS propios: no resuelven el análisis y
   agregan un JVM, un catálogo paralelo y superficie de ataque. Ver ADR 027.
+- `scripts/raster-publish.mjs` valida, normaliza a COG con `gdal_translate` y
+  genera tiles con `gdal2tiles.py` en un contenedor efímero. No calcula
+  pendientes, sombras ni MCDA.
+- `scripts/raster-sync.mjs` regenera el índice, verifica checksums y aplica
+  retención. `public.raster_stats` (migración `052`) guarda el CSV calculado en
+  QGIS; `/api/raster-stats` lo expone para la ficha.
 - La versión es inmutable: actualizar = publicar una versión nueva y cambiar la
   config. La anterior queda para rollback hasta `raster:sync --prune`.
 - El visor carga la capa con `L.tileLayer` (`source.type: "raster"`); no tiene
   tabla, filtros por atributo ni popup de feature, sino una ficha metodológica.
+  WebP se usa para RGB/RGBA y PNG para 1 banda/paleta.
 - Las estadísticas por comuna/provincia/región se calculan en QGIS y se
   importan como CSV; el servidor solo las lee. El LLM nunca hace álgebra de
   ráster.
 - El análisis multicriterio (criterios y pesos) vive en el Sprint 41 (ADR 017).
-- Detalle: `docs/specs/49-publicador-raster.md`.
+- Detalle: `docs/specs/49-publicador-raster.md` y `docs/DEV_GUIDE.md` §2.12.
 
 ### 4.9. Demanda no satisfecha (Sprint 50)
 

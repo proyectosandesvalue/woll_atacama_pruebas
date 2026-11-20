@@ -17,6 +17,7 @@ import { configRoutes } from "./config.js";
 import { healthRoute, readyRoute } from "./health.js";
 import { layerRoutes } from "./layers.js";
 import { proxyRoute } from "./proxy.js";
+import { rasterRoutes } from "./raster.js";
 import { stationRoutes } from "./stations.js";
 
 export const routes = [
@@ -32,6 +33,7 @@ export const routes = [
   proxyRoute,
   arclimRoute,
   ...layerRoutes,
+  ...rasterRoutes,
   ...stationRoutes,
   healthRoute,
   readyRoute,

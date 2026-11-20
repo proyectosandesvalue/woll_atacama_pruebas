@@ -2,8 +2,8 @@
 
 | Campo | Valor |
 |---|---|
-| **Sprint (ROADMAP)** | 49 (nuevo, propuesto 2026-11-19; pendiente de aprobación del roadmap) |
-| **Estado de la spec** | DRAFT |
+| **Sprint (ROADMAP)** | 49 (nuevo, aprobado 2026-11-19) |
+| **Estado de la spec** | CERRADA (local 2026-11-19; validación visual y carga/VPS pendientes) |
 | **Tamaño** | Mediano |
 | **Duración estimada** | 10-12 h |
 | **Dependencias** | 08-G (versionado de tiles), 26-D (Nginx), 47 (gestor de capas); 41 para el consumo MCDA |
@@ -100,6 +100,8 @@ raster/index.json                                # público, no-cache
   sirve.
 - `raster/` se agrega a `.gitignore` (los tiles se generan; no se versionan).
 - El manifest público no contiene rutas absolutas ni secretos.
+- La fuente se normaliza a COG con `gdal_translate -of COG` antes de generar
+  tiles; si el archivo ya es COG, el paso es idempotente.
 
 ### 4.2. Manifest por versión
 
@@ -160,7 +162,8 @@ raster/index.json                                # público, no-cache
   obligatorios. Sin licencia no se publica.
 - `model` es obligatorio si el ráster es un resultado MCDA; si no, se omite.
 - `values` y `legend` son obligatorios: la ficha y la leyenda no se inventan en
-  el cliente.
+  el cliente. Si no se pasa `--legend`, el publicador genera un gradiente
+  neutro entre el mínimo y el máximo y lo deja registrado en el manifest.
 - `checksum` cubre el COG fuente; `tiles.checksum` cubre el conjunto de tiles.
 
 ### 4.3. Índice global
@@ -193,9 +196,9 @@ raster/index.json                                # público, no-cache
 }
 ```
 
-La versión activa es la publicada más recientemente; `--activate <version>`
-permite fijar otra. La config del visor puede apuntar a una versión explícita
-(rollback por capa), igual que en 08-G.
+La versión activa del índice es la publicada más recientemente. El rollback se
+hace en la config del visor, que puede apuntar a una versión explícita, igual
+que en 08-G.
 
 ### 4.4. Config de la capa
 
@@ -255,9 +258,18 @@ Opciones mínimas:
 | `--layer` | — | slug `[a-z0-9_]+`; no puede salir de `raster/`. |
 | `--version` | — | `[A-Za-z0-9._-]+`; una versión publicada no se sobrescribe sin `--force`. |
 | `--name`, `--license`, `--producer`, `--method` | — | obligatorios; se copian al manifest. |
+| `--description` | — | texto de la ficha. |
+| `--attribution` | `WOLL Atacama` | atribución visible en el mapa. |
+| `--legend` | gradiente mínimo/máximo | JSON con `type: "gradient"` o `"classes"`; si falta, se genera un gradiente neutro. |
+| `--model` | — | JSON con criterios, pesos y restricciones del MCDA. |
+| `--created-at` | hoy | fecha del producto. |
 | `--minzoom` | 8 | entero 0-18. |
 | `--maxzoom` | 13 | entero ≥ minzoom; si supera 20.000 tiles, baja un zoom y lo registra. |
-| `--format` | `webp` | `webp` o `png`. |
+| `--format` | `webp` | `webp` (3/4 bandas) o `png`; si el ráster tiene 1 banda/paleta se usa PNG automáticamente. |
+| `--resampling` | `bilinear` | `near` para clases/categóricos; `bilinear` para continuos. |
+| `--max-mb` | 2048 | tamaño máximo de la fuente. |
+| `--engine` | auto | `podman` o `docker`; también `RASTER_ENGINE`. |
+| `--gdal-image` | `ghcr.io/osgeo/gdal:alpine-normal-latest` | imagen con GDAL (`RASTER_GDAL_IMAGE`). |
 | `--stats-csv` | — | CSV de estadísticas; si falta, la capa se publica sin tabla. |
 | `--dry-run` | — | valida y estima tiles/bytes sin escribir. |
 | `--force` | — | republica una versión existente; solo para corregir una publicación fallida. |
@@ -350,7 +362,8 @@ GRANT SELECT ON TABLE public.raster_stats TO woll_api;
 ```
 
 - Solo lectura; `woll_api`; sin SQL dinámico.
-- Si se omite `version`, se usa la versión activa de `raster/index.json`.
+- Si se omite `version`, se usa la última versión con `computed_at` en
+  `public.raster_stats`; si no hay filas, responde 200 con `rows: []`.
 - Nginx cachea 5 min por URL (los datos cambian solo al publicar).
 - El frontend lo usa para la ficha; el chat lo consumirá en el Sprint 41 por una
   RPC tipada, no por este endpoint.
@@ -422,32 +435,30 @@ location ^~ /raster/ {
 
 | Tramo | Contenido | Horas | Estado |
 |---|---|---|---|
-| 49-A | ADR 027, contrato de directorios, `.gitignore`, decisiones de GDAL/formato | 1 | ⏳ |
-| 49-B | `scripts/raster-publish.mjs`: validación, manifest, índice, versionado | 2 | ⏳ |
-| 49-C | Generación de tiles con GDAL, límite 20k, `raster:sync --check/--prune` | 2-3 | ⏳ |
-| 49-D | Nginx `/raster/`, config `source.raster`, `rasterUtils.js`, ficha y ocultamiento de tabla/filtros | 2 | ⏳ |
-| 49-E | Migración 052, CSV de estadísticas, `GET /api/raster-stats` | 2 | ⏳ |
-| 49-F | Tests, docs, smoke de publicación, carga de 50 usuarios y CHANGELOG | 1-2 | ⏳ |
+| 49-A | ADR 027, contrato de directorios, `.gitignore`, decisiones de GDAL/formato | 1 | ✅ local |
+| 49-B | `scripts/raster-publish.mjs`: validación, manifest, índice, versionado | 2 | ✅ local |
+| 49-C | Generación de tiles con GDAL, límite 20k, `raster:sync --check/--prune` | 2-3 | ✅ local |
+| 49-D | Nginx `/raster/`, config `source.raster`, `rasterUtils.js`, ficha y ocultamiento de tabla/filtros | 2 | ✅ local |
+| 49-E | Migración 052, CSV de estadísticas, `GET /api/raster-stats` | 2 | ✅ local |
+| 49-F | Tests, docs, smoke de publicación, carga de 50 usuarios y CHANGELOG | 1-2 | 🔶 local; falta carga/VPS |
 
 Un commit por tramo, con el ID en el mensaje (`feat: sprint-49-A ...`).
 
 ## 7. Tests requeridos (`node:test`)
 
-- `raster-publish.test.js`: parseo de args, slug, extensión, tamaño, licencia
-  obligatoria, versión inválida, `--force`, `--dry-run`.
-- `raster-manifest.test.js`: manifest mínimo, `model` MCDA, leyenda, checksum,
-  rutas y bbox.
-- `raster-index.test.js`: alta de versión, `active_version`, orden por fecha,
-  `--activate`, versión inexistente.
-- `raster-stats.test.js`: CSV válido, columnas faltantes, comuna inexistente,
-  UPSERT idempotente, `class_id=-1`.
-- `raster-sync.test.js`: `--check` con tile faltante, `--prune --keep`, path
-  traversal y `--dry-run`.
-- **Integración opt-in** (`RASTER_TEST_GDAL=1`): publicar un GeoTIFF sintético
-  de 4×4 píxeles, generar tiles, verificar manifest e índice; se salta si no
-  hay GDAL.
-- **Manual:** Nginx (CA-9), visor (CA-11), PostgreSQL detenido (CA-10) y carga
-  de 50 usuarios sobre tiles estáticos.
+- `scripts/__tests__/raster-utils.test.js`: args, slug, versión, extensión,
+  licencia, `parseGdalInfo` (4326/CRS inválido), leyenda, manifest, índice,
+  CSV (columnas, duplicados, `admin_level`, `class_id=-1`), `verifyVersion` y
+  `configValidator` para `tipo: "raster"`.
+- `scripts/__tests__/raster-sync.test.js`: `--index` con versión activa,
+  `--prune --keep 1`, retención de la versión reciente.
+- `server/handlers/__tests__/raster-stats.test.js`: parámetros inválidos,
+  versión omitida (última `computed_at`), sin filas, error de BD sin filtrar.
+- **Integración manual:** publicación real de un GeoTIFF con GDAL en Podman
+  (22 tiles, manifest, índice, `--check`), Nginx con caché inmutable, fuente
+  privada 404 y `GET /api/raster-stats` contra PostgreSQL local.
+- **Pendiente:** prueba visual en navegador visible y carga de 50 usuarios
+  sobre tiles ráster estáticos.
 
 ## 8. Seguridad y procedencia
 
@@ -466,19 +477,27 @@ Un commit por tramo, con el ID en el mensaje (`feat: sprint-49-A ...`).
   directorios y con `Cache-Control: immutable`; el índice va sin caché.
 - No hay secretos ni credenciales en el manifest, el CSV ni los tiles.
 
-## 9. Preguntas abiertas
+## 9. Decisiones de cierre
 
-| # | Pregunta | Default | ¿Bloquea? |
-|---|---|---|---|
-| R1 | ¿GDAL en el host o en un contenedor efímero? | Contenedor `raster-tools` (perfil `tools`), sin servicio residente | sí (49-A) |
-| R2 | ¿WebP o PNG? | WebP; PNG disponible con `--format png` | no |
-| R3 | ¿Tamaño máximo de fuente? | 2048 MB (`RASTER_MAX_MB`) | no |
-| R4 | ¿Maxzoom por defecto? | 13 para regionales; 20.000 tiles como límite | no |
-| R5 | ¿Estadísticas solo por CSV o se automatizan? | CSV desde QGIS; el servidor no calcula. Automatizar queda para una decisión futura | no |
-| R6 | ¿Upload desde el panel en este sprint? | No; CLI/SCP. Panel en Sprint 47/16 | no |
-| R7 | ¿Consulta de valor en un punto? | Fuera de alcance; evaluar si aparece | no |
-| R8 | ¿titiler para tiles on-demand? | No; tiles pregenerados | no |
-| R9 | ¿`--prune` borra las fuentes COG? | No; solo tiles. `--prune-sources` explícito | no |
+Las preguntas quedaron cerradas el 2026-11-19. La spec pasa a **APROBADA**.
+
+| # | Pregunta | Decisión |
+|---|---|---|
+| R1 | ¿GDAL en el host o en un contenedor efímero? | **Contenedor efímero** con Podman o Docker (`--engine` / `RASTER_ENGINE`, `--gdal-image` / `RASTER_GDAL_IMAGE`). No se instala GDAL en el host ni se agrega al contenedor de la API. |
+| R2 | ¿WebP o PNG? | **WebP** para RGB/RGBA; **PNG automático** para 1 banda o paleta (WebP de GDAL requiere 3/4 bandas). `--format` permite forzar. |
+| R3 | ¿Tamaño máximo de fuente? | **2048 MB** (`RASTER_MAX_MB`), configurable. |
+| R4 | ¿Maxzoom por defecto? | **13** para rásteres regionales; límite de **20.000 tiles** con degradación automática. |
+| R5 | ¿Estadísticas solo por CSV o se automatizan? | **CSV desde QGIS**. El servidor no calcula estadísticas zonales; automatizar queda para una decisión futura. |
+| R6 | ¿Upload desde el panel en este sprint? | **No**. CLI/SCP en el 49; el panel se integra después con el gestor de capas. |
+| R7 | ¿Consulta de valor en un punto? | **Fuera de alcance**; se evalúa si aparece un caso de uso. |
+| R8 | ¿titiler para tiles on-demand? | **No**; tiles pregenerados. |
+| R9 | ¿`--prune` borra las fuentes COG? | **No**; solo tiles. `--prune-sources` es explícito. |
+
+**Por qué el contenedor y no el host:** el equipo de desarrollo no tiene GDAL
+instalado y el VPS no debe cargar con otra dependencia global. La imagen
+`ghcr.io/osgeo/gdal:alpine-normal-latest` se ejecuta solo durante la publicación
+y no queda como servicio residente. El CLI detecta Podman o Docker y falla con
+un mensaje claro si no hay ninguno.
 
 ## 10. Riesgos, reversión y documentación
 
@@ -497,7 +516,8 @@ Un commit por tramo, con el ID en el mensaje (`feat: sprint-49-A ...`).
 - **Reversión:** cambiar la config a la versión anterior; los tiles viejos
   siguen en disco hasta `--prune`.
 - **Documentos a actualizar:** ADR 027, este archivo, `ROADMAP.md`,
-  `ARCHITECTURE.md` §4.8, `AGENTS.md`, `CHANGELOG.md`, `.gitignore`,
+  `ARCHITECTURE.md` §4.8, `DEV_GUIDE.md` §2.12, `README.md`, `AGENTS.md`,
+  `CHANGELOG.md`, `.gitignore`, `.env.example`,
   `deploy/nginx/woll-locations.conf`, `docs/specs/README.md`.
 
 ## 11. Puntos de integración
@@ -514,6 +534,22 @@ Un commit por tramo, con el ID en el mensaje (`feat: sprint-49-A ...`).
 
 ## 12. Cierre
 
-- Horas reales:
-- Desvíos:
-- Lecciones:
+- **Horas reales:** no cronometradas; sesión asistida que cubrió 49-A a 49-F
+  (estimación original: 10-12 h).
+- **Desvíos:**
+  - La imagen `alpine-small` no incluye `gdal2tiles.py`; se usa
+    `ghcr.io/osgeo/gdal:alpine-normal-latest`.
+  - GDAL 3.14 solo genera WebP con 3/4 bandas; un ráster de 1 banda o paleta se
+    publica automáticamente como PNG. `--format` queda como override.
+  - `--activate` no se implementó: la versión activa del índice es la más
+    reciente y el rollback se hace en la config.
+  - Si se omite `version` en `/api/raster-stats`, se usa la última
+    `computed_at` de la tabla, no el índice.
+- **Lecciones:** el tileado moderno de GDAL (`gdal raster tile`) es más
+  estricto que el legacy; conviene validar bandas/formato antes de publicar.
+  El flujo offline + Nginx + manifest se comporta igual que los MVT y no
+  requiere un servicio residente.
+- **Estado:** **cierre local 2026-11-19**. Implementación verificada con
+  publicación real, `--check`, índice, Nginx, fuente privada y endpoint contra
+  PostgreSQL. La validación visual en un navegador visible y la prueba de carga
+  en VPS quedan como follow-up de despliegue (49-F).

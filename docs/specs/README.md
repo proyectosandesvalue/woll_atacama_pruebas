@@ -31,7 +31,7 @@
 | [30-aceptacion](30-aceptacion.md) | 30 | Grande | EN EJECUCIÓN |
 | [44-indicadores-copernicus](44-indicadores-copernicus.md) | 44 | Mediano | CERRADA |
 | [45-panel-admin-operaciones](45-panel-admin-operaciones/00-spec-madre.md) | 45-48 | Grande | EN EJECUCIÓN |
-| [49-publicador-raster](49-publicador-raster.md) | 49 | Mediano | DRAFT |
+| [49-publicador-raster](49-publicador-raster.md) | 49 | Mediano | EN EJECUCIÓN |
 | [50-demanda-no-satisfecha](50-demanda-no-satisfecha.md) | 50 | Mediano | CERRADA |
 | 22-alineacion-documentacion | 22 | Pequeño | por escribir |
 

@@ -22,7 +22,7 @@ Si el código contradice el CONTRACT, no decidas por tu cuenta: señálalo y dej
 |---|---|
 | Reglas que no se rompen | `docs/CONTRACT.md` |
 | Reglas de calidad del chat (rutas, evidencia, abstención, evaluación) | `docs/CONTRACT.md` §6.7 + `docs/DECISIONS/025-calidad-chat-orquestador-fuentes.md` |
-| Demanda del chat (preguntas sin respuesta, triage y brief) | `docs/specs/50-demanda-no-satisfecha.md` + `server/handlers/admin-unanswered.js` |
+| Demanda del chat (preguntas sin respuesta, triage y brief) | `docs/specs/50-demanda-no-satisfecha.md` + `server/handlers/admin-unanswered.js` + `docs/help/demanda-no-satisfecha.md` |
 | Cómo está armado el sistema hoy | `docs/ARCHITECTURE.md` |
 | Qué sprint sigue o está activo | `docs/ROADMAP.md` |
 | Cómo hacer una tarea habitual | `docs/DEV_GUIDE.md` |
@@ -98,7 +98,7 @@ Reglas:
 - **Tests:** toda feature nueva trae al menos un test (`node:test`).
 - **Configuración del visor**: el runtime lee el snapshot activo por `GET /api/config`; publicar con `npm run config:snapshot -- --publish` y verificar con `--check`. El fallback es `allTemasConfig` (INV-5). Panel admin en `/admin.html` con contraseña y sesión; TOTP opcional para flujos sensibles (ADR 007).
 - **Capas (47)**: el panel sube GeoJSON a `geojson/uploads/`, encola en `admin.layer_jobs` y `npm run layer:worker` carga a PostGIS/genera tiles. Luego se asigna en Taxonomía y se publica el snapshot. El borrado es lógico.
-- **Ráster (49, spec DRAFT)**: se produce offline en QGIS/GDAL/GRASS y se publica como COG privado + tiles WebP/PNG + manifest + índice + estadísticas por comuna desde CSV de QGIS. El servidor no calcula pendientes, sombras ni MCDA en runtime. No se adopta GeoServer (ADR 027). Ver `docs/specs/49-publicador-raster.md`.
+- **Ráster (49)**: se produce offline en QGIS/GDAL/GRASS y se publica con `npm run raster:publish` como COG privado + tiles WebP/PNG + manifest + índice + estadísticas por comuna desde CSV de QGIS (migración 052). `npm run raster:sync` regenera el índice, verifica y aplica retención. El servidor no calcula pendientes, sombras ni MCDA en runtime. No se adopta GeoServer (ADR 027). Ver `docs/specs/49-publicador-raster.md`.
 - **Taxonomía (46)**: las dimensiones/grupos/subgrupos/capas viven en `admin.*`; el panel las edita y `npm run taxonomy:compile -- --publish` genera el snapshot que lee el visor. El seed reproduce el snapshot v1 con el mismo checksum.
 - **Panel RAG (45-A)**: la UI sube PDFs a `rag/inbox/`, edita `rag/manifest.json` y encola en `admin.rag_jobs`. El worker `npm run rag:worker` (imagen `docker/rag-worker`) extrae, embebe y escribe `rag.*`. El API nunca importa `pdfjs-dist`.
 - **Configuración del chat**: los prompts y settings viven en `admin.*` (migración 024). Antes de activar un cambio, correr el golden set. Ver "Gobierno de la configuración del chat".
@@ -141,6 +141,8 @@ npm run layer:load  # Carga GeoJSON/Shapefile a PostGIS (--tiles para generar ti
 npm run tiles:build # Genera tiles MVT de una capa/versión (offline)
 npm run tiles:sync  # Publica capas nuevas/editadas y actualiza tiles/index.json
 npm run tiles:check # Verifica manifests, tiles y conteo contra la BD
+npm run raster:publish # Publica un GeoTIFF/COG como capa ráster (GDAL en contenedor)
+npm run raster:sync    # Índice, verificación y retención de rásteres
 npm run acceptance:08 # Gate del Sprint 08 (tiles, tabla, filtros, export)
 npm run load:30     # Carga 25/50: static, table, mixed y on-demand
 npm run db:up       # Levanta PostgreSQL local (Docker Compose)

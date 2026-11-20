@@ -104,7 +104,7 @@
 | 46 | Taxonomía normalizada + sidebar | 🔶 parcial (46-A/46-B ✅; 46-C pendiente) | alta | 20-26h | 14/15, 45 |
 | 47 | Gestor de capas geográficas | 🔶 local (GeoJSON, worker y tiles ✅; VPS/Shapefile pendientes) | alta | 18-24h | 08-G, 46 |
 | 48 | CRUD de configuración del chat | ✅ local (prompts, settings, mensajes, unavailable y golden; tools read-only) | alta | 8-10h | 40-D.2, 45 |
-| 49 | Publicador de ráster precalculado | ⏳ pending (nuevo, 2026-11-19) | media | 10-12h | 08-G, 26-D, 47; 41 |
+| 49 | Publicador de ráster precalculado | ✅ local (publicación, API, visor y tests; VPS/carga pendientes) | media | 10-12h | 08-G, 26-D, 47; 41 |
 | 50 | Demanda no satisfecha | ✅ done (2026-11-19) | media | 12-16h | 40-D.2, 40-E |
 
 **Leyenda de estados:**
@@ -1201,8 +1201,8 @@ RPCs tipadas (CONTRACT §6.2/§6.3).
 
 ### Sprint 49 — Publicador de ráster precalculado
 
-**Estado**: ⏳ pending (nuevo, 2026-11-19) · **Prioridad**: media · **Duración**: 10-12h · **Dependencias**: 08-G, 26-D, 47; 41 para el consumo MCDA
-**Spec**: `docs/specs/49-publicador-raster.md` (DRAFT)
+**Estado**: ✅ local (publicación, API, visor y tests; VPS/carga pendientes) · **Prioridad**: media · **Duración**: 10-12h · **Dependencias**: 08-G, 26-D, 47; 41 para el consumo MCDA
+**Spec**: `docs/specs/49-publicador-raster.md` (APROBADA)
 **ADR**: `docs/DECISIONS/027-raster-precalculado-sin-geoserver.md`
 
 **Objetivo**: publicar como capa del visor un ráster ya calculado en QGIS,
@@ -1211,17 +1211,18 @@ manifiesto, tiles WebP/PNG, ficha metodológica y estadísticas por comuna desde
 CSV de QGIS. El servidor no calcula rásteres ni adopta GeoServer.
 
 **Tramos**:
-- [ ] **49-A (1h).** Contrato de directorios, `.gitignore`, decisión GDAL
-  (host o contenedor efímero) y formato de tile.
-- [ ] **49-B (2h).** `scripts/raster-publish.mjs`: validación, manifest, índice
-  y versionado.
-- [ ] **49-C (2-3h).** Tiles con GDAL, límite de 20.000, `raster:sync
+- [x] **49-A (1h).** Contrato de directorios, `.gitignore`, GDAL en contenedor
+  efímero y formato de tile (WebP/PNG automático).
+- [x] **49-B (2h).** `scripts/raster-publish.mjs` y
+  `scripts/lib/raster-utils.mjs`: validación, manifest, índice y versionado.
+- [x] **49-C (2-3h).** Tiles con GDAL, límite de 20.000, `raster:sync
   --check/--prune`.
-- [ ] **49-D (2h).** Nginx `/raster/`, config `source.raster`,
+- [x] **49-D (2h).** Nginx `/raster/`, config `source.raster`,
   `js/utils/rasterUtils.js`, ficha y ocultamiento de tabla/filtros.
-- [ ] **49-E (2h).** Migración `052_raster_stats.sql`, CSV de estadísticas y
+- [x] **49-E (2h).** Migración `052_raster_stats.sql`, CSV de estadísticas y
   `GET /api/raster-stats`.
-- [ ] **49-F (1-2h).** Tests, docs, smoke de publicación y carga de 50 usuarios.
+- [x] **49-F (local).** Tests, docs y smoke de publicación. Pendiente: prueba
+  visual en navegador visible y carga de 50 usuarios en VPS.
 
 **Criterios**:
 - **CA-1** Un COG con licencia y metadatos se publica con tiles, manifest e
@@ -1269,8 +1270,9 @@ capa o documento en un sprint posterior. El panel no crea tools.
 
 **Resultados:** vista **Demanda** con las 4 preguntas reales de la base (una
 con 2 ocurrencias), filtros, detalle, triage y brief Markdown descargable.
-Migraciones 053/054/055, API, RPCs, limpieza de PII y tests. 491 tests (479 pasan,
-12 omitidos, 0 fallos), lint 0 errores y `check:rpcs` 51/51. Quedan las 4
+Migraciones 053/054/055, API, RPCs, limpieza de PII, tests y contenido de
+ayuda en `docs/help/demanda-no-satisfecha.md`. 491 tests (479 pasan, 12
+omitidos, 0 fallos), lint 0 errores y `check:rpcs` 51/51. Quedan las 4
 preguntas pendientes para triage operativo.
 
 ---
@@ -1283,7 +1285,8 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 - ✅ **Sprint 50 completado:** módulo **Demanda** para gestionar
   `admin.unanswered_questions`. Vista propia, sin datos personales, brief
   Markdown descargable y triage de estados/prioridad/decisión/sprint.
-  Migraciones 053/054/055, endpoints y tests. El panel no crea tools; solo prepara
+  Migraciones 053/054/055, endpoints, tests y contenido de ayuda en
+  `docs/help/demanda-no-satisfecha.md`. El panel no crea tools; solo prepara
   el brief para el sprint que corresponda. 491 tests (479 pasan, 12 omitidos,
   0 fallos), lint 0 errores y `check:rpcs` 51/51. Quedan 4 preguntas reales
   pendientes de triage.
@@ -1291,14 +1294,24 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   capas. El VPS R3 (4 vCPU/16 GB/100 GB) confirma el pipeline actual:
   MVT pregenerado + Nginx + PostGIS. El ráster se produce offline en
   QGIS/GDAL/GRASS y el servidor solo valida, versiona, publica y sirve.
-- ✅ **Spec 49 (DRAFT):** publicador de ráster precalculado (COG privado + tiles
-  WebP/PNG + manifest + índice + ficha + estadísticas por comuna). Sin cálculo
-  de pendientes, sombras ni MCDA en runtime. El MCDA queda en el Sprint 41
-  (ADR 017).
+- ✅ **Spec 49 (aprobada y ejecutada localmente):** publicador de ráster
+  precalculado (COG privado + tiles WebP/PNG + manifest + índice + ficha +
+  estadísticas por comuna). Sin cálculo de pendientes, sombras ni MCDA en
+  runtime. El MCDA queda en el Sprint 41 (ADR 017).
+- ✅ **Sprint 49 cerrado localmente:** `scripts/raster-publish.mjs` +
+  `scripts/lib/raster-utils.mjs` (GDAL en Podman/Docker), `scripts/raster-sync.mjs`
+  (índice, `--check`, `--prune`), migración `052_raster_stats.sql`,
+  `GET /api/raster-stats`, `source.type: "raster"` + `L.tileLayer` +
+  ficha/leyenda en el visor, Nginx `/raster/` y tests.
+- ✅ **Verificación local:** publicación real de un GeoTIFF (22 tiles PNG,
+  manifest e índice), `raster:sync --check` sin errores, Nginx con caché
+  inmutable, fuente `data/raster/` 404 y endpoint contra PostgreSQL local.
+- 📝 **Pendiente:** validación visual en un navegador visible y prueba de carga
+  de 50 usuarios en el VPS. `--force` republica una versión; el rollback se
+  hace en la config.
 - 📝 **Roadmap:** se agrega el Sprint 49 y se actualiza la dependencia del
-  Sprint 41. Sin cambios de código.
-- 📝 Próximo: aprobar la spec 49 y resolver las preguntas abiertas (GDAL,
-  formato de tile, maxzoom y origen de las estadísticas).
+  Sprint 41.
+- 📝 Próximo: **49-F** (carga/VPS) o pasar al **Sprint 41** (recetas MCDA).
 
 ### 2026-11-14
 - ✅ **Login del panel sin TOTP** (`98ae91d`): usuario + contraseña con scrypt,

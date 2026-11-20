@@ -158,8 +158,12 @@ for (const [temaKey, tema] of Object.entries(allTemasConfig)) {
   for (const capaName of capaNames) {
     if (!capaName) continue;
     const style = tema.estilo?.[capaName] || {};
-    // Las capas WMS no tienen tabla física en PostGIS.
-    if (style.tipo === "wms" || style.type === "wms") continue;
+    // Las capas WMS y ráster no tienen tabla física en PostGIS.
+    const esRaster =
+      style.tipo === "raster" ||
+      style.type === "raster" ||
+      style.source?.type === "raster";
+    if (style.tipo === "wms" || style.type === "wms" || esRaster) continue;
     const fields = Array.isArray(style.popupCampos) ? style.popupCampos : [];
     if (!layers.has(capaName)) {
       layers.set(capaName, {

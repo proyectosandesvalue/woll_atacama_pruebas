@@ -59,5 +59,8 @@ geojson/uploads/
 # Tiles MVT pregenerados (se generan con npm run tiles:build; no se versionan)
 tiles/
 
+# Tiles ráster pregenerados (Sprint 49; se generan con npm run raster:publish)
+raster/
+
 # Configuración de backups (26-G)
 .env.backup

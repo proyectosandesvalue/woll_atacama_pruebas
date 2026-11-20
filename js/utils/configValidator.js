@@ -9,6 +9,7 @@ import { logger } from "./logger.js";
  *  - Que cada capa declarada tenga una entrada de estilo.
  *  - Que las capas GeoJSON tengan `url`.
  *  - Que las capas WMS tengan `servicio`.
+ *  - Que las capas ráster tengan `source.raster.urlTemplate` y `manifest`.
  *  - Que el `type` sea uno de los valores soportados.
  *  - Que si hay `atributo`, existan `colores` o `iconos` para ese atributo.
  *  - Duplicados DENTRO de un mismo contenedor (capas duplicadas en la lista
@@ -123,8 +124,19 @@ export function validarConfiguracionGlobal(allTemasConfig) {
         estilo.tipo === "wms" ||
         estilo.type === "wms" ||
         (estilo.servicio && !estilo.url);
+      const esRaster =
+        estilo.tipo === "raster" ||
+        estilo.type === "raster" ||
+        estilo.source?.type === "raster";
 
-      if (esWMS) {
+      if (esRaster) {
+        const raster = estilo.source?.raster;
+        if (!raster?.urlTemplate || !raster?.manifest) {
+          err(
+            `Tema "${temaNombre}", capa "${capaNombre}": declarada como ráster pero sin source.raster.urlTemplate o source.raster.manifest.`
+          );
+        }
+      } else if (esWMS) {
         if (!estilo.servicio) {
           err(
             `Tema "${temaNombre}", capa "${capaNombre}": declarada como WMS pero sin 'servicio'.`

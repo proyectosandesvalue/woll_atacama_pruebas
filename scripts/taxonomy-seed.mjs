@@ -85,7 +85,7 @@ export function buildTaxonomy(config) {
           nombre: cfg.nombrePersonalizado || layerKey,
           tipo: cfg.type || cfg.tipo || null,
           source_type: cfg.source?.type || null,
-          has_tiles: Boolean(cfg.source?.tiles),
+          has_tiles: Boolean(cfg.source?.tiles || cfg.source?.raster),
           config: cfg,
         });
       }

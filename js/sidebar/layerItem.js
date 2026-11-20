@@ -64,6 +64,10 @@ export function crearElementoCapa(
     temaConfig.estilo?.[capaNombre]?.nombrePersonalizado || capaNombre;
   const initialOpacity = getLayerOpacity(capaNombre);
   const configCapa = temaConfig.estilo?.[capaNombre] || {};
+  const esRaster =
+    configCapa.tipo === "raster" ||
+    configCapa.type === "raster" ||
+    configCapa.source?.type === "raster";
 
   let subCategoriesHtml = "";
   if (configCapa.atributo && (configCapa.iconos || configCapa.colores)) {
@@ -163,10 +167,21 @@ export function crearElementoCapa(
             <span class="material-symbols-outlined">zoom_in_map</span>
             Zoom a la Capa
           </button>
+          ${
+            esRaster
+              ? `
+          <button class="layer-option-item" type="button" data-action="ver-ficha" data-capa="${capaNombre}">
+            <span class="material-symbols-outlined">info</span>
+            Ver ficha metodológica
+          </button>
+          `
+              : `
           <button class="layer-option-item" type="button" data-action="ver-tabla" data-capa="${capaNombre}">
             <span class="material-symbols-outlined">table_chart</span>
             Ver tabla de Atributos
           </button>
+          `
+          }
           
           <!-- NUEVO BOTÓN: Solo aparece si la capa tiene una variable asociada -->
           ${
@@ -180,10 +195,16 @@ export function crearElementoCapa(
               : ""
           }
 
+          ${
+            esRaster
+              ? ""
+              : `
           <button class="layer-option-item" type="button" data-action="filter-data" data-capa="${capaNombre}">
             <span class="material-symbols-outlined">filter_alt</span>
             Filtrar Datos
           </button>
+          `
+          }
           ${
             configCapa.type === "point"
               ? `
@@ -198,10 +219,16 @@ export function crearElementoCapa(
           `
               : ""
           }
+          ${
+            esRaster
+              ? ""
+              : `
           <button class="layer-option-item" type="button" data-action="descargar-capa" data-capa="${capaNombre}">
             <span class="material-symbols-outlined">download</span>
             Descargar Capa
           </button>
+          `
+          }
         </div>
       </div>
     </div>
@@ -417,6 +444,20 @@ export function crearElementoCapa(
             );
           }
         }
+      });
+    }
+
+    const btnFicha = menuOptions.querySelector('[data-action="ver-ficha"]');
+    if (btnFicha) {
+      btnFicha.addEventListener("click", (e) => {
+        e.stopPropagation();
+        closeMenu();
+        import("../utils/rasterUtils.js")
+          .then(({ openRasterInfo }) => openRasterInfo(capaNombre, configCapa))
+          .catch((err) => {
+            log.error("No se pudo abrir la ficha del ráster", err);
+            alert("No se pudo abrir la ficha metodológica de la capa.");
+          });
       });
     }
 

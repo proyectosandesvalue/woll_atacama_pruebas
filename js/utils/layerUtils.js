@@ -38,6 +38,7 @@ import { shouldUseGlify, createGlifyLayer } from "./glifyAdapter.js";
 import { runWorkerTask } from "../workers/workerPool.js";
 import { isWMSLayer, getWMSService, createWMSLayer } from "./wmsUtils.js";
 import { isVectorTileLayer, createVectorTileLayer } from "./vectorTileUtils.js";
+import { isRasterLayer, createRasterLayer } from "./rasterUtils.js";
 
 let sharedCanvasRenderer = null;
 
@@ -354,6 +355,18 @@ export async function cargarCapaIndividual(capaNombre, temaKey, temasConfig, isI
         markLayerAsLoaded(capaNombre);
         applySavedOpacity(capaNombre);
         log.log(`Capa ${capaNombre} cargada como WMS (servicio: ${configCapa.servicio})`);
+        return;
+      }
+
+      // ── Rama ráster precalculado (Sprint 49) ──
+      // El servidor no calcula: solo sirve tiles publicados y el manifest.
+      if (isRasterLayer(configCapa)) {
+        const rasterLayer = await createRasterLayer(capaNombre, configCapa);
+        rasterLayer.addTo(appState.map);
+        addLayer(capaNombre, rasterLayer);
+        markLayerAsLoaded(capaNombre);
+        applySavedOpacity(capaNombre);
+        log.log(`Capa ${capaNombre} cargada como ráster precalculado`);
         return;
       }
 
