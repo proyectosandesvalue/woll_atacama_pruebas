@@ -2,15 +2,20 @@
  * Carga de la configuración del visor.
  *
  * Orden:
- *   1. `GET /api/config` (snapshot activo en `admin.config_snapshots`).
- *   2. Fallback a `js/config/allTemasConfig.js` si la API falla, tarda o
- *      devuelve un payload inválido (INV-5).
+ *   1. `GET /api/taxonomy` si el feature flag de cliente está activo.
+ *   2. `GET /api/config` (snapshot activo en `admin.config_snapshots`).
+ *   3. Fallback a `js/config/allTemasConfig.js` si ambas APIs fallan (INV-5).
+ *
+ * Feature flag de cliente: `?taxonomy=1` en la URL o
+ * `globalThis.WOLL_TAXONOMY_API = true`. El servidor debe tener
+ * `TAXONOMY_API_ENABLED=1`; si no, `/api/taxonomy` devuelve 404 y se usa
+ * `/api/config`.
  *
  * `initTemasConfig()` es idempotente: la primera llamada resuelve y las
  * siguientes devuelven la misma promesa. `getTemasConfig()` está disponible
  * después de inicializar; antes devuelve el fallback local.
  *
- * Sprint 14 (docs/specs/14-15-panel-admin.md).
+ * Sprint 14 / Sprint 46-C.
  */
 
 import fallbackConfig from "./allTemasConfig.js";
@@ -25,6 +30,38 @@ function isConfig(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
+function taxonomyEnabled(opts = {}) {
+  if (typeof opts.useTaxonomy === "boolean") return opts.useTaxonomy;
+  if (typeof globalThis.WOLL_TAXONOMY_API === "boolean") {
+    return globalThis.WOLL_TAXONOMY_API;
+  }
+  try {
+    const search = globalThis.location?.search || "";
+    return new URLSearchParams(search).get("taxonomy") === "1";
+  } catch {
+    return false;
+  }
+}
+
+async function fetchPayload(fetchImpl, url, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetchImpl(url, {
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const payload = await res.json();
+    if (!payload || !isConfig(payload.config)) {
+      throw new Error("Payload de configuración inválido.");
+    }
+    return payload;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Configuración activa. Antes de `initTemasConfig()` devuelve el fallback.
  * @returns {object}
@@ -35,7 +72,7 @@ export function getTemasConfig() {
 
 /**
  * Metadatos de la configuración cargada.
- * @returns {{source: "api"|"fallback", version: number|null, checksum: string|null}}
+ * @returns {{source: "taxonomy"|"api"|"fallback", version: number|null, checksum: string|null}}
  */
 export function getTemasConfigMeta() {
   return { ..._meta };
@@ -45,7 +82,8 @@ export function getTemasConfigMeta() {
  * @param {{
  *   fetchImpl?: typeof fetch,
  *   timeoutMs?: number,
- *   url?: string
+ *   url?: string,
+ *   useTaxonomy?: boolean
  * }} [opts]
  * @returns {Promise<object>}
  */
@@ -55,7 +93,8 @@ export function initTemasConfig(opts = {}) {
   const {
     fetchImpl = globalThis.fetch,
     timeoutMs = DEFAULT_TIMEOUT_MS,
-    url = "/api/config",
+    url = null,
+    useTaxonomy = taxonomyEnabled(opts),
   } = opts;
 
   if (typeof fetchImpl !== "function") {
@@ -64,40 +103,36 @@ export function initTemasConfig(opts = {}) {
     return _promise;
   }
 
+  const urls = url
+    ? [url]
+    : useTaxonomy
+      ? ["/api/taxonomy", "/api/config"]
+      : ["/api/config"];
+
   _promise = (async () => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-    try {
-      const res = await fetchImpl(url, {
-        headers: { Accept: "application/json" },
-        signal: controller.signal,
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const payload = await res.json();
-      if (!payload || !isConfig(payload.config)) {
-        throw new Error("Payload de configuración inválido.");
+    let lastError = null;
+    for (const endpoint of urls) {
+      try {
+        const payload = await fetchPayload(fetchImpl, endpoint, timeoutMs);
+        _config = payload.config;
+        _meta = {
+          source: endpoint.includes("taxonomy") ? "taxonomy" : "api",
+          version: Number.isInteger(payload.version) ? payload.version : null,
+          checksum: payload.checksum || null,
+        };
+        return _config;
+      } catch (err) {
+        lastError = err;
       }
-
-      _config = payload.config;
-      _meta = {
-        source: "api",
-        version: Number.isInteger(payload.version) ? payload.version : null,
-        checksum: payload.checksum || null,
-      };
-      return _config;
-    } catch (err) {
-      console.warn(
-        "[config] no se pudo cargar /api/config; se usa el fallback local:",
-        err?.message || err
-      );
-      _config = fallbackConfig;
-      _meta = { source: "fallback", version: null, checksum: null };
-      return _config;
-    } finally {
-      clearTimeout(timer);
     }
+
+    console.warn(
+      "[config] no se pudo cargar la configuración remota; se usa el fallback local:",
+      lastError?.message || lastError
+    );
+    _config = fallbackConfig;
+    _meta = { source: "fallback", version: null, checksum: null };
+    return _config;
   })();
 
   return _promise;

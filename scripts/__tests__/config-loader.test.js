@@ -63,6 +63,68 @@ test("initTemasConfig cae al fallback si el payload es inválido", async () => {
   assert.ok(config.agua);
 });
 
+test("initTemasConfig usa /api/taxonomy cuando el flag está activo", async () => {
+  reset();
+  const urls = [];
+  const config = await initTemasConfig({
+    useTaxonomy: true,
+    fetchImpl: async (url) => {
+      urls.push(url);
+      return {
+        ok: true,
+        json: async () => ({
+          source: "taxonomy",
+          checksum: "tax",
+          config: { agua: { nombre: "Desde taxonomía" } },
+        }),
+      };
+    },
+  });
+
+  assert.deepEqual(urls, ["/api/taxonomy"]);
+  assert.equal(config.agua.nombre, "Desde taxonomía");
+  assert.equal(getTemasConfigMeta().source, "taxonomy");
+  assert.equal(getTemasConfigMeta().checksum, "tax");
+});
+
+test("initTemasConfig cae a /api/config si /api/taxonomy falla", async () => {
+  reset();
+  const urls = [];
+  const config = await initTemasConfig({
+    useTaxonomy: true,
+    fetchImpl: async (url) => {
+      urls.push(url);
+      if (url === "/api/taxonomy") throw new Error("taxonomy down");
+      return {
+        ok: true,
+        json: async () => ({
+          version: 3,
+          checksum: "cfg",
+          config: { agua: { nombre: "Desde snapshot" } },
+        }),
+      };
+    },
+  });
+
+  assert.deepEqual(urls, ["/api/taxonomy", "/api/config"]);
+  assert.equal(config.agua.nombre, "Desde snapshot");
+  assert.equal(getTemasConfigMeta().source, "api");
+  assert.equal(getTemasConfigMeta().version, 3);
+});
+
+test("initTemasConfig cae al fallback si taxonomy y config fallan", async () => {
+  reset();
+  const config = await initTemasConfig({
+    useTaxonomy: true,
+    fetchImpl: async () => {
+      throw new Error("network");
+    },
+  });
+
+  assert.equal(getTemasConfigMeta().source, "fallback");
+  assert.ok(config.agua);
+});
+
 test("initTemasConfig es idempotente", async () => {
   reset();
   let calls = 0;
