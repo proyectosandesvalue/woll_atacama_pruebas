@@ -19,6 +19,7 @@ import { layerRoutes } from "./layers.js";
 import { proxyRoute } from "./proxy.js";
 import { rasterRoutes } from "./raster.js";
 import { stationRoutes } from "./stations.js";
+import { taxonomyRoutes } from "./taxonomy.js";
 
 export const routes = [
   chatRoute,
@@ -34,6 +35,7 @@ export const routes = [
   arclimRoute,
   ...layerRoutes,
   ...rasterRoutes,
+  ...taxonomyRoutes,
   ...stationRoutes,
   healthRoute,
   readyRoute,

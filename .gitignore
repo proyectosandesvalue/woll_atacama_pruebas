@@ -56,6 +56,9 @@ secrets/
 # GeoJSON subidos desde el panel admin (Sprint 47)
 geojson/uploads/
 
+# Shapefiles ZIP privados subidos desde el panel (Sprint 47-D)
+geojson/private/
+
 # Tiles MVT pregenerados (se generan con npm run tiles:build; no se versionan)
 tiles/
 

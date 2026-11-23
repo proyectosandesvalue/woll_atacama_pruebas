@@ -253,7 +253,7 @@
           <div class="panel-head">
             <div>
               <h2>Gestor de capas geográficas</h2>
-              <p class="muted">GeoJSON → PostGIS → tiles → snapshot del visor.</p>
+              <p class="muted">GeoJSON o Shapefile (ZIP) → PostGIS → tiles → snapshot del visor.</p>
             </div>
             <div class="panel-head-actions">
               <div class="help-wrap">
@@ -266,12 +266,12 @@
                   <strong>Cómo importar una capa</strong>
                   <ol>
                     <li>Crea los metadatos con <b>Agregar capa</b>.</li>
-                    <li>En <b>Importar GeoJSON</b> elige la capa, el archivo y la dimensión.</li>
+                    <li>En <b>Importar capa</b> elige la capa, el archivo y la dimensión.</li>
                     <li>El worker carga la tabla en PostGIS y genera los tiles MVT.</li>
                     <li>Asigna la capa a grupos/subgrupos en <b>Taxonomía</b>.</li>
                     <li>Publica el snapshot para que el visor la muestre.</li>
                   </ol>
-                  <p>El GeoJSON original queda como fallback. La versión de tiles es inmutable.</p>
+                  <p>GeoJSON o ZIP con Shapefile (.shp/.dbf/.shx/.prj). El GeoJSON de respaldo queda como fallback. La versión de tiles es inmutable.</p>
                 </div>
               </div>
               <button id="layerAddToggle" class="btn btn-secondary" type="button"
@@ -284,7 +284,7 @@
                       data-form-toggle="layerImportDrawer" aria-expanded="false"
                       aria-controls="layerImportDrawer">
                 <span class="material-symbols-outlined">upload_file</span>
-                Importar GeoJSON
+                Importar capa
               </button>
               <button id="layersPublishBtn" class="btn btn-primary" type="button">
                 <span class="material-symbols-outlined">publish</span>
@@ -326,6 +326,7 @@
                   <label for="layerSourceType">Fuente</label>
                   <select id="layerSourceType">
                     <option value="geojson">GeoJSON</option>
+                    <option value="shapefile">Shapefile (ZIP)</option>
                     <option value="postgis">PostGIS / tiles</option>
                     <option value="wms">WMS</option>
                   </select>
@@ -354,9 +355,9 @@
                   <select id="layerImportDimension"></select>
                 </div>
               </div>
-              <label for="layerImportFile">Archivo GeoJSON</label>
-              <input id="layerImportFile" type="file" accept=".geojson,.json,application/geo+json,application/json" />
-              <p class="field-hint">Máximo 100 MB. Debe ser una FeatureCollection con geometrías.</p>
+              <label for="layerImportFile">Archivo GeoJSON o Shapefile (ZIP)</label>
+              <input id="layerImportFile" type="file" accept=".geojson,.json,.zip,application/geo+json,application/json,application/zip" />
+              <p class="field-hint">GeoJSON: máx. 100 MB. Shapefile: ZIP de máx. 200 MB con .shp, .dbf, .shx y .prj del mismo nombre.</p>
               <div class="field-grid">
                 <div>
                   <label for="layerImportName">Nombre visible</label>

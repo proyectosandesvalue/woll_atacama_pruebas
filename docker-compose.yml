@@ -67,6 +67,7 @@ services:
       ADMIN_TOTP_SECRET: ${ADMIN_TOTP_SECRET:-}
       ADMIN_TOTP_REQUIRED: ${ADMIN_TOTP_REQUIRED:-0}
       CONFIG_API_MAX_AGE: ${CONFIG_API_MAX_AGE:-300}
+      TAXONOMY_API_ENABLED: ${TAXONOMY_API_ENABLED:-0}
       # LLM (Vertex AI en local/VPS; openai-compatible para demo)
       LLM_PROVIDER: ${LLM_PROVIDER:-}
       GOOGLE_CLOUD_PROJECT: ${GOOGLE_CLOUD_PROJECT:-}
@@ -153,8 +154,8 @@ services:
   layer-worker:
     build:
       context: .
-      dockerfile: docker/api/Dockerfile
-    image: woll/api:latest
+      dockerfile: docker/layer-worker/Dockerfile
+    image: woll/layer-worker:latest
     restart: unless-stopped
     init: true
     depends_on:

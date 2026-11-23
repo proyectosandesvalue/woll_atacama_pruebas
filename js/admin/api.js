@@ -123,9 +123,11 @@ export const api = {
   layerCancel: (id) =>
     request("/api/admin/layers/jobs/cancel", { method: "POST", body: { id } }),
   layerUpload: async (key, file, name) => {
+    const isZip =
+      /\.zip$/i.test(file?.name || "") || /zip/i.test(file?.type || "");
     const headers = {
       Accept: "application/json",
-      "Content-Type": "application/geo+json",
+      "Content-Type": isZip ? "application/zip" : "application/geo+json",
     };
     if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
     const params = new URLSearchParams({ key });

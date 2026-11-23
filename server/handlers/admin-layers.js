@@ -8,12 +8,16 @@
 import { getDB as defaultGetDB } from "../db/pool.js";
 import { recordAudit } from "../admin/auth.js";
 import {
+  deleteLayerZip,
   layerFileInfo,
   layerFileRelative,
   layerTileVersion,
+  layerZipInfo,
   saveGeoJsonStream,
+  saveZipStream,
   validateLayerKey,
   MAX_GEOJSON_BYTES,
+  MAX_SHAPEFILE_BYTES,
 } from "../admin/layer-files.js";
 import {
   isPostgres,
@@ -23,7 +27,7 @@ import {
 } from "./admin.js";
 
 const TYPES = new Set(["point", "line", "polygon", "heatmap", "wms"]);
-const SOURCE_TYPES = new Set(["geojson", "postgis", "wms"]);
+const SOURCE_TYPES = new Set(["geojson", "postgis", "shapefile", "wms"]);
 const MAX_CONFIG_BYTES = 200_000;
 
 function parseId(value) {
@@ -133,6 +137,12 @@ export async function handleLayersGet(ctx, { getDB = defaultGetDB } = {}) {
           modified_at: null,
           file: null,
         })),
+        upload: await layerZipInfo(layer.layer_key).catch(() => ({
+          exists: false,
+          bytes: 0,
+          modified_at: null,
+          file: null,
+        })),
       }))
     );
 
@@ -142,7 +152,10 @@ export async function handleLayersGet(ctx, { getDB = defaultGetDB } = {}) {
       jobs,
       dimensions,
       worker: workers[0] || null,
-      limits: { maxGeoJsonBytes: MAX_GEOJSON_BYTES },
+      limits: {
+        maxGeoJsonBytes: MAX_GEOJSON_BYTES,
+        maxShapefileBytes: MAX_SHAPEFILE_BYTES,
+      },
     });
   } catch (err) {
     console.error("[admin:layers] error leyendo:", err?.message || err);
@@ -299,21 +312,34 @@ export async function handleLayerUpload(ctx, { getDB = defaultGetDB } = {}) {
   }
 
   const contentType = String(ctx.req?.headers?.["content-type"] || "").toLowerCase();
+  const isZip =
+    contentType.includes("application/zip") ||
+    contentType.includes("application/x-zip-compressed");
+
   if (
+    !isZip &&
     contentType &&
     !contentType.includes("application/geo+json") &&
     !contentType.includes("application/json")
   ) {
-    return json(415, { error: "El upload debe ser GeoJSON." });
+    return json(415, { error: "El upload debe ser GeoJSON o un ZIP de Shapefile." });
   }
+
   const declared = Number(ctx.req?.headers?.["content-length"] || 0);
-  if (Number.isFinite(declared) && declared > MAX_GEOJSON_BYTES) {
-    return json(413, { error: "El GeoJSON supera el límite de 100 MB." });
+  const maxBytes = isZip ? MAX_SHAPEFILE_BYTES : MAX_GEOJSON_BYTES;
+  if (Number.isFinite(declared) && declared > maxBytes) {
+    return json(413, {
+      error: isZip
+        ? "El ZIP supera el límite de 200 MB."
+        : "El GeoJSON supera el límite de 100 MB.",
+    });
   }
 
   let saved;
   try {
-    saved = await saveGeoJsonStream(ctx.req, key, { maxBytes: MAX_GEOJSON_BYTES });
+    saved = isZip
+      ? await saveZipStream(ctx.req, key, { maxBytes })
+      : await saveGeoJsonStream(ctx.req, key, { maxBytes });
   } catch (err) {
     const status = /límite/i.test(err.message) ? 413 : 400;
     return json(status, { error: err.message });
@@ -331,27 +357,45 @@ export async function handleLayerUpload(ctx, { getDB = defaultGetDB } = {}) {
     const previousConfig = existing[0]?.config || {};
     const config = {
       ...previousConfig,
-      url: saved.file,
-      type: previousConfig.type || saved.type,
+      // El ZIP se procesa en el worker; el fallback público es el GeoJSON
+      // que ese worker genera a partir del Shapefile.
+      url: layerFileRelative(key),
+      type: previousConfig.type || saved.type || "polygon",
       nombrePersonalizado: previousConfig.nombrePersonalizado || name,
     };
+    if (isZip) {
+      config.upload = {
+        format: "shapefile",
+        file: saved.file,
+        bytes: saved.bytes,
+      };
+    } else {
+      delete config.upload;
+    }
+
+    const sourceType = isZip ? "shapefile" : "geojson";
     const rows = await db.query(
       `INSERT INTO admin.layers
          (layer_key, nombre, tipo, source_type, has_tiles, config, activo, updated_by)
-       VALUES ($1, $2, $3, 'geojson', false, $4::jsonb, true, $5)
+       VALUES ($1, $2, $3, $4, false, $5::jsonb, true, $6)
        ON CONFLICT (layer_key) DO UPDATE
          SET nombre = COALESCE(NULLIF(admin.layers.nombre, ''), EXCLUDED.nombre),
              tipo = EXCLUDED.tipo,
-             source_type = 'geojson',
+             source_type = EXCLUDED.source_type,
              has_tiles = false,
-             config = $4::jsonb,
+             config = $5::jsonb,
              activo = true,
              updated_at = now(),
              updated_by = EXCLUDED.updated_by
        RETURNING id, layer_key, nombre, tipo, source_type, has_tiles, config, activo`,
-      [key, name, saved.type, JSON.stringify(config), auth.session.sub]
+      [key, name, config.type, sourceType, JSON.stringify(config), auth.session.sub]
     );
-    await audit(ctx, auth.session, "layer.upload", key, "ok", { bytes: saved.bytes, features: saved.features });
+    await audit(ctx, auth.session, "layer.upload", key, "ok", {
+      bytes: saved.bytes,
+      format: isZip ? "shapefile" : "geojson",
+      ...(isZip ? {} : { features: saved.features }),
+    });
+    if (!isZip) await deleteLayerZip(key).catch(() => {});
     return json(201, { item: rows[0], file: saved.file, ...saved });
   } catch (err) {
     console.error("[admin:layers] error registrando upload:", err?.message || err);
@@ -384,13 +428,22 @@ export async function handleLayerQueue(ctx, { getDB = defaultGetDB } = {}) {
       [key]
     );
     if (layer.length === 0) return json(404, { error: "Capa no encontrada." });
-    const file = layer[0].config?.url;
-    if (!file || !String(file).startsWith("geojson/uploads/")) {
+    const config = layer[0].config || {};
+    const upload = config.upload || null;
+    const isShapefile = upload?.format === "shapefile";
+    const file = isShapefile ? String(upload.file || "") : String(config.url || "");
+
+    if (isShapefile) {
+      if (!file.startsWith("geojson/private/") || file.includes("..")) {
+        return json(400, { error: "El ZIP de la capa no es válido." });
+      }
+    } else if (!file.startsWith("geojson/uploads/")) {
       return json(400, { error: "La capa no tiene un GeoJSON subido desde el panel." });
     }
 
     const version = layerTileVersion();
     const payload = {
+      format: isShapefile ? "shapefile" : "geojson",
       file,
       dimension_key: text(body.dimension_key, 60) || "otros",
       display_name: text(body.display_name, 200) || layer[0].nombre || key,

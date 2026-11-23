@@ -1756,8 +1756,8 @@ function renderLayerTable(layers, placements) {
         el("td", {}, [
           el("span", {
             className: layer.file?.exists ? "badge badge-ok" : "badge",
-            text: layer.file?.exists ? "subido" : "—",
-            title: layer.file?.file || "",
+            text: layer.file?.exists ? "subido" : layer.upload?.exists ? "ZIP" : "—",
+            title: layer.file?.file || layer.upload?.file || "",
           }),
         ]),
         el("td", {}, [el("div", { className: "row-actions" }, actions)]),
@@ -1924,13 +1924,14 @@ async function submitLayerImport(event) {
     return;
   }
   if (!file) {
-    layerImportSetStatus("Selecciona un archivo GeoJSON.", "error");
+    layerImportSetStatus("Selecciona un archivo GeoJSON o un ZIP de Shapefile.", "error");
     return;
   }
 
+  const isZip = /\.zip$/i.test(file.name) || /zip/i.test(file.type);
   const button = $("#layerImportSubmit");
   button.disabled = true;
-  layerImportSetStatus("Subiendo GeoJSON…");
+  layerImportSetStatus(isZip ? "Subiendo Shapefile…" : "Subiendo GeoJSON…");
   try {
     const uploaded = await api.layerUpload(key, file, name || key);
     const job = await api.layerQueue({
@@ -1939,7 +1940,10 @@ async function submitLayerImport(event) {
       display_name: name || uploaded.item?.nombre || key,
       tiles,
     });
-    const message = `GeoJSON subido (${uploaded.features} features). Trabajo #${job.job.id} encolado.`;
+    const message =
+      uploaded.format === "shapefile"
+        ? `Shapefile subido (${(uploaded.bytes / 1024 / 1024).toFixed(1)} MB). Trabajo #${job.job.id} encolado.`
+        : `GeoJSON subido (${uploaded.features} features). Trabajo #${job.job.id} encolado.`;
     layerImportSetStatus(message);
     setStatus(message);
     setDrawerOpen("layerImportDrawer", false, { focus: false });
