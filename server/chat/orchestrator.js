@@ -27,6 +27,13 @@ function dbg(...args) {
   if (DEBUG) console.log("[orchestrator]", ...args);
 }
 
+// El paso de síntesis (isLast) no ofrece tools. Sin esta nota, Gemini 3
+// intenta emitir una function call igual y responde con
+// finish_reason="malformed_function_call" y contenido vacío.
+const SYNTHESIS_NO_TOOLS_NOTE =
+  "\n\nEn este turno NO hay herramientas disponibles. " +
+  "No intentes invocar funciones; responde en texto con la información disponible.";
+
 export async function runOrchestrator({ text, history = [], sessionId = null, timing = null }) {
   const budgetMs =
     Number(process.env.ORCHESTRATOR_BUDGET_MS) || DEFAULT_BUDGET_MS;
@@ -76,13 +83,24 @@ export async function runOrchestrator({ text, history = [], sessionId = null, ti
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
         response = await llm.chat({
-          system,
+          system: isLast ? `${system}${SYNTHESIS_NO_TOOLS_NOTE}` : system,
           messages,
           tools: TOOL_DEFINITIONS,
           toolChoice: isLast ? "none" : "auto",
           reasoningEffort: "low",
           sessionId,
         });
+
+        // Gemini 3 puede devolver finish_reason="malformed_function_call"
+        // con contenido vacío. Un reintento lo resuelve en la práctica.
+        const empty =
+          !(response.content || "").trim() &&
+          (!response.toolCalls || response.toolCalls.length === 0);
+        if (empty && attempt < MAX_RETRIES) {
+          dbg(`step ${step}: respuesta vacía, reintento ${attempt + 1}`);
+          continue;
+        }
+
         break;
       } catch (err) {
         const isRetryable = err?.retryable === true;

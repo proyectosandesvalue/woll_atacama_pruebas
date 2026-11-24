@@ -87,7 +87,7 @@ export function createProvider(config) {
       body.reasoning_effort = args.reasoningEffort;
     }
 
-    if (args.tools && args.tools.length > 0) {
+    if (args.tools && args.tools.length > 0 && args.toolChoice !== "none") {
       body.tools = args.tools;
       body.tool_choice = args.toolChoice ?? "auto";
     
