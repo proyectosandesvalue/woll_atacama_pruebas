@@ -15,6 +15,11 @@ import { matchRoute } from "./http/router.js";
 import { routes as defaultRoutes } from "./routes/index.js";
 import { applyCors } from "./utils/cors.js";
 import { getClientIp } from "./utils/request.js";
+import {
+  buildAccessLogLine,
+  createIpHasher,
+  resolveRequestId,
+} from "./utils/request-context.js";
 
 /**
  * @param {{
@@ -31,11 +36,37 @@ export function createApp(opts = {}) {
     getDB = defaultGetDB,
     env = process.env,
     logger = console,
+    accessLog = (line) => console.log(line),
   } = opts;
 
+  const hashIp = createIpHasher(env);
+  const logRequests = String(env.LOG_REQUESTS ?? "1") !== "0";
+
   return async function app(req, res) {
+    const startedAt = process.hrtime.bigint();
     const url = new URL(req.url || "/", "http://localhost");
     const pathname = url.pathname;
+    const requestId = resolveRequestId(req.headers["x-request-id"]);
+    res.setHeader("x-request-id", requestId);
+
+    if (logRequests) {
+      res.once("finish", () => {
+        const durationMs =
+          Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+        accessLog(
+          buildAccessLogLine({
+            requestId,
+            method: req.method || "GET",
+            path: pathname,
+            status: res.statusCode,
+            durationMs,
+            ipHash: hashIp(getClientIp(req, env)),
+            country: getCountryFromRequest({ headers: req.headers }) || null,
+          })
+        );
+      });
+    }
+
     const match = matchRoute(routes, req.method, pathname);
 
     if (!match.route) {
@@ -67,6 +98,7 @@ export function createApp(opts = {}) {
       const ctx = {
         req,
         res,
+        requestId,
         query: parseQuery(url.searchParams),
         ip: getClientIp(req, env),
         country: getCountryFromRequest({ headers: req.headers }),

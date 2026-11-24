@@ -214,7 +214,49 @@ services:
       DATABASE_URL: ${DATABASE_URL_DOCKER:?Define DATABASE_URL_DOCKER en .env}
       PG_APPLICATION_NAME: woll-ingest
       GEO_PROVIDER: none
+      METEOCHILE_USER: ${METEOCHILE_USER:-}
+      METEOCHILE_TOKEN: ${METEOCHILE_TOKEN:-}
     entrypoint: ["node", "scripts/ingest-run.mjs"]
+    networks:
+      - internal
+    logging: *default-logging
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  # Chequeo operativo (Sprint 31-B). Sin socket de Docker; solo lee el
+  # directorio de backups montado y consulta la red interna.
+  ops-check:
+    profiles: ["ops"]
+    image: woll/api:latest
+    restart: "no"
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DB_DRIVER: postgres
+      DATABASE_URL: ${DATABASE_URL_DOCKER:?Define DATABASE_URL_DOCKER en .env}
+      PG_APPLICATION_NAME: woll-ops
+      OPS_ALERT_WEBHOOK: ${OPS_ALERT_WEBHOOK:-}
+      OPS_BACKUP_DIR: ${OPS_BACKUP_DIR:-/var/backups/woll}
+      OPS_DISK_PATH: ${OPS_DISK_PATH:-/var/backups/woll}
+      OPS_HEALTH_API: ${OPS_HEALTH_API:-http://api:3000/healthz}
+      OPS_HEALTH_NGINX: ${OPS_HEALTH_NGINX:-http://nginx/nginx-health}
+      OPS_CERT_HOST: ${OPS_CERT_HOST:-nginx}
+      OPS_CERT_PORT: ${OPS_CERT_PORT:-443}
+      OPS_CERT_SERVERNAME: ${OPS_CERT_SERVERNAME:-localhost}
+      OPS_MAX_DISK_PCT: ${OPS_MAX_DISK_PCT:-80}
+      OPS_MAX_BACKUP_HOURS: ${OPS_MAX_BACKUP_HOURS:-26}
+      OPS_MIN_CERT_DAYS: ${OPS_MIN_CERT_DAYS:-14}
+      OPS_MAX_HEARTBEAT_MIN: ${OPS_MAX_HEARTBEAT_MIN:-10}
+      OPS_MAX_BACKLOG: ${OPS_MAX_BACKLOG:-25}
+    volumes:
+      - ${OPS_BACKUP_HOST_DIR:-/var/backups/woll}:${OPS_BACKUP_DIR:-/var/backups/woll}:ro
+    entrypoint: ["node", "scripts/ops-check.mjs"]
     networks:
       - internal
     logging: *default-logging

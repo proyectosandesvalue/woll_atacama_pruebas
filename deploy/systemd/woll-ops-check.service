@@ -1,0 +1,19 @@
+[Unit]
+Description=Chequeo operativo WOLL (API, Nginx, TLS, disco, backup, workers)
+Documentation=file:/srv/woll/docs/specs/31-observabilidad.md
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+WorkingDirectory=/srv/woll
+# Opcional: OPS_ALERT_WEBHOOK y umbrales propios (600, fuera de git).
+EnvironmentFile=-/srv/woll/.env.ops
+ExecStart=/usr/bin/docker compose --env-file /srv/woll/.env --profile ops \
+  -f /srv/woll/docker-compose.yml run --rm ops-check
+TimeoutStartSec=5min
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7

@@ -1490,7 +1490,7 @@ versión anotada en la spec 28 o en el CHANGELOG.
 ### 2.14. Despliegue al VPS: local primero (26-I)
 
 **Regla:** el VPS es producción. No se edita código, configuración ni archivos
-allí; todo cambio se desarrolla y prueba en local, se commitea y recién
+allí; todo cambio se desarrolla y prueba en local, se hace commit y solo entonces
 después se despliega con un release. La única excepción son los incidentes
 (caída, disco lleno, certificado vencido), que se resuelven en el servidor y
 se documentan en `docs/CHANGELOG.md` el mismo día.

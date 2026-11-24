@@ -1,0 +1,11 @@
+[Unit]
+Description=Chequeo operativo WOLL cada 10 minutos
+
+[Timer]
+OnCalendar=*:0/10
+AccuracySec=1min
+Persistent=false
+Unit=woll-ops-check.service
+
+[Install]
+WantedBy=timers.target
