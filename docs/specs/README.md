@@ -29,6 +29,7 @@
 | [26-plataforma](26-plataforma/00-spec-madre.md) | 26 | Grande | EN EJECUCIÓN |
 | [28-seguridad-frontend](28-seguridad-frontend.md) | 28 | Mediano | PARCIAL CERRADA (ZAP/capa base pendientes) |
 | [30-aceptacion](30-aceptacion.md) | 30 | Grande | EN EJECUCIÓN |
+| [31-observabilidad](31-observabilidad.md) | 31 | Mediano | PARCIAL (31-A/B/E ✅) |
 | [32-marco-legal-privacidad](32-marco-legal-privacidad.md) | 32 | Mediano | DRAFT (A/B/C) |
 | [44-indicadores-copernicus](44-indicadores-copernicus.md) | 44 | Mediano | CERRADA |
 | [45-panel-admin-operaciones](45-panel-admin-operaciones/00-spec-madre.md) | 45-48 | Grande | EN EJECUCIÓN (47-C/VPS pendientes) |

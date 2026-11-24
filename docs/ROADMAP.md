@@ -88,7 +88,7 @@
 | 28 | Seguridad del frontend y dependencias | 🔶 parcial (dependencias 0, CSP, XSS y vendorización ✅; ZAP/capa base pendientes) | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
 | 30 | Pruebas de aceptación técnica | 🔶 parcial (gate 08 ✅ y carga 25/50 local ✅; VPS/E2E pendientes) | alta | 16h | 26, 27 |
-| 31 | Observabilidad y operación | ⏳ pending | alta | 7-8h | 26 |
+| 31 | Observabilidad y operación | 🔶 parcial (31-A/B/E ✅ en VPS; 31-C/D pendientes) | alta | 7-8h | 26 |
 | 32 | Marco legal y privacidad | ⏳ pending | media | 5-6h | 24, 31-A |
 | 33 | Entrega y traspaso | ⏳ pending | alta | 10h | Sprints Must |
 | 34 | Refactor de mantenibilidad (frontend) | ⏳ pending | media | 20-25h | 26-D, 28 |
@@ -1290,8 +1290,14 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 - ✅ **Validación RAG:** `ingest:dry` (6 páginas, 10 chunks, 3.815 tokens),
   ingesta real en el VPS (10 vectores de 1024 dims) y consulta de similitud
   coseno con `RETRIEVAL_QUERY`. Documento de prueba eliminado del corpus.
-- ⏳ **Pendiente:** cargar PDFs reales con licencia y `copyright_cleared`,
-  retrieval del chat (18-D), offsite de backups, tiles MVT y DNS/TLS.
+- ✅ **31-A/B/E (observabilidad):** log JSON con `request_id` e IP hasheada,
+  `ops-check` cada 10 min (API, Nginx, TLS, disco, backup, heartbeats y
+  backlog) y tests de `/healthz` y `/readyz`.
+- ✅ **26-J en el VPS:** timers de realtime, agromet, redmeteo y daily activos;
+  las cuatro fuentes probadas con datos reales y `flock` verificado.
+- ⏳ **Pendiente:** 31-C/D, cargar PDFs reales con licencia y
+  `copyright_cleared`, retrieval del chat (18-D), offsite de backups, tiles
+  MVT y DNS/TLS.
 
 ### 2026-11-23
 - ✅ **26-H (VPS operativo):** Ubuntu 24.04.4 en KVM de webhospedaje.cl

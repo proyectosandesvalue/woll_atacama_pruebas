@@ -103,3 +103,23 @@ Timer `woll-ops-check.timer` cada 10 minutos.
   `/readyz` alias.
 - `server/ops/__tests__/checks.test.js`: umbrales de disco, backup, cert,
   workers y backlog; agregación y exit code.
+
+
+## 7. Implementación (2026-11-24)
+
+- **31-A:** `server/utils/request-context.js` (id saneado, hash de IP, línea
+  JSON) y `server/app.js` (cabecera `x-request-id`, log en `finish`). Se
+  eliminaron los logs de IP en claro del extractor de request.
+- **31-B:** `server/ops/checks.js` (lógica pura e inyectable),
+  `scripts/ops-check.mjs`, servicio Compose `ops-check` (profile `ops`, sin
+  socket de Docker, backup montado `ro`) y `woll-ops-check.timer` cada 10 min.
+- **31-E:** `/healthz` y `/readyz` ya existían; se agregaron tests de 200/503,
+  alias y compatibilidad con el driver REST.
+- **Validación en el VPS:** `ok=true` con certificado a 364 días, disco al
+  15 %, backup de 3 min, heartbeats de `rag-worker` y `layer-worker` y colas en
+  cero. Fallo simulado con `OPS_MAX_DISK_PCT=1`: `ok=false` con alerta de disco.
+- **Tests:** 6 de `checks` + 5 de request-log + 4 de health; suite completa en
+  verde.
+- **Pendiente:** 31-C (GlitchTip/Sentry y analítica) y 31-D (valoración del
+  chat) requieren decisión de servicio/UX. La tasa de error del LLM se puede
+  sumar cuando existan métricas persistidas.

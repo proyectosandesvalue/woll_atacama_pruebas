@@ -127,3 +127,21 @@ temporalmente si el VPS falla. Al cortar (26-I), se desactivan en GitHub.
 - Horas reales: 2.
 - Pendiente: probar los 4 timers en el VPS real y definir alerta de fallo
   (`OnFailure` a un webhook/email).
+
+
+## 7. Despliegue en el VPS (2026-11-24)
+
+- Unidades instaladas con `User=deploy` (el VPS no tiene usuario `woll`) y
+  `EnvironmentFile` implícito vía el `.env` de Compose.
+- El servicio `ingest` recibe `METEOCHILE_USER` y `METEOCHILE_TOKEN` desde
+  `.env`; sin esas variables los adapters responden 401.
+- Timers activos: `woll-ingest-realtime` (:05), `woll-ingest-agromet` (:15),
+  `woll-ingest-redmeteo` (:25) y `woll-ingest-daily` (03:00 UTC).
+- Validación manual de las cuatro fuentes:
+  - daily: `loaded=31 skipped=155 errors=0` (+31 filas en
+    `ingest.indicator_values`).
+  - realtime: 31 + 28 cargadas, 0 errores.
+  - redmeteo: 28 cargadas, 0 errores.
+  - agromet: carga por estación; dos EMAs con timeout/parseo fallido, sin
+    abortar el resto (el timer termina OK).
+- `flock` por fuente verificado: una segunda ejecución simultánea se omite.
