@@ -47,6 +47,16 @@
 
 ## [Unreleased]
 
+### Added
+- **VPS de producción (26-H):** Ubuntu 24.04.4 en KVM (`136.243.227.86`), usuario `deploy` con sudo y llave, SSH solo por llave, UFW (22/80/443), fail2ban, Docker 29.10 con rotación de logs y `live-restore`. Stack Compose con `woll/postgres:17` (PostGIS 3.7 + pgvector 0.8.7), `woll/api`, `woll/rag-worker` y `woll/layer-worker` compilados en el servidor.
+- **Datos restaurados:** dump de Supabase del 2026-11-11 (`restore-local.sh`), baseline de migraciones 000-035 y aplicación de 036-055; `check:rpcs` 51/51. Snapshot de configuración `v1` publicado (158 capas).
+- **Backups (26-G):** timer diario 03:00 UTC, dump `-Fc -Z9` cifrado con GPG AES256, checksum y retención 14 días. Simulacro de restauración medido: RTO 53 s.
+
+### Fixed
+- **Nginx y GeoJSON:** los `.geojson` se servían como `application/octet-stream` y sin comprimir. Se agregó el bloque `types` (`application/geo+json geojson`, `application/vnd.mapbox-vector-tile mvt`) en producción y desarrollo; `acuiferos.geojson` pasa de 2.78 MB a 1.02 MB comprimido.
+- **Permisos de scripts shell:** los `.sh` estaban versionados como `100644`, lo que rompía las unidades systemd tras un clone (`status=203/EXEC`). Ahora son `100755`.
+- **Backup systemd:** la unidad usa `User=deploy` (el VPS no tiene usuario `woll`) y `UMask=0077`.
+
 ### Security
 - **Sprint 28:** `npm audit` en 0 (`@vercel/functions@3.11.2` y `overrides.uuid@^11.1.1`); gate de auditoría en CI.
 - **Assets vendorizados (28-A):** Leaflet 1.9.4, markercluster 1.5.3, flatpickr 4.6.13, DOMPurify 3.0.3, Chart.js 4.4.0 y tipografías (Montserrat, Open Sans, Space Grotesk y Material Symbols) se sirven desde `js/lib/` y `css/fonts/`. `index.html`, `help.html` y `admin.html` ya no cargan CDN; la CSP no permite dominios externos.

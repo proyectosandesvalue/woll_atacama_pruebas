@@ -83,7 +83,7 @@
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
-| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 parcial (26-E v1 ✅, 26-G ✅, 26-J ✅, 26-K diferido; 26-F/H/I pendientes) | alta | 42-46h | 23, 24 |
+| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 parcial (VPS operativo: 26-A/B/C/D/E/G ✅; 26-F/I pendientes; 26-J/K diferidos) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | 🔶 parcial (CI base ✅; deploy/rollback pendientes) | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | 🔶 parcial (dependencias 0, CSP, XSS y vendorización ✅; ZAP/capa base pendientes) | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
@@ -1282,6 +1282,21 @@ preguntas pendientes para triage operativo.
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-11-23
+- ✅ **26-H (VPS operativo):** Ubuntu 24.04.4 en KVM de webhospedaje.cl
+  (`136.243.227.86`). Hardening: `deploy` con sudo, SSH solo llave (root
+  `prohibit-password`, `PasswordAuthentication no`), UFW 22/80/443, fail2ban,
+  Docker 29.10 con rotación de logs. Stack Compose levantado con
+  `woll/postgres:17` (PostGIS 3.7, pgvector 0.8.7), API y Nginx.
+- ✅ **Datos y config:** dump del 11-11 restaurado, migraciones 036-055
+  aplicadas, `check:rpcs` 51/51, snapshot `v1` publicado (158 capas).
+- ✅ **26-G en el VPS:** timer 03:00 UTC, backup cifrado y simulacro con RTO
+  53 s (71 capas, 1.425.842 indicadores).
+- ✅ **Fixes:** GeoJSON como `application/geo+json` comprimido (2.78 MB →
+  1.02 MB) y permisos `100755` de los `.sh`.
+- ⏳ **Pendiente:** DNS `visor.atacamawoll.cl` + certbot, deploy key del repo
+  nuevo, `LLM_*`, credenciales del proxy, offsite de backups y tiles MVT.
 
 ### 2026-11-19
 - ✅ **28-A (vendorización):** Leaflet 1.9.4, markercluster 1.5.3, flatpickr

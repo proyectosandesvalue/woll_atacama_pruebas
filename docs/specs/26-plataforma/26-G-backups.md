@@ -144,7 +144,19 @@ RESTORE_EXPECT_VALUES=1425842 \
 | RPO 24 h insuficiente | evaluar WAL/PITR en 26-G.2 |
 | El contenedor cambia de nombre | `BACKUP_PG_CONTAINER` en `.env.backup`; verificar en el deploy |
 
-## 8. Cierre
+## 8. Despliegue en el VPS (2026-11-23)
+
+- Unidad instalada como `User=deploy` (el VPS no tiene usuario `woll`) con
+  `UMask=0077`; `BACKUP_DIR=/var/backups/woll`, passphrase en
+  `/home/deploy/.woll-backup.pass` y `.env.backup` en `/srv/woll`.
+- Timer activo: próxima ejecución 03:00 UTC con `RandomizedDelaySec=15m`.
+- Backups medidos: 71.978.113 B crudos → 68.156.897 B cifrados en ~30 s.
+- Simulacro ejecutado contra `woll_restore_test`: **RTO 53 s**, 71 capas y
+  1.425.842 indicadores. Se ejecutó sobre el backup de las 00:08 UTC.
+- Pendiente: copia externa (`BACKUP_OFFSITE_CMD`). Hoy el backup está en el
+  mismo disco del VPS.
+
+## 9. Cierre
 
 - Horas reales: 3.
 - Medición local: dump 69 MB en 38 s; cifrado 65 MB; restore 94 s.
