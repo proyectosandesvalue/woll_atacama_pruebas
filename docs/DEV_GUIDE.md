@@ -185,20 +185,42 @@ EMBEDDINGS_SEND_DIMENSIONS=1
 RAG_DATABASE_URL=postgres://rag_ingest:...@127.0.0.1:5432/woll
 ```
 
-**Opción B — Vertex AI (igual que Vercel).** Necesita credenciales dentro del
-contenedor: `GOOGLE_APPLICATION_CREDENTIALS_JSON` en `.env.local` o un archivo
-ADC montado. No alcanza con tener `gcloud` en el host.
+**Opción B — Vertex AI (igual que producción).** En local se usa el mismo JSON
+de service account montado como archivo, nunca inline:
 
 ```bash
+# .env.local
 LLM_PROVIDER=vertex-ai
 GOOGLE_CLOUD_PROJECT=woll-atacama-staging
 GOOGLE_CLOUD_LOCATION=global
 LLM_MODEL=gemini-3.1-flash-lite
-GOOGLE_APPLICATION_CREDENTIALS_JSON='{"type":"service_account",...}'
+EMBEDDINGS_PROVIDER=vertex
+EMBEDDINGS_MODEL=gemini-embedding-001
+EMBEDDINGS_LOCATION=us-central1
+EMBEDDINGS_TASK_TYPE=RETRIEVAL_DOCUMENT
+EMBEDDINGS_DIM=1024
+GCP_SA_FILE=/home/tu-usuario/.config/woll/gcp-sa.json
 ```
 
-El módulo de embeddings actual solo soporta `openai-compatible`; para Vertex
-habría que agregar un driver `vertex-ai`.
+El stack local se levanta con el overlay de Vertex, igual que el VPS:
+
+```bash
+podman-compose -p woll_local --env-file .env.local \
+  -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.vertex.yml \
+  up -d --force-recreate api rag-worker
+```
+
+El overlay monta el JSON en `/run/secrets/gcp-sa.json` y define
+`GOOGLE_APPLICATION_CREDENTIALS` para `api` y `rag-worker`. En el VPS aplica el
+mismo overlay a través de `deploy/vps/compose.sh`.
+
+Ojo: `GOOGLE_APPLICATION_CREDENTIALS=/ruta/del/host` en `.env.local` solo sirve
+cuando corres Node directamente en el host (por ejemplo `npm run ingest`).
+Dentro de un contenedor esa ruta no existe; usa `GCP_SA_FILE` y el overlay.
+
+El módulo de embeddings soporta `vertex` (`gemini-embedding-001`, 1024 dims) y
+`openai-compatible`. La dimensión está fijada por `rag.chunks.embedding
+vector(1024)`: cambiarla exige migración y re-ingesta (ADR 022).
 
 ### 2.9.1. Vertex AI en el VPS (imagen + secreto)
 
@@ -243,7 +265,7 @@ Si ya tienes un `.env` local con un proveedor OpenAI-compatible (por ejemplo
 Gemini API), puedes cargarlo sin copiar claves:
 
 ```bash
-podman-compose -p woll_local --env-file /tmp/woll-local.env \
+podman-compose -p woll_local --env-file ~/.config/woll/compose.env \
   -f docker-compose.yml -f docker-compose.dev.yml \
   -f docker-compose.local-llm.yml up -d --force-recreate api
 ```
@@ -256,7 +278,7 @@ Después de editar `.env.local`, recrear el contenedor API (no alcanza con
 `restart`, porque `env_file` se lee al crear):
 
 ```bash
-podman-compose -p woll_local --env-file /tmp/woll-local.env \
+podman-compose -p woll_local --env-file ~/.config/woll/compose.env \
   -f docker-compose.yml -f docker-compose.dev.yml \
   up -d --force-recreate api
 ```
@@ -1464,6 +1486,67 @@ Pasos:
 
 No edites archivos minificados a mano: reemplaza el archivo completo y deja la
 versión anotada en la spec 28 o en el CHANGELOG.
+
+### 2.14. Despliegue al VPS: local primero (26-I)
+
+**Regla:** el VPS es producción. No se edita código, configuración ni archivos
+allí; todo cambio se desarrolla y prueba en local, se commitea y recién
+después se despliega con un release. La única excepción son los incidentes
+(caída, disco lleno, certificado vencido), que se resuelven en el servidor y
+se documentan en `docs/CHANGELOG.md` el mismo día.
+
+**Flujo normal**
+
+```bash
+# 1. Local: pruebas antes de tocar producción
+npm run lint
+npm test
+# si el cambio toca el chat, además:
+CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1 \
+  node --env-file=.env.staging scripts/run-golden-set.mjs --all --limit 20
+
+# 2. Commit y push al repo de producción (remote `vps`)
+git add -A && git commit -m "feat: ..."
+git push vps main
+
+# 3. Release en el VPS (backup -> build -> migrate -> up -> smoke)
+ssh woll-vps 'cd /srv/woll && deploy/vps/release.sh --with-chat'
+```
+
+`deploy/vps/release.sh` aborta si el árbol del VPS tiene cambios locales o si
+el historial divergió; hace backup antes de migrar, aplica migraciones
+idempotentes, reconstruye `api`, `rag-worker` y `layer-worker`, recrea Nginx
+cuando cambió su configuración y termina con smoke de `/healthz` y
+`/api/config`.
+
+**Reglas asociadas**
+
+- Migraciones: archivo nuevo en `db/migrations/`, idempotente, probado en local.
+  Nunca se edita una migración ya aplicada.
+- Secretos: solo en `.env` / `.env.local` / `.env.backup`; nunca en el repo ni
+  en imágenes.
+- Rollback: `git revert` del commit en local + push + `release.sh`, o restaurar
+  el backup previo que deja el release en `/var/backups/woll`.
+- Los archivos de Nginx se montan por inodo: si se editan a mano en el VPS hay
+  que recrear el contenedor (`deploy/vps/compose.sh up -d --force-recreate nginx`).
+- No se suben PDFs, dumps ni tiles al repo; viajan por `scp` o por el panel.
+
+**Postgres local con Podman** (el stack ya existe como proyecto `woll_local`):
+
+```bash
+podman start woll_local_postgres_1          # o el stack completo con podman-compose
+podman exec woll_local_postgres_1 psql -U postgres -d woll -c "select count(*) from comunas_poligonos;"
+```
+
+La ingesta RAG real en local corre en el host contra `127.0.0.1:5432` con
+`.env.local` (Node tiene `pdfjs-dist`); dentro del contenedor se usa la imagen
+`rag-worker` reconstruida y el overlay de Vertex.
+
+El archivo `~/.config/woll/compose.env` (permisos `600`, fuera del repo) es la
+unión de `.env.local` con `POSTGRES_PASSWORD`, `DATABASE_URL_DOCKER` y
+`RAG_DATABASE_URL_DOCKER`, que los compose exigen para interpolación. Se crea
+una vez; si cambia `.env.local`, se regenera. Sin él, `podman-compose` falla
+con `required variable POSTGRES_PASSWORD is missing a value`.
 
 ## Verificación después de reemplazar
 

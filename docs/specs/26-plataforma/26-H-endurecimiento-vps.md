@@ -100,6 +100,22 @@ docker compose ... exec api node scripts/config-snapshot.mjs --publish
 # volumen woll_letsencrypt con live/woll/{fullchain,privkey}.pem
 ```
 
+### 4.1. Release controlado (26-I)
+
+`deploy/vps/release.sh` es el único camino para actualizar producción:
+
+1. exige árbol limpio y `HEAD` ancestro de `origin/main`;
+2. hace backup cifrado antes de migrar (aborta si falla);
+3. reconstruye `api`, `rag-worker` y `layer-worker`;
+4. aplica migraciones idempotentes;
+5. levanta el stack y recrea Nginx si cambió su configuración montada;
+6. termina con smoke de `/healthz` y `/api/config` (y del chat con
+   `--with-chat`).
+
+Los cambios se desarrollan y prueban en local; al VPS solo llega lo que ya
+pasó lint, tests y, si toca el chat, el golden set. Los incidentes se resuelven
+en el servidor y se documentan en `docs/CHANGELOG.md`.
+
 ## 5. Verificación
 
 | Check | Resultado |
