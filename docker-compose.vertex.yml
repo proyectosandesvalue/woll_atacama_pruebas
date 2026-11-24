@@ -26,3 +26,10 @@ services:
       GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/gcp-sa.json
     volumes:
       - ${GCP_SA_FILE:?Define GCP_SA_FILE con la ruta absoluta al JSON de service account}:/run/secrets/gcp-sa.json:ro,Z
+
+  # El worker RAG embebe los chunks: necesita la misma credencial montada.
+  rag-worker:
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /run/secrets/gcp-sa.json
+    volumes:
+      - ${GCP_SA_FILE:?Define GCP_SA_FILE con la ruta absoluta al JSON de service account}:/run/secrets/gcp-sa.json:ro,Z
