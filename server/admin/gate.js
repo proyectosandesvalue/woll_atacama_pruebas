@@ -48,10 +48,12 @@ export async function checkAdminAccess({
   }
 
   try {
-    const { rows } = await db.query(
+    const result = await db.query(
       "select username, role, activo from admin.admin_users where username = $1",
       [session.sub]
     );
+    // El driver PostgreSQL devuelve filas; el REST de la demo devuelve {rows}.
+    const rows = Array.isArray(result) ? result : result?.rows;
     const user = Array.isArray(rows) ? rows[0] : null;
     const active = user?.activo === true || user?.activo === "true";
     if (!user || !active) {

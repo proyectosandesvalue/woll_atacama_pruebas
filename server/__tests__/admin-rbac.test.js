@@ -170,3 +170,24 @@ test("una ruta admin no clasificada queda solo para owner", async () => {
   });
   assert.equal(owner.status, 200);
 });
+
+test("acepta el driver que devuelve filas como array", async () => {
+  const app = createApp({
+    routes,
+    getDB: async () => ({
+      query: async () => [
+        { username: "dueno", role: "owner", activo: true },
+      ],
+    }),
+    env: { ADMIN_SESSION_SECRET: SECRET, LOG_REQUESTS: "0" },
+    logger: { error() {}, warn() {} },
+  });
+  const server = http.createServer(app);
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  servers.push(server);
+  const { port } = server.address();
+  const res = await fetch(`http://127.0.0.1:${port}/api/admin/audit`, {
+    headers: { cookie: cookieFor("dueno") },
+  });
+  assert.equal(res.status, 200);
+});
