@@ -111,16 +111,37 @@ test("login exige TOTP si ADMIN_TOTP_REQUIRED=1", async () => {
   assert.equal(withTotp.status, 200);
 });
 
-test("session devuelve 401 sin cookie y 200 con cookie válida", () => {
-  const unauthorized = handleAdminSession({ req: { headers: {} }, env: ENV });
+test("session devuelve 401 sin cookie y 200 con cookie válida", async () => {
+  const unauthorized = await handleAdminSession({
+    req: { headers: {} },
+    env: ENV,
+    getDB: async () => ({ query: async () => [] }),
+  });
   assert.equal(unauthorized.status, 401);
 
   const session = createSession({ user: "admin", secret: ENV.ADMIN_SESSION_SECRET });
-  const authorized = handleAdminSession({
+  const authorized = await handleAdminSession({
     req: { headers: { cookie: `woll_admin=${encodeURIComponent(session.token)}` } },
     env: ENV,
+    getDB: async () => ({
+      query: async () => [{ username: "admin", role: "owner", activo: true }],
+    }),
   });
   assert.equal(authorized.status, 200);
   assert.equal(authorized.body.user, "admin");
+  assert.equal(authorized.body.role, "owner");
   assert.equal(authorized.body.csrfToken, session.csrf);
+});
+
+test("session devuelve editor cuando el rol no es owner", async () => {
+  const session = createSession({ user: "editor", secret: ENV.ADMIN_SESSION_SECRET });
+  const res = await handleAdminSession({
+    req: { headers: { cookie: `woll_admin=${encodeURIComponent(session.token)}` } },
+    env: ENV,
+    getDB: async () => ({
+      query: async () => [{ username: "editor", role: "editor", activo: true }],
+    }),
+  });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.role, "editor");
 });

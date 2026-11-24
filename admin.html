@@ -98,7 +98,7 @@
           <span class="material-symbols-outlined">library_books</span>
           <span>RAG</span>
         </button>
-        <button class="nav-item" type="button" data-view="apis">
+        <button class="nav-item" type="button" data-view="apis" data-requires="owner">
           <span class="material-symbols-outlined">api</span>
           <span>APIs</span>
         </button>
@@ -106,7 +106,7 @@
           <span class="material-symbols-outlined">account_tree</span>
           <span>Taxonomía</span>
         </button>
-        <button class="nav-item" type="button" data-view="chat">
+        <button class="nav-item" type="button" data-view="chat" data-requires="owner">
           <span class="material-symbols-outlined">forum</span>
           <span>Chat IA</span>
         </button>
@@ -115,7 +115,7 @@
           <span>Demanda</span>
           <span id="demandBadge" class="nav-badge" hidden>0</span>
         </button>
-        <button class="nav-item" type="button" data-view="audit">
+        <button class="nav-item" type="button" data-view="audit" data-requires="owner">
           <span class="material-symbols-outlined">history</span>
           <span>Auditoría</span>
         </button>
@@ -286,7 +286,7 @@
                 <span class="material-symbols-outlined">upload_file</span>
                 Importar capa
               </button>
-              <button id="layersPublishBtn" class="btn btn-primary" type="button">
+              <button id="layersPublishBtn" class="btn btn-primary" type="button" data-requires="owner">
                 <span class="material-symbols-outlined">publish</span>
                 Publicar snapshot
               </button>
@@ -858,7 +858,7 @@
                   <p>Si la validación falla, el snapshot anterior queda activo y el visor no se rompe.</p>
                 </div>
               </div>
-              <button id="taxPublishBtn" class="btn btn-primary" type="button">
+              <button id="taxPublishBtn" class="btn btn-primary" type="button" data-requires="owner">
                 <span class="material-symbols-outlined">publish</span>
                 Publicar snapshot
               </button>

@@ -138,7 +138,7 @@ export async function handleAdminLogin(ctx, { getDB = defaultGetDB } = {}) {
   let user;
   try {
     const rows = await db.query(
-      `SELECT username, password_hash, activo
+      `SELECT username, password_hash, activo, role
          FROM admin.admin_users
         WHERE username = $1`,
       [username]
@@ -206,6 +206,7 @@ export async function handleAdminLogin(ctx, { getDB = defaultGetDB } = {}) {
     200,
     {
       user: user.username,
+      role: user.role === "owner" ? "owner" : "editor",
       expiresAt: new Date(session.expiresAt).toISOString(),
       csrfToken: session.csrf,
     },
@@ -243,11 +244,32 @@ export async function handleAdminLogout(ctx, { getDB = defaultGetDB } = {}) {
 /**
  * GET /api/admin/session
  */
-export function handleAdminSession(ctx) {
+export async function handleAdminSession(ctx) {
   const auth = requireSession(ctx);
   if (auth.error) return auth.error;
+
+  let role = "editor";
+  try {
+    const db = await ctx.getDB();
+    const result = await db.query(
+      "select username, role, activo from admin.admin_users where username = $1",
+      [auth.session.sub]
+    );
+    const rows = Array.isArray(result) ? result : result?.rows;
+    const user = rows?.[0];
+    const active = user?.activo === true || user?.activo === "true";
+    if (!user || !active) {
+      return json(401, { error: "Sesión inválida o expirada." });
+    }
+    role = user.role === "owner" ? "owner" : "editor";
+  } catch (err) {
+    console.error("[admin] no se pudo leer el rol:", err?.message || err);
+    return json(503, { error: "No se pudo verificar el permiso." });
+  }
+
   return json(200, {
     user: auth.session.sub,
+    role,
     expiresAt: new Date(auth.session.exp * 1000).toISOString(),
     csrfToken: auth.session.csrf,
   });

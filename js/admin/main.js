@@ -20,6 +20,7 @@ const VIEW_META = {
 
 const state = {
   view: "config",
+  role: "editor",
   layers: [],
   loaded: { config: false, layers: false, rag: false, apis: false, taxonomy: false, chat: false, demand: false, audit: false },
   layerManager: {
@@ -302,17 +303,34 @@ function showLogin() {
 function showApp(session) {
   $("#loginView").hidden = true;
   $("#adminView").hidden = false;
+  state.role = session.role === "owner" ? "owner" : "editor";
   $("#sessionUser").textContent = session.user || "—";
   $("#sessionExpiry").textContent = session.expiresAt
     ? `vence ${formatDate(session.expiresAt)}`
     : "—";
   setStatus("");
-  selectView("config");
+  applyRoleUi();
+  selectView(state.view);
   loadDemandBadge().catch(() => {});
+}
+
+function applyRoleUi() {
+  const owner = state.role === "owner";
+  document.body.dataset.role = state.role;
+  for (const element of document.querySelectorAll('[data-requires="owner"]')) {
+    element.hidden = !owner;
+  }
+  if (!owner && ["apis", "chat", "audit"].includes(state.view)) {
+    state.view = "config";
+  }
 }
 
 function selectView(view) {
   if (!VIEW_META[view]) return;
+  const navButton = document.querySelector(`.nav-item[data-view="${view}"]`);
+  if (navButton?.dataset.requires === "owner" && state.role !== "owner") {
+    return;
+  }
   state.view = view;
 
   for (const button of document.querySelectorAll(".nav-item")) {
