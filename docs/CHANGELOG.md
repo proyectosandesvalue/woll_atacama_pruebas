@@ -51,6 +51,7 @@
 - **VPS de producción (26-H):** Ubuntu 24.04.4 en KVM (`136.243.227.86`), usuario `deploy` con sudo y llave, SSH solo por llave, UFW (22/80/443), fail2ban, Docker 29.10 con rotación de logs y `live-restore`. Stack Compose con `woll/postgres:17` (PostGIS 3.7 + pgvector 0.8.7), `woll/api`, `woll/rag-worker` y `woll/layer-worker` compilados en el servidor.
 - **Datos restaurados:** dump de Supabase del 2026-11-11 (`restore-local.sh`), baseline de migraciones 000-035 y aplicación de 036-055; `check:rpcs` 51/51. Snapshot de configuración `v1` publicado (158 capas).
 - **Backups (26-G):** timer diario 03:00 UTC, dump `-Fc -Z9` cifrado con GPG AES256, checksum y retención 14 días. Simulacro de restauración medido: RTO 53 s.
+- **Vertex AI (chat):** service account `woll-atacama` con rol Vertex AI User y claves separadas para PC y VPS; el VPS monta el JSON como secreto (`/run/secrets/gcp-sa.json`) vía `docker-compose.vertex.yml`, con `deploy/vps/compose.sh` como único punto de entrada a Compose. Golden set 20/20 con 2 rondas de tools y presupuesto de 12 s. Limitación conocida: ~1 de 6 respuestas de conteo toma un número del volcado de la tool en vez del total.
 
 ### Fixed
 - **Nginx y GeoJSON:** los `.geojson` se servían como `application/octet-stream` y sin comprimir. Se declara `default_type application/geo+json` en la `location` de GeoJSON; `acuiferos.geojson` pasa de 2.78 MB a 1.02 MB comprimido. El primer intento usó un bloque `types`, que reemplazó `mime.types` y dejó html/css/js como descarga; se revirtió.

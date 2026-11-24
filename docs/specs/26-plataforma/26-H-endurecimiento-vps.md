@@ -114,15 +114,35 @@ docker compose ... exec api node scripts/config-snapshot.mjs --publish
 | Backup manual + systemd | 65 MB cifrados en ~30 s |
 | Simulacro de restore | RTO 53 s, conteos coinciden |
 
-## 6. Pendientes
+## 6. Vertex AI y chat
+
+- **Proveedor:** `LLM_PROVIDER=vertex-ai`, proyecto `woll-atacama-staging`,
+  `GOOGLE_CLOUD_LOCATION=global`, `gemini-3.1-flash-lite` con fallback
+  `gemini-2.5-flash-lite`.
+- **Credenciales:** service account `woll-atacama@…` con rol **Vertex AI User**
+  (`roles/aiplatform.user`). Dos claves separadas por entorno (PC y VPS); la
+  del VPS vive en `/etc/woll/gcp-sa.json` (600, uid 1000) y se monta como
+  secreto con `docker-compose.vertex.yml` en `/run/secrets/gcp-sa.json`.
+- **Compose:** `deploy/vps/compose.sh` fija la cadena
+  base + producción + Vertex. Recrear la API sin el overlay deja el chat sin
+  credenciales, así que todo comando del VPS pasa por ese script.
+- **Rondas de tools:** `ORCHESTRATOR_MAX_ITERATIONS=2` y
+  `ORCHESTRATOR_BUDGET_MS=12000`. Con 1 ronda el orquestador nunca ofrece
+  tools y el golden set cae a 17/20; con 2 rondas da **20/20**.
+- **Respuestas vacías:** Gemini 3 devuelve `finish_reason="malformed_function_call"`
+  con contenido vacío si recibe `tools` junto a `toolChoice="none"`. El driver
+  omite `tools` en ese caso y el orquestador reintenta una vez si la respuesta
+  vuelve vacía.
+- **Limitación conocida:** en preguntas de conteo, el modelo acierta ~5 de 6
+  veces; en el resto toma un número del volcado de `get_layer_stats` (p. ej.
+  responde 874 en vez de 863 glaciares). Pendiente: recortar el payload de la
+  tool para preguntas de conteo o subir el modelo de síntesis.
+
+## 7. Pendientes
 
 - **DNS + TLS real:** registro A `visor.atacamawoll.cl → 136.243.227.86` en
   SiteGround y `certbot certonly --webroot --cert-name woll`. Reemplaza el
   certificado autofirmado y habilita `ALLOWED_ORIGINS` definitivo.
-- **Deploy key:** clave `vps-woll-deploy` en el repo
-  `proyectosandesvalue/woll_atacama_vps` (solo lectura) para `git fetch`.
-- **Secretos de terceros:** `LLM_*` (Vertex u OpenAI-compatible) y
-  `INSTANCE_ID`/`CLIENT_ID`/`CLIENT_SECRET` del proxy de Copernicus.
 - **Copia externa de backups:** hoy el backup vive en el mismo disco
   (`/var/backups/woll`); definir `BACKUP_OFFSITE_CMD` (rclone/S3 o `rsync` al
   equipo de desarrollo).
@@ -130,7 +150,7 @@ docker compose ... exec api node scripts/config-snapshot.mjs --publish
   tiles el visor usa GeoJSON.
 - **Tareas 26-J** (ingestas programadas) y **26-F/I** (staging y corte DNS).
 
-## 7. Desvíos respecto de otras specs
+## 8. Desvíos respecto de otras specs
 
 - **26-G:** la unidad `woll-backup.service` usa `User=deploy` en vez de
   `User=woll` (el VPS no tiene usuario `woll`) y `BACKUP_DIR=/var/backups/woll`.
