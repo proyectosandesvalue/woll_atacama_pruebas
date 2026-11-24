@@ -67,3 +67,6 @@ raster/
 
 # Configuración de backups (26-G)
 .env.backup
+
+# Guía local de operación del VPS (no versionar: contiene IP, rutas y comandos)
+docs/ops/logs-vps.md
