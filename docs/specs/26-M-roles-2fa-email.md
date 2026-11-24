@@ -132,3 +132,19 @@ server/notifications/
   sensibles del owner).
 - WAF/Cloudflare y VPN (Tailscale/Headscale) quedan documentados como opción
   futura, no como requisito.
+
+
+## 11. Estado en el VPS (2026-11-24)
+
+- Migración `056_admin_roles.sql` aplicada; el usuario existente
+  (`diegovelasquezf@gmail.com`) quedó como `owner`.
+- Gate de roles activo: sin cookie 401; owner en auditoría 200; editor en
+  auditoría y publicación 403; editor en RAG y taxonomía 200. Se probó con un
+  editor temporal y se eliminó después.
+- `/api/admin/session` y el login devuelven `role`; la UI oculta APIs, Chat IA,
+  Auditoría y los botones de publicar para el editor.
+- Bug corregido: el driver PostgreSQL devuelve filas como array, no `{rows}`;
+  el gate ahora acepta ambas formas.
+- Módulo de notificaciones desplegado con `EMAIL_PROVIDER=console`. Falta
+  Resend: cuenta, verificación de `notificaciones.atacamawoll.cl` y API key.
+- Pendiente: fases 3 y 4 (OTP por email y dispositivos de confianza).

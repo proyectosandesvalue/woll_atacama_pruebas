@@ -83,7 +83,7 @@
 | 23 | Hotfixes críticos del chat y la API | ✅ done | **crítica** | 14-15h | — |
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
-| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 parcial (VPS operativo: 26-A/B/C/D/E/G ✅; 26-F/I pendientes; 26-J/K diferidos) | alta | 42-46h | 23, 24 |
+| 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 parcial (VPS operativo: 26-A/B/C/D/E/G/J ✅; 26-M fases 1-2 ✅; 26-F/I pendientes; 26-K diferido) | alta | 42-46h | 23, 24 |
 | 27 | CI/CD y entrega versionada | 🔶 parcial (CI base ✅; deploy/rollback pendientes) | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | 🔶 parcial (dependencias 0, CSP, XSS y vendorización ✅; ZAP/capa base pendientes) | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
@@ -1295,9 +1295,12 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   backlog) y tests de `/healthz` y `/readyz`.
 - ✅ **26-J en el VPS:** timers de realtime, agromet, redmeteo y daily activos;
   las cuatro fuentes probadas con datos reales y `flock` verificado.
-- ⏳ **Pendiente:** 31-C/D, cargar PDFs reales con licencia y
-  `copyright_cleared`, retrieval del chat (18-D), offsite de backups, tiles
-  MVT y DNS/TLS.
+- ✅ **26-M fases 1-2:** roles owner/editor con gate en el servidor, rol en
+  sesión y UI; módulo de notificaciones con adapter Resend y plantillas. El
+  usuario existente quedó como owner.
+- ⏳ **Pendiente:** Resend (cuenta, dominio y API key), OTP por email,
+  dispositivos de confianza, 31-C/D, corpus RAG real, 18-D, offsite de
+  backups, tiles MVT y DNS/TLS.
 
 ### 2026-11-23
 - ✅ **26-H (VPS operativo):** Ubuntu 24.04.4 en KVM de webhospedaje.cl
