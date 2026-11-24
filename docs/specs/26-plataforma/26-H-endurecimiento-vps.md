@@ -138,7 +138,31 @@ docker compose ... exec api node scripts/config-snapshot.mjs --publish
   responde 874 en vez de 863 glaciares). Pendiente: recortar el payload de la
   tool para preguntas de conteo o subir el modelo de síntesis.
 
-## 7. Pendientes
+## 7. RAG con embeddings (18-B)
+
+- **Proveedor:** `EMBEDDINGS_PROVIDER=vertex`, `gemini-embedding-001`,
+  `EMBEDDINGS_LOCATION=us-central1`, `EMBEDDINGS_TASK_TYPE=RETRIEVAL_DOCUMENT`,
+  `EMBEDDINGS_DIM=1024` (fijado por `rag.chunks.embedding vector(1024)`).
+  Para consultas se usa `RETRIEVAL_QUERY` con el mismo modelo.
+- **Credenciales:** las mismas de Vertex. `docker-compose.vertex.yml` monta el
+  JSON también en `rag-worker`; el API y el worker comparten proyecto y rol.
+- **Costos:** `EMBEDDINGS_PRICE_PER_MTOK=0.15` (estimación informativa).
+- **Validación local:** `npm run ingest:dry` con un PDF de 6 páginas dio 10
+  chunks y 3.815 tokens; `createEmbedder()` devolvió 2 vectores de 1024
+  dimensiones en 2,7 s.
+- **Validación en el VPS:** ingesta real del mismo documento (10 chunks, todos
+  con embedding de 1024 dims, costo estimado USD 0,00057) y consulta de
+  similitud coseno con `RETRIEVAL_QUERY` (top-3 con similitud 0,54).
+- **Limpieza:** el documento de prueba se borró de `rag.*` y del manifiesto
+  para no contaminar el corpus de producción.
+- **Local sin Postgres:** en este equipo no hay Docker/Podman corriendo el
+  stack, así que la prueba local es `--dry-run` + llamada real al embedder.
+  La ingesta real se corre en el VPS o contra un Postgres local cuando exista.
+- **Pendiente:** cargar el corpus real (PDFs con licencia y
+  `copyright_cleared: true` en `rag/manifest.json`) y el retrieval del chat
+  (Sprint 18-D), que hoy no está implementado.
+
+## 8. Pendientes
 
 - **DNS + TLS real:** registro A `visor.atacamawoll.cl → 136.243.227.86` en
   SiteGround y `certbot certonly --webroot --cert-name woll`. Reemplaza el
@@ -150,7 +174,7 @@ docker compose ... exec api node scripts/config-snapshot.mjs --publish
   tiles el visor usa GeoJSON.
 - **Tareas 26-J** (ingestas programadas) y **26-F/I** (staging y corte DNS).
 
-## 8. Desvíos respecto de otras specs
+## 9. Desvíos respecto de otras specs
 
 - **26-G:** la unidad `woll-backup.service` usa `User=deploy` en vez de
   `User=woll` (el VPS no tiene usuario `woll`) y `BACKUP_DIR=/var/backups/woll`.

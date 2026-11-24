@@ -74,7 +74,7 @@
 | 14 | Migrar config a Supabase (`admin.*`) | 🔶 local (snapshot + `/api/config` ✅; VPS pendiente) | alta | 4-6h | 07 |
 | 15 | Panel admin — solo lectura | 🔶 local (login, config, chat y auditoría ✅; VPS pendiente) | alta | 6-8h | 14 |
 | 16 | Panel admin — CRUD de capas | ⏳ pending | alta | 8-12h | 08, 14, 15 |
-| 17 | Ingesta RAG (PDFs → chunks → embeddings) | 🔶 parcial | media | 8-12h | — (CLI); 15 solo para el panel |
+| 17 | Ingesta RAG (PDFs → chunks → embeddings) | 🔶 pipeline ✅ con Vertex embeddings; corpus real pendiente | media | 8-12h | — (CLI); 15 solo para el panel |
 | 18 | Retrieval RAG + tool en chat | 🔶 parcial (18-A ✅; 18-B en curso; 18-C a 18-E pendientes) | media | 8-12h | 17 |
 | 19 | APIs externas + CRUD | ⏳ pending | media | 15-25h | 16 |
 | 20 | Adapter real: meteorología | ⏳ pending | baja | 4-6h | 19 |
@@ -1282,6 +1282,16 @@ preguntas pendientes para triage operativo.
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-11-24
+- ✅ **18-B (embeddings Vertex):** `gemini-embedding-001` a 1024 dims en
+  `us-central1`, misma service account que el LLM. Local con ADC y VPS con el
+  JSON montado también en `rag-worker`.
+- ✅ **Validación RAG:** `ingest:dry` (6 páginas, 10 chunks, 3.815 tokens),
+  ingesta real en el VPS (10 vectores de 1024 dims) y consulta de similitud
+  coseno con `RETRIEVAL_QUERY`. Documento de prueba eliminado del corpus.
+- ⏳ **Pendiente:** cargar PDFs reales con licencia y `copyright_cleared`,
+  retrieval del chat (18-D), offsite de backups, tiles MVT y DNS/TLS.
 
 ### 2026-11-23
 - ✅ **26-H (VPS operativo):** Ubuntu 24.04.4 en KVM de webhospedaje.cl
