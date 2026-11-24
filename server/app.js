@@ -20,6 +20,8 @@ import {
   createIpHasher,
   resolveRequestId,
 } from "./utils/request-context.js";
+import { checkAdminAccess } from "./admin/gate.js";
+import { requiredAdminRole } from "./admin/roles.js";
 
 /**
  * @param {{
@@ -94,11 +96,30 @@ export function createApp(opts = {}) {
       return;
     }
 
+    // Gate de rol del panel: la base manda, no la UI (Sprint 26-M).
+    const requiredRole = requiredAdminRole(req.method, pathname);
+    let adminUser = null;
+    if (requiredRole) {
+      const access = await checkAdminAccess({
+        req,
+        env,
+        getDB,
+        requiredRole,
+        logger,
+      });
+      if (access.error) {
+        sendJson(res, access.status, { error: access.error });
+        return;
+      }
+      adminUser = access.user;
+    }
+
     try {
       const ctx = {
         req,
         res,
         requestId,
+        adminUser,
         query: parseQuery(url.searchParams),
         ip: getClientIp(req, env),
         country: getCountryFromRequest({ headers: req.headers }),
