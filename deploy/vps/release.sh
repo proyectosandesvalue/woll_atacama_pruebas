@@ -45,7 +45,10 @@ die() { printf '[release] ERROR: %s\n' "$*" >&2; exit 1; }
 [ -f .env.backup ] || die "falta /srv/woll/.env.backup"
 
 # ── 1. Árbol limpio y sin divergencia ────────────────────────────────
-[ -z "$(git status --porcelain)" ] || die "hay cambios locales en $ROOT; el deploy solo avanza con el árbol limpio"
+# rag/manifest.json es dato de runtime (lo edita el panel) y no debe
+# bloquear un release.
+DIRTY="$(git status --porcelain -- . ':(exclude)rag/manifest.json' || true)"
+[ -z "$DIRTY" ] || die "hay cambios locales en $ROOT; el deploy solo avanza con el árbol limpio"
 git fetch -q origin
 CURRENT="$(git rev-parse --short HEAD)"
 TARGET="$(git rev-parse --short "origin/$BRANCH")"
