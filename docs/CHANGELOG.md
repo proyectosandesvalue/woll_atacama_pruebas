@@ -53,7 +53,7 @@
 - **Backups (26-G):** timer diario 03:00 UTC, dump `-Fc -Z9` cifrado con GPG AES256, checksum y retención 14 días. Simulacro de restauración medido: RTO 53 s.
 
 ### Fixed
-- **Nginx y GeoJSON:** los `.geojson` se servían como `application/octet-stream` y sin comprimir. Se agregó el bloque `types` (`application/geo+json geojson`, `application/vnd.mapbox-vector-tile mvt`) en producción y desarrollo; `acuiferos.geojson` pasa de 2.78 MB a 1.02 MB comprimido.
+- **Nginx y GeoJSON:** los `.geojson` se servían como `application/octet-stream` y sin comprimir. Se declara `default_type application/geo+json` en la `location` de GeoJSON; `acuiferos.geojson` pasa de 2.78 MB a 1.02 MB comprimido. El primer intento usó un bloque `types`, que reemplazó `mime.types` y dejó html/css/js como descarga; se revirtió.
 - **Permisos de scripts shell:** los `.sh` estaban versionados como `100644`, lo que rompía las unidades systemd tras un clone (`status=203/EXEC`). Ahora son `100755`.
 - **Backup systemd:** la unidad usa `User=deploy` (el VPS no tiene usuario `woll`) y `UMask=0077`.
 

@@ -46,10 +46,14 @@ Supabase y backups verificados con simulacro de restauración.
    backend `systemd`.
 5. **Docker.** Repo oficial de Docker (no `docker.io` de Ubuntu), `live-restore`
    activo, rotación de logs `50m × 3` y `vm.swappiness=10`.
-6. **Nginx.** Único servicio con puertos públicos. GeoJSON y MVT se sirven con
-   su MIME correcto (`types`) para que entren en `gzip_types`; sin eso, cada
-   `.geojson` salía como `application/octet-stream` sin comprimir (2.78 MB vs
-   1.02 MB comprimido en `acuiferos.geojson`).
+6. **Nginx.** Único servicio con puertos públicos. El MIME de GeoJSON se
+   declara con `default_type application/geo+json` en su `location` (no con un
+   bloque `types`, que reemplaza el mapa heredado de `mime.types` y deja
+   html/css/js como `octet-stream`). Así el GeoJSON entra en `gzip_types`:
+   2.78 MB → 1.02 MB en `acuiferos.geojson`.
+   **Cambiar un archivo de configuración montado exige recrear el contenedor**
+   (`docker compose up -d --force-recreate nginx`): el bind mount fija el inode
+   y `nginx -s reload` seguiría leyendo el archivo viejo.
 7. **Datos.** Dump custom de Supabase del 2026-11-11 restaurado con
    `scripts/restore-local.sh` (`000_compat_roles.sql` + `pg_restore --clean`).
    Baseline de migraciones hasta 035 y aplicación de 036-055. `check:rpcs`
