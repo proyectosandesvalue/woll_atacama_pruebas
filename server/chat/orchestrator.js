@@ -32,7 +32,9 @@ function dbg(...args) {
 // finish_reason="malformed_function_call" y contenido vacío.
 const SYNTHESIS_NO_TOOLS_NOTE =
   "\n\nEn este turno NO hay herramientas disponibles. " +
-  "No intentes invocar funciones; responde en texto con la información disponible.";
+  "No intentes invocar funciones; responde en texto con la información disponible. " +
+  "Si la evidencia incluye un campo count o total, ese es el valor exacto: " +
+  "no uses otros números que aparezcan en el contexto (coordenadas, promedios, porcentajes).";
 
 export async function runOrchestrator({ text, history = [], sessionId = null, timing = null }) {
   const budgetMs =
