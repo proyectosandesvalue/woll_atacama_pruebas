@@ -18,6 +18,8 @@ const VIEW_META = {
   audit: { eyebrow: "Operación / Trazabilidad", title: "Auditoría", mode: "solo lectura" },
 };
 
+let pendingChallengeId = null;
+
 const state = {
   view: "config",
   role: "editor",
@@ -297,7 +299,22 @@ function showLogin() {
   $("#adminView").hidden = true;
   $("#loginView").hidden = false;
   setCsrfToken(null);
+  pendingChallengeId = null;
+  $("#loginTitle").textContent = "Ingresar";
+  $("#loginForm").hidden = false;
+  $("#loginCodeForm").hidden = true;
+  $("#loginCodeError").hidden = true;
   $("#adminUsername")?.focus();
+}
+
+function showLoginCode(challengeId) {
+  pendingChallengeId = challengeId;
+  $("#loginTitle").textContent = "Verifica tu correo";
+  $("#loginForm").hidden = true;
+  $("#loginCodeForm").hidden = false;
+  $("#loginCode").value = "";
+  $("#loginCodeError").hidden = true;
+  $("#loginCode").focus();
 }
 
 function showApp(session) {
@@ -3016,6 +3033,10 @@ function bindEvents() {
 
     try {
       const session = await api.login(username, password);
+      if (session.two_factor_required) {
+        showLoginCode(session.challenge_id);
+        return;
+      }
       setCsrfToken(session.csrfToken);
       $("#loginForm").reset();
       showApp(session);
@@ -3029,6 +3050,31 @@ function bindEvents() {
       button.textContent = "Ingresar";
     }
   });
+
+  $("#loginCodeForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = $("#loginCodeSubmit");
+    const code = $("#loginCode").value.trim();
+    $("#loginCodeError").hidden = true;
+    button.disabled = true;
+    button.textContent = "Verificando…";
+    try {
+      const session = await api.loginVerify(pendingChallengeId, code);
+      setCsrfToken(session.csrfToken);
+      $("#loginCodeForm").reset();
+      showApp(session);
+    } catch (err) {
+      $("#loginCodeError").textContent = err.message;
+      $("#loginCodeError").hidden = false;
+      $("#loginCode").value = "";
+      $("#loginCode").focus();
+    } finally {
+      button.disabled = false;
+      button.textContent = "Verificar";
+    }
+  });
+
+  $("#loginCodeCancel")?.addEventListener("click", () => showLogin());
 
   for (const button of document.querySelectorAll(".nav-item")) {
     button.addEventListener("click", () => selectView(button.dataset.view));

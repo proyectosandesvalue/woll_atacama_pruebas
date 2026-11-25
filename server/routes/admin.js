@@ -9,6 +9,7 @@ import {
   handleAdminAudit,
   handleAdminConfig,
   handleAdminLogin,
+  handleAdminLoginVerify,
   handleAdminLogout,
   handleAdminMessages,
   handleAdminPrompts,
@@ -25,6 +26,12 @@ export const adminRoutes = [
     path: "/api/admin/login",
     ...jsonBody,
     handler: (ctx) => handleAdminLogin(ctx, { getDB: ctx.getDB }),
+  },
+  {
+    method: "POST",
+    path: "/api/admin/login/verify",
+    ...jsonBody,
+    handler: (ctx) => handleAdminLoginVerify(ctx, { getDB: ctx.getDB }),
   },
   {
     method: "POST",

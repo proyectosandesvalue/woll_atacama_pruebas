@@ -36,6 +36,8 @@ test("login rechaza credenciales incorrectas y audita", async () => {
     username: "admin",
     password_hash: hashPassword("admin_local_2026"),
     activo: true,
+    role: "owner",
+    two_factor: "none",
   });
 
   const result = await handleAdminLogin(
@@ -58,6 +60,8 @@ test("login acepta usuario y contraseña sin TOTP", async () => {
     username: "admin",
     password_hash: hashPassword("admin_local_2026"),
     activo: true,
+    role: "owner",
+    two_factor: "none",
   });
 
   const result = await handleAdminLogin(
@@ -83,6 +87,8 @@ test("login exige TOTP si ADMIN_TOTP_REQUIRED=1", async () => {
     username: "admin",
     password_hash: hashPassword("admin_local_2026"),
     activo: true,
+    role: "owner",
+    two_factor: "none",
   });
   const env = { ...ENV, ADMIN_TOTP_REQUIRED: "1" };
 
@@ -95,7 +101,7 @@ test("login exige TOTP si ADMIN_TOTP_REQUIRED=1", async () => {
     },
     { getDB: async () => db }
   );
-  assert.equal(withoutTotp.status, 400);
+  assert.equal(withoutTotp.status, 401);
 
   _resetLoginLimiterForTests();
   const totp = generateTotp(env.ADMIN_TOTP_SECRET);

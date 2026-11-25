@@ -16,6 +16,8 @@
 import tls from "node:tls";
 import pg from "pg";
 import { collectChecks, evaluateChecks } from "../server/ops/checks.js";
+import { notifyOpsAlerts } from "../server/ops/notify.js";
+import { sendEmail } from "../server/notifications/index.js";
 
 const { Pool } = pg;
 
@@ -127,6 +129,23 @@ async function main() {
   };
 
   console.log(JSON.stringify(output));
+
+  try {
+    const notified = await notifyOpsAlerts({
+      db,
+      alerts: result.alerts,
+      sendEmail,
+      env,
+    });
+    if (!notified.skipped) {
+      console.error(
+        `[ops-check] correo: ${notified.alerts} alerta(s), ${notified.recovered} recuperación(es)`
+      );
+    }
+  } catch (err) {
+    console.error("[ops-check] no se pudo notificar por correo:", err?.message || err);
+  }
+
   await notify(env.OPS_ALERT_WEBHOOK, result.alerts);
   await pool.end();
   process.exit(result.ok ? 0 : 1);

@@ -242,6 +242,17 @@ services:
       DATABASE_URL: ${DATABASE_URL_DOCKER:?Define DATABASE_URL_DOCKER en .env}
       PG_APPLICATION_NAME: woll-ops
       OPS_ALERT_WEBHOOK: ${OPS_ALERT_WEBHOOK:-}
+      OPS_ALERT_EMAIL: ${OPS_ALERT_EMAIL:-}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-console}
+      EMAIL_FROM: ${EMAIL_FROM:-no-reply@localhost}
+      EMAIL_REPLY_TO: ${EMAIL_REPLY_TO:-}
+      EMAIL_APP_NAME: ${EMAIL_APP_NAME:-WOLL Atacama}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_SECURE: ${SMTP_SECURE:-1}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
       OPS_BACKUP_DIR: ${OPS_BACKUP_DIR:-/var/backups/woll}
       OPS_DISK_PATH: ${OPS_DISK_PATH:-/var/backups/woll}
       OPS_HEALTH_API: ${OPS_HEALTH_API:-http://api:3000/healthz}

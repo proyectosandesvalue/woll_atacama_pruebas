@@ -331,6 +331,7 @@ const MAX_FAILURES = 5;
 const FAILURE_WINDOW_MS = 60_000;
 const BLOCK_MS = 15 * 60_000;
 const attempts = new Map();
+const recentFailures = [];
 
 /**
  * @param {string} key
@@ -354,6 +355,10 @@ export function checkLoginAllowed(key, now = Date.now()) {
  * @param {number} [now]
  */
 export function recordLoginFailure(key, now = Date.now()) {
+  recentFailures.push(now);
+  while (recentFailures.length > 0 && now - recentFailures[0] > 60 * 60_000) {
+    recentFailures.shift();
+  }
   const entry = attempts.get(key) || { failures: [], blockedUntil: 0 };
   entry.failures = entry.failures.filter((at) => now - at < FAILURE_WINDOW_MS);
   entry.failures.push(now);
@@ -368,8 +373,27 @@ export function clearLoginFailures(key) {
   attempts.delete(key);
 }
 
+/**
+ * Cuenta fallos globales recientes (cualquier IP/usuario), para detectar
+ * ráfagas distribuidas.
+ *
+ * @param {number} [now]
+ * @param {number} [windowMs]
+ * @param {number} [threshold]
+ * @returns {{count: number, burst: boolean}}
+ */
+export function loginFailureBurst(
+  now = Date.now(),
+  windowMs = 15 * 60_000,
+  threshold = 10
+) {
+  const count = recentFailures.filter((at) => now - at < windowMs).length;
+  return { count, burst: count >= threshold };
+}
+
 export function _resetLoginLimiterForTests() {
   attempts.clear();
+  recentFailures.length = 0;
 }
 
 // ── Auditoría ──────────────────────────────────────────────

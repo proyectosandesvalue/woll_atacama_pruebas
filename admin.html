@@ -66,6 +66,23 @@
         <p id="loginError" class="form-error" role="alert" hidden></p>
       </form>
 
+      <form id="loginCodeForm" novalidate hidden>
+        <p class="muted">
+          Te enviamos un código de 6 dígitos al correo de tu cuenta.
+          Vence en 10 minutos.
+        </p>
+        <label for="loginCode">Código de verificación</label>
+        <input id="loginCode" name="code" type="text" inputmode="numeric"
+               pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required />
+        <button id="loginCodeSubmit" class="btn btn-primary" type="submit">
+          Verificar
+        </button>
+        <button id="loginCodeCancel" class="btn btn-secondary" type="button">
+          Volver
+        </button>
+        <p id="loginCodeError" class="form-error" role="alert" hidden></p>
+      </form>
+
       <p class="login-foot">
         Sesión de 8 horas · Cookie HttpOnly · Intentos auditados
       </p>

@@ -60,6 +60,11 @@ export const api = {
       method: "POST",
       body: { username, password },
     }),
+  loginVerify: (challengeId, code) =>
+    request("/api/admin/login/verify", {
+      method: "POST",
+      body: { challenge_id: challengeId, code },
+    }),
   logout: () => request("/api/admin/logout", { method: "POST", body: {} }),
   session: () => request("/api/admin/session"),
   config: () => request("/api/admin/config"),

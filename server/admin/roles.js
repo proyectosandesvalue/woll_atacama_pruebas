@@ -10,6 +10,7 @@
 
 const PUBLIC_ADMIN_PATHS = new Set([
   "/api/admin/login",
+  "/api/admin/login/verify",
   "/api/admin/logout",
   "/api/admin/session",
 ]);
