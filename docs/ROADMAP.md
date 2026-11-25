@@ -1290,8 +1290,12 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 - ✅ **TLS real:** certificado Let's Encrypt para `visor.atacamawoll.cl`
   (vence 2027-02-23), HTTP → HTTPS, HSTS y renovación cada 12 h con el
   contenedor `certbot`; `renew --dry-run` exitoso.
-- ⏳ **Pendiente:** actualizar el navbar de WordPress al nuevo dominio,
-  elegir SiteGround SMTP o Resend, fases 3-4 de 26-M, 31-C/D y offsite.
+- ✅ **26-M fase 3:** login 2FA por email con SMTP de SiteGround, desafíos
+  hasheados, límites, UI en dos pasos, detector de ráfagas y avisos de cuenta.
+- ✅ **31-B correo:** ops-check notifica alertas y recuperaciones con dedupe;
+  backup e ingestas fallidas envían aviso.
+- ⏳ **Pendiente:** dispositivos de confianza (30 días/Chile), navbar de
+  WordPress, 31-C/D y offsite.
 
 ### 2026-11-24
 - ✅ **18-B (embeddings Vertex):** `gemini-embedding-001` a 1024 dims en

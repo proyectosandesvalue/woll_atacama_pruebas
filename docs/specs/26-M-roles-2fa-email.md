@@ -122,8 +122,8 @@ server/notifications/
 |---|---|---|
 | 1 | Roles, migración, gate de rutas, tests | ✅ 2026-11-24 |
 | 2 | Módulo de notificaciones, adapter Resend, plantillas, tests | ✅ 2026-11-24 |
-| 3 | OTP por email, challenges, rate limits, UI de login | ⏳ pendiente |
-| 4 | Dispositivos de confianza, país, revocación, UI | ⏳ pendiente |
+| 3 | OTP por email, challenges, rate limits, UI de login | ✅ 2026-11-25 |
+| 4 | Dispositivos de confianza, país, revocación, UI | ⏳ pendiente (hoy cada login pide código) |
 
 ## 10. Fuera de alcance
 
@@ -148,3 +148,20 @@ server/notifications/
 - Módulo de notificaciones desplegado con `EMAIL_PROVIDER=console`. Falta
   Resend: cuenta, verificación de `notificaciones.atacamawoll.cl` y API key.
 - Pendiente: fases 3 y 4 (OTP por email y dispositivos de confianza).
+
+
+## 12. Implementación 2026-11-25
+
+- Migraciones `057_admin_login_challenges.sql` y `058_admin_user_email_backfill.sql`.
+- Login en dos pasos: contraseña → código de 6 dígitos por SMTP de SiteGround →
+  sesión. Código con HMAC, expiración 10 min, un solo uso, 5 intentos, máximo
+  3 envíos por 15 min y auditoría de envío/verificación.
+- UI del panel con formulario de código y botón “Volver”.
+- Detección de ráfagas: 10 fallos en 15 min (cualquier IP/usuario) envía alerta
+  al owner con cooldown de 1 h.
+- `scripts/admin-user.mjs` acepta `--email` y `--role` y avisa al usuario al
+  crear la cuenta, cambiar contraseña/rol/correo, reactivar o desactivar.
+- Verificado: `POST /api/admin/login/verify` con un desafío de prueba responde
+  200 y crea sesión; el correo de prueba y los avisos llegan a Gmail.
+- Pendiente: dispositivos de confianza (30 días/Chile) para no pedir código en
+  el PC habitual, y CRUD de usuarios en el panel (hoy se usa el CLI).

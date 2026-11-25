@@ -123,3 +123,16 @@ Timer `woll-ops-check.timer` cada 10 minutos.
 - **Pendiente:** 31-C (GlitchTip/Sentry y analítica) y 31-D (valoración del
   chat) requieren decisión de servicio/UX. La tasa de error del LLM se puede
   sumar cuando existan métricas persistidas.
+
+
+## 8. Correo operativo (2026-11-25)
+
+- `ops-check` envía correo al owner al cambiar de estado (`failing`), con
+  recordatorio cada 6 h y aviso de recuperación. Estado en
+  `admin.notify_state` (migración 059).
+- Fallos de backup e ingestas envían alerta con `deploy/vps/notify-alert.sh`
+  (imagen de la API + SMTP).
+- Destinatario: `OPS_ALERT_EMAIL` en `.env`.
+- Verificado con umbral de disco simulado: alerta, no duplicado en la segunda
+  corrida y recuperación al volver a `ok`; ingesta forzada a fallar envió aviso
+  y terminó con código 1.
