@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Geodatos | Atacamawoll — Living Lab Hídrico de Atacama</title>
+<meta name="description" content="Geoportal de datos, chat con IA y dashboard territorial del WOLL Atacama. Explora, consulta y monitorea la información hídrica de Atacama.">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<link rel="canonical" href="https://visor.atacamawoll.cl/">
+<meta property="og:site_name" content="Atacamawoll">
+<meta property="og:locale" content="es_CL">
+<meta property="og:title" content="Geodatos | Atacamawoll">
+<meta property="og:description" content="Geoportal de datos, chat con inteligencia artificial y dashboard territorial del WOLL Atacama.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://visor.atacamawoll.cl/">
+<meta property="og:image" content="https://visor.atacamawoll.cl/assets/geodatos/og-geodatos.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Geodatos | Atacamawoll">
+<meta name="twitter:description" content="Geoportal de datos, chat con inteligencia artificial y dashboard territorial del WOLL Atacama.">
+<meta name="twitter:image" content="https://visor.atacamawoll.cl/assets/geodatos/og-geodatos.webp">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Geodatos | Atacamawoll",
+  "url": "https://visor.atacamawoll.cl/",
+  "description": "Geoportal de datos, chat con inteligencia artificial y dashboard territorial del WOLL Atacama.",
+  "inLanguage": "es-CL",
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "Atacamawoll",
+    "url": "https://atacamawoll.cl/"
+  },
+  "mainEntity": {
+    "@type": "ItemList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "item": {
+          "@type": "WebApplication",
+          "name": "Geoportal de datos",
+          "description": "Visor territorial con capas geoespaciales, filtros, tabla de atributos y descarga de datos de la Región de Atacama.",
+          "url": "https://visor.atacamawoll.cl/visor",
+          "applicationCategory": "GISApplication",
+          "operatingSystem": "Web"
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "item": {
+          "@type": "WebApplication",
+          "name": "Chat con inteligencia artificial",
+          "description": "Asistente que responde preguntas territoriales en lenguaje natural con evidencia, gráficos y referencia a la capa de origen.",
+          "url": "https://visor.atacamawoll.cl/visor?chat=1",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web"
+        }
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "item": {
+          "@type": "CreativeWork",
+          "name": "Dashboard territorial",
+          "description": "Producto en desarrollo para monitorear los principales indicadores del geoportal y comparar las comunas de Atacama.",
+          "creativeWorkStatus": "En desarrollo"
+        }
+      }
+    ]
+  }
+}
+</script>
+<link rel="icon" href="./assets/img/cropped-logo2-192x192.png" type="image/png">
+<style>
+@font-face{
+  font-family:"Plus Jakarta Sans";
+  font-style:normal;
+  font-weight:200 800;
+  font-display:swap;
+  src:url("./css/fonts/plus-jakarta-sans-latin.woff2") format("woff2");
+}
+:root{
+  --bg-page:#f8fbff;
+  --bg-surface:#fff;
+  --bg-tint:#eef6ff;
+  --bg-footer:#eaf3fc;
+  --ink:#072038;
+  --ink-strong:#06203a;
+  --ink-muted:#334e68;
+  --ink-subtle:#486581;
+  --accent:#0284c7;
+  --accent-dark:#0369a1;
+  --accent-soft:#e0f2fe;
+  --line:#0284c729;
+  --line-strong:#0284c757;
+  --success:#047857;
+  --success-soft:#d1fae5;
+  --warning:#92400e;
+  --warning-soft:#fef3c7;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--bg-page)}
+body{margin:0;padding:0;background:var(--bg-page);color:var(--ink);font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:geometricPrecision}
+a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+img{max-width:100%}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip-link{position:absolute;left:-9999px;top:0;z-index:100;background:#fff;color:var(--ink-strong);padding:12px 18px;border-radius:0 0 10px 0;font-weight:700;text-decoration:none;box-shadow:0 8px 24px #07203826}
+.skip-link:focus{left:0}
+
+/* ── Cabecera ─────────────────────────────────────────────── */
+.site-header{position:sticky;top:0;z-index:40;background:#f8fbffeb;border-bottom:1px solid var(--line);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.nav-bar{display:flex;align-items:center;justify-content:space-between;gap:20px;max-width:1240px;height:70px;margin:0 auto;padding:0 24px}
+.logo{display:inline-flex;align-items:center;color:var(--ink-strong);font-size:23px;font-weight:700;letter-spacing:-.02em;text-decoration:none}
+.logo img{display:block;width:auto;max-width:175px;height:36px;object-fit:contain}
+.nav-links{display:flex;align-items:center;gap:24px}
+.nav-links a{color:var(--ink-muted);border-bottom:2px solid transparent;padding:6px 2px;font-size:13.5px;font-weight:600;text-decoration:none;white-space:nowrap;transition:color .18s,border-color .18s}
+.nav-links a:hover,.nav-links a.is-active{color:var(--accent);border-bottom-color:var(--accent)}
+.nav-actions{display:flex;align-items:center}
+.btn-header-cta{display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 20px;border-radius:999px;background:var(--accent-dark);color:#fff;font-size:13.5px;font-weight:600;text-decoration:none;box-shadow:0 6px 18px #0284c738;transition:background .18s,transform .18s,box-shadow .18s}
+.btn-header-cta:hover{background:#075985;transform:translateY(-1px);box-shadow:0 10px 24px #0284c747}
+.burger{display:none;align-items:center;justify-content:center;width:44px;height:38px;border:1px solid var(--line-strong);border-radius:999px;background:#fff;cursor:pointer}
+.burger span,.burger span::before,.burger span::after{display:block;content:"";width:18px;height:1.8px;border-radius:2px;background:var(--ink-strong);position:relative;transition:transform .2s,opacity .2s}
+.burger span::before{position:absolute;top:-5px;left:0}
+.burger span::after{position:absolute;top:5px;left:0}
+.mobile-menu{position:fixed;top:74px;left:16px;right:16px;z-index:45;display:none;flex-direction:column;padding:12px;border:1px solid var(--line-strong);border-radius:18px;background:#fff;box-shadow:0 22px 50px #07203829}
+.mobile-menu.open{display:flex}
+.mobile-menu a{color:var(--ink);border-radius:10px;padding:12px 14px;font-size:15px;font-weight:600;text-decoration:none}
+.mobile-menu a:hover,.mobile-menu a.is-active{background:var(--accent-soft);color:var(--accent-dark)}
+.mobile-menu .divider{height:1px;margin:8px 10px;background:var(--line)}
+.mobile-menu .m-cta{background:var(--accent);color:#fff;text-align:center}
+
+/* ── Hero ─────────────────────────────────────────────────── */
+.page-hero{position:relative;padding:84px 0 64px;border-bottom:1px solid var(--line);background:radial-gradient(circle at 88% 18%,#38bdf838 0%,#f8fbff00 48%),radial-gradient(circle at 10% 85%,#0284c71f 0%,#f8fbff00 44%),linear-gradient(#eef6ff 0%,#f8fbff 100%)}
+.hero-kicker{display:inline-block;margin:0 0 16px;color:var(--accent-dark);font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.page-hero h1{max-width:24ch;margin:0 0 22px;color:var(--ink-strong);font-size:clamp(32px,4.2vw,50px);font-weight:700;letter-spacing:-.025em;line-height:1.12;text-wrap:balance}
+.page-hero h1 span{color:var(--accent)}
+.hero-lead{max-width:66ch;margin:0;color:var(--ink-muted);font-size:clamp(16px,1.55vw,19px);line-height:1.65}
+.hero-actions{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:30px}
+.btn-primary,.btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:44px;padding:0 24px;border-radius:999px;font-family:inherit;font-size:14.5px;font-weight:600;text-decoration:none;white-space:nowrap;cursor:pointer;transition:transform .18s,background .18s,border-color .18s,color .18s,box-shadow .18s}
+.btn-primary{border:1px solid #075985;background:var(--accent-dark);color:#fff;box-shadow:0 10px 24px #0284c73d}
+.btn-primary:hover{background:#075985;transform:translateY(-1px);box-shadow:0 14px 28px #0284c752}
+.btn-secondary{border:1px solid var(--line-strong);background:var(--bg-surface);color:var(--ink)}
+.btn-secondary:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-dark)}
+.btn-primary svg,.btn-secondary svg{flex:none;width:16px;height:16px}
+.geo-hero-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));max-width:900px;margin:36px 0 0;padding:24px 0 0;border-top:1px solid var(--line)}
+.geo-hero-stat{padding:0 22px;border-left:1px solid var(--line)}
+.geo-hero-stat:first-child{padding-left:0;border-left:0}
+.geo-hero-stat dt{margin:0 0 4px;color:var(--ink-subtle);font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.geo-hero-stat dd{margin:0;color:var(--ink-strong);font-size:20px;font-weight:700;line-height:1.2}
+.geo-hero-stat dd span{color:var(--accent)}
+
+/* ── Secciones y títulos ──────────────────────────────────── */
+.section-pad{padding:84px 0}
+.section-white{background:var(--bg-surface);border-bottom:1px solid var(--line)}
+.section-tint{background:linear-gradient(#f0f7ff 0%,#f8fbff 100%);border-bottom:1px solid var(--line)}
+section[id]{scroll-margin-top:92px}
+.section-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:40px}
+.section-head > div{max-width:760px}
+.kicker{display:block;margin-bottom:10px;color:var(--accent-dark);font-size:13px;font-weight:700;letter-spacing:.04em}
+.section-title{max-width:28ch;margin:0 0 12px;color:var(--ink-strong);font-size:clamp(28px,3.2vw,40px);font-weight:700;letter-spacing:-.02em;line-height:1.18;text-wrap:balance}
+.section-subtitle{max-width:62ch;margin:0;color:var(--ink-muted);font-size:16.5px;line-height:1.65}
+.section-footnote{max-width:70ch;margin:26px 0 0;color:var(--ink-subtle);font-size:13.5px;line-height:1.6}
+
+/* ── Tarjetas de producto ─────────────────────────────────── */
+.geo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:stretch}
+.geo-card{display:flex;flex-direction:column;height:100%;padding:30px 28px;border:1px solid var(--line);border-radius:22px;background:linear-gradient(#fff 0%,#f6faff 100%);box-shadow:0 10px 28px #0720380d;transition:transform .22s,border-color .22s,box-shadow .22s}
+.geo-card:hover{border-color:var(--line-strong);transform:translateY(-4px);box-shadow:0 18px 40px #0284c71f}
+.geo-card--soon{background:linear-gradient(#fff 0%,#fffbf3 100%)}
+.geo-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px}
+.geo-icon{display:flex;align-items:center;justify-content:center;width:52px;height:52px;border:1px solid #0284c738;border-radius:15px;background:linear-gradient(135deg,#e0f2fe,#bae6fd);color:var(--accent-dark);flex:none}
+.geo-icon svg{width:25px;height:25px}
+.geo-status{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.geo-status i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.geo-status.is-live{border:1px solid #a7f3d0;background:var(--success-soft);color:#065f46}
+.geo-status.is-soon{border:1px solid #fde68a;background:var(--warning-soft);color:var(--warning)}
+.geo-card h3{margin:0 0 10px;color:var(--ink-strong);font-size:21px;font-weight:700;line-height:1.28}
+.geo-card h3 a{color:inherit;text-decoration:none}
+.geo-card h3 a:hover{color:var(--accent-dark)}
+.geo-card p{margin:0 0 18px;color:var(--ink-subtle);font-size:14.5px;line-height:1.65}
+.geo-features{display:flex;flex-direction:column;gap:9px;margin:0 0 24px;padding:0;list-style:none}
+.geo-features li{display:flex;align-items:flex-start;gap:9px;color:var(--ink-muted);font-size:13.5px;line-height:1.45}
+.geo-features svg{flex:none;width:16px;height:16px;margin-top:2px;color:var(--accent)}
+.geo-card-cta{display:inline-flex;align-items:center;gap:8px;margin-top:auto;color:var(--accent-dark);font-size:13.5px;font-weight:700;text-decoration:none}
+.geo-card-cta svg{width:14px;height:14px;transition:transform .18s}
+.geo-card-cta:hover svg{transform:translate(3px)}
+.geo-card-cta:hover{color:var(--accent)}
+
+/* ── Filas de detalle ─────────────────────────────────────── */
+.geo-detail{display:grid;grid-template-columns:1.04fr .96fr;overflow:hidden;border:1px solid var(--line);border-radius:24px;background:var(--bg-surface);box-shadow:0 12px 32px #0720380d;transition:border-color .22s,box-shadow .22s}
+.geo-detail:hover{border-color:var(--line-strong);box-shadow:0 18px 42px #0284c71c}
+.geo-detail--reverse .geo-detail-copy{order:2}
+.geo-detail--reverse .geo-detail-visual{order:1}
+.geo-detail-copy{display:flex;flex-direction:column;justify-content:center;gap:15px;padding:42px 40px}
+.geo-label{display:flex;align-items:center;gap:10px;color:var(--accent-dark);font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.geo-detail-copy h3{margin:0;color:var(--ink-strong);font-size:clamp(24px,2.5vw,30px);font-weight:700;line-height:1.22;text-wrap:balance}
+.geo-detail-lead{margin:0;color:var(--ink-muted);font-size:15.5px;line-height:1.68}
+.geo-detail-list{display:flex;flex-direction:column;gap:9px;margin:2px 0 0;padding:0;list-style:none}
+.geo-detail-list li{display:flex;align-items:flex-start;gap:9px;color:var(--ink-subtle);font-size:14px;line-height:1.5}
+.geo-detail-list svg{flex:none;width:17px;height:17px;margin-top:2px;color:var(--accent)}
+.geo-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:6px}
+.geo-note{margin:0;color:var(--ink-subtle);font-size:12.5px;line-height:1.5}
+.geo-visual{position:relative;display:flex;align-items:center;justify-content:center;min-height:390px;padding:30px;overflow:hidden;background:linear-gradient(135deg,#e0f2fe 0%,#f8fbff 100%)}
+.geo-visual::before,.geo-visual::after{content:"";position:absolute;border-radius:50%;pointer-events:none}
+.geo-visual::before{width:250px;height:250px;top:-90px;right:-70px;background:radial-gradient(circle,#38bdf833,transparent 70%)}
+.geo-visual::after{width:210px;height:210px;bottom:-90px;left:-60px;background:radial-gradient(circle,#0284c71f,transparent 70%)}
+.geo-visual--chat{background:linear-gradient(135deg,#eef6ff 0%,#f8fbff 100%)}
+.mock-window,.mock-chat,.mock-dash{position:relative;z-index:1;width:100%;max-width:520px;overflow:hidden;border:1px solid #0284c733;border-radius:16px;background:#fff;box-shadow:0 24px 50px #07203824;transition:transform .3s ease}
+.mock-window{transform:rotate(-1deg)}
+.mock-chat{max-width:430px;transform:rotate(1deg)}
+.mock-dash{max-width:560px}
+.geo-detail:hover .mock-window,.geo-detail:hover .mock-chat{transform:rotate(0)}
+.mock-caption{position:absolute;right:28px;bottom:16px;z-index:2;color:var(--ink-subtle);font-size:10px;font-weight:600;letter-spacing:.02em}
+
+/* ── Mock del geoportal ───────────────────────────────────── */
+.mock-bar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #0284c71f;background:#f4f9ff}
+.mock-dots{display:flex;gap:4px;flex:none}
+.mock-dots i{width:7px;height:7px;border-radius:50%;background:#c7dbea}
+.mock-dots i:first-child{background:#fca5a5}
+.mock-dots i:nth-child(2){background:#fcd34d}
+.mock-dots i:nth-child(3){background:#86efac}
+.mock-address{flex:1;padding:3px 8px;border:1px solid #0284c71f;border-radius:6px;background:#fff;color:#486581;font-size:8.5px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mock-live{display:inline-flex;align-items:center;gap:4px;color:#047857;font-size:8px;font-weight:700;white-space:nowrap}
+.mock-live i{width:5px;height:5px;border-radius:50%;background:#059669}
+.mock-app{display:grid;grid-template-columns:1fr 154px;min-height:280px}
+.mock-map{position:relative;overflow:hidden;background:#eaf6ff}
+.mock-map-svg{display:block;width:100%;height:100%;min-height:280px}
+.mock-tooltip{position:absolute;top:42%;left:34%;padding:7px 9px;border:1px solid #0284c733;border-radius:8px;background:#fffffff2;box-shadow:0 8px 20px #0720381f}
+.mock-tooltip-title{display:block;color:#06203a;font-size:9px;font-weight:700;line-height:1.2}
+.mock-tooltip-sub{display:block;margin-top:2px;color:#486581;font-size:7px}
+.mock-legend{position:absolute;left:10px;bottom:10px;display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid #0284c71f;border-radius:999px;background:#fffffff2;color:#334e68;font-size:7px;font-weight:600;backdrop-filter:blur(4px)}
+.mock-legend span{display:inline-flex;align-items:center;gap:4px}
+.mock-legend .dot{width:6px;height:6px;border-radius:50%}
+.dot--water{background:#0284c7}
+.dot--land{background:#65a30d}
+.dot--risk{background:#d97706}
+.mock-coords{position:absolute;right:10px;bottom:10px;padding:4px 7px;border-radius:5px;background:#06203ae6;color:#e0f2fe;font-size:6.5px;font-weight:600;letter-spacing:.03em}
+.mock-side{display:flex;flex-direction:column;padding:11px;border-left:1px solid #0284c71f;background:#fff}
+.mock-side-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;color:#334e68;font-size:8px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+.mock-count{padding:1px 5px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-size:7px}
+.mock-side-head--second{margin-top:12px}
+.mock-layer{display:flex;align-items:center;gap:6px;padding:3.5px 0;color:#486581;font-size:8px}
+.mock-check{display:inline-flex;align-items:center;justify-content:center;width:10px;height:10px;border:1px solid #b8d3e6;border-radius:3px;background:#fff;flex:none}
+.mock-check.is-on{border-color:#0284c7;background:#0284c7;color:#fff}
+.mock-check.is-on::after{content:"✓";font-size:7px;line-height:1;font-weight:800}
+.mock-select{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:5px;padding:5px 6px;border:1px solid #0284c73d;border-radius:5px;color:#486581;font-size:7.5px}
+.mock-export{margin-top:auto;padding:6px;border-radius:6px;background:#0284c7;color:#fff;font-size:7.5px;font-weight:700;text-align:center}
+
+/* ── Mock del chat ────────────────────────────────────────── */
+.mock-chat{display:flex;flex-direction:column}
+.mock-chat-head{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid #0284c71f;background:linear-gradient(#fff,#f8fbff)}
+.mock-chat-avatar{display:flex;align-items:center;justify-content:center;width:29px;height:29px;border-radius:9px;background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;font-size:14px;flex:none}
+.mock-chat-head strong{display:block;color:#06203a;font-size:11px;line-height:1.2}
+.mock-chat-head small{display:block;color:#486581;font-size:8px}
+.mock-chat-status{display:inline-flex;align-items:center;gap:3px;margin-left:auto;color:#047857;font-size:7.5px;font-weight:700}
+.mock-chat-status i{width:5px;height:5px;border-radius:50%;background:#059669}
+.mock-chat-body{display:flex;flex-direction:column;gap:9px;min-height:258px;padding:14px;background:#f8fbff}
+.mock-msg{max-width:88%;padding:9px 11px;border-radius:12px;font-size:9.5px;line-height:1.5}
+.mock-msg--user{align-self:flex-end;border-bottom-right-radius:4px;background:#0284c7;color:#fff}
+.mock-msg--bot{align-self:flex-start;border:1px solid #0284c71f;border-bottom-left-radius:4px;background:#fff;color:#334e68;box-shadow:0 4px 12px #0720380a}
+.mock-msg--bot p{margin:0}
+.mock-mini-chart{display:flex;align-items:flex-end;gap:4px;height:46px;margin:8px 0 6px;padding:6px 4px 0;border-top:1px solid #0284c71a}
+.mock-mini-chart span{flex:1;height:var(--bar);border-radius:3px 3px 0 0;background:linear-gradient(#38bdf8,#0284c7);opacity:.85}
+.mock-source{display:flex;align-items:center;gap:5px;color:#0369a1;font-size:8px;font-weight:700}
+.mock-source-dot{width:5px;height:5px;border-radius:50%;background:#0284c7}
+.mock-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+.mock-chips span{padding:3px 6px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-size:7px;font-weight:700}
+.mock-typing{display:flex;gap:3px;width:34px;padding:7px 9px;border:1px solid #0284c71f;border-radius:10px;background:#fff}
+.mock-typing i{width:4px;height:4px;border-radius:50%;background:#7aa7c7;animation:mockBlink 1.4s infinite ease-in-out}
+.mock-typing i:nth-child(2){animation-delay:.2s}
+.mock-typing i:nth-child(3){animation-delay:.4s}
+.mock-chat-input{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 12px 12px;padding:8px 10px;border:1px solid #0284c73d;border-radius:999px;background:#fff;color:#829ab1;font-size:8.5px}
+.mock-send{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#0284c7;color:#fff;font-size:11px;flex:none}
+@keyframes mockBlink{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-1px)}}
+
+/* ── Mock del dashboard ───────────────────────────────────── */
+.mock-dash{padding:16px}
+.mock-dash-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
+.mock-kicker{display:block;color:#0284c7;font-size:7px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.mock-dash-head strong{display:block;margin-top:2px;color:#06203a;font-size:13px;line-height:1.2}
+.mock-badge{padding:3px 7px;border:1px solid #fde68a;border-radius:999px;background:#fef3c7;color:#92400e;font-size:6.5px;font-weight:700;white-space:nowrap}
+.mock-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.mock-kpi{padding:8px;border:1px solid #0284c71f;border-radius:9px;background:#f8fbff}
+.mock-kpi span{display:block;color:#486581;font-size:7px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.mock-kpi strong{display:block;margin:2px 0 1px;color:#06203a;font-size:17px;line-height:1.1}
+.mock-kpi small{display:block;color:#486581;font-size:6.5px}
+.mock-dash-body{display:grid;grid-template-columns:1.15fr .85fr;gap:8px}
+.mock-panel{padding:9px;border:1px solid #0284c71f;border-radius:9px;background:#fff}
+.mock-panel-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:8px;color:#334e68;font-size:7.5px;font-weight:700}
+.mock-panel-tag{padding:2px 5px;border-radius:999px;background:#f1f5f9;color:#64748b;font-size:5.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.mock-hbars{display:flex;flex-direction:column;gap:6px}
+.mock-hbar{display:grid;grid-template-columns:42px 1fr;align-items:center;gap:5px;color:#486581;font-size:6.5px}
+.mock-hbar i{display:block;width:var(--w);height:6px;border-radius:999px;background:linear-gradient(90deg,#38bdf8,#0284c7);opacity:.85}
+.mock-status-list{display:flex;flex-direction:column;gap:7px;color:#334e68;font-size:7px}
+.mock-status-list div{display:flex;align-items:center;gap:5px}
+.mock-status-list b{margin-left:auto;font-size:6px;font-weight:700}
+.mock-status-dot{width:5px;height:5px;border-radius:50%;flex:none}
+.mock-status-dot.is-live{background:#059669}
+.mock-status-dot.is-soon{background:#d97706}
+.mock-update{margin-top:8px;padding-top:6px;border-top:1px solid #0284c71a;color:#829ab1;font-size:6px}
+
+/* ── Sección dashboard ────────────────────────────────────── */
+.geo-dash-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:38px}
+.geo-dash-head > div{max-width:760px}
+.geo-dash-grid{display:grid;grid-template-columns:1fr 1.05fr;gap:44px;align-items:center}
+.geo-dash-copy p{margin:0 0 18px;color:var(--ink-muted);font-size:15.5px;line-height:1.68}
+.geo-dash-list{display:flex;flex-direction:column;gap:10px;margin:0 0 24px;padding:0;list-style:none}
+.geo-dash-list li{display:flex;align-items:flex-start;gap:9px;color:var(--ink-subtle);font-size:14px;line-height:1.5}
+.geo-dash-list svg{flex:none;width:17px;height:17px;margin-top:2px;color:var(--accent)}
+.geo-dash-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.geo-dash-visual{position:relative;display:flex;align-items:center;justify-content:center;padding:28px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(135deg,#e0f2fe 0%,#f8fbff 100%);overflow:hidden}
+.geo-dash-visual::before{content:"";position:absolute;width:260px;height:260px;top:-100px;right:-80px;border-radius:50%;background:radial-gradient(circle,#38bdf833,transparent 70%);pointer-events:none}
+.geo-modules{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:40px}
+.geo-module{padding:22px 20px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:0 8px 20px #0720380a}
+.geo-module-icon{display:flex;align-items:center;justify-content:center;width:38px;height:38px;margin-bottom:12px;border-radius:11px;background:var(--accent-soft);color:var(--accent-dark)}
+.geo-module-icon svg{width:19px;height:19px}
+.geo-module h3{margin:0 0 6px;color:var(--ink-strong);font-size:15px;font-weight:700;line-height:1.3}
+.geo-module p{margin:0;color:var(--ink-subtle);font-size:13px;line-height:1.55}
+.geo-dash-note{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-top:28px;padding:20px 24px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.geo-dash-note p{margin:0;max-width:72ch;color:var(--ink-muted);font-size:14px;line-height:1.6}
+.geo-dash-note .geo-actions{margin:0;flex:none}
+
+/* ── Flujo del ecosistema ─────────────────────────────────── */
+.geo-flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:0;padding:0;list-style:none}
+.geo-flow-step{position:relative;display:flex;flex-direction:column;gap:9px;padding:26px 24px;border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:18px;background:#fff;box-shadow:0 8px 22px #0720380a}
+.geo-flow-step:not(:last-child)::after{content:"→";position:absolute;top:50%;right:-19px;z-index:2;display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--bg-surface);color:var(--accent);font-size:13px;font-weight:800;line-height:1;transform:translateY(-50%)}
+.geo-flow-num{color:var(--accent-dark);font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.geo-flow-icon{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:13px;background:var(--accent-soft);color:var(--accent-dark)}
+.geo-flow-icon svg{width:22px;height:22px}
+.geo-flow-step h3{margin:2px 0 0;color:var(--ink-strong);font-size:18px;font-weight:700;line-height:1.3}
+.geo-flow-step p{margin:0;color:var(--ink-subtle);font-size:13.5px;line-height:1.6}
+.geo-flow-tag{align-self:flex-start;margin-top:4px;padding:4px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-dark);font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+.geo-flow-tag.is-soon{background:var(--warning-soft);color:var(--warning)}
+.geo-flow-note{max-width:80ch;margin:28px auto 0;color:var(--ink-subtle);font-size:13.5px;line-height:1.65;text-align:center}
+
+/* ── FAQ ──────────────────────────────────────────────────── */
+.faq-layout{display:grid;grid-template-columns:.85fr 1.15fr;align-items:start;gap:48px}
+.faq-aside{position:sticky;top:96px}
+.faq-aside .btn-secondary{margin-top:8px}
+.faq-list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.faq-item{border-bottom:1px solid var(--line)}
+.faq-trigger{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;padding:22px 4px;border:0;background:transparent;color:var(--ink-strong);font-family:inherit;font-size:17px;font-weight:600;line-height:1.4;text-align:left;cursor:pointer;list-style:none;transition:color .18s}
+.faq-trigger::-webkit-details-marker{display:none}
+.faq-trigger:hover{color:var(--accent)}
+.faq-chevron{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent-dark);flex:none;transition:transform .2s,background .2s,color .2s}
+.faq-chevron svg{width:14px;height:14px}
+.faq-item[open] .faq-chevron{background:var(--accent);color:#fff;transform:rotate(180deg)}
+.faq-panel{padding:0 4px 22px;color:var(--ink-muted);font-size:15px;line-height:1.68}
+.faq-panel p{margin:0}
+
+/* ── CTA final ────────────────────────────────────────────── */
+.geo-cta{position:relative;display:grid;grid-template-columns:1.35fr .65fr;align-items:center;gap:32px;overflow:hidden;padding:48px;border-radius:26px;background:linear-gradient(120deg,#06203a 0%,#0b3a5e 55%,#075985 100%);color:#fff;box-shadow:0 24px 60px #06203a2e}
+.geo-cta::before{content:"";position:absolute;width:340px;height:340px;top:-140px;right:-80px;border-radius:50%;background:radial-gradient(circle,#38bdf838,transparent 70%);pointer-events:none}
+.geo-cta::after{content:"";position:absolute;width:280px;height:280px;bottom:-150px;left:-80px;border-radius:50%;background:radial-gradient(circle,#0284c740,transparent 70%);pointer-events:none}
+.geo-cta > *{position:relative;z-index:1}
+.geo-cta .kicker{color:#7dd3fc}
+.geo-cta h2{max-width:24ch;margin:0 0 14px;color:#fff;font-size:clamp(28px,3.2vw,38px);font-weight:700;letter-spacing:-.02em;line-height:1.18;text-wrap:balance}
+.geo-cta p{max-width:60ch;margin:0;color:#dbeafe;font-size:15.5px;line-height:1.65}
+.geo-cta-actions{display:flex;flex-direction:column;gap:10px;align-items:stretch}
+.btn-light,.btn-outline-light{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 22px;border-radius:999px;font-family:inherit;font-size:14.5px;font-weight:600;text-decoration:none;transition:transform .18s,background .18s,border-color .18s,color .18s}
+.btn-light svg,.btn-outline-light svg{flex:none;width:16px;height:16px}
+.btn-light{border:1px solid #fff;background:#fff;color:#06203a;box-shadow:0 10px 24px #00000024}
+.btn-light:hover{background:#e0f2fe;transform:translateY(-1px)}
+.btn-outline-light{border:1px solid #ffffff59;background:transparent;color:#fff}
+.btn-outline-light:hover{border-color:#fff;background:#ffffff14}
+.geo-cta-note{grid-column:1/-1;margin:24px 0 0;padding-top:18px;border-top:1px solid #ffffff24;color:#bae6fd;font-size:12.5px;line-height:1.5}
+
+/* ── Franja de aliados ────────────────────────────────────── */
+.partners-strip{position:relative;padding:44px 24px;background:#072038;border-top:1px solid #ffffff14}
+.partners-strip-inner{max-width:1200px;margin:0 auto}
+.partners-strip-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+.partners-strip-title{margin:0;color:#7dd3fc;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.partners-strip-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:18px;align-items:center}
+.partner-slot{display:flex;align-items:center;justify-content:center;min-height:82px;padding:10px 14px;transition:transform .2s ease,opacity .2s ease}
+.partner-slot:hover{transform:translateY(-2px)}
+.partner-slot img{display:block;width:auto;height:auto;max-width:100%;max-height:64px;object-fit:contain}
+
+/* ── Pie de página ────────────────────────────────────────── */
+.site-footer{padding:68px 24px 36px;border-top:1px solid var(--line);background:var(--bg-footer);color:var(--ink-muted)}
+.footer-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1.1fr;align-items:start;gap:44px;max-width:1200px;margin:0 auto 48px}
+.footer-brand-name{display:inline-flex;align-items:center;margin:0 0 14px;color:var(--ink-strong);font-size:22px;font-weight:700;letter-spacing:-.02em}
+.footer-brand-name img{display:block;width:auto;max-width:210px;height:40px;object-fit:contain}
+.footer-brand-desc{max-width:38ch;margin:0 0 16px;color:var(--ink-subtle);font-size:14px;line-height:1.65}
+.footer-location{margin:0;color:var(--accent-dark);font-size:13px;font-weight:600}
+.footer-col h3{margin:0 0 18px;color:var(--ink-strong);font-size:12.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.footer-col ul{margin:0;padding:0;list-style:none}
+.footer-col li{margin-bottom:11px}
+.footer-col a{color:var(--ink-muted);font-size:14px;text-decoration:none;transition:color .15s}
+.footer-col a:hover{color:var(--accent)}
+.footer-bottom{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:16px;max-width:1200px;margin:0 auto;padding-top:28px;border-top:1px solid #0284c724;color:var(--ink-subtle);font-size:13px;text-align:center}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width:1060px){
+  .geo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .geo-card:last-child{grid-column:1/-1}
+}
+@media (max-width:1024px){
+  .nav-links,.nav-actions{display:none}
+  .burger{display:inline-flex}
+}
+@media (max-width:980px){
+  .geo-modules{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .partners-strip-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:960px){
+  .geo-dash-grid{grid-template-columns:1fr;gap:28px}
+  .footer-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:32px}
+}
+@media (max-width:900px){
+  .geo-detail{grid-template-columns:1fr}
+  .geo-detail--reverse .geo-detail-copy,.geo-detail--reverse .geo-detail-visual{order:initial}
+  .geo-detail-copy{padding:32px 28px}
+  .geo-visual{min-height:320px;padding:24px}
+  .faq-layout{grid-template-columns:1fr;gap:28px}
+  .faq-aside{position:static}
+  .geo-flow{grid-template-columns:1fr}
+  .geo-flow-step:not(:last-child)::after{content:"";display:none}
+}
+@media (max-width:820px){
+  .geo-grid{grid-template-columns:1fr}
+  .geo-card:last-child{grid-column:auto}
+  .geo-cta{grid-template-columns:1fr;padding:34px 28px}
+  .geo-cta-actions{flex-direction:row;flex-wrap:wrap}
+  .geo-cta-note{grid-column:auto}
+  .geo-dash-head{flex-direction:column;gap:12px}
+  .geo-dash-note{flex-direction:column;align-items:flex-start}
+  .geo-dash-note .geo-actions{flex:none}
+}
+@media (max-width:760px){
+  .geo-hero-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 0}
+  .geo-hero-stat{padding:0 18px}
+  .geo-hero-stat:nth-child(odd){padding-left:0;border-left:0}
+  .geo-hero-stat:nth-child(n+3){padding-top:18px;border-top:1px solid var(--line)}
+}
+@media (max-width:620px){
+  .page-hero{padding:64px 0 48px}
+  .section-pad{padding:56px 0}
+  .container{padding:0 18px}
+  .nav-bar{padding:0 16px}
+  .logo img{max-width:150px;height:32px}
+  .geo-card{padding:26px 22px}
+  .geo-detail-copy{padding:28px 22px}
+  .geo-visual{padding:18px;min-height:280px}
+  .mock-app{grid-template-columns:1fr 128px}
+  .mock-legend{gap:5px;font-size:6px}
+  .mock-coords{display:none}
+  .geo-dash-visual{padding:16px}
+  .geo-dash-note{padding:18px}
+  .geo-cta{padding:30px 22px}
+  .geo-cta-actions{flex-direction:column}
+  .partners-strip{padding:36px 18px}
+  .partners-strip-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .partner-slot:last-child{grid-column:span 2}
+  .site-footer{padding:52px 18px 30px}
+  .footer-grid{grid-template-columns:1fr;gap:28px}
+}
+@media (max-width:460px){
+  .mock-app{grid-template-columns:1fr}
+  .mock-side{display:none}
+  .mock-dash-body{grid-template-columns:1fr}
+  .mock-kpis{grid-template-columns:1fr}
+  .mock-kpi{display:grid;grid-template-columns:1fr auto;align-items:center;gap:0 8px}
+  .mock-kpi span{grid-column:1}
+  .mock-kpi strong{grid-column:2;grid-row:1/span 2;margin:0;font-size:20px}
+  .mock-kpi small{grid-column:1}
+  .geo-modules{grid-template-columns:1fr}
+}
+@media (max-width:380px){
+  .geo-hero-stats{grid-template-columns:1fr}
+  .geo-hero-stat{padding:14px 0;border-left:0;border-top:1px solid var(--line)}
+  .geo-hero-stat:first-child{padding-top:0;border-top:0}
+  .geo-hero-stat:nth-child(n+3){padding-top:14px}
+}
+@media (min-width:768px){
+  .footer-bottom{flex-direction:row;text-align:left}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Saltar al contenido</a>
+
+<header class="site-header">
+  <div class="nav-bar">
+    <a href="https://atacamawoll.cl/" class="logo" aria-label="Atacamawoll Inicio">
+      <img src="./assets/geodatos/logo-atacamawoll.webp" alt="Atacamawoll" width="427" height="112" decoding="async">
+    </a>
+    <nav class="nav-links" aria-label="Principal">
+      <a href="https://atacamawoll.cl/">Inicio</a>
+      <a href="https://atacamawoll.cl/oportunidades.html">Oportunidades</a>
+      <a href="https://atacamawoll.cl/recursos.html">Recursos</a>
+      <a href="./" class="is-active" aria-current="page">Geodatos</a>
+      <a href="https://atacamawoll.cl/proyectos-pilotos.html">Proyectos pilotos</a>
+    </nav>
+    <div class="nav-actions">
+      <a href="https://atacamawoll.cl/oportunidades.html#contacto" class="btn-header-cta">Contacto</a>
+    </div>
+    <button id="burger" class="burger" aria-label="Abrir menú" aria-expanded="false" aria-controls="mobileMenu">
+      <span></span>
+    </button>
+  </div>
+</header>
+
+<nav class="mobile-menu" id="mobileMenu" aria-label="Móvil">
+  <a href="https://atacamawoll.cl/">Inicio</a>
+  <a href="https://atacamawoll.cl/oportunidades.html">Oportunidades</a>
+  <a href="https://atacamawoll.cl/recursos.html">Recursos</a>
+  <a href="./" class="is-active" aria-current="page">Geodatos</a>
+  <a href="https://atacamawoll.cl/proyectos-pilotos.html">Proyectos pilotos</a>
+  <div class="divider"></div>
+  <a href="https://atacamawoll.cl/oportunidades.html#contacto" class="m-cta">Contacto</a>
+</nav>
+
+<main id="main">
+
+  <!-- HERO GEODATOS -->
+  <section class="page-hero">
+    <div class="container">
+      <p class="hero-kicker">Atacama Water Oriented Living Lab · Geodatos</p>
+      <h1>El territorio de Atacama, en <span>datos que puedes usar.</span></h1>
+      <p class="hero-lead">
+        Geodatos reúne las herramientas del WOLL Atacama para explorar, consultar y monitorear la información hídrica y territorial de la Región. Un mismo ecosistema de datos, tres formas de acceder a él.
+      </p>
+      <div class="hero-actions">
+        <a href="#productos" class="btn-primary">
+          Explorar los productos
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+        </a>
+        <a href="/visor" class="btn-secondary">
+          Abrir geoportal
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+        </a>
+      </div>
+
+      <dl class="geo-hero-stats">
+        <div class="geo-hero-stat">
+          <dt>Dimensiones temáticas</dt>
+          <dd>9</dd>
+        </div>
+        <div class="geo-hero-stat">
+          <dt>Capas geoespaciales</dt>
+          <dd>+70</dd>
+        </div>
+        <div class="geo-hero-stat">
+          <dt>Comunas de Atacama</dt>
+          <dd>9</dd>
+        </div>
+        <div class="geo-hero-stat">
+          <dt>Productos</dt>
+          <dd>3</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <!-- PRODUCTOS -->
+  <section class="section-pad section-white" id="productos">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="kicker">Tres productos, un ecosistema</span>
+          <h2 class="section-title">Elige cómo quieres trabajar con los datos</h2>
+          <p class="section-subtitle">
+            El geoportal te muestra dónde está el dato; el chat te ayuda a interpretarlo; el dashboard te permitirá monitorearlo. Una misma base territorial, tres formas de usarla.
+          </p>
+        </div>
+      </div>
+
+      <div class="geo-grid">
+        <article class="geo-card">
+          <div class="geo-card-head">
+            <span class="geo-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/><path d="M9 3v15M15 6v15"/></svg>
+            </span>
+            <span class="geo-status is-live"><i aria-hidden="true"></i>Disponible</span>
+          </div>
+          <h3><a href="/visor">Geoportal de datos</a></h3>
+          <p>Explora más de 70 capas geoespaciales de agua, clima, agricultura, minería y planificación territorial. Activa capas, filtra y descarga la información que necesitas.</p>
+          <ul class="geo-features">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Mapa interactivo con capas y leyendas
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Filtros por comuna y atributos
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Tabla de datos con exportación CSV y GeoJSON
+            </li>
+          </ul>
+          <a href="/visor" class="geo-card-cta">
+            Abrir geoportal
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+          </a>
+        </article>
+
+        <article class="geo-card">
+          <div class="geo-card-head">
+            <span class="geo-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4H7l-4 3v-7.1A8.4 8.4 0 0 1 11.4 3h1.2A8.4 8.4 0 0 1 21 11.5Z"/><path d="M8 10h8M8 14h5"/></svg>
+            </span>
+            <span class="geo-status is-live"><i aria-hidden="true"></i>Disponible</span>
+          </div>
+          <h3><a href="/visor?chat=1">Chat con inteligencia artificial</a></h3>
+          <p>Haz preguntas en lenguaje natural sobre el territorio. El asistente consulta la base de datos del geoportal y responde con cifras, gráficos y la capa de origen.</p>
+          <ul class="geo-features">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Consultas sobre capas, comunas y atributos
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Respuestas con evidencia y fuente
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Gráficos automáticos y enlace a la capa
+            </li>
+          </ul>
+          <a href="/visor?chat=1" class="geo-card-cta">
+            Abrir chat
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+          </a>
+        </article>
+
+        <article class="geo-card geo-card--soon">
+          <div class="geo-card-head">
+            <span class="geo-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+            </span>
+            <span class="geo-status is-soon"><i aria-hidden="true"></i>En desarrollo</span>
+          </div>
+          <h3>Dashboard territorial</h3>
+          <p>Una vista ejecutiva con los indicadores clave del geoportal: cobertura de datos, capas publicadas, estaciones activas y comparación entre comunas.</p>
+          <ul class="geo-features">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Indicadores clave del territorio
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Comparación entre las 9 comunas
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Series temporales y alertas
+            </li>
+          </ul>
+          <a href="#dashboard" class="geo-card-cta">
+            Ver la propuesta
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
+          </a>
+        </article>
+      </div>
+
+      <p class="section-footnote">
+        El geoportal y el chat están disponibles hoy. El dashboard se encuentra en etapa de diseño y validación con usuarios.
+      </p>
+    </div>
+  </section>
+
+  <!-- GEOPORTAL -->
+  <section class="section-pad section-tint" id="geoportal">
+    <div class="container">
+      <div class="geo-detail">
+        <div class="geo-detail-copy">
+          <span class="geo-label">01 · Geoportal de datos</span>
+          <h3>Explora el territorio, capa por capa</h3>
+          <p class="geo-detail-lead">
+            El geoportal es la puerta de entrada al visor territorial. Reúne capas vectoriales, ráster y servicios WMS en un solo mapa, con herramientas para filtrar, consultar y descargar.
+          </p>
+          <ul class="geo-detail-list">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Nueve dimensiones temáticas: agua, clima, agricultura, minería, energía, riesgos, suelo, planificación y otros.
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Filtros por comuna, categoría y atributos; tabla con búsqueda y exportación.
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Estaciones meteorológicas, imágenes satelitales y capas de referencia.
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Tema claro y oscuro, con diseño responsive para trabajar en terreno o en oficina.
+            </li>
+          </ul>
+          <div class="geo-actions">
+            <a href="/visor" class="btn-primary">
+              Abrir geoportal
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+            </a>
+          </div>
+          <p class="geo-note">Acceso web, sin instalación. Funciona en navegadores modernos.</p>
+        </div>
+        <div class="geo-visual geo-visual--map" aria-hidden="true">
+          <div class="mock-window">
+            <div class="mock-bar">
+              <span class="mock-dots"><i></i><i></i><i></i></span>
+              <span class="mock-address">visor-woll-atacama.cl</span>
+              <span class="mock-live"><i></i> En línea</span>
+            </div>
+            <div class="mock-app">
+              <div class="mock-map">
+                <svg class="mock-map-svg" viewBox="0 0 520 340" preserveAspectRatio="none" aria-hidden="true">
+                  <defs>
+                    <linearGradient id="mapBg" x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0" stop-color="#eaf6ff"/>
+                      <stop offset="1" stop-color="#d7ecfb"/>
+                    </linearGradient>
+                    <linearGradient id="mapLand" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="#d5ecd9"/>
+                      <stop offset="1" stop-color="#b9ddc9"/>
+                    </linearGradient>
+                  </defs>
+                  <rect width="520" height="340" fill="url(#mapBg)"/>
+                  <path d="M0 70 L120 55 L210 80 L300 60 L410 95 L520 75 L520 340 L0 340 Z" fill="#dcecf4" opacity=".8"/>
+                  <path d="M70 40 L150 30 L210 58 L190 120 L130 150 L70 110 Z" fill="url(#mapLand)" stroke="#8fc3a7" stroke-width="1.5"/>
+                  <path d="M210 58 L300 44 L360 82 L340 150 L250 170 L190 120 Z" fill="#d9ead9" stroke="#9ec9ac" stroke-width="1.5"/>
+                  <path d="M130 150 L190 120 L250 170 L230 235 L150 250 L100 205 Z" fill="#e6dfc8" stroke="#c9bd97" stroke-width="1.5"/>
+                  <path d="M340 150 L420 130 L470 180 L440 250 L350 260 L300 210 Z" fill="#d8e4f2" stroke="#a9c1dc" stroke-width="1.5"/>
+                  <path d="M150 250 L230 235 L300 270 L280 330 L170 335 L120 290 Z" fill="#cfe4d8" stroke="#9ac5ad" stroke-width="1.5"/>
+                  <path d="M250 170 L340 150 L350 260 L300 270 L230 235 Z" fill="#e9e2cd" stroke="#cbbf98" stroke-width="1.5"/>
+                  <path d="M-10 230 C90 210 150 250 220 240 S360 190 540 230" fill="none" stroke="#5fb3e8" stroke-width="4" stroke-linecap="round" opacity=".7"/>
+                  <path d="M0 90 C100 100 180 80 260 100 S420 120 540 100" fill="none" stroke="#9cc9e8" stroke-width="2" stroke-dasharray="6 7" opacity=".8"/>
+                  <circle cx="205" cy="185" r="7" fill="#0284c7" stroke="#fff" stroke-width="3"/>
+                  <circle cx="355" cy="205" r="7" fill="#0284c7" stroke="#fff" stroke-width="3"/>
+                  <circle cx="165" cy="280" r="7" fill="#0284c7" stroke="#fff" stroke-width="3"/>
+                </svg>
+                <div class="mock-tooltip">
+                  <span class="mock-tooltip-title">Cuenca del Huasco</span>
+                  <span class="mock-tooltip-sub">12 capas activas</span>
+                </div>
+                <div class="mock-legend">
+                  <span><i class="dot dot--water"></i> Agua</span>
+                  <span><i class="dot dot--land"></i> Suelo</span>
+                  <span><i class="dot dot--risk"></i> Riesgos</span>
+                </div>
+                <div class="mock-coords">27°22′S · 70°20′W · z8</div>
+              </div>
+              <aside class="mock-side">
+                <div class="mock-side-head"><span>Capas</span><span class="mock-count">12</span></div>
+                <div class="mock-layer"><i class="mock-check is-on"></i><span>Recursos hídricos</span></div>
+                <div class="mock-layer"><i class="mock-check is-on"></i><span>Clima</span></div>
+                <div class="mock-layer"><i class="mock-check is-on"></i><span>Agricultura</span></div>
+                <div class="mock-layer"><i class="mock-check"></i><span>Minería</span></div>
+                <div class="mock-layer"><i class="mock-check"></i><span>Riesgos</span></div>
+                <div class="mock-side-head mock-side-head--second"><span>Filtros</span></div>
+                <div class="mock-select">Todas las comunas <span>⌄</span></div>
+                <div class="mock-select">Todas las categorías <span>⌄</span></div>
+                <div class="mock-export">Exportar CSV</div>
+              </aside>
+            </div>
+          </div>
+          <span class="mock-caption">Vista esquemática del geoportal</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHAT IA -->
+  <section class="section-pad section-white" id="chat">
+    <div class="container">
+      <div class="geo-detail geo-detail--reverse">
+        <div class="geo-detail-copy">
+          <span class="geo-label">02 · Chat con inteligencia artificial</span>
+          <h3>Pregunta en tus palabras. Recibe evidencia.</h3>
+          <p class="geo-detail-lead">
+            El chat es un asistente preparado para consultar el catálogo territorial del WOLL Atacama. No escribe SQL ni inventa cifras: usa funciones seguras sobre la base de datos y responde con la evidencia disponible.
+          </p>
+          <ul class="geo-detail-list">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Preguntas como “¿cuántas lagunas hay por comuna?” o “¿dónde están las plantas desaladoras?”.
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Agregaciones, comparaciones y análisis de proximidad sobre las capas.
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Gráficos automáticos y referencia a la capa utilizada.
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Si no hay datos suficientes, lo indica en lugar de inventar una respuesta.
+            </li>
+          </ul>
+          <div class="geo-actions">
+            <a href="/visor?chat=1" class="btn-primary">
+              Abrir chat
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+            </a>
+          </div>
+          <p class="geo-note">El chat se abre dentro del geoportal, en el panel “Asistente IA”.</p>
+        </div>
+        <div class="geo-visual geo-visual--chat" aria-hidden="true">
+          <div class="mock-chat">
+            <div class="mock-chat-head">
+              <span class="mock-chat-avatar">✦</span>
+              <div>
+                <strong>Asistente IA</strong>
+                <small>Consulta territorial</small>
+              </div>
+              <span class="mock-chat-status"><i></i> Activo</span>
+            </div>
+            <div class="mock-chat-body">
+              <div class="mock-msg mock-msg--user">¿Cuántas lagunas hay por comuna?</div>
+              <div class="mock-msg mock-msg--bot">
+                <p>La respuesta incluye el detalle por comuna y la capa de origen. Puedes revisar el mapa y descargar los registros.</p>
+                <div class="mock-mini-chart">
+                  <span style="--bar:68%"></span>
+                  <span style="--bar:86%"></span>
+                  <span style="--bar:49%"></span>
+                  <span style="--bar:64%"></span>
+                  <span style="--bar:37%"></span>
+                </div>
+                <div class="mock-source"><span class="mock-source-dot"></span> Fuente: capa de lagunas</div>
+                <div class="mock-chips"><span>Cifras</span><span>Gráfico</span><span>Fuente</span></div>
+              </div>
+              <div class="mock-typing"><i></i><i></i><i></i></div>
+            </div>
+            <div class="mock-chat-input">Escribe tu consulta… <span class="mock-send">→</span></div>
+          </div>
+          <span class="mock-caption">Ejemplo ilustrativo</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="section-pad section-tint" id="dashboard">
+    <div class="container">
+      <div class="geo-dash-head">
+        <div>
+          <span class="kicker">03 · Dashboard territorial</span>
+          <h2 class="section-title">Una vista ejecutiva para monitorear el territorio</h2>
+          <p class="section-subtitle">
+            Estamos diseñando un tablero que reúne los principales indicadores del geoportal en una sola vista. El objetivo es pasar de la consulta puntual al monitoreo continuo: qué datos están disponibles, cómo evolucionan y cómo se comparan las comunas.
+          </p>
+        </div>
+        <span class="geo-status is-soon"><i aria-hidden="true"></i>En desarrollo</span>
+      </div>
+
+      <div class="geo-dash-grid">
+        <div class="geo-dash-copy">
+          <p>
+            El dashboard tomará la misma base de datos del geoportal y la organizará en indicadores, series y comparaciones. No será un producto separado: será otra forma de mirar el mismo territorio.
+          </p>
+          <ul class="geo-dash-list">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Panorama de datos: capas publicadas, dimensiones y cobertura comunal.
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Indicadores hídricos: estaciones activas, variables disponibles y series de tiempo.
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Comparación territorial: brechas y rankings entre las 9 comunas de Atacama.
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>
+              Novedades y alertas: nuevas capas, actualizaciones y cambios en los datos.
+            </li>
+          </ul>
+          <div class="geo-dash-actions">
+            <a href="https://atacamawoll.cl/oportunidades.html#contacto" class="btn-primary">
+              Quiero participar en la validación
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="geo-dash-visual" aria-hidden="true">
+          <div class="mock-dash">
+            <div class="mock-dash-head">
+              <div>
+                <span class="mock-kicker">Dashboard territorial</span>
+                <strong>Panorama de datos</strong>
+              </div>
+              <span class="mock-badge">Vista conceptual</span>
+            </div>
+            <div class="mock-kpis">
+              <div class="mock-kpi">
+                <span>Capas publicadas</span>
+                <strong>+70</strong>
+                <small>9 dimensiones</small>
+              </div>
+              <div class="mock-kpi">
+                <span>Comunas</span>
+                <strong>9</strong>
+                <small>Cobertura regional</small>
+              </div>
+              <div class="mock-kpi">
+                <span>Productos</span>
+                <strong>3</strong>
+                <small>Un ecosistema</small>
+              </div>
+            </div>
+            <div class="mock-dash-body">
+              <div class="mock-panel">
+                <div class="mock-panel-head"><span>Cobertura por dimensión</span><span class="mock-panel-tag">Ejemplo</span></div>
+                <div class="mock-hbars">
+                  <div class="mock-hbar"><span>Agua</span><i style="--w:92%"></i></div>
+                  <div class="mock-hbar"><span>Clima</span><i style="--w:78%"></i></div>
+                  <div class="mock-hbar"><span>Agricultura</span><i style="--w:61%"></i></div>
+                  <div class="mock-hbar"><span>Minería</span><i style="--w:54%"></i></div>
+                  <div class="mock-hbar"><span>Riesgos</span><i style="--w:69%"></i></div>
+                </div>
+              </div>
+              <div class="mock-panel">
+                <div class="mock-panel-head"><span>Estado del ecosistema</span></div>
+                <div class="mock-status-list">
+                  <div><span class="mock-status-dot is-live"></span><span>Geoportal</span><b>Disponible</b></div>
+                  <div><span class="mock-status-dot is-live"></span><span>Chat IA</span><b>Disponible</b></div>
+                  <div><span class="mock-status-dot is-soon"></span><span>Dashboard</span><b>En desarrollo</b></div>
+                </div>
+                <div class="mock-update">Fuente: catálogo del geoportal</div>
+              </div>
+            </div>
+          </div>
+          <span class="mock-caption">Vista conceptual · no corresponde a datos definitivos</span>
+        </div>
+      </div>
+
+      <div class="geo-modules">
+        <article class="geo-module">
+          <span class="geo-module-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+          </span>
+          <h3>Panorama de datos</h3>
+          <p>Capas publicadas, dimensiones y cobertura comunal en una sola lectura.</p>
+        </article>
+        <article class="geo-module">
+          <span class="geo-module-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c3.5 4 6 7.2 6 10a6 6 0 0 1-12 0c0-2.8 2.5-6 6-10Z"/><path d="M9.5 14a2.5 2.5 0 0 0 2.5 2.5"/></svg>
+          </span>
+          <h3>Indicadores hídricos</h3>
+          <p>Estaciones activas, variables disponibles y series de tiempo.</p>
+        </article>
+        <article class="geo-module">
+          <span class="geo-module-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16v-5M12 16V7M17 16v-8"/></svg>
+          </span>
+          <h3>Comparación territorial</h3>
+          <p>Brechas y rankings entre las 9 comunas de la Región de Atacama.</p>
+        </article>
+        <article class="geo-module">
+          <span class="geo-module-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+          </span>
+          <h3>Novedades y alertas</h3>
+          <p>Nuevas capas, actualizaciones y cambios relevantes en los datos.</p>
+        </article>
+      </div>
+
+      <div class="geo-dash-note">
+        <p>El dashboard aún no está disponible. Estamos definiendo sus indicadores con usuarios y equipos técnicos. Si quieres participar en la validación, escríbenos.</p>
+        <div class="geo-actions">
+          <a href="https://atacamawoll.cl/oportunidades.html#contacto" class="btn-secondary">Contacto</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ECOSISTEMA -->
+  <section class="section-pad section-white" id="ecosistema">
+    <div class="container">
+      <div class="section-head">
+        <div>
+          <span class="kicker">Un mismo dato, tres niveles de uso</span>
+          <h2 class="section-title">Del mapa al indicador, sin duplicar la fuente</h2>
+          <p class="section-subtitle">
+            El geoportal y el chat comparten el catálogo de capas y la base de datos geoespacial. El dashboard se integrará a esa misma base: una actualización de datos se reflejará en todo el ecosistema.
+          </p>
+        </div>
+      </div>
+
+      <ol class="geo-flow">
+        <li class="geo-flow-step">
+          <span class="geo-flow-num">01 · Explora</span>
+          <span class="geo-flow-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z"/><path d="M9 3v15M15 6v15"/></svg>
+          </span>
+          <h3>Geoportal</h3>
+          <p>Identifica la capa, filtra por comuna o atributo y descarga los datos que necesitas.</p>
+          <span class="geo-flow-tag">Disponible</span>
+        </li>
+        <li class="geo-flow-step">
+          <span class="geo-flow-num">02 · Comprende</span>
+          <span class="geo-flow-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-8.4 8.4H7l-4 3v-7.1A8.4 8.4 0 0 1 11.4 3h1.2A8.4 8.4 0 0 1 21 11.5Z"/><path d="M8 10h8M8 14h5"/></svg>
+          </span>
+          <h3>Chat con IA</h3>
+          <p>Pregunta en lenguaje natural y obtén una respuesta con cifras, gráfico y fuente.</p>
+          <span class="geo-flow-tag">Disponible</span>
+        </li>
+        <li class="geo-flow-step">
+          <span class="geo-flow-num">03 · Monitorea</span>
+          <span class="geo-flow-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+          </span>
+          <h3>Dashboard</h3>
+          <p>Sigue los indicadores clave y compara el comportamiento de las comunas.</p>
+          <span class="geo-flow-tag is-soon">En desarrollo</span>
+        </li>
+      </ol>
+
+      <p class="geo-flow-note">
+        El geoportal y el chat ya están disponibles. El dashboard se integrará a la misma base de datos cuando cierre su etapa de diseño y validación.
+      </p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section-pad section-tint" id="faq">
+    <div class="container">
+      <div class="faq-layout">
+        <div class="faq-aside">
+          <span class="kicker">Preguntas frecuentes</span>
+          <h2 class="section-title">Antes de empezar</h2>
+          <p class="section-subtitle">
+            Si no encuentras lo que buscas, escríbenos desde la página de contacto.
+          </p>
+          <a href="https://atacamawoll.cl/oportunidades.html#contacto" class="btn-secondary">Contacto</a>
+        </div>
+
+        <div class="faq-list">
+          <details class="faq-item" open>
+            <summary class="faq-trigger">
+              ¿Qué es Geodatos?
+              <span class="faq-chevron" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </span>
+            </summary>
+            <div class="faq-panel">
+              <p>Es la sección del WOLL Atacama que reúne el geoportal, el chat con inteligencia artificial y el dashboard territorial. Funciona como puerta de entrada a los datos abiertos de la Región de Atacama.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-trigger">
+              ¿Necesito una cuenta para usarlo?
+              <span class="faq-chevron" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </span>
+            </summary>
+            <div class="faq-panel">
+              <p>No. El geoportal y el chat son de acceso abierto desde el navegador. El panel de administración es independiente y está reservado para la gestión de capas y contenidos.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-trigger">
+              ¿Puedo descargar los datos?
+              <span class="faq-chevron" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </span>
+            </summary>
+            <div class="faq-panel">
+              <p>Sí. La tabla de atributos permite exportar CSV y GeoJSON cuando la capa lo habilita. Al reutilizar los datos, cita la fuente original indicada en cada capa.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-trigger">
+              ¿El chat reemplaza al geoportal?
+              <span class="faq-chevron" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </span>
+            </summary>
+            <div class="faq-panel">
+              <p>No. El geoportal es para explorar y ver el territorio; el chat es para preguntar y obtener una síntesis con evidencia. Se complementan: el chat puede referenciar la capa y tú puedes revisarla en el mapa.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-trigger">
+              ¿Cuándo estará disponible el dashboard?
+              <span class="faq-chevron" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </span>
+            </summary>
+            <div class="faq-panel">
+              <p>Está en etapa de diseño y validación. Si quieres participar en la definición de indicadores, escríbenos desde la página de contacto.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary class="faq-trigger">
+              ¿Cómo reporto un error o solicito una capa?
+              <span class="faq-chevron" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </span>
+            </summary>
+            <div class="faq-panel">
+              <p>Escríbenos desde la página de contacto e indica la capa, la comuna y el problema observado. Si es posible, adjunta una captura de pantalla para facilitar la revisión.</p>
+            </div>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA FINAL -->
+  <section class="section-pad section-white">
+    <div class="container">
+      <div class="geo-cta">
+        <div>
+          <span class="kicker">Acceso y soporte</span>
+          <h2>¿Necesitas datos para tu proyecto o institución?</h2>
+          <p>El geoportal y el chat están disponibles hoy. Si necesitas apoyo con una capa, una consulta técnica o quieres explorar una colaboración, conversemos.</p>
+        </div>
+        <div class="geo-cta-actions">
+          <a href="/visor" class="btn-light">
+            Abrir geoportal
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
+          </a>
+          <a href="https://atacamawoll.cl/oportunidades.html#contacto" class="btn-outline-light">Contacto</a>
+        </div>
+        <p class="geo-cta-note">El dashboard territorial se encuentra en etapa de diseño. Su incorporación no modificará el acceso al geoportal ni al chat.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- FRANJA DE ALIADOS -->
+<section class="partners-strip" aria-label="Instituciones y alianzas">
+  <div class="partners-strip-inner">
+    <div class="partners-strip-head">
+      <p class="partners-strip-title">Ecosistema e Instituciones Participantes</p>
+    </div>
+    <div class="partners-strip-grid">
+      <div class="partner-slot" title="Corfo Atacama">
+        <img src="./assets/geodatos/partner-corfo.webp" alt="Corfo Atacama" width="220" height="64" loading="lazy" decoding="async">
+      </div>
+      <div class="partner-slot" title="Gobierno Regional de Atacama">
+        <img src="./assets/geodatos/partner-gore.webp" alt="Gobierno Regional de Atacama" width="220" height="64" loading="lazy" decoding="async">
+      </div>
+      <div class="partner-slot" title="Comité de Desarrollo Productivo Atacama">
+        <img src="./assets/geodatos/partner-comite.webp" alt="Comité de Desarrollo Productivo Atacama" width="220" height="64" loading="lazy" decoding="async">
+      </div>
+      <div class="partner-slot" title="Universidad de Atacama">
+        <img src="./assets/geodatos/partner-uda.webp" alt="Universidad de Atacama" width="220" height="64" loading="lazy" decoding="async">
+      </div>
+      <div class="partner-slot" title="Transforma Hídrico Atacama">
+        <img src="./assets/geodatos/partner-transformahidrico.webp" alt="Transforma Hídrico Atacama" width="220" height="64" loading="lazy" decoding="async">
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer" id="contacto">
+  <div class="footer-grid">
+    <div class="footer-col">
+      <span class="footer-brand-name">
+        <img src="./assets/geodatos/logo-atacamawoll.webp" alt="Atacamawoll" width="427" height="112" loading="lazy" decoding="async">
+      </span>
+      <p class="footer-brand-desc">
+        Living Lab Hídrico de la Región de Atacama. Inteligencia de datos, geodatos e innovación abierta para la seguridad hídrica sostenible.
+      </p>
+      <p class="footer-location">Región de Atacama, Chile</p>
+    </div>
+    <div class="footer-col">
+      <h3>Explorar</h3>
+      <ul>
+        <li><a href="https://atacamawoll.cl/">Inicio</a></li>
+        <li><a href="https://atacamawoll.cl/oportunidades.html">Oportunidades</a></li>
+        <li><a href="https://atacamawoll.cl/recursos.html">Recursos</a></li>
+        <li><a href="./">Geodatos</a></li>
+        <li><a href="https://atacamawoll.cl/proyectos-pilotos.html">Proyectos pilotos</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h3>Ecosistema</h3>
+      <ul>
+        <li><a href="/visor">Geoportal de datos</a></li>
+        <li><a href="/visor?chat=1">Chat con IA</a></li>
+        <li><a href="#faq">Preguntas Frecuentes</a></li>
+        <li><a href="https://atacamawoll.cl/#por-que-woll">¿Por qué Atacama?</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h3>Contáctanos aquí</h3>
+      <ul>
+        <li><a href="https://atacamawoll.cl/oportunidades.html#contacto">Envíanos tu mensaje</a></li>
+        <li><a href="https://atacamawoll.cl/proyectos-pilotos.html#contacto">Postular un desafío hídrico</a></li>
+        <li><a href="https://atacamawoll.cl/oportunidades.html#contacto">Soporte Técnico Geodatos</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div>© 2026 Atacamawoll. Todos los derechos reservados.</div>
+    <div>Powered by: Andes Value Research 2026</div>
+  </div>
+</footer>
+
+<script src="./js/geodatos.js" defer></script>
+
+</body>
+</html>

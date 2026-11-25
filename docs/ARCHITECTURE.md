@@ -737,7 +737,13 @@ La ingesta calcula los embeddings antes de abrir la transacción y reemplaza la 
 
 6. Frontend
 6.1. Entry point
-index.html — SPA principal.
+index.html — SPA principal (visor).
+
+geodatos.html — portada institucional del VPS. Nginx la sirve en `/` y el
+visor en `/visor`, sin cambiar la URL para que los recursos relativos del SPA
+resuelvan contra la raíz. Ver `docs/ops/geodatos-vps.md`.
+
+js/geodatos.js — menú móvil de la portada.
 
 help.html — manual.
 

@@ -64,9 +64,10 @@ Para correr en local:
 
 ```bash
 npx http-server -p 8099   # visor sin chat → http://localhost:8099
+npm run dev:site          # portada Geodatos + visor → http://localhost:8099
 npm run dev               # visor + chat + proxy Copernicus → http://localhost:3000
 npm run dev:api           # API Node persistente → http://localhost:3000 (sin frontend)
-npm run stack:up          # stack completo: PostgreSQL + API + Nginx → http://localhost:8080
+npm run stack:up          # stack completo: PostgreSQL + API + Nginx → http://localhost:8080 (portada)
 npm run stack:down        # baja el stack completo
 npm start                 # API Node sin watch (producción)
 npm run db:dump           # dump de Supabase (SOURCE_DATABASE_URL)
@@ -102,15 +103,17 @@ npm run db:down
 
 La base queda en `127.0.0.1:5432` (solo loopback). En el VPS no se publica:
 queda en la red interna de Compose. `npm run stack:up` levanta PostgreSQL, API y
-Nginx; el visor queda en `http://localhost:8080` y la API directa en
-`http://localhost:3000`. No corras `dev:api` y `stack:up` a la vez: ambos usan
-el puerto 3000. La demo Vercel + Supabase sigue disponible con `vercel dev`.
+Nginx; la portada Geodatos queda en `http://localhost:8080` y el visor en
+`http://localhost:8080/visor`. La API directa en `http://localhost:3000`.
+No corras `dev:api` y `stack:up` a la vez: ambos usan el puerto 3000. La demo
+Vercel + Supabase sigue disponible con `vercel dev`.
 
 ## Estructura del proyecto
 
 ```text
 woll_atacama_pruebas/
-├── index.html, help.html       # SPA y manual de ayuda
+├── index.html, help.html       # SPA (visor) y manual de ayuda
+├── geodatos.html               # Portada institucional del VPS (/)
 ├── api/*.js                    # Vercel Functions (adapters delgados para la demo)
 ├── docker/                     # Dockerfiles de PostgreSQL y API
 ├── deploy/nginx/               # Config TLS, dev, locations y proxy headers
@@ -149,7 +152,9 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 
 | Archivo / carpeta | Para qué sirve | Cuándo tocarlo |
 |---|---|---|
-| `index.html`, `help.html` | Entry point de la SPA y manual de ayuda | Cambios de shell, carga de scripts o UI global |
+| `index.html`, `help.html` | Entry point de la SPA (visor) y manual de ayuda | Cambios de shell, carga de scripts o UI global |
+| `geodatos.html`, `js/geodatos.js`, `assets/geodatos/` | Portada Geodatos del VPS: Nginx la sirve en `/` y el visor en `/visor` | Cambios de portada, enlaces o assets institucionales |
+| `docs/ops/geodatos-vps.md` | Checklist de publicación de la portada y del visor en el VPS | Antes de cambiar rutas o desplegar la portada |
 | `raster/`, `data/raster/`, `scripts/raster-*.mjs` | Ráster precalculado: tiles públicos, COG privado, publicación y retención | Publicar o actualizar un ráster (Sprint 49) |
 | `admin.html`, `css/admin.css`, `js/admin/` | Panel admin: configuración, capas, RAG, APIs, taxonomía, Chat IA, Demanda y auditoría | Configuración, chat, demanda o login |
 | `js/lib/`, `css/fonts/`, `css/fonts.css` | Librerías y tipografías vendorizadas (Leaflet, markercluster, flatpickr, DOMPurify, Chart.js) | Actualizar una versión o agregar un asset local (28-A) |

@@ -129,7 +129,8 @@ npm run stack:logs
 npm run stack:down
 ```
 
-- Visor: `http://localhost:8080` (Nginx).
+- Portada Geodatos: `http://localhost:8080` (Nginx).
+- Visor: `http://localhost:8080/visor` (Nginx).
 - API directa: `http://localhost:3000`.
 - Health: `http://localhost:8080/healthz` y `http://localhost:8080/nginx-health`.
 - No corras `npm run dev:api` al mismo tiempo: ambos usan el puerto 3000.
@@ -1516,8 +1517,8 @@ ssh woll-vps 'cd /srv/woll && deploy/vps/release.sh --with-chat'
 `deploy/vps/release.sh` aborta si el árbol del VPS tiene cambios locales o si
 el historial divergió; hace backup antes de migrar, aplica migraciones
 idempotentes, reconstruye `api`, `rag-worker` y `layer-worker`, recrea Nginx
-cuando cambió su configuración y termina con smoke de `/healthz` y
-`/api/config`.
+cuando cambió su configuración y termina con smoke de `/healthz`, `/api/config`,
+`/`, `/visor` y `/visor?chat=1`.
 
 **Reglas asociadas**
 
@@ -1547,6 +1548,25 @@ unión de `.env.local` con `POSTGRES_PASSWORD`, `DATABASE_URL_DOCKER` y
 `RAG_DATABASE_URL_DOCKER`, que los compose exigen para interpolación. Se crea
 una vez; si cambia `.env.local`, se regenera. Sin él, `podman-compose` falla
 con `required variable POSTGRES_PASSWORD is missing a value`.
+
+### 2.15. Portada Geodatos y visor en `/visor` (VPS)
+
+La portada del VPS es `geodatos.html`: Nginx la sirve en `/` con
+`index geodatos.html;`. El visor se sirve en `/visor` sin cambiar la URL, para
+que sus recursos relativos (`js/`, `css/`, `geojson/`) resuelvan contra la raíz.
+`/visor/` redirige a `/visor` y `/index.html` sigue disponible como acceso
+directo heredado.
+
+- Configuración: `deploy/nginx/woll.conf`, `woll.dev.conf` y
+  `woll-locations.conf`.
+- Previsualización local: `npm run dev:site` (portada en
+  `http://localhost:8099/` y visor en `http://localhost:8099/visor`).
+- La portada no usa CDN ni scripts inline: tipografía en
+  `css/fonts/plus-jakarta-sans-latin.woff2` y JS en `js/geodatos.js`.
+- `deploy/vps/release.sh` verifica `/`, `/visor` y `/visor?chat=1`.
+- Checklist de publicación: `docs/ops/geodatos-vps.md`.
+- Tests: `scripts/__tests__/geodatos-landing.test.js` y
+  `scripts/__tests__/chat-deep-link.test.js`.
 
 ## Verificación después de reemplazar
 

@@ -30,6 +30,7 @@ Si el código contradice el CONTRACT, no decidas por tu cuenta: señálalo y dej
 | Qué cambió y qué bugs se corrigieron | `docs/CHANGELOG.md` |
 | Spec de un sprint | `docs/specs/` |
 | Integraciones externas y proxy | `docs/integrations/` |
+| Publicar la portada Geodatos y el visor en el VPS | `docs/ops/geodatos-vps.md` |
 | Qué archivo hace qué (mapa rápido) | `README.md` → “Mapa de archivos y responsabilidades” |
 
 Antes de crear un archivo nuevo, comprobar si ya existe uno canónico en `README.md`/`ARCHITECTURE.md`. Un recurso, un lugar.

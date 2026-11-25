@@ -11,6 +11,10 @@
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1.js" }
+    { "source": "/api/(.*)", "destination": "/api/$1.js" },
+    { "source": "/visor", "destination": "/index.html" }
+  ],
+  "redirects": [
+    { "source": "/visor/", "destination": "/visor", "permanent": true }
   ]
 }

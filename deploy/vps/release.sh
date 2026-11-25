@@ -112,6 +112,24 @@ log "smoke: /healthz OK"
 wait_http /api/config || die "smoke: /api/config no respondió 200"
 log "smoke: /api/config OK"
 
+# Portada institucional y visor.
+wait_http / || die "smoke: / (Geodatos) no respondió 200"
+log "smoke: / (Geodatos) OK"
+HOME_HTML="$(curl -sk https://127.0.0.1/ || true)"
+case "$HOME_HTML" in
+  *"Geodatos"*) ;;
+  *) die "smoke: / no sirve la portada Geodatos" ;;
+esac
+wait_http /visor || die "smoke: /visor no respondió 200"
+log "smoke: /visor OK"
+VISOR_HTML="$(curl -sk https://127.0.0.1/visor || true)"
+case "$VISOR_HTML" in
+  *"Plataforma Woll Atacama"*) ;;
+  *) die "smoke: /visor no sirve el visor" ;;
+esac
+wait_http "/visor?chat=1" || die "smoke: /visor?chat=1 no respondió 200"
+log "smoke: /visor?chat=1 OK"
+
 if [ "$WITH_CHAT" -eq 1 ]; then
   log "smoke: chat"
   curl -sk --max-time 60 -X POST https://127.0.0.1/api/chat \

@@ -15,6 +15,7 @@
 import { sendMessage } from "../utils/chatAssistant.js";
 import { createContextLogger } from "../utils/logger.js";
 import { showResults, clearResults } from "../utils/chatMapUtils.js";
+import { shouldOpenChatFromUrl } from "../utils/chatDeepLink.js";
 import { appState } from "../store/appState.js";
 
 const log = createContextLogger("ChatUI");
@@ -706,6 +707,15 @@ export function initChatUI() {
   infoCloseBtn?.addEventListener("click", () => {
     infoModal?.close();
   });
+
+  // Enlaces externos: ?chat=1 o #chat abren el panel al cargar el visor.
+  // Si es la primera visita, cerramos el modal de bienvenida para que el
+  // chat quede visible sin un paso extra.
+  if (shouldOpenChatFromUrl(window.location.search, window.location.hash)) {
+    const welcomeModal = document.getElementById("welcomeModal");
+    if (welcomeModal?.open) welcomeModal.close();
+    openChat();
+  }
 
   log.log("UI de Chat IA inicializada");
 }

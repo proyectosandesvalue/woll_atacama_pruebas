@@ -48,6 +48,8 @@
 ## [Unreleased]
 
 ### Added
+- **Portada Geodatos en el VPS:** `geodatos.html` se sirve en `/` y el visor en `/visor` sin cambiar la URL. La marca del visor vuelve a `/`. Incluye `js/geodatos.js`, assets en `assets/geodatos/`, tipografía local `css/fonts/plus-jakarta-sans-latin.woff2` (OFL), smoke en `deploy/vps/release.sh` y checklist en `docs/ops/geodatos-vps.md`.
+- **Enlace directo al chat (sección Geodatos):** `?chat=1` o `#chat` abren el panel del asistente al cargar el visor. Helper puro `js/utils/chatDeepLink.js` y test `scripts/__tests__/chat-deep-link.test.js`.
 - **VPS de producción (26-H):** Ubuntu 24.04.4 en KVM (`136.243.227.86`), usuario `deploy` con sudo y llave, SSH solo por llave, UFW (22/80/443), fail2ban, Docker 29.10 con rotación de logs y `live-restore`. Stack Compose con `woll/postgres:17` (PostGIS 3.7 + pgvector 0.8.7), `woll/api`, `woll/rag-worker` y `woll/layer-worker` compilados en el servidor.
 - **Datos restaurados:** dump de Supabase del 2026-11-11 (`restore-local.sh`), baseline de migraciones 000-035 y aplicación de 036-055; `check:rpcs` 51/51. Snapshot de configuración `v1` publicado (158 capas).
 - **Backups (26-G):** timer diario 03:00 UTC, dump `-Fc -Z9` cifrado con GPG AES256, checksum y retención 14 días. Simulacro de restauración medido: RTO 53 s.
@@ -72,6 +74,7 @@
 - **Tests:** `scripts/__tests__/geo-utils.test.js` y `scripts/__tests__/security-frontend.test.js`.
 
 ### Changed
+- **Nginx del VPS:** `index geodatos.html;` en producción y desarrollo; `/visor` sirve el SPA sin cambiar la URL; `/visor/` redirige a `/visor`; el fallback de `/` apunta a `geodatos.html`.
 - **Seguridad frontend (28-A):** se retiraron unpkg, cdnjs, jsdelivr y Google Fonts de `index.html`, `help.html` y `admin.html`; los recursos viven en el repositorio. `security-frontend.test.js` verifica que no haya CDN y que existan los assets locales. Verificado en navegador: visor, ayuda y panel cargan fuentes y librerías locales sin violaciones CSP.
 - **Documentación (22-F):** auditoría de coherencia entre README, ARCHITECTURE, DEV_GUIDE, CHANGELOG, ROADMAP, AGENTS y specs. Se alinearon 46-C, 47-D, 49 y 50, se corrigieron estados y el mapa de archivos.
 - **Login del panel sin TOTP:** se retiró el código TOTP del formulario de ingreso; queda usuario + contraseña con scrypt, bloqueo por intentos y auditoría. La generación/verificación TOTP se conserva para cambios de contraseña u otros flujos sensibles y puede reactivarse con `ADMIN_TOTP_REQUIRED=1`.
