@@ -30,6 +30,17 @@ LOG_TAG="woll-ingest-${SOURCE}"
 
 cd "$COMPOSE_DIR"
 
+notify_failure() {
+  local code=$?
+  local cmd="${WOLL_NOTIFY_CMD:-/srv/woll/deploy/vps/notify-alert.sh}"
+  if [ -x "$cmd" ]; then
+    "$cmd" "Ingesta ${SOURCE} falló" \
+      "Código ${code}. Revisa: journalctl -u woll-ingest@${SOURCE}.service" || true
+  fi
+  exit "$code"
+}
+trap notify_failure ERR
+
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
   echo "[${LOG_TAG}] ya hay una ingesta en ejecución; se omite."
