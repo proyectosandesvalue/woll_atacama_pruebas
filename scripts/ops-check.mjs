@@ -97,7 +97,7 @@ async function main() {
     application_name: env.PG_APPLICATION_NAME || "woll-ops",
     connectionTimeoutMillis: 5000,
   });
-  const db = { query: (sql) => pool.query(sql) };
+  const db = { query: (sql, params = []) => pool.query(sql, params) };
 
   const metrics = await collectChecks({
     env,
