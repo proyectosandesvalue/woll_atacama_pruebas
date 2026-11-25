@@ -1,7 +1,8 @@
 # Geodatos como portada del VPS
 
 > Destino: `https://visor.atacamawoll.cl/` (IP `136.243.227.86`).
-> Última revisión: 2026-11-25.
+> Última revisión: 2026-11-25. Publicado con TLS real; renovación
+> automática vía contenedor `certbot`.
 > Checklist operativo para publicar la portada `geodatos.html` en `/` y el
 > visor en `/visor`. No se edita nada directamente en el VPS: todo entra por
 > `deploy/vps/release.sh`.
@@ -48,11 +49,11 @@ la demo/staging, pero la ruta oficial es la del VPS.
 
 ## 3. Antes de tocar el VPS
 
-- [ ] DNS: registro `A visor.atacamawoll.cl → 136.243.227.86`.
-- [ ] Certificado TLS para `visor.atacamawoll.cl` con
-      `certbot certonly --webroot --cert-name woll`.
-- [ ] `DOMAIN=visor.atacamawoll.cl` y `CERTBOT_EMAIL` en `.env`.
-- [ ] `ALLOWED_ORIGINS` incluye `https://visor.atacamawoll.cl`.
+- [x] DNS: registro `A visor.atacamawoll.cl → 136.243.227.86` (2026-11-25).
+- [x] Certificado TLS para `visor.atacamawoll.cl` con
+      `certbot certonly --webroot --cert-name woll` (Let's Encrypt, vence 2027-02-23).
+- [x] `DOMAIN=visor.atacamawoll.cl` y `CERTBOT_EMAIL` en `.env`.
+- [x] `ALLOWED_ORIGINS=https://visor.atacamawoll.cl`.
 - [ ] El sitio principal `atacamawoll.cl` actualizará su enlace “Geodatos” a
       `https://visor.atacamawoll.cl/` (no al visor de Vercel).
 - [ ] Confirmar que el visor de Vercel queda como demo/staging y no como

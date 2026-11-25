@@ -1283,6 +1283,16 @@ preguntas pendientes para triage operativo.
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
+### 2026-11-25
+- ✅ **Portada Geodatos en el VPS:** `/` sirve `geodatos.html`, `/visor` el
+  visor y `/visor/` redirige con 301; smoke de `/`, `/visor` y
+  `/visor?chat=1` en `release.sh`.
+- ✅ **TLS real:** certificado Let's Encrypt para `visor.atacamawoll.cl`
+  (vence 2027-02-23), HTTP → HTTPS, HSTS y renovación cada 12 h con el
+  contenedor `certbot`; `renew --dry-run` exitoso.
+- ⏳ **Pendiente:** actualizar el navbar de WordPress al nuevo dominio,
+  elegir SiteGround SMTP o Resend, fases 3-4 de 26-M, 31-C/D y offsite.
+
 ### 2026-11-24
 - ✅ **18-B (embeddings Vertex):** `gemini-embedding-001` a 1024 dims en
   `us-central1`, misma service account que el LLM. Local con ADC y VPS con el

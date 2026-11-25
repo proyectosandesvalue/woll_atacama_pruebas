@@ -197,3 +197,18 @@ en el servidor y se documentan en `docs/CHANGELOG.md`.
   Se agregó `UMask=0077`.
 - **26-D:** se agregó el bloque `types` de Nginx para GeoJSON/MVT; sin él la
   compresión de GeoJSON no se aplicaba.
+
+
+## 10. TLS real y renovación (2026-11-25)
+
+- DNS `A visor.atacamawoll.cl → 136.243.227.86` en SiteGround (TTL 5 min).
+- Certificado Let's Encrypt con `certbot certonly --webroot -w
+  /var/www/certbot -d visor.atacamawoll.cl --cert-name woll`; vence el
+  2027-02-23. Reemplaza el autofirmado de la puesta en marcha.
+- `certbot renew --dry-run` exitoso; el contenedor `certbot` (profile `tls`)
+  corre la renovación cada 12 h y Nginx recarga con los archivos del volumen
+  `woll_letsencrypt`.
+- `DOMAIN`, `CERTBOT_EMAIL` y `ALLOWED_ORIGINS=https://visor.atacamawoll.cl`
+  en `.env`; API recreada.
+- Verificado: `/` sirve Geodatos, `/visor` el visor, `/visor/` 301, HTTP 301 a
+  HTTPS, HSTS y cadena Let's Encrypt válida.
