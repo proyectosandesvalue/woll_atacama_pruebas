@@ -2,7 +2,7 @@
  * Envío de emails transaccionales (Sprint 26-M).
  *
  * Un solo punto de entrada para códigos de login, alertas y avisos de estado.
- * El proveedor se elige con EMAIL_PROVIDER (`resend` o `console`).
+ * El proveedor se elige con EMAIL_PROVIDER (`resend`, `smtp` o `console`).
  *
  * Seguridad:
  *   - No se registran códigos, API keys ni el destinatario completo.
@@ -12,6 +12,7 @@ import { loginCodeTemplate } from "./templates/login-code.js";
 import { alertTemplate, statusTemplate } from "./templates/alert.js";
 import { createConsoleProvider } from "./providers/console.js";
 import { createResendProvider } from "./providers/resend.js";
+import { createSmtpProvider } from "./providers/smtp.js";
 
 const TEMPLATES = {
   "login-code": loginCodeTemplate,
@@ -26,14 +27,18 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
  */
 export function getEmailConfig(env = process.env) {
   const provider = String(env.EMAIL_PROVIDER || "console").trim();
-  if (!["resend", "console"].includes(provider)) {
+  if (!["resend", "smtp", "console"].includes(provider)) {
     throw new Error(
-      `EMAIL_PROVIDER no soportado: ${provider}. Válidos: resend, console.`
+      `EMAIL_PROVIDER no soportado: ${provider}. Válidos: resend, smtp, console.`
     );
+  }
+  const from = String(env.EMAIL_FROM || "no-reply@localhost").trim();
+  if (provider === "smtp" && from.endsWith("@localhost")) {
+    throw new Error("Falta EMAIL_FROM para EMAIL_PROVIDER=smtp.");
   }
   return {
     provider,
-    from: String(env.EMAIL_FROM || "no-reply@localhost").trim(),
+    from,
     replyTo: String(env.EMAIL_REPLY_TO || "").trim() || null,
     appName: String(env.EMAIL_APP_NAME || "WOLL Atacama").trim(),
   };
@@ -71,7 +76,9 @@ export async function sendEmail({
   const provider =
     config.provider === "resend"
       ? createResendProvider({ env, fetchImpl })
-      : createConsoleProvider({ env, logger });
+      : config.provider === "smtp"
+        ? createSmtpProvider({ env })
+        : createConsoleProvider({ env, logger });
 
   const result = await provider.send({
     to,

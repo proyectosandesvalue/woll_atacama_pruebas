@@ -65,6 +65,7 @@
     "@vercel/functions": "^3.10.1",
     "csv-parser": "^3.2.1",
     "google-auth-library": "^11.3.0",
+    "nodemailer": "^10.6.1",
     "pg": "^8.23.1"
   },
   "overrides": {
