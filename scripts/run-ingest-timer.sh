@@ -11,7 +11,7 @@
 #
 # Sprint 26-J.
 
-set -euo pipefail
+set -Eeuo pipefail
 
 SOURCE="${1:-}"
 case "$SOURCE" in
