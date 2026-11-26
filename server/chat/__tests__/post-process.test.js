@@ -84,6 +84,30 @@ test("collectRequestedLayerIds encuentra las capas nombradas y excluye límites"
       dimension: "Planificación",
       attributes: ["NOM_COMUNA"],
     },
+    {
+      layer_id: "plantas_desaladoras_puntos",
+      display_name: "Plantas Desaladoras Puntos",
+      dimension: "Agua",
+      attributes: ["Nombre"],
+    },
+    {
+      layer_id: "desaladoras_acueductos",
+      display_name: "Desaladoras y acueductos",
+      dimension: "Agua",
+      attributes: ["Nombre"],
+    },
+    {
+      layer_id: "catastro_plantas_embalaje",
+      display_name: "Catastro de plantas de embalaje",
+      dimension: "Agricultura",
+      attributes: ["Nombre"],
+    },
+    {
+      layer_id: "plantas_aguas_servidas",
+      display_name: "Plantas de aguas servidas",
+      dimension: "Agua",
+      attributes: ["Nombre"],
+    },
   ];
 
   const ids = collectRequestedLayerIds(
@@ -92,4 +116,40 @@ test("collectRequestedLayerIds encuentra las capas nombradas y excluye límites"
   );
 
   assert.deepEqual(ids.slice().sort(), ["humedales", "lagunas_embalses"]);
+});
+
+test("collectRequestedLayerIds no agrega capas solo por una palabra genérica", () => {
+  const catalog = [
+    {
+      layer_id: "plantas_desaladoras_puntos",
+      display_name: "Plantas Desaladoras Puntos",
+      dimension: "Agua",
+      attributes: ["Nombre"],
+    },
+    {
+      layer_id: "desaladoras_acueductos",
+      display_name: "Desaladoras y acueductos",
+      dimension: "Agua",
+      attributes: ["Nombre"],
+    },
+    {
+      layer_id: "catastro_plantas_embalaje",
+      display_name: "Catastro de plantas de embalaje",
+      dimension: "Agricultura",
+      attributes: ["Nombre"],
+    },
+    {
+      layer_id: "plantas_aguas_servidas",
+      display_name: "Plantas de aguas servidas",
+      dimension: "Agua",
+      attributes: ["Nombre"],
+    },
+  ];
+
+  const ids = collectRequestedLayerIds(
+    "¿Dónde están las plantas desaladoras?",
+    catalog
+  );
+
+  assert.deepEqual(ids, ["plantas_desaladoras_puntos"]);
 });

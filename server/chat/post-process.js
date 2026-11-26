@@ -23,6 +23,36 @@ const RETRIEVAL_EXCLUDE = new Set([
   "limite_comunal_linea",
 ]);
 
+const RETRIEVAL_STOPWORDS = new Set([
+  "de", "del", "la", "las", "el", "los", "y", "o", "en", "por", "para",
+  "con", "sin", "al", "un", "una", "unos", "unas", "que", "cual",
+  "cuales", "donde", "estan", "esta", "hay", "muestra", "muestrame",
+  "lista", "listar", "ver", "quiero", "necesito", "sobre", "comuna",
+  "comunas", "provincia", "provincias", "region", "regiones", "atacama",
+  "chile",
+]);
+
+const GEOMETRY_TOKENS = new Set([
+  "punto", "poligono", "linea", "registro", "capa", "mapa",
+]);
+
+function tokenize(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.replace(/(es|s)$/, ""))
+    .filter(
+      (word) =>
+        word.length >= 3 &&
+        !RETRIEVAL_STOPWORDS.has(word) &&
+        !GEOMETRY_TOKENS.has(word)
+    );
+}
+
 /**
  * Capas nombradas en la traza de tools, en orden y sin duplicados.
  * Incluye layer_id, layer_id_source y layer_id_targets.
@@ -73,12 +103,29 @@ export function collectRequestedLayerIds(userText, catalog) {
     " "
   );
   const { layers } = retrieveLayers(retrievalText, catalog, 6);
-  return layers
-    .filter(
-      (item) =>
-        item.score >= 3 && !RETRIEVAL_EXCLUDE.has(item.layer_id)
-    )
-    .map((item) => item.layer_id);
+  const catalogById = new Map(catalog.map((layer) => [layer.layer_id, layer]));
+  const textTokens = new Set(tokenize(userText));
+  const requested = [];
+
+  for (const item of layers) {
+    if (item.score < 3 || RETRIEVAL_EXCLUDE.has(item.layer_id)) continue;
+
+    const layer = catalogById.get(item.layer_id);
+    if (!layer) continue;
+
+    const candidates = [
+      tokenize(layer.display_name || ""),
+      tokenize(String(layer.layer_id || "").replace(/_/g, " ")),
+    ].filter((tokens) => tokens.length > 0);
+
+    const matches = candidates.some((tokens) =>
+      tokens.every((token) => textTokens.has(token))
+    );
+
+    if (matches) requested.push(item.layer_id);
+  }
+
+  return requested;
 }
 
 export function shouldFetchFeatures(userText, ctx) {
