@@ -31,6 +31,11 @@ import {
   verifyChallenge,
 } from "../admin/challenges.js";
 import { sendEmail } from "../notifications/index.js";
+import {
+  createOrRotateDevice,
+  findValidDevice,
+  serializeDeviceCookie,
+} from "../admin/devices.js";
 
 const MAX_USERNAME = 80;
 const MAX_PASSWORD = 256;
@@ -142,7 +147,14 @@ async function notifyLoginBurst(ctx, db, username) {
   }
 }
 
-async function issueSession(ctx, db, user, secret, detail = {}) {
+async function issueSession(
+  ctx,
+  db,
+  user,
+  secret,
+  detail = {},
+  extraCookies = []
+) {
   const session = createSession({ user: user.username, secret });
   try {
     await db.query(
@@ -158,6 +170,10 @@ async function issueSession(ctx, db, user, secret, detail = {}) {
     ...detail,
   });
 
+  const sessionCookie = serializeSessionCookie(
+    session.token,
+    cookieOptions(ctx.env)
+  );
   return json(
     200,
     {
@@ -167,7 +183,9 @@ async function issueSession(ctx, db, user, secret, detail = {}) {
       csrfToken: session.csrf,
     },
     {
-      "Set-Cookie": serializeSessionCookie(session.token, cookieOptions(ctx.env)),
+      "Set-Cookie": extraCookies.length
+        ? [sessionCookie, ...extraCookies]
+        : sessionCookie,
     }
   );
 }
@@ -276,6 +294,22 @@ export async function handleAdminLogin(
   }
 
   if (mode === "email") {
+    const userAgent = ctx.req?.headers?.["user-agent"];
+    const device = await findValidDevice({
+      db,
+      req: ctx.req,
+      username: user.username,
+      ip: ctx.ip,
+      userAgent,
+      secret,
+    }).catch(() => ({ ok: false }));
+
+    const country = ctx.country ? String(ctx.country).toUpperCase() : null;
+    const countryOk = !country || country === "CL";
+    if (device.ok && countryOk) {
+      return issueSession(ctx, db, user, secret, { method: "device" });
+    }
+
     const email = String(user.email || "").trim();
     if (!email.includes("@")) {
       console.error(`[admin] usuario ${username} sin correo para 2FA.`);
@@ -426,7 +460,24 @@ export async function handleAdminLoginVerify(
   }
 
   clearLoginFailures(key);
-  return issueSession(ctx, db, user, secret, { method: "email" });
+
+  const device = await createOrRotateDevice({
+    db,
+    req: ctx.req,
+    username: user.username,
+    ip: ctx.ip,
+    userAgent: ctx.req?.headers?.["user-agent"],
+    secret,
+  }).catch((err) => {
+    console.error("[admin] no se pudo guardar el dispositivo:", err?.message || err);
+    return null;
+  });
+
+  const extraCookies = device
+    ? [serializeDeviceCookie(device, cookieOptions(ctx.env))]
+    : [];
+
+  return issueSession(ctx, db, user, secret, { method: "email" }, extraCookies);
 }
 
 /**

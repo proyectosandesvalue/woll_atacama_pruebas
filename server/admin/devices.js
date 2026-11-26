@@ -169,7 +169,7 @@ export async function findValidDevice({
   now = Date.now(),
 }) {
   const current = getDeviceCookie(req);
-  if (!current) return { ok: false };
+  if (!current) return { ok: false, reason: "no_cookie" };
 
   const rows = await db.query(
     `select id, username, token_hash, ip_prefix_hash, user_agent_hash,
@@ -179,16 +179,16 @@ export async function findValidDevice({
     [current.id]
   );
   const row = Array.isArray(rows) ? rows[0] : rows?.rows?.[0];
-  if (!row) return { ok: false };
-  if (row.username !== username) return { ok: false };
-  if (row.revoked_at) return { ok: false };
-  if (new Date(row.expires_at).getTime() <= now) return { ok: false };
+  if (!row) return { ok: false, reason: "not_found" };
+  if (row.username !== username) return { ok: false, reason: "user" };
+  if (row.revoked_at) return { ok: false, reason: "revoked" };
+  if (new Date(row.expires_at).getTime() <= now) return { ok: false, reason: "expired" };
 
   const tokenHash = hashValue(current.token, secret);
-  if (!tokenMatches(tokenHash, row.token_hash)) return { ok: false };
-  if (row.ip_prefix_hash !== hashValue(ipPrefix(ip), secret)) return { ok: false };
+  if (!tokenMatches(tokenHash, row.token_hash)) return { ok: false, reason: "token" };
+  if (row.ip_prefix_hash !== hashValue(ipPrefix(ip), secret)) return { ok: false, reason: "prefix" };
   if (row.user_agent_hash !== hashValue(String(userAgent || ""), secret)) {
-    return { ok: false };
+    return { ok: false, reason: "agent" };
   }
 
   await db.query(

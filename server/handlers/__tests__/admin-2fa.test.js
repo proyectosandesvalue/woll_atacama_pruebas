@@ -8,6 +8,7 @@ import {
   recordLoginFailure,
 } from "../../admin/auth.js";
 import { _resetSendLimiterForTests } from "../../admin/challenges.js";
+import { createOrRotateDevice } from "../../admin/devices.js";
 import {
   _resetBurstNotifierForTests,
   handleAdminLogin,
@@ -23,10 +24,12 @@ const ENV = {
 
 function makeDB(user) {
   const challenges = new Map();
+  const devices = new Map();
   const audits = [];
   return {
     pool: { query: async () => [] },
     challenges,
+    devices,
     audits,
     query: async (sql, params = []) => {
       if (sql.includes("FROM admin.admin_users")) return user ? [user] : [];
@@ -57,6 +60,35 @@ function makeDB(user) {
         if (row) row.consumed_at = new Date();
         return [];
       }
+      if (sql.includes("insert into admin.trusted_devices")) {
+        const [id, username, tokenHash, prefixHash, agentHash, expiresAt] = params;
+        devices.set(id, {
+          id,
+          username,
+          token_hash: tokenHash,
+          ip_prefix_hash: prefixHash,
+          user_agent_hash: agentHash,
+          expires_at: expiresAt,
+          revoked_at: null,
+        });
+        return [];
+      }
+      if (sql.includes("from admin.trusted_devices")) {
+        const row = devices.get(params[0]);
+        return row ? [row] : [];
+      }
+      if (sql.includes("update admin.trusted_devices set token_hash")) {
+        const row = devices.get(params[0]);
+        if (row) {
+          row.token_hash = params[1];
+          row.ip_prefix_hash = params[2];
+          row.user_agent_hash = params[3];
+          row.expires_at = params[4];
+          row.revoked_at = null;
+        }
+        return [];
+      }
+      if (sql.includes("update admin.trusted_devices set last_seen")) return [];
       if (sql.includes("UPDATE admin.admin_users SET last_login_at")) return [];
       if (sql.includes("INSERT INTO admin.audit_log")) {
         audits.push({ sql, params });
@@ -145,7 +177,9 @@ test("verify con el código correcto crea sesión y consume el desafío", async 
   assert.equal(verify.status, 200);
   assert.equal(verify.body.role, "owner");
   assert.ok(verify.body.csrfToken);
-  assert.match(verify.headers["Set-Cookie"], /HttpOnly/);
+  const cookies = [].concat(verify.headers["Set-Cookie"]).join("; ");
+  assert.match(cookies, /HttpOnly/);
+  assert.match(cookies, /woll_device=/);
   assert.ok(db.challenges.get(challengeId).consumed_at);
 });
 
@@ -211,4 +245,54 @@ test("la ráfaga se detecta a nivel global", () => {
   const burst = loginFailureBurst();
   assert.equal(burst.burst, true);
   assert.ok(burst.count >= 10);
+});
+
+test("un dispositivo válido evita el código; otro user-agent lo exige", async () => {
+  _resetLoginLimiterForTests();
+  _resetSendLimiterForTests();
+  const db = makeDB(user2fa());
+  const device = await createOrRotateDevice({
+    db,
+    req: { headers: {} },
+    username: "dueno@example.com",
+    ip: "203.0.113.9",
+    userAgent: "UA-A",
+    secret: ENV.ADMIN_SESSION_SECRET,
+  });
+  let sent = 0;
+  const res = await handleAdminLogin(
+    {
+      body: { username: "dueno@example.com", password: PASSWORD },
+      env: ENV,
+      ip: "203.0.113.9",
+      country: "CL",
+      req: {
+        headers: {
+          cookie: `woll_device=${device.id}.${device.token}`,
+          "user-agent": "UA-A",
+        },
+      },
+    },
+    { getDB: async () => db, sendEmailImpl: async () => { sent += 1; } }
+  );
+  assert.equal(res.status, 200);
+  assert.equal(sent, 0);
+
+  const changed = await handleAdminLogin(
+    {
+      body: { username: "dueno@example.com", password: PASSWORD },
+      env: ENV,
+      ip: "203.0.113.9",
+      country: "CL",
+      req: {
+        headers: {
+          cookie: `woll_device=${device.id}.${device.token}`,
+          "user-agent": "UA-B",
+        },
+      },
+    },
+    { getDB: async () => db, sendEmailImpl: async () => { sent += 1; } }
+  );
+  assert.equal(changed.status, 202);
+  assert.equal(sent, 1);
 });
