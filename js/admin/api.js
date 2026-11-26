@@ -65,6 +65,13 @@ export const api = {
       method: "POST",
       body: { challenge_id: challengeId, code },
     }),
+  forgotPassword: (email) =>
+    request("/api/admin/password/forgot", { method: "POST", body: { email } }),
+  resetPassword: (token, password) =>
+    request("/api/admin/password/reset", {
+      method: "POST",
+      body: { token, password },
+    }),
   logout: () => request("/api/admin/logout", { method: "POST", body: {} }),
   session: () => request("/api/admin/session"),
   config: () => request("/api/admin/config"),

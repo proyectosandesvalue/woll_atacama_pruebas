@@ -17,6 +17,10 @@ import {
   handleAdminSettings,
   handleAdminUnavailable,
 } from "../handlers/admin.js";
+import {
+  handlePasswordForgot,
+  handlePasswordReset,
+} from "../handlers/admin-password.js";
 
 const jsonBody = { body: "json", bodyLimit: 10_000 };
 
@@ -26,6 +30,18 @@ export const adminRoutes = [
     path: "/api/admin/login",
     ...jsonBody,
     handler: (ctx) => handleAdminLogin(ctx, { getDB: ctx.getDB }),
+  },
+  {
+    method: "POST",
+    path: "/api/admin/password/forgot",
+    ...jsonBody,
+    handler: (ctx) => handlePasswordForgot(ctx, { getDB: ctx.getDB }),
+  },
+  {
+    method: "POST",
+    path: "/api/admin/password/reset",
+    ...jsonBody,
+    handler: (ctx) => handlePasswordReset(ctx, { getDB: ctx.getDB }),
   },
   {
     method: "POST",

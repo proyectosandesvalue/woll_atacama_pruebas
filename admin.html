@@ -64,6 +64,41 @@
           Ingresar
         </button>
         <p id="loginError" class="form-error" role="alert" hidden></p>
+        <p class="login-help">
+          <a href="#" id="forgotLink">¿Olvidaste tu contraseña?</a>
+        </p>
+      </form>
+
+      <form id="forgotForm" novalidate hidden>
+        <p class="muted">
+          Escribe el correo de tu cuenta. Si existe, recibirás un enlace
+          para restablecer la contraseña.
+        </p>
+        <label for="forgotEmail">Correo</label>
+        <input id="forgotEmail" name="email" type="email" maxlength="160"
+               autocomplete="email" required />
+        <button id="forgotSubmit" class="btn btn-primary" type="submit">
+          Enviar enlace
+        </button>
+        <button id="forgotCancel" class="btn btn-secondary" type="button">
+          Volver
+        </button>
+        <p id="forgotMessage" class="form-status" role="status" hidden></p>
+      </form>
+
+      <form id="resetForm" novalidate hidden>
+        <p class="muted">Define una contraseña nueva (mínimo 8 caracteres).</p>
+        <label for="resetPassword">Nueva contraseña</label>
+        <input id="resetPassword" type="password" autocomplete="new-password"
+               minlength="8" maxlength="256" required />
+        <label for="resetPassword2">Repite la contraseña</label>
+        <input id="resetPassword2" type="password" autocomplete="new-password"
+               minlength="8" maxlength="256" required />
+        <button id="resetSubmit" class="btn btn-primary" type="submit">
+          Guardar contraseña
+        </button>
+        <p id="resetError" class="form-error" role="alert" hidden></p>
+        <p id="resetOk" class="form-status" role="status" hidden></p>
       </form>
 
       <form id="loginCodeForm" novalidate hidden>

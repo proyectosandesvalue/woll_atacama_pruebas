@@ -11,6 +11,8 @@
 const PUBLIC_ADMIN_PATHS = new Set([
   "/api/admin/login",
   "/api/admin/login/verify",
+  "/api/admin/password/forgot",
+  "/api/admin/password/reset",
   "/api/admin/logout",
   "/api/admin/session",
 ]);

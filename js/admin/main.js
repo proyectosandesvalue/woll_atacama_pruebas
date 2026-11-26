@@ -19,6 +19,7 @@ const VIEW_META = {
 };
 
 let pendingChallengeId = null;
+let pendingResetToken = null;
 
 const state = {
   view: "config",
@@ -304,7 +305,39 @@ function showLogin() {
   $("#loginForm").hidden = false;
   $("#loginCodeForm").hidden = true;
   $("#loginCodeError").hidden = true;
+  $("#forgotForm").hidden = true;
+  $("#resetForm").hidden = true;
+  $("#forgotMessage").hidden = true;
+  $("#resetError").hidden = true;
+  $("#resetOk").hidden = true;
   $("#adminUsername")?.focus();
+}
+
+function showForgot() {
+  $("#loginTitle").textContent = "Recuperar contraseña";
+  $("#loginForm").hidden = true;
+  $("#loginCodeForm").hidden = true;
+  $("#resetForm").hidden = true;
+  $("#forgotForm").hidden = false;
+  $("#forgotMessage").hidden = true;
+  $("#forgotEmail").value = "";
+  $("#forgotEmail").focus();
+}
+
+function showReset() {
+  $("#adminView").hidden = true;
+  $("#loginView").hidden = false;
+  setCsrfToken(null);
+  $("#loginTitle").textContent = "Nueva contraseña";
+  $("#loginForm").hidden = true;
+  $("#loginCodeForm").hidden = true;
+  $("#forgotForm").hidden = true;
+  $("#resetForm").hidden = false;
+  $("#resetError").hidden = true;
+  $("#resetOk").hidden = true;
+  $("#resetPassword").value = "";
+  $("#resetPassword2").value = "";
+  $("#resetPassword").focus();
 }
 
 function showLoginCode(challengeId) {
@@ -3076,6 +3109,63 @@ function bindEvents() {
 
   $("#loginCodeCancel")?.addEventListener("click", () => showLogin());
 
+  $("#forgotLink")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    showForgot();
+  });
+  $("#forgotCancel")?.addEventListener("click", () => showLogin());
+  $("#forgotForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = $("#forgotSubmit");
+    const email = $("#forgotEmail").value.trim();
+    button.disabled = true;
+    button.textContent = "Enviando…";
+    try {
+      await api.forgotPassword(email);
+    } catch {
+      // Respuesta genérica a propósito.
+    } finally {
+      button.disabled = false;
+      button.textContent = "Enviar enlace";
+      $("#forgotMessage").textContent =
+        "Si el correo existe, recibirás un enlace para restablecer la contraseña. Revisa también spam.";
+      $("#forgotMessage").hidden = false;
+    }
+  });
+  $("#resetForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = $("#resetSubmit");
+    const password = $("#resetPassword").value;
+    const repeat = $("#resetPassword2").value;
+    $("#resetError").hidden = true;
+    $("#resetOk").hidden = true;
+    if (password.length < 8) {
+      $("#resetError").textContent = "La contraseña debe tener al menos 8 caracteres.";
+      $("#resetError").hidden = false;
+      return;
+    }
+    if (password !== repeat) {
+      $("#resetError").textContent = "Las contraseñas no coinciden.";
+      $("#resetError").hidden = false;
+      return;
+    }
+    button.disabled = true;
+    button.textContent = "Guardando…";
+    try {
+      await api.resetPassword(pendingResetToken, password);
+      $("#resetOk").textContent = "Contraseña actualizada. Ya puedes ingresar.";
+      $("#resetOk").hidden = false;
+      pendingResetToken = null;
+      setTimeout(showLogin, 1800);
+    } catch (err) {
+      $("#resetError").textContent = err.message;
+      $("#resetError").hidden = false;
+    } finally {
+      button.disabled = false;
+      button.textContent = "Guardar contraseña";
+    }
+  });
+
   for (const button of document.querySelectorAll(".nav-item")) {
     button.addEventListener("click", () => selectView(button.dataset.view));
   }
@@ -3433,6 +3523,15 @@ async function boot() {
   bindEvents();
   bindHelpPopovers();
   bindFormDrawers();
+
+  const resetToken = new URLSearchParams(window.location.search).get("reset");
+  if (resetToken) {
+    pendingResetToken = resetToken;
+    window.history.replaceState({}, "", window.location.pathname);
+    showReset();
+    return;
+  }
+
   try {
     const session = await api.session();
     setCsrfToken(session.csrfToken);

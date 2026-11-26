@@ -10,12 +10,14 @@
  */
 import { loginCodeTemplate } from "./templates/login-code.js";
 import { alertTemplate, statusTemplate } from "./templates/alert.js";
+import { passwordResetTemplate } from "./templates/password-reset.js";
 import { createConsoleProvider } from "./providers/console.js";
 import { createResendProvider } from "./providers/resend.js";
 import { createSmtpProvider } from "./providers/smtp.js";
 
 const TEMPLATES = {
   "login-code": loginCodeTemplate,
+  "password-reset": passwordResetTemplate,
   alert: alertTemplate,
   status: statusTemplate,
 };
@@ -47,7 +49,7 @@ export function getEmailConfig(env = process.env) {
 /**
  * @param {{
  *   to: string,
- *   template: "login-code"|"alert"|"status",
+ *   template: "login-code"|"password-reset"|"alert"|"status",
  *   data?: object,
  *   env?: NodeJS.ProcessEnv,
  *   fetchImpl?: typeof fetch,

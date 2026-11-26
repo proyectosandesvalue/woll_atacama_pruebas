@@ -116,6 +116,12 @@ async function main() {
         "UPDATE admin.admin_users SET activo = false, updated_by = 'cli' WHERE username = $1",
         [opts.username]
       );
+      await client
+        .query(
+          "UPDATE admin.trusted_devices SET revoked_at = now() WHERE username = $1 AND revoked_at IS NULL",
+          [opts.username]
+        )
+        .catch(() => {});
       console.log(`[admin:user] ${opts.username} deshabilitado.`);
       await notifyUser(previous?.email, "Cuenta desactivada", "Tu acceso al panel fue desactivado.");
       return;
@@ -134,6 +140,12 @@ async function main() {
              updated_by = 'cli'`,
       [opts.username, passwordHash, opts.role || null, opts.email || null]
     );
+    await client
+      .query(
+        "UPDATE admin.trusted_devices SET revoked_at = now() WHERE username = $1 AND revoked_at IS NULL",
+        [opts.username]
+      )
+      .catch(() => {});
     console.log(`[admin:user] ${opts.username} creado/actualizado.`);
 
     const recipient = opts.email || previous?.email;
