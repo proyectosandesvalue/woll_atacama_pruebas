@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 31 |
-| **Estado de la spec** | EN EJECUCIÓN — 31-A, 31-B (base) y 31-E ✅; 31-C y 31-D pendientes |
+| **Estado de la spec** | PARCIAL — 31-A, 31-B, 31-D y 31-E ✅; 31-C pospuesto |
 | **Tamaño** | Mediano (7-8 h) |
 | **Dependencias** | 26 (VPS operativo) |
 | **Última revisión** | 2026-11-24 |
@@ -32,8 +32,8 @@ backlogs. Sin filtrar datos personales ni contenido de usuarios a los logs.
 - **31-C.** Reporte de errores del frontend (GlitchTip/Sentry) y analítica
   (Umami/Plausible): implica desplegar o contratar un servicio y definir
   retención. Se retoma cuando el cliente elija.
-- **31-D.** Valoración “útil / no útil” del chat: requiere UX y tabla; se
-  planifica aparte.
+- **31-D.** Valoración del chat: ✅ implementada (pulgares, motivos, ruta/tier
+  y panel).
 - Alertas de tasa de error del LLM: requiere leer logs o instrumentar el
   orquestador; se puede sumar a `ops-check` cuando haya métricas persistidas.
 
@@ -136,3 +136,19 @@ Timer `woll-ops-check.timer` cada 10 minutos.
 - Verificado con umbral de disco simulado: alerta, no duplicado en la segunda
   corrida y recuperación al volver a `ok`; ingesta forzada a fallar envió aviso
   y terminó con código 1.
+
+
+## 9. Valoración del chat (31-D, 2026-11-26)
+
+- Cada respuesta del chat devuelve un `response_id` (UUID) y registra contexto
+  anónimo en `chat.feedback`: ruta (router/orchestrator), tier y cantidad de
+  tools. **No** guarda pregunta ni respuesta.
+- El visor muestra “👍 Útil / 👎 No útil”; al marcar negativo se eligen motivos:
+  no era lo que pedí, datos incorrectos, incompleta u otro.
+- `POST /api/chat/feedback` valida UUID, rating y motivo; limita a 12
+  valoraciones/minuto por IP y actualiza la fila.
+- El panel (Chat IA) muestra una tarjeta de 30 días: útiles, no útiles, %,
+  sin valorar, motivos y desglose por ruta.
+- Verificado: chat 200 con `response_id`, feedback 200, fila
+  `orchestrator / down / incomplete` y resumen admin con totales y motivos.
+- Migración `062_chat_feedback.sql`.

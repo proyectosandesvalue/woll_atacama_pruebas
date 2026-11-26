@@ -1286,8 +1286,10 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 ### 2026-11-26
 - ✅ **Backup semanal:** domingo 03:00 UTC, 2 copias exactas y correo a los
   admins con instrucciones de descarga; corrida manual verificada.
+- ✅ **31-D (valoración del chat):** pulgares con motivos, `response_id` por
+  respuesta, tabla anónima `chat.feedback` y tarjeta de 30 días en el panel.
 - ⏳ **Pendiente:** navbar de WordPress (sin acceso), `full-backup.sh` por SSH,
-  offsite automático y 31-C/D.
+  offsite automático y 31-C (pospuesto).
 
 ### 2026-11-25
 - ✅ **Portada Geodatos en el VPS:** `/` sirve `geodatos.html`, `/visor` el
