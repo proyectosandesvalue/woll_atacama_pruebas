@@ -1298,8 +1298,9 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   las capas nuevas cuando el mapa ya está visible. Se quitó la caja duplicada
   “Capas visibles” del lienzo.
 - ✅ **Capas del chat, mapa base y panel:** el post-proceso y el router adjuntan
-  todas las capas pedidas; el mapa permite elegir OpenStreetMap o Google Maps
-  y el header del chat puede ocultar/recuperar el panel cuando hay capas.
+  todas las capas pedidas; el cliente conserva `geojson_layers` (antes pintaba
+  solo la primera); el mapa permite elegir OpenStreetMap o Google Maps y el
+  header del chat puede ocultar/recuperar el panel cuando hay capas.
 - ✅ **Backup completo por SSH:** `full-backup.sh` cifrado con DB, secretos,
   configs, certificados y uploads; descargado y verificado en el equipo local.
 - ✅ **Backup semanal:** domingo 03:00 UTC, 2 copias exactas y correo a los
