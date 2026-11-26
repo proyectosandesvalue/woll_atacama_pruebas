@@ -48,6 +48,7 @@
 ## [Unreleased]
 
 ### Added
+- **Mantenimiento del VPS (26-H):** 11 paquetes actualizados (5 de seguridad) y Docker 29.10.1; reinicio para activar el kernel `6.8.0-151`. SSH volvió a los 25 s, contenedores `healthy` a los 11 s, `/healthz`, `/api/config`, `/`, `/visor` y `/chat` en 200, 13/13 checks de aceptación y `ops-check` sin alertas. No se hizo `do-release-upgrade`.
 - **Chat inmersivo `/chat`:** nueva shell sobre la misma SPA que reutiliza `#map`, `initChatUI`, `showResults` y `clearResults`. Portada de chat, split mapa/chat cuando hay capas, divisor arrastrable, header/leyenda reales del mapa y retorno al chat completo al quitar capas o iniciar una conversación. El chat tradicional de `/visor` no cambia. Implementación: `js/ui/chatImmersiveUI.js` y `css/components/chat-immersive.css`.
 - **Portada Geodatos en el VPS:** `geodatos.html` se sirve en `/` y el visor en `/visor` sin cambiar la URL. La marca del visor vuelve a `/`. Incluye `js/geodatos.js`, assets en `assets/geodatos/`, tipografía local `css/fonts/plus-jakarta-sans-latin.woff2` (OFL), smoke en `deploy/vps/release.sh` y checklist en `docs/ops/geodatos-vps.md`.
 - **Enlace directo al chat (sección Geodatos):** `?chat=1` o `#chat` abren el panel del asistente al cargar el visor. Helper puro `js/utils/chatDeepLink.js` y test `scripts/__tests__/chat-deep-link.test.js`.

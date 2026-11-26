@@ -212,3 +212,19 @@ en el servidor y se documentan en `docs/CHANGELOG.md`.
   en `.env`; API recreada.
 - Verificado: `/` sirve Geodatos, `/visor` el visor, `/visor/` 301, HTTP 301 a
   HTTPS, HSTS y cadena Let's Encrypt válida.
+
+## 11. Mantenimiento y reinicio (2026-11-26)
+
+- 11 paquetes pendientes (5 de seguridad): Docker 29.10.0 → 29.10.1,
+  `libexpat1`, `libheif`, `libsqlite3`, `fwupd`, `linux-firmware` y kernel.
+- El host corría `6.8.0-111` con `6.8.0-151` instalado y `reboot-required`.
+- Procedimiento: detener `woll-ops-check.timer` y los cuatro
+  `woll-ingest-*.timer` → `apt-get update && apt-get upgrade` con
+  `NEEDRESTART_MODE=l` → `systemctl reboot` → reactivar timers.
+- Resultado: SSH disponible a los 25 s; kernel `6.8.0-151`; contenedores
+  `healthy` a los 11 s por `restart: unless-stopped`; `/healthz`,
+  `/api/config`, `/`, `/visor` y `/chat` en 200; `acceptance:vps` 13/13;
+  `ops-check` `ok=true` sin alertas; tiles 200. `apt` no dejó servicios
+  pendientes de reinicio.
+- No se ejecutó `do-release-upgrade`: el host sigue en Ubuntu 24.04 LTS.
+

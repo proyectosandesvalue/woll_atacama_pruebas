@@ -1285,6 +1285,9 @@ preguntas pendientes para triage operativo.
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
 ### 2026-11-26
+- ✅ **Mantenimiento del VPS:** 11 paquetes (5 de seguridad) y Docker 29.10.1;
+  reinicio con kernel `6.8.0-151` en 25 s, contenedores `healthy` a los 11 s,
+  13/13 checks y `ops-check` sin alertas. Timers reactivados.
 - ✅ **Tiles MVT en el VPS:** 393 MB / 88.152 archivos subidos a
   `/srv/woll/tiles/`; 41/41 manifiestos 200 y Nginx sirve MVT con gzip e
   `immutable`. Los tiles vacíos de borde responden 204 (sin 404 en consola).
@@ -1303,7 +1306,7 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   en navegador. Sprint 30 cerrado.
 
 - ⏳ **Pendiente:** navbar de WordPress (sin acceso), offsite automático,
-  secretos de GitHub, 31-C (pospuesto) y ventana de actualización/reboot del VPS.
+  secretos de GitHub y 31-C (pospuesto).
 
 ### 2026-11-25
 - ✅ **Portada Geodatos en el VPS:** `/` sirve `geodatos.html`, `/visor` el
