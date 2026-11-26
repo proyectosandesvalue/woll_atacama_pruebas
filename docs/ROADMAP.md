@@ -1301,6 +1301,9 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   todas las capas pedidas; el cliente conserva `geojson_layers` (antes pintaba
   solo la primera); el mapa permite elegir OpenStreetMap o Google Maps y el
   header del chat puede ocultar/recuperar el panel cuando hay capas.
+- ✅ **Arranque de `/chat`:** `js/chat-route.js` marca el body antes del primer
+  render y evita que el visor aparezca de fondo durante la carga.
+
 - ✅ **Backup completo por SSH:** `full-backup.sh` cifrado con DB, secretos,
   configs, certificados y uploads; descargado y verificado en el equipo local.
 - ✅ **Backup semanal:** domingo 03:00 UTC, 2 copias exactas y correo a los

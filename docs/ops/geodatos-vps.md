@@ -51,6 +51,8 @@ para la demo/staging, pero la ruta oficial es la del VPS.
 - `deploy/nginx/woll.conf` — `index geodatos.html;`.
 - `deploy/nginx/woll.dev.conf` — misma portada en local.
 - `deploy/nginx/woll-locations.conf` — `/visor`, `/chat` y fallback.
+- `js/chat-route.js` — marca `/chat` antes del primer render para evitar el
+  flash del visor.
 - `js/ui/chatImmersiveUI.js` — shell de `/chat`, split, encuadre y divisor.
 - `css/components/chat-immersive.css` — estilos del chat inmersivo.
 - `deploy/vps/release.sh` — smoke de `/`, `/visor` y `/visor?chat=1`.
