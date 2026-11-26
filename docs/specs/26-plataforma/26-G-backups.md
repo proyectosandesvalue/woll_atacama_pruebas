@@ -164,3 +164,25 @@ RESTORE_EXPECT_VALUES=1425842 \
   `pg_restore -l` es una verificación barata antes de cifrar.
 - Pendiente: configurar offsite real (rclone/S3) y alerta en el VPS; evaluar
   PITR si el RPO de 24 h no alcanza.
+
+
+## 10. Backup completo del VPS por SSH (pendiente de cierre)
+
+El proveedor genera **una imagen completa mensual** desde Virtualizor; no se
+lanza ni se descarga por SSH. Para el día a día se agrega un backup completo de
+la aplicación, a demanda:
+
+- Script `deploy/vps/full-backup.sh` (a implementar al cierre).
+- Incluye: dump `pg_dump -Fc`, `.env*`, `/etc/woll/gcp-sa.json`, configs de
+  SSH/UFW/fail2ban/Docker/systemd/sysctl, certificados, uploads de capas,
+  `rag/manifest.json` y llave de deploy.
+- Excluye: código y GeoJSON base (GitHub), tiles y ráster (regenerables),
+  imágenes Docker, logs.
+- Empaqueta en `tar.gz`, cifra con GPG (misma passphrase de backups), agrega
+  SHA-256 y guarda en `/var/backups/woll/full/` con retención de 3 copias.
+- Descarga: `scp woll-vps:/var/backups/woll/full/<archivo> .` y verificación
+  local con `sha256sum` y `gpg --decrypt`.
+
+Complementa, no reemplaza: GitHub cubre código, el dump local cubre datos
+históricos, el backup diario cubre RPO 24 h y el mensual del proveedor cubre
+desastre total.

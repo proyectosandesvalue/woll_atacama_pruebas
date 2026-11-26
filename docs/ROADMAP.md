@@ -1297,7 +1297,8 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 - ✅ **Dispositivos de confianza:** cookie de 30 días (token HMAC, prefijo de
   red y user-agent); el segundo factor solo se pide al cambiar de equipo o red.
   Verificado en producción con usuario temporal.
-- ⏳ **Pendiente:** navbar de WordPress, 31-C/D y offsite.
+- ⏳ **Pendiente:** navbar de WordPress (sin acceso al panel aún), backup
+  completo por SSH (`full-backup.sh`, al cierre), offsite y 31-C/D.
 
 ### 2026-11-24
 - ✅ **18-B (embeddings Vertex):** `gemini-embedding-001` a 1024 dims en
