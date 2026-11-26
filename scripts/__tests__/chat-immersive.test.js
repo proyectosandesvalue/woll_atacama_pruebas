@@ -131,3 +131,15 @@ test("el release verifica /chat y conserva /visor", async () => {
   assert.match(release, /wait_http \/visor/);
   await exists("css/components/chat-immersive.css");
 });
+
+test("el body de /chat se marca antes de pintar el visor", async () => {
+  const html = await read("index.html");
+  const early = await read("js/chat-route.js");
+
+  assert.match(
+    html,
+    /<body>\s*<script src="js\/chat-route\.js\?v=20261126e"><\/script>/
+  );
+  assert.match(early, /pathname === "\/chat"/);
+  assert.match(early, /classList\.add\("chat-immersive"\)/);
+});
