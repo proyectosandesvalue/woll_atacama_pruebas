@@ -1,11 +1,12 @@
 [Unit]
-Description=Backup diario de PostgreSQL (WOLL Atacama)
+Description=Backup semanal de PostgreSQL (WOLL Atacama)
 Documentation=file:/srv/woll/docs/specs/26-plataforma/26-G-backups.md
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=oneshot
+UMask=0077
 User=deploy
 Group=deploy
 WorkingDirectory=/srv/woll
