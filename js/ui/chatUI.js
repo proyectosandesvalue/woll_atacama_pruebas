@@ -96,9 +96,101 @@ function addMessage(payload, sender) {
     }
   }
 
+  if (
+    sender === "assistant" &&
+    payload &&
+    typeof payload === "object" &&
+    payload.response_id
+  ) {
+    attachFeedback(msg, payload.response_id);
+  }
+
   messagesEl.appendChild(msg);
   scrollToBottom();
   return msg;
+}
+
+const FEEDBACK_REASONS = [
+  ["irrelevant", "No era lo que pedí"],
+  ["incorrect", "Datos incorrectos"],
+  ["incomplete", "Respuesta incompleta"],
+  ["other", "Otro"],
+];
+
+function attachFeedback(container, responseId) {
+  const wrap = document.createElement("div");
+  wrap.className = "ai-feedback";
+
+  const label = document.createElement("span");
+  label.className = "ai-feedback-label";
+  label.textContent = "¿Te sirvió?";
+  wrap.appendChild(label);
+
+  const up = document.createElement("button");
+  up.type = "button";
+  up.className = "ai-feedback-btn";
+  up.textContent = "👍 Útil";
+  up.setAttribute("aria-pressed", "false");
+
+  const down = document.createElement("button");
+  down.type = "button";
+  down.className = "ai-feedback-btn";
+  down.textContent = "👎 No útil";
+  down.setAttribute("aria-pressed", "false");
+
+  const status = document.createElement("span");
+  status.className = "ai-feedback-status";
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+
+  const reasons = document.createElement("div");
+  reasons.className = "ai-feedback-reasons";
+  reasons.hidden = true;
+
+  async function send(rating, reason = null) {
+    up.disabled = true;
+    down.disabled = true;
+    try {
+      const res = await fetch("/api/chat/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          response_id: responseId,
+          rating,
+          reason,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      status.textContent = "Gracias por tu valoración.";
+      reasons.hidden = true;
+    } catch {
+      status.textContent = "No se pudo enviar la valoración.";
+      up.disabled = false;
+      down.disabled = false;
+    }
+  }
+
+  up.addEventListener("click", () => {
+    up.setAttribute("aria-pressed", "true");
+    send("up");
+  });
+
+  down.addEventListener("click", () => {
+    down.setAttribute("aria-pressed", "true");
+    reasons.hidden = false;
+  });
+
+  for (const [code, text] of FEEDBACK_REASONS) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "ai-feedback-btn ai-feedback-reason";
+    button.textContent = text;
+    button.addEventListener("click", () => send("down", code));
+    reasons.appendChild(button);
+  }
+
+  wrap.append(up, down, status, reasons);
+  container.appendChild(wrap);
 }
 
 /**
@@ -412,6 +504,7 @@ function openChat() {
 }
 
 function closeChat() {
+  if (document.body.classList.contains("chat-immersive")) return;
   if (!isOpen || !chatSidebar) return;
   isOpen = false;
 
@@ -464,6 +557,13 @@ function updateClearResultsBtn() {
       clearResultsMobileBtn.setAttribute("hidden", "");
     }
   }
+
+  // Notifica al shell inmersivo (/chat) para abrir o cerrar el mapa.
+  document.dispatchEvent(
+    new CustomEvent("woll:chat-results", {
+      detail: { count: (appState.chat.resultsLayers || []).length },
+    })
+  );
 }
 
 /**
@@ -485,6 +585,9 @@ function clearConversation() {
 
   clearResults();
   updateClearResultsBtn();
+
+  // El shell inmersivo vuelve a mostrar la portada del chat.
+  document.dispatchEvent(new CustomEvent("woll:chat-cleared"));
 
   log.debug("Conversación limpiada");
 }
@@ -712,6 +815,13 @@ export function initChatUI() {
   // Si es la primera visita, cerramos el modal de bienvenida para que el
   // chat quede visible sin un paso extra.
   if (shouldOpenChatFromUrl(window.location.search, window.location.hash)) {
+    const welcomeModal = document.getElementById("welcomeModal");
+    if (welcomeModal?.open) welcomeModal.close();
+    openChat();
+  }
+
+  // /chat siempre abre el panel como columna principal.
+  if (document.body.classList.contains("chat-immersive")) {
     const welcomeModal = document.getElementById("welcomeModal");
     if (welcomeModal?.open) welcomeModal.close();
     openChat();

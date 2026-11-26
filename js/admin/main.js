@@ -32,6 +32,7 @@ const state = {
     pollTimer: null,
   },
   chat: {
+    feedback: null,
     prompts: [],
     settings: [],
     messages: [],
@@ -2432,6 +2433,82 @@ function renderEmpty(container, message) {
   container.replaceChildren(el("p", { className: "empty", text: message }));
 }
 
+function renderFeedback(data) {
+  const container = $("#feedbackStats");
+  if (!container) return;
+  const totals = data?.totals || {};
+  const up = Number(totals.up) || 0;
+  const down = Number(totals.down) || 0;
+  const pending = Number(totals.pending) || 0;
+  const rated = up + down;
+  const pct = rated > 0 ? Math.round((up / rated) * 100) : 0;
+  const reasons = Array.isArray(data?.reasons) ? data.reasons : [];
+  const routes = Array.isArray(data?.routes) ? data.routes : [];
+  const reasonLabels = {
+    irrelevant: "No era lo que pedí",
+    incorrect: "Datos incorrectos",
+    incomplete: "Incompleta",
+    other: "Otro",
+  };
+
+  container.replaceChildren();
+  const grid = document.createElement("div");
+  grid.className = "feedback-grid";
+  for (const [label, value] of [
+    ["Útiles", up],
+    ["No útiles", down],
+    ["% útiles", `${pct}%`],
+    ["Sin valorar", pending],
+  ]) {
+    const card = document.createElement("div");
+    card.className = "feedback-card";
+    const strong = document.createElement("strong");
+    strong.textContent = String(value);
+    const span = document.createElement("span");
+    span.textContent = label;
+    card.append(strong, span);
+    grid.appendChild(card);
+  }
+  container.appendChild(grid);
+
+  if (reasons.length > 0) {
+    const title = document.createElement("p");
+    title.className = "feedback-subtitle";
+    title.textContent = "Motivos de valoración negativa";
+    container.appendChild(title);
+    const list = document.createElement("ul");
+    list.className = "feedback-reasons";
+    for (const item of reasons) {
+      const li = document.createElement("li");
+      li.textContent = `${reasonLabels[item.reason] || item.reason}: ${item.count}`;
+      list.appendChild(li);
+    }
+    container.appendChild(list);
+  }
+
+  if (routes.length > 0) {
+    const title = document.createElement("p");
+    title.className = "feedback-subtitle";
+    title.textContent = "Por ruta";
+    container.appendChild(title);
+    const list = document.createElement("ul");
+    list.className = "feedback-reasons";
+    for (const item of routes) {
+      const li = document.createElement("li");
+      li.textContent = `${item.route}: ${item.up} útiles / ${item.down} no útiles`;
+      list.appendChild(li);
+    }
+    container.appendChild(list);
+  }
+
+  if (rated === 0) {
+    const empty = document.createElement("p");
+    empty.className = "muted";
+    empty.textContent = "Aún no hay valoraciones en los últimos 30 días.";
+    container.appendChild(empty);
+  }
+}
+
 async function loadChat({ keepStatus = false } = {}) {
   if (!keepStatus) setStatus("Cargando configuración del chat…");
   try {
@@ -2458,6 +2535,20 @@ async function loadChat({ keepStatus = false } = {}) {
     renderUnavailable(state.chat.unavailable);
     renderGolden(state.chat.golden);
     renderTools(state.chat.tools, tools);
+    try {
+      const feedback = await withAuth(api.feedbackStats());
+      state.chat.feedback = feedback;
+      renderFeedback(feedback);
+    } catch {
+      const container = $("#feedbackStats");
+      if (container) {
+        container.replaceChildren();
+        const empty = document.createElement("p");
+        empty.className = "muted";
+        empty.textContent = "Sin datos de valoración.";
+        container.appendChild(empty);
+      }
+    }
     state.loaded.chat = true;
     if (!keepStatus) setStatus("");
   } catch (err) {
@@ -3471,6 +3562,15 @@ function bindEvents() {
   });
 
   // Demanda
+  $("#feedbackRefresh")?.addEventListener("click", async () => {
+    try {
+      const feedback = await withAuth(api.feedbackStats());
+      renderFeedback(feedback);
+    } catch (err) {
+      setStatus(`No se pudo cargar la valoración: ${err.message}`, "error");
+    }
+  });
+
   $("#demandRefresh")?.addEventListener("click", () => loadDemand());
   $("#demandClear")?.addEventListener("click", () => {
     const search = $("#demandSearch");

@@ -21,6 +21,7 @@ import {
   handlePasswordForgot,
   handlePasswordReset,
 } from "../handlers/admin-password.js";
+import { handleAdminFeedback } from "../handlers/feedback.js";
 
 const jsonBody = { body: "json", bodyLimit: 10_000 };
 
@@ -84,6 +85,11 @@ export const adminRoutes = [
     method: "GET",
     path: "/api/admin/unavailable",
     handler: (ctx) => handleAdminUnavailable(ctx, { getDB: ctx.getDB }),
+  },
+  {
+    method: "GET",
+    path: "/api/admin/feedback",
+    handler: (ctx) => handleAdminFeedback(ctx, { getDB: ctx.getDB }),
   },
   {
     method: "GET",

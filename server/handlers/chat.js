@@ -28,7 +28,7 @@ import {
 } from "../chat/unanswered-fingerprint.js";
 import { checkCostGuard, recordLLMCall } from "../chat/cost-guard.js";
 import { createTiming } from "../chat/timing.js";
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 /**
  * Genera un ID corto y legible para correlacionar errores con logs.
@@ -36,6 +36,37 @@ import { randomBytes } from "node:crypto";
  */
 function generateErrorId() {
   return randomBytes(4).toString("hex");
+}
+
+async function recordFeedbackContext({
+  responseId,
+  sessionId,
+  route,
+  tier,
+  toolsCount,
+}) {
+  try {
+    const db = await getDB();
+    if (!db || typeof db.query !== "function") return;
+    const sessionHash = sessionId
+      ? createHash("sha256").update(String(sessionId)).digest("hex").slice(0, 16)
+      : null;
+    await db.query(
+      `INSERT INTO chat.feedback
+         (response_id, session_hash, route, tier, tools_count)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (response_id) DO NOTHING`,
+      [
+        responseId,
+        sessionHash,
+        route,
+        Number.isInteger(tier) ? tier : null,
+        Number.isInteger(toolsCount) ? toolsCount : null,
+      ]
+    );
+  } catch (err) {
+    console.error("[chat] no se pudo registrar el contexto de feedback:", err?.message || err);
+  }
 }
 
 const MSG_OUT_OF_SCOPE =
@@ -70,6 +101,7 @@ export async function handleChat(body, ctx = {}) {
     }
 
     const { text, history, sessionId } = validation;
+    const responseId = randomUUID();
     timing.setMeta({
       text_chars: text.length,
       history_turns: Array.isArray(history) ? history.length : 0,
@@ -216,6 +248,16 @@ export async function handleChat(body, ctx = {}) {
       if (unavailableMatches.length > 0) {
         payload.no_disponible = unavailableMatches;
       }
+      payload.response_id = responseId;
+      if (!ctx.skipFeedbackLog) {
+        await recordFeedbackContext({
+          responseId,
+          sessionId,
+          route: "router",
+          tier: classification?.tier,
+          toolsCount: routed.results?.length || 0,
+        });
+      }
       if (ctx.includeTrace) {
         payload.trace = routed.results.map((r) => ({
           tool: r.tool,
@@ -248,6 +290,7 @@ export async function handleChat(body, ctx = {}) {
     if (unavailableNotice) notices.push(unavailableNotice);
 
     const normalized = {
+      response_id: responseId,
       reply: payload?.reply || "Sin respuesta.",
       notice: notices.length > 0 ? notices.join("\n") : null,
       geojson: payload?.geojson ?? null,
@@ -265,6 +308,16 @@ export async function handleChat(body, ctx = {}) {
 
     if (ctx.includeTrace) {
       normalized.trace = payload?.trace || [];
+    }
+
+    if (!ctx.skipFeedbackLog) {
+      await recordFeedbackContext({
+        responseId,
+        sessionId,
+        route: "orchestrator",
+        tier: classification?.tier,
+        toolsCount: null,
+      });
     }
 
     timing.mark("done");

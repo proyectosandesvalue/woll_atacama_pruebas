@@ -639,3 +639,52 @@
 .leaflet-container a.leaflet-popup-close-button {
   color: var(--text-secondary);
 }
+/* ── Valoración de respuestas (31-D) ─────────────────────── */
+.ai-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ai-feedback-label {
+  font-weight: 600;
+}
+
+.ai-feedback-btn {
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ai-feedback-btn:hover:not(:disabled),
+.ai-feedback-btn[aria-pressed="true"] {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.ai-feedback-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.ai-feedback-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.ai-feedback-status {
+  font-size: 12px;
+}

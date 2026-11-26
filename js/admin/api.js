@@ -80,6 +80,7 @@ export const api = {
   messages: () => request("/api/admin/messages"),
   unavailable: () => request("/api/admin/unavailable"),
   audit: (limit = 50) => request(`/api/admin/audit?limit=${limit}`),
+  feedbackStats: () => request("/api/admin/feedback"),
 
   chatTools: () => request("/api/admin/chat/tools"),
   promptSave: (payload) =>
