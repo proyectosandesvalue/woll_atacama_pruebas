@@ -62,7 +62,6 @@ export function initChatImmersiveUI(map) {
   const chatInput = document.getElementById("ai-chat-input");
   const mapCanvas = document.querySelector(".map-canvas");
   const mapChips = document.getElementById("ciMapChips");
-  const mapLegend = document.getElementById("ciMapLegend");
   const mapCount = document.getElementById("ciMapCount");
   const mapStatusText = document.getElementById("ciMapStatusText");
   const newConversation = document.getElementById("ciNewConversation");
@@ -181,73 +180,30 @@ export function initChatImmersiveUI(map) {
     return chip;
   }
 
-  function buildLegendSection(layer) {
-    const section = document.createElement("div");
-    section.className = "ci-legend-section";
+  function fitToLayers(layers) {
+    if (!map || !Array.isArray(layers) || layers.length === 0) return;
 
-    const title = document.createElement("strong");
-    title.textContent =
-      layer.layerLabel || humanizeLayer(layer.layerId) || "Capa";
-    section.appendChild(title);
-
-    const rows = document.createElement("div");
-    rows.className = "ci-legend-rows";
-
-    const cache = layer.colorCache instanceof Map ? layer.colorCache : null;
-    const entries = cache
-      ? Array.from(cache.entries()).filter(
-          ([value]) =>
-            value != null &&
-            value !== "" &&
-            String(value).trim().toLowerCase() !== "(sin dato)"
-        )
-      : [];
-
-    if (entries.length > 0) {
-      const sorted = entries.sort(([a], [b]) =>
-        String(a).localeCompare(String(b), "es")
-      );
-      sorted.slice(0, 6).forEach(([value, color]) => {
-        const row = document.createElement("div");
-        row.className = "ci-legend-row";
-
-        const swatch = document.createElement("i");
-        swatch.className = "ci-legend-swatch";
-        swatch.style.background = color;
-        row.appendChild(swatch);
-
-        const text = document.createElement("span");
-        text.textContent =
-          value == null || value === "" ? "(sin dato)" : String(value);
-        row.appendChild(text);
-
-        rows.appendChild(row);
-      });
-
-      if (sorted.length > 6) {
-        const more = document.createElement("span");
-        more.className = "ci-legend-more";
-        more.textContent = `+${sorted.length - 6} valores más`;
-        rows.appendChild(more);
+    const fit = () => {
+      try {
+        map.invalidateSize();
+        const group = L.featureGroup(
+          layers.map((layer) => layer.leafletLayer).filter(Boolean)
+        );
+        const bounds = group.getBounds();
+        if (bounds.isValid()) {
+          map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+        }
+      } catch (error) {
+        log.warn(
+          "No se pudo centrar el mapa en los resultados:",
+          error.message
+        );
       }
-    } else {
-      const row = document.createElement("div");
-      row.className = "ci-legend-row";
+    };
 
-      const swatch = document.createElement("i");
-      swatch.className = "ci-legend-swatch";
-      swatch.style.background = layerColor(layer);
-      row.appendChild(swatch);
-
-      const text = document.createElement("span");
-      text.textContent = `${layerFeatureCount(layer)} elementos`;
-      row.appendChild(text);
-
-      rows.appendChild(row);
-    }
-
-    section.appendChild(rows);
-    return section;
+    // El split se muestra en este tick; dos frames después el contenedor
+    // ya tiene tamaño y fitBounds calcula el zoom correcto.
+    window.requestAnimationFrame(() => window.requestAnimationFrame(fit));
   }
 
   function renderMapLayers(layers) {
@@ -257,26 +213,6 @@ export function initChatImmersiveUI(map) {
         .slice()
         .reverse()
         .forEach((layer) => mapChips.appendChild(buildLayerChip(layer)));
-    }
-
-    if (mapLegend) {
-      mapLegend.innerHTML = "";
-      if (layers.length > 0) {
-        const title = document.createElement("strong");
-        title.className = "ci-legend-title";
-        title.textContent = "Capas visibles";
-        mapLegend.appendChild(title);
-
-        layers.forEach((layer) => {
-          mapLegend.appendChild(buildLegendSection(layer));
-        });
-
-        const foot = document.createElement("div");
-        foot.className = "ci-legend-foot";
-        foot.textContent =
-          "Fuente: capas del geoportal. La leyenda se genera desde el estilo de cada capa.";
-        mapLegend.appendChild(foot);
-      }
     }
 
     const label =
@@ -428,8 +364,9 @@ export function initChatImmersiveUI(map) {
   });
 
   // ── Eventos del chat ───────────────────────────────────────
-  document.addEventListener("woll:chat-results", () => {
+  document.addEventListener("woll:chat-results", (event) => {
     updateLayout();
+    fitToLayers(event.detail?.layers);
   });
 
   document.addEventListener("woll:chat-cleared", () => {

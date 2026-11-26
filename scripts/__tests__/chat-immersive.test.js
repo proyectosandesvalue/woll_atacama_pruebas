@@ -37,6 +37,35 @@ test("el chat avisa al shell cuando cambian los resultados", async () => {
   assert.match(chat, /woll:chat-results/);
   assert.match(chat, /woll:chat-cleared/);
   assert.match(chat, /chat-immersive/);
+  assert.match(chat, /layers: Array\.isArray\(focusLayers\)/);
+});
+
+test("en /chat el mapa abre solo con límites comunales y lo consultado", async () => {
+  const app = await read("js/app.js");
+
+  assert.match(app, /isChatImmersiveRoute/);
+  assert.match(app, /\["limite_comunal_linea"\]/);
+});
+
+test("el shell no duplica la caja de capas visibles en el mapa", async () => {
+  const html = await read("index.html");
+  const shell = await read("js/ui/chatImmersiveUI.js");
+
+  assert.doesNotMatch(html, /id="ciMapLegend"/);
+  assert.doesNotMatch(shell, /ci-legend-/);
+  assert.doesNotMatch(shell, /Capas visibles/);
+});
+
+test("el encuadre usa solo las capas nuevas y espera a que el mapa abra", async () => {
+  const shell = await read("js/ui/chatImmersiveUI.js");
+  const chat = await read("js/ui/chatUI.js");
+
+  assert.match(shell, /detail\?\.layers/);
+  assert.match(shell, /requestAnimationFrame\(fit\)/);
+  assert.match(shell, /fitBounds/);
+  assert.match(chat, /const before = new Set\(appState\.chat\.resultsLayers/);
+  assert.match(chat, /updateClearResultsBtn\(added\)/);
+  assert.match(chat, /fitBounds: !isChatImmersiveRoute/);
 });
 
 test("Nginx y dev-site sirven /chat sin cambiar la URL", async () => {

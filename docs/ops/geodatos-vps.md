@@ -32,9 +32,12 @@ Oportunidades, Recursos y Proyectos pilotos apuntan a `https://atacamawoll.cl/`
 porque esas páginas no viven en el VPS. El visor se abre en `/visor` y su marca
 (el logo del header) vuelve a `/`. El chat inmersivo vive en `/chat`: reutiliza
 el mismo mapa y el mismo chat, abre el mapa a la izquierda cuando hay resultados
-y lo cierra cuando se quitan todas las capas o se inicia una nueva conversación.
-El chat tradicional del visor sigue en `/visor`. Vercel conserva `/visor` y
-`/chat` como rewrites para la demo/staging, pero la ruta oficial es la del VPS.
+y lo encuadra en las capas nuevas. El mapa muestra solo la capa base, los
+límites comunales y las capas consultadas; cada respuesta nueva se suma a las
+anteriores. Lo cierra cuando se quitan todas las capas o se inicia una nueva
+conversación. El chat tradicional del visor sigue en `/visor`. Vercel conserva
+`/visor` y `/chat` como rewrites para la demo/staging, pero la ruta oficial es
+la del VPS.
 
 ## 2. Archivos que se publican
 
@@ -47,7 +50,7 @@ El chat tradicional del visor sigue en `/visor`. Vercel conserva `/visor` y
 - `deploy/nginx/woll.conf` — `index geodatos.html;`.
 - `deploy/nginx/woll.dev.conf` — misma portada en local.
 - `deploy/nginx/woll-locations.conf` — `/visor`, `/chat` y fallback.
-- `js/ui/chatImmersiveUI.js` — shell de `/chat`, split, leyenda y divisor.
+- `js/ui/chatImmersiveUI.js` — shell de `/chat`, split, encuadre y divisor.
 - `css/components/chat-immersive.css` — estilos del chat inmersivo.
 - `deploy/vps/release.sh` — smoke de `/`, `/visor` y `/visor?chat=1`.
 - `scripts/__tests__/geodatos-landing.test.js` — guard de rutas y assets.

@@ -38,6 +38,11 @@ let messageHistory = [];
 const TRANSITION_MS = 300;
 const MAX_HISTORY = 12;
 
+// En /chat el encuadre lo hace el shell inmersivo después de abrir el mapa.
+// Si se hiciera aquí, el contenedor aún está oculto y el zoom sale mal.
+const isChatImmersiveRoute =
+  typeof window !== "undefined" && window.location.pathname === "/chat";
+
 function isMobile() {
   return window.innerWidth < 769;
 }
@@ -533,7 +538,7 @@ function toggleChat() {
  * Muestra u oculta los botones de "Quitar resultados" según si hay
  * resultados pintados en el mapa.
  */
-function updateClearResultsBtn() {
+function updateClearResultsBtn(focusLayers = null) {
   const hasResults = (appState.chat.resultsLayers || []).length > 0;
 
   // Botón dentro del chat.
@@ -559,9 +564,14 @@ function updateClearResultsBtn() {
   }
 
   // Notifica al shell inmersivo (/chat) para abrir o cerrar el mapa.
+  // `layers` lleva solo las capas nuevas de esta respuesta; el shell las
+  // usa para encuadrar el mapa cuando ya está visible.
   document.dispatchEvent(
     new CustomEvent("woll:chat-results", {
-      detail: { count: (appState.chat.resultsLayers || []).length },
+      detail: {
+        count: (appState.chat.resultsLayers || []).length,
+        layers: Array.isArray(focusLayers) ? focusLayers : [],
+      },
     })
   );
 }
@@ -629,8 +639,9 @@ async function handleSend() {
     typing.remove();
     addMessage(payload, "assistant");
 
-        if (Array.isArray(payload?.geojson_layers) && payload.geojson_layers.length > 0) {
+    if (Array.isArray(payload?.geojson_layers) && payload.geojson_layers.length > 0) {
       try {
+        const before = new Set(appState.chat.resultsLayers || []);
         for (const item of payload.geojson_layers) {
           if (item.geojson && item.geojson.type === "FeatureCollection") {
             showResults(item.geojson, {
@@ -641,25 +652,33 @@ async function handleSend() {
             });
           }
         }
-        // Ajustar bounds al final.
-        const allLayers = appState.chat.resultsLayers || [];
-        if (allLayers.length > 0 && appState.map) {
-          try {
-            const group = L.featureGroup(allLayers.map((l) => l.leafletLayer));
-            const bounds = group.getBounds();
-            if (bounds.isValid()) {
-              appState.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+        const added = (appState.chat.resultsLayers || []).filter(
+          (layer) => !before.has(layer)
+        );
+
+        // En /visor se conserva el encuadre sobre todos los resultados.
+        // En /chat el shell encuadra solo lo nuevo cuando el mapa ya abrió.
+        if (!isChatImmersiveRoute) {
+          const allLayers = appState.chat.resultsLayers || [];
+          if (allLayers.length > 0 && appState.map) {
+            try {
+              const group = L.featureGroup(allLayers.map((l) => l.leafletLayer));
+              const bounds = group.getBounds();
+              if (bounds.isValid()) {
+                appState.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+              }
+            } catch (err) {
+              log.warn("fitBounds global falló:", err);
             }
-          } catch (err) {
-            log.warn("fitBounds global falló:", err);
           }
         }
-        updateClearResultsBtn();
+        updateClearResultsBtn(added);
       } catch (err) {
         log.warn("No se pudo pintar geojson_layers:", err);
       }
     } else if (payload?.geojson && payload.geojson.type === "FeatureCollection") {
       try {
+        const before = new Set(appState.chat.resultsLayers || []);
         const painted = showResults(payload.geojson, {
           styleConfig: payload?.geojson_meta?.style_hint || null,
           layerId: payload?.geojson_meta?.layer_id || null,
@@ -667,8 +686,12 @@ async function handleSend() {
             payload?.geojson_meta?.layer_label ||
             payload?.geojson_layers?.[0]?.layer_label ||
             null,
+          fitBounds: !isChatImmersiveRoute,
         });
-        if (painted) updateClearResultsBtn();
+        const added = (appState.chat.resultsLayers || []).filter(
+          (layer) => !before.has(layer)
+        );
+        if (painted) updateClearResultsBtn(added);
       } catch (err) {
         log.warn("No se pudo pintar el geojson:", err);
       }

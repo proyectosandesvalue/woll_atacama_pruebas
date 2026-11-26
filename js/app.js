@@ -21,6 +21,12 @@ import { initChartModal } from "./utils/chartModal.js";
 // Se resuelve en DOMContentLoaded (API o fallback local).
 let allTemasConfig = null;
 
+// /chat abre el mapa solo cuando hay resultados del chat. Para que el
+// lienzo no herede hidrografía, reservas ni infraestructura del visor, la
+// carga inicial se limita a la capa auxiliar de límites comunales.
+const isChatImmersiveRoute =
+  typeof window !== "undefined" && window.location.pathname === "/chat";
+
 document.addEventListener("DOMContentLoaded", async () => {
   logger.log("Inicializando aplicación...");
 
@@ -106,7 +112,13 @@ function setupInitialTheme() {
     logger.error(`Tema '${appState.activeTemaName}' no encontrado`);
     return;
   }
-  const capasACargaInicial = obtenerCapasParaCargaInicial(temaConfig);
+  // En /chat solo se pinta la capa auxiliar de límites comunales; el resto
+  // del mapa se llena con las capas que devuelve la conversación.
+  const capasACargaInicial = isChatImmersiveRoute
+    ? ["limite_comunal_linea"].filter(
+        (capa) => Boolean(temaConfig.estilo?.[capa])
+      )
+    : obtenerCapasParaCargaInicial(temaConfig);
   logger.debug(
     `Capas a cargar inicialmente para ${appState.activeTemaName}:`,
     capasACargaInicial

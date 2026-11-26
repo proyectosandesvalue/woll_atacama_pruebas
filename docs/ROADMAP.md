@@ -1293,6 +1293,10 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   `immutable`. Los tiles vacíos de borde responden 204 (sin 404 en consola).
 - ✅ **/chat inmersivo:** desplegado, smoke de `/chat` y validado en Chromium;
   cache-busting de JS/CSS corregido para que un deploy se vea al recargar.
+- ✅ **Mapa del chat:** al abrirse muestra solo base + límites comunales + capas
+  consultadas; las respuestas nuevas se acumulan y el encuadre se hace sobre
+  las capas nuevas cuando el mapa ya está visible. Se quitó la caja duplicada
+  “Capas visibles” del lienzo.
 - ✅ **Backup completo por SSH:** `full-backup.sh` cifrado con DB, secretos,
   configs, certificados y uploads; descargado y verificado en el equipo local.
 - ✅ **Backup semanal:** domingo 03:00 UTC, 2 copias exactas y correo a los
