@@ -32,14 +32,14 @@ if ! flock -n 9; then
   exit 0
 fi
 
-FREE_MB="$(df -Pk "$BACKUP_DIR" 2>/dev/null | awk 'NR==2 {print $4}' || echo 0)"
+mkdir -p "$BACKUP_DIR"
+chown deploy:deploy "$BACKUP_DIR" 2>/dev/null || true
+
+FREE_MB="$(df -Pk "$BACKUP_DIR" | awk 'NR==2 {print $4}')"
 if [ -n "$FREE_MB" ] && [ "$FREE_MB" -lt 2048 ]; then
   echo "[full-backup] quedan menos de 2 GB libres en $BACKUP_DIR." >&2
   exit 1
 fi
-
-mkdir -p "$BACKUP_DIR"
-chown deploy:deploy "$BACKUP_DIR" 2>/dev/null || true
 STAGE="$(mktemp -d /var/tmp/woll-full.XXXXXX)"
 ARCHIVE="${STAGE}/${NAME}"
 cleanup() { rm -rf "$STAGE"; }
