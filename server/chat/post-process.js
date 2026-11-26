@@ -58,6 +58,29 @@ export function collectTraceLayerIds(ctx) {
   return ids;
 }
 
+/**
+ * Capas nombradas explícitamente en la pregunta, según el catálogo.
+ * Excluye las capas auxiliares de límites y solo acepta coincidencias
+ * fuertes con el nombre visible (score >= 3).
+ *
+ * @param {string} userText
+ * @param {Array<object>} catalog
+ * @returns {string[]}
+ */
+export function collectRequestedLayerIds(userText, catalog) {
+  const retrievalText = String(userText || "").replace(
+    /\bpor\s+(comuna|comunas|provincia|provincias|regi[oó]n|regiones)\b/gi,
+    " "
+  );
+  const { layers } = retrieveLayers(retrievalText, catalog, 6);
+  return layers
+    .filter(
+      (item) =>
+        item.score >= 3 && !RETRIEVAL_EXCLUDE.has(item.layer_id)
+    )
+    .map((item) => item.layer_id);
+}
+
 export function shouldFetchFeatures(userText, ctx) {
   if (!userText || typeof userText !== "string") return false;
 
@@ -87,24 +110,13 @@ export async function maybeFetchFeaturesForStyle(ctx, userText) {
   if (!shouldFetch) return;
 
   let layerIds = collectTraceLayerIds(ctx);
-  const retrievalText = String(userText || "").replace(
-    /\bpor\s+(comuna|comunas|provincia|provincias|regi[oó]n|regiones)\b/gi,
-    " "
-  );
 
   // Complementa con las capas nombradas en la pregunta. Así no depende
   // de que el LLM haya consultado todas las capas pedidas.
   try {
     const catalog = await getCatalog();
-    const { layers: retrieved } = retrieveLayers(retrievalText, catalog, 6);
-    for (const item of retrieved) {
-      if (
-        item.score >= 3 &&
-        !RETRIEVAL_EXCLUDE.has(item.layer_id) &&
-        !layerIds.includes(item.layer_id)
-      ) {
-        layerIds.push(item.layer_id);
-      }
+    for (const layerId of collectRequestedLayerIds(userText, catalog)) {
+      if (!layerIds.includes(layerId)) layerIds.push(layerId);
     }
   } catch (err) {
     dbg(
@@ -116,19 +128,6 @@ export async function maybeFetchFeaturesForStyle(ctx, userText) {
     const fallback = ctx.lastAggregateLayerId || ctx.lastQueryLayerId;
     if (fallback) {
       layerIds = [fallback];
-    } else {
-      try {
-        const catalog = await getCatalog();
-        const { layers: retrieved } = retrieveLayers(retrievalText, catalog, 1);
-        if (retrieved.length > 0) {
-          layerIds = [retrieved[0].layer_id];
-          dbg(
-            `maybeFetchFeaturesForStyle: lastLayerId inferido por retrieval = ${layerIds[0]}`
-          );
-        }
-      } catch (err) {
-        dbg(`maybeFetchFeaturesForStyle: retrieval falló: ${err?.message}`);
-      }
     }
   }
 

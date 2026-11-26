@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { collectTraceLayerIds } from "../post-process.js";
+import { collectTraceLayerIds, collectRequestedLayerIds } from "../post-process.js";
 
 test("collectTraceLayerIds recupera todas las capas de la traza sin duplicados", () => {
   const ids = collectTraceLayerIds({
@@ -56,4 +56,40 @@ test("collectTraceLayerIds tolera trazas vacías o argumentos inválidos", () =>
     collectTraceLayerIds({ trace: [{ ok: true, args: "no-es-objeto" }] }),
     []
   );
+});
+
+test("collectRequestedLayerIds encuentra las capas nombradas y excluye límites", () => {
+  const catalog = [
+    {
+      layer_id: "humedales",
+      display_name: "Humedales",
+      dimension: "Agua",
+      attributes: ["COMUNA"],
+    },
+    {
+      layer_id: "lagunas_embalses",
+      display_name: "Lagunas, tranques y embalses",
+      dimension: "Agua",
+      attributes: ["COMUNA"],
+    },
+    {
+      layer_id: "comunas_poligonos",
+      display_name: "Comunas",
+      dimension: "Planificación",
+      attributes: ["NOM_COMUNA"],
+    },
+    {
+      layer_id: "limite_comunal_linea",
+      display_name: "Límite comunal",
+      dimension: "Planificación",
+      attributes: ["NOM_COMUNA"],
+    },
+  ];
+
+  const ids = collectRequestedLayerIds(
+    "Muéstrame humedales y lagunas, tranques y embalses por comuna",
+    catalog
+  );
+
+  assert.deepEqual(ids.slice().sort(), ["humedales", "lagunas_embalses"]);
 });

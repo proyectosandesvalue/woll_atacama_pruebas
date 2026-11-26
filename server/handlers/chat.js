@@ -13,7 +13,7 @@
 
 import { runOrchestrator } from "../chat/orchestrator.js";
 import { runTool } from "../chat/runners.js";
-import { collectTraceLayerIds } from "../chat/post-process.js";
+import { collectTraceLayerIds, collectRequestedLayerIds } from "../chat/post-process.js";
 import { validateChatInput } from "../chat/input-validator.js";
 import { checkChatRateLimit } from "../chat/rate-limiter.js";
 import { scopeFilter } from "../chat/scope-filter.js";
@@ -406,7 +406,20 @@ async function buildPayloadFromPipeline(
   const allResults = [...resultList];
 
   if (wantsMap) {
-    const layerIds = collectTraceLayerIds({ trace: resultList });
+    let requested = [];
+    try {
+      const catalog = await getCatalog();
+      requested = collectRequestedLayerIds(userText, catalog);
+    } catch {
+      requested = [];
+    }
+
+    const layerIds = [
+      ...new Set([
+        ...collectTraceLayerIds({ trace: resultList }),
+        ...requested,
+      ]),
+    ];
     const present = new Set(
       resultList
         .filter((r) => r.ok && r.tool === "get_layer_features")
