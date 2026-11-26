@@ -87,7 +87,7 @@
 | 27 | CI/CD y entrega versionada | 🔶 parcial (CI ✅; deploy SSH ✅; faltan secretos/primera corrida) | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | 🔶 parcial (dependencias 0, CSP, XSS y vendorización ✅; ZAP/capa base pendientes) | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
-| 30 | Pruebas de aceptación técnica | 🔶 parcial (VPS 14/14; carga table/filtered ✅; tiles/E2E pendientes) | alta | 16h | 26, 27 |
+| 30 | Pruebas de aceptación técnica | ✅ cerrado (VPS 14/14; carga 8/8 ✅; tiles ✅) | alta | 16h | 26, 27 |
 | 31 | Observabilidad y operación | 🔶 parcial (31-A/B/E ✅ en VPS; 31-C/D pendientes) | alta | 7-8h | 26 |
 | 32 | Marco legal y privacidad | ⏳ pending | media | 5-6h | 24, 31-A |
 | 33 | Entrega y traspaso | ⏳ pending | alta | 10h | Sprints Must |
@@ -273,6 +273,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 - Nginx sirve `/tiles/` con MIME MVT, gzip y `Cache-Control: immutable`; `try_files` evita el fallback a la SPA.
 - Mediciones: `borde_costero` 382 features → 2.887 tiles / 7,8 MB (GeoJSON 47 MB); `humedales` → 2.518 tiles / 3,6 MB (GeoJSON 24 MB). Puntos: 920 derechos → 8,2 MB de tiles vs 0,19 MB gzip → se quedan en GeoJSON/API.
 - **Corrida completa:** 41 capas, 88.152 tiles, 146,6 MB lógicos / 393 MB en disco; 7 capas regionales degradadas a z13; 27 puntos, 2 WMS y 1 tabla vacía omitidos. `tiles:check` valida las 41 versiones. Tiles servidos con PostgreSQL detenido (Nginx 200) y 6.502 req/s con 50 conexiones.
+- **Tiles en el VPS (2026-11-26):** 393 MB / 88.152 MVT subidos a `/srv/woll/tiles/`; 41/41 manifiestos responden 200. Nginx sirve MVT con gzip e `immutable`; los tiles vacíos de borde responden 204 (antes generaban 404 en consola) y los manifiestos ausentes conservan el 404 para el fallback a GeoJSON.
 - **08-C cerrado (2026-11-13):** 40 capas no-punto usan tiles: `borde_costero`, `hidrografia`, `humedales`, `cuencas_dga`, los 3 decretos de escasez, `zonas_climaticas`, los 2 planes reguladores costeros, `unidades_geomorfologicas`, `capacidad_uso_suelo`, `energia_linea_transmision` y `energia_potencial_fotovoltaico`. La tabla subió a un límite de 5.000 propiedades; falta paginar/buscar (08-D), exportar desde PostGIS (08-E) y migrar la capa de puntos solo si cambia la decisión de M1.
 - **08-B (2026-11-13):** `borde_costero` se pinta con `leaflet.vectorgrid` (3 tiles en z8, sin GeoJSON), popup desde `properties`, zoom por manifest, tabla de 382 features desde PostGIS, filtro `ZP`=11 (coincide con SQL), CSV de 382 filas y fallback GeoJSON. La tabla dejó de mostrar 450 (GeoJSON) y ahora usa `/api/layer-features`. Pendiente: capa de puntos con API y capa dinámica.
 - **08-B y GeoJSON (2026-11-13):** las estaciones se confirman como capa de valores dinámicos por API (no tiles, son puntos). El on-demand queda listo para una futura capa poligonal/línea. Los 71 GeoJSON se conservan como respaldo y para análisis (`comunas_poligonos`), según ADR 016.
@@ -1284,17 +1285,25 @@ preguntas pendientes para triage operativo.
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
 ### 2026-11-26
+- ✅ **Tiles MVT en el VPS:** 393 MB / 88.152 archivos subidos a
+  `/srv/woll/tiles/`; 41/41 manifiestos 200 y Nginx sirve MVT con gzip e
+  `immutable`. Los tiles vacíos de borde responden 204 (sin 404 en consola).
+- ✅ **/chat inmersivo:** desplegado, smoke de `/chat` y validado en Chromium;
+  cache-busting de JS/CSS corregido para que un deploy se vea al recargar.
+- ✅ **Backup completo por SSH:** `full-backup.sh` cifrado con DB, secretos,
+  configs, certificados y uploads; descargado y verificado en el equipo local.
 - ✅ **Backup semanal:** domingo 03:00 UTC, 2 copias exactas y correo a los
   admins con instrucciones de descarga; corrida manual verificada.
 - ✅ **31-D (valoración del chat):** pulgares con motivos, `response_id` por
   respuesta, tabla anónima `chat.feedback` y tarjeta de 30 días en el panel.
 - ✅ **27 deploy SSH:** workflow `deploy.yml` con entorno `production` y llave
   restringida a `release.sh`; falta cargar secretos y hacer la primera corrida.
-- ✅ **30 aceptación VPS:** 14/14 checks funcionales y carga table/filtered
-  dentro de umbral desde el VPS; `/chat` validado en navegador.
+- ✅ **30 aceptación VPS:** 14/14 checks funcionales y carga 8/8 (table,
+  filtered, static y mixed) dentro de umbral desde el VPS; `/chat` validado
+  en navegador. Sprint 30 cerrado.
 
-- ⏳ **Pendiente:** navbar de WordPress (sin acceso), offsite automático y
-  31-C (pospuesto).
+- ⏳ **Pendiente:** navbar de WordPress (sin acceso), offsite automático,
+  secretos de GitHub, 31-C (pospuesto) y ventana de actualización/reboot del VPS.
 
 ### 2026-11-25
 - ✅ **Portada Geodatos en el VPS:** `/` sirve `geodatos.html`, `/visor` el

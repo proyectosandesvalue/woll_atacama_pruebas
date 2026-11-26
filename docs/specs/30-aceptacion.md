@@ -3,11 +3,11 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 30 |
-| **Estado de la spec** | EN EJECUCIÓN (gate 08 y carga 25/50 local ✅; VPS y E2E pendientes) |
+| **Estado de la spec** | CERRADA (VPS 14/14; carga 8/8 y tiles ✅) |
 | **Tamaño** | Grande |
 | **Duración estimada** | 16 h |
 | **Dependencias** | 26 (stack), 27 (CI), 08 (tiles) |
-| **Última revisión** | 2026-11-13 |
+| **Última revisión** | 2026-11-26 |
 
 ## 1. Objetivo
 
@@ -165,16 +165,33 @@ equipo de desarrollo:
 | table | 50 | 1.953 | 24 ms | 31 ms | 52 ms | 200 |
 | filtered | 25 | 4.017 | 6 ms | 8 ms | 12 ms | 200 |
 | filtered | 50 | 4.109 | 13 ms | 15 ms | 22 ms | 200 |
+| static | 25 | 4.932 | 5 ms | 8 ms | 13 ms | 200 |
+| static | 50 | 5.027 | 10 ms | 12 ms | 13 ms | 200 |
+| mixed | 25 | 3.068 | 8 ms | 13 ms | 18 ms | 200 |
+| mixed | 50 | 3.424 | 14 ms | 20 ms | 28 ms | 200 |
 
-- 4/4 dentro de umbral, 0 errores.
+- **8/8 dentro de umbral**, 0 errores.
 - Una corrida desde el PC contra el dominio dio p95 de 10-36 s por el enlace
   de subida (4,7 MB en 34 respuestas); no representa al servidor.
-- `static` y `mixed` no se pueden medir todavía: los MVT no están generados
-  en el VPS (`/tiles/.../manifest.json` → 404). El visor cae a GeoJSON.
+
+### Tiles MVT
+
+Los tiles locales se subieron a `/srv/woll/tiles/` (393 MB, 88.152 archivos,
+41 capas) y se verificaron en el VPS:
+
+- 41/41 manifiestos del índice responden 200.
+- Tile existente: `200`, `application/vnd.mapbox-vector-tile`, gzip y
+  `Cache-Control: immutable`.
+- `tiles/index.json`: `200` con `no-cache`.
+- Los tiles vacíos de borde (celdas sin features que el generador no escribe)
+  responden **204** mediante `@empty_mvt`; los manifiestos ausentes siguen
+  dando 404 real, así el visor mantiene el fallback a GeoJSON.
+- Navegador: al activar una capa con tiles, 30 peticiones MVT → 28 × 200 y
+  2 × 204, **0 errores de consola**.
 
 ### Navegador
 
 - `/chat` validado en Chromium: sin errores de JS; consulta de humedales abre
   el mapa a la izquierda (1 capa, 500), chat a la derecha y leyenda.
-- Errores de consola esperados: manifiestos de tiles 404 mientras no se
-  generen los MVT.
+- Con los tiles desplegados, `/visor` carga sin errores de consola y dibuja
+  la hidrografía desde MVT.

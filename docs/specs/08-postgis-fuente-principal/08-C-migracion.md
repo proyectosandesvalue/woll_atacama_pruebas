@@ -146,7 +146,7 @@ GeoJSON/API.
 | `popupCampos` con nombres inexistentes | Revisar la tabla física (`\d`) y corregir |
 | Capa >5.000 features | La tabla se trunca hasta 08-D; priorizar paginación |
 | Estilo de líneas/polígonos distinto | Probar en el visor antes de commitear |
-| Tiles 404 en bordes del bbox | Son tiles vacíos; se ignoran en `tileerror` |
+| Tiles 404 en bordes del bbox | Son tiles vacíos; desde 2026-11-26 Nginx responde 204 y el cliente los trata como vacíos |
 
 ## 8. Reversión
 
