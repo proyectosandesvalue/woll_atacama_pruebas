@@ -41,8 +41,8 @@ if [ -n "$FREE_MB" ] && [ "$FREE_MB" -lt 2048 ]; then
   exit 1
 fi
 STAGE="$(mktemp -d /var/tmp/woll-full.XXXXXX)"
-ARCHIVE="${STAGE}/${NAME}"
-cleanup() { rm -rf "$STAGE"; }
+ARCHIVE="/var/tmp/${NAME}"
+cleanup() { rm -rf "$STAGE" "$ARCHIVE"; }
 trap cleanup EXIT
 
 log() { printf '[full-backup] %s\n' "$*"; }
