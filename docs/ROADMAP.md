@@ -84,10 +84,10 @@
 | 24 | Decisiones y alcance de entrega | ⏳ pending | alta | 5-6h | — |
 | 25 | Calidad del chat: latencia y evaluación | ✅ done | alta | 16h | 23 |
 | 26 | Plataforma propia (Postgres + Docker + proxy) | 🔶 parcial (VPS operativo: 26-A/B/C/D/E/G/J ✅; 26-M fases 1-2 ✅; 26-F/I pendientes; 26-K diferido) | alta | 42-46h | 23, 24 |
-| 27 | CI/CD y entrega versionada | 🔶 parcial (CI base ✅; deploy/rollback pendientes) | alta | 7-8h | 26-D |
+| 27 | CI/CD y entrega versionada | 🔶 parcial (CI ✅; deploy SSH ✅; faltan secretos/primera corrida) | alta | 7-8h | 26-D |
 | 28 | Seguridad del frontend y dependencias | 🔶 parcial (dependencias 0, CSP, XSS y vendorización ✅; ZAP/capa base pendientes) | alta | 9-10h | 26-D |
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
-| 30 | Pruebas de aceptación técnica | 🔶 parcial (gate 08 ✅ y carga 25/50 local ✅; VPS/E2E pendientes) | alta | 16h | 26, 27 |
+| 30 | Pruebas de aceptación técnica | 🔶 parcial (VPS 14/14; carga table/filtered ✅; tiles/E2E pendientes) | alta | 16h | 26, 27 |
 | 31 | Observabilidad y operación | 🔶 parcial (31-A/B/E ✅ en VPS; 31-C/D pendientes) | alta | 7-8h | 26 |
 | 32 | Marco legal y privacidad | ⏳ pending | media | 5-6h | 24, 31-A |
 | 33 | Entrega y traspaso | ⏳ pending | alta | 10h | Sprints Must |
@@ -1288,8 +1288,11 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   admins con instrucciones de descarga; corrida manual verificada.
 - ✅ **31-D (valoración del chat):** pulgares con motivos, `response_id` por
   respuesta, tabla anónima `chat.feedback` y tarjeta de 30 días en el panel.
-- ✅ **Backup completo por SSH:** `full-backup.sh` cifrado con DB, secretos,
-  configs, certificados y uploads; descargado y verificado en el equipo local.
+- ✅ **27 deploy SSH:** workflow `deploy.yml` con entorno `production` y llave
+  restringida a `release.sh`; falta cargar secretos y hacer la primera corrida.
+- ✅ **30 aceptación VPS:** 14/14 checks funcionales y carga table/filtered
+  dentro de umbral desde el VPS; `/chat` validado en navegador.
+
 - ⏳ **Pendiente:** navbar de WordPress (sin acceso), offsite automático y
   31-C (pospuesto).
 

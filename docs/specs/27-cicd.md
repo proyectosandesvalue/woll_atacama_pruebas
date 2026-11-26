@@ -94,3 +94,17 @@ valida. El deploy/rollback se define en el cierre de 27.
 - Horas reales: 1 (CI base).
 - Pendiente: artefactos, deploy y rollback; se harán cuando el VPS esté
   conectado (26-F/26-I).
+
+
+## 9. Deploy manual implementado (2026-11-26)
+
+- Workflow `.github/workflows/deploy.yml` con `workflow_dispatch`, entorno
+  `production` y `concurrency: deploy-vps`.
+- Se conecta por SSH con una llave dedicada; en el VPS está restringida con
+  `command="/srv/woll/deploy/vps/release.sh --with-chat",restrict`, así que no
+  abre shell ni permite otros comandos.
+- Secretos requeridos: `SSH_HOST`, `SSH_USER`, `SSH_KEY`, `SSH_KNOWN_HOSTS`.
+- El release corre backup, build, migraciones, `up`, smoke de rutas y chat.
+- Pendiente: cargar los secretos, crear el environment con revisores y hacer
+  la primera corrida desde GitHub. Rollback: `git revert` + ejecutar el mismo
+  workflow.

@@ -140,3 +140,41 @@ recomendado). El gate y el runner son scripts independientes.
 - 8/8 escenarios de carga dentro de umbral; gate 13/13.
 - Lecciones: el costo de serializar geometría en la tabla era el cuello; el
   cache corto de Nginx es suficiente para 50 usuarios en este corpus.
+
+
+## 8. Aceptación en el VPS (2026-11-26)
+
+### Funcional
+
+`node scripts/acceptance-vps.mjs --base https://visor.atacamawoll.cl --with-chat`
+→ **14/14 PASS**:
+
+- `/` portada Geodatos, `/visor`, `/chat`, `/chat/` y `/visor/` con 301,
+  `/api/config`, `/healthz`, `/admin.html`, sesión admin 401, feedback admin
+  401, GeoJSON `geo+json` con gzip, assets, feedback inválido 400 y chat real
+  con `response_id`.
+
+### Carga
+
+Ejecutada **desde el VPS** (loopback a Nginx) para no medir el enlace del
+equipo de desarrollo:
+
+| Escenario | Concurrencia | RPS | p50 | p95 | p99 | HTTP |
+|---|---:|---:|---:|---:|---:|---|
+| table | 25 | 2.039 | 12 ms | 20 ms | 26 ms | 200 |
+| table | 50 | 1.953 | 24 ms | 31 ms | 52 ms | 200 |
+| filtered | 25 | 4.017 | 6 ms | 8 ms | 12 ms | 200 |
+| filtered | 50 | 4.109 | 13 ms | 15 ms | 22 ms | 200 |
+
+- 4/4 dentro de umbral, 0 errores.
+- Una corrida desde el PC contra el dominio dio p95 de 10-36 s por el enlace
+  de subida (4,7 MB en 34 respuestas); no representa al servidor.
+- `static` y `mixed` no se pueden medir todavía: los MVT no están generados
+  en el VPS (`/tiles/.../manifest.json` → 404). El visor cae a GeoJSON.
+
+### Navegador
+
+- `/chat` validado en Chromium: sin errores de JS; consulta de humedales abre
+  el mapa a la izquierda (1 capa, 500), chat a la derecha y leyenda.
+- Errores de consola esperados: manifiestos de tiles 404 mientras no se
+  generen los MVT.
