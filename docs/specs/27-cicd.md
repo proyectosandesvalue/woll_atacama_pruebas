@@ -108,3 +108,33 @@ valida. El deploy/rollback se define en el cierre de 27.
 - Pendiente: cargar los secretos, crear el environment con revisores y hacer
   la primera corrida desde GitHub. Rollback: `git revert` + ejecutar el mismo
   workflow.
+
+
+### 9.1 Alta de secretos (pendiente del owner)
+
+La llave privada está en `~/.ssh/woll_actions` del equipo de desarrollo y no se
+versiona. La pública ya está en `/home/deploy/.ssh/authorized_keys` con
+`command="/srv/woll/deploy/vps/release.sh --with-chat",restrict`.
+
+Con una cuenta con permisos de administración del repo:
+
+```bash
+gh secret set SSH_HOST --repo proyectosandesvalue/woll_atacama_vps --body "136.243.227.86"
+gh secret set SSH_USER --repo proyectosandesvalue/woll_atacama_vps --body "deploy"
+gh secret set SSH_KEY  --repo proyectosandesvalue/woll_atacama_vps < ~/.ssh/woll_actions
+ssh-keyscan -t ed25519 136.243.227.86   | grep -v '^#'   | gh secret set SSH_KNOWN_HOSTS --repo proyectosandesvalue/woll_atacama_vps
+```
+
+Luego crear el environment `production` con revisores requeridos y ejecutar
+**Actions → Deploy VPS → Run workflow**. El comando remoto está restringido por
+`authorized_keys`: la llave no abre shell ni ejecuta otra cosa que `release.sh`.
+
+Verificación local de la llave (sin usar la configuración de `~/.ssh/config`):
+
+```bash
+ssh -F /dev/null -i ~/.ssh/woll_actions -o IdentitiesOnly=yes deploy@136.243.227.86
+```
+
+La primera corrida real terminó con `release OK` y smoke de `/`, `/visor`,
+`/chat` y chat. Tags/GHCR quedan fuera de alcance; el rollback es `git revert`
+y volver a ejecutar el workflow.
