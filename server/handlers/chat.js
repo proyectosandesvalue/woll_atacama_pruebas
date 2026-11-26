@@ -12,6 +12,8 @@
  */
 
 import { runOrchestrator } from "../chat/orchestrator.js";
+import { runTool } from "../chat/runners.js";
+import { collectTraceLayerIds } from "../chat/post-process.js";
 import { validateChatInput } from "../chat/input-validator.js";
 import { checkChatRateLimit } from "../chat/rate-limiter.js";
 import { scopeFilter } from "../chat/scope-filter.js";
@@ -240,7 +242,7 @@ export async function handleChat(body, ctx = {}) {
     });
     if (routed) {
       timing.setMeta({ status: 200, route: "router" });
-      const payload = buildPayloadFromPipeline(
+      const payload = await buildPayloadFromPipeline(
         routed,
         text,
         unavailableNotice
@@ -380,7 +382,7 @@ export async function handleChat(body, ctx = {}) {
  * El reply SIEMPRE menciona las capas involucradas y los filtros aplicados,
  * haya o no tabla (fix F2 del 40-C).
  */
-function buildPayloadFromPipeline(
+async function buildPayloadFromPipeline(
   routed,
   userText = "",
   unavailableNotice = null
@@ -394,7 +396,50 @@ function buildPayloadFromPipeline(
 
   const proximitySummaries = [];
 
-  for (const r of results) {
+  // Si la pregunta pide ver o ubicar capas, o el router ya pidió features,
+  // completa las capas que falten para no pintar solo una de varias.
+  const resultList = Array.isArray(results) ? results : [];
+  const wantsMap =
+    /\bmu[eé]strame\b|\bd[oó]nde\s+est[aá]n\b|\bubicaci[oó]n\s+de\b|\ben\s+el\s+mapa\b/i.test(
+      userText
+    ) || resultList.some((r) => r.tool === "get_layer_features" && r.ok);
+  const allResults = [...resultList];
+
+  if (wantsMap) {
+    const layerIds = collectTraceLayerIds({ trace: resultList });
+    const present = new Set(
+      resultList
+        .filter((r) => r.ok && r.tool === "get_layer_features")
+        .map((r) => r.args?.layer_id || r.result?._layer_id)
+        .filter(Boolean)
+    );
+    const missing = layerIds
+      .filter((layerId) => !present.has(layerId))
+      .slice(0, 4);
+
+    if (missing.length > 0) {
+      const fetched = await Promise.all(
+        missing.map(async (layerId) => {
+          try {
+            const out = await runTool("get_layer_features", { layer_id: layerId });
+            if (!out.ok || !out.result) return null;
+            return {
+              tool: "get_layer_features",
+              args: { layer_id: layerId },
+              ok: true,
+              result: out.result,
+              forced: true,
+            };
+          } catch {
+            return null;
+          }
+        })
+      );
+      allResults.push(...fetched.filter(Boolean));
+    }
+  }
+
+  for (const r of allResults) {
     if (!r.ok || !r.result) continue;
     const layerId = r.args?.layer_id || r.args?.layer_id_source || null;
     if (layerId) layersInvolved.add(layerId);
@@ -518,7 +563,7 @@ function buildPayloadFromPipeline(
   // citations
   const citations = [];
   const seen = new Set();
-  for (const r of results) {
+  for (const r of allResults) {
     const citationLayer = r.args?.layer_id || r.args?.layer_id_source;
     if (!r.ok || !citationLayer) continue;
     const key = `${citationLayer}:${r.tool}`;

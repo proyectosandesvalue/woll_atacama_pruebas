@@ -34,10 +34,11 @@ porque esas páginas no viven en el VPS. El visor se abre en `/visor` y su marca
 el mismo mapa y el mismo chat, abre el mapa a la izquierda cuando hay resultados
 y lo encuadra en las capas nuevas. El mapa muestra solo la capa base, los
 límites comunales y las capas consultadas; cada respuesta nueva se suma a las
-anteriores. Lo cierra cuando se quitan todas las capas o se inicia una nueva
-conversación. El chat tradicional del visor sigue en `/visor`. Vercel conserva
-`/visor` y `/chat` como rewrites para la demo/staging, pero la ruta oficial es
-la del VPS.
+anteriores. Permite cambiar entre OpenStreetMap y Google Maps, y el header del
+chat puede ocultar o recuperar el panel cuando hay capas. Lo cierra cuando se
+quitan todas las capas o se inicia una nueva conversación. El chat tradicional
+del visor sigue en `/visor`. Vercel conserva `/visor` y `/chat` como rewrites
+para la demo/staging, pero la ruta oficial es la del VPS.
 
 ## 2. Archivos que se publican
 

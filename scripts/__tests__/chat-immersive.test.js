@@ -68,6 +68,28 @@ test("el encuadre usa solo las capas nuevas y espera a que el mapa abra", async 
   assert.match(chat, /fitBounds: !isChatImmersiveRoute/);
 });
 
+test("el mapa permite cambiar entre OpenStreetMap y Google Maps", async () => {
+  const html = await read("index.html");
+  const shell = await read("js/ui/chatImmersiveUI.js");
+
+  assert.match(html, /id="ciBasemapSelect"/);
+  assert.match(html, /value="openStreetMap"/);
+  assert.match(html, /value="googleMaps"/);
+  assert.match(shell, /capasBaseConfig/);
+  assert.match(shell, /setCurrentBaseLayer/);
+  assert.match(shell, /function applyBasemap/);
+});
+
+test("el mapa se puede volver a abrir desde el chat si hay capas", async () => {
+  const html = await read("index.html");
+  const shell = await read("js/ui/chatImmersiveUI.js");
+
+  assert.match(html, /id="ciShowMap"/);
+  assert.match(shell, /mapCollapsed/);
+  assert.match(shell, /mapToggle/);
+  assert.match(shell, /mapCollapsed = false/);
+});
+
 test("Nginx y dev-site sirven /chat sin cambiar la URL", async () => {
   const locations = await read("deploy/nginx/woll-locations.conf");
   const devSite = await read("scripts/dev-site.mjs");

@@ -11,7 +11,8 @@
  * No modifica el orquestador, las tools ni los prompts.
  */
 
-import { appState } from "../store/appState.js";
+import { appState, setCurrentBaseLayer } from "../store/appState.js";
+import capasBaseConfig from "../config/capasBase.js";
 import {
   clearResults,
   clearResultsByLayerId,
@@ -29,6 +30,8 @@ if (isChatImmersiveRoute && typeof document !== "undefined" && document.body) {
 
 const SPLIT_KEY = "woll-chat-split";
 const SPLIT_DEFAULT = 62;
+const BASE_MAP_KEY = "woll-chat-basemap";
+const DEFAULT_BASE_MAP = "openStreetMap";
 
 function humanizeLayer(value) {
   if (!value) return "Capa";
@@ -64,6 +67,8 @@ export function initChatImmersiveUI(map) {
   const mapChips = document.getElementById("ciMapChips");
   const mapCount = document.getElementById("ciMapCount");
   const mapStatusText = document.getElementById("ciMapStatusText");
+  const mapToggle = document.getElementById("ciShowMap");
+  const basemapSelect = document.getElementById("ciBasemapSelect");
   const newConversation = document.getElementById("ciNewConversation");
   const clearLayers = document.getElementById("ciClearLayers");
   const expandMap = document.getElementById("ciExpandMap");
@@ -71,6 +76,8 @@ export function initChatImmersiveUI(map) {
   const themeIcon = document.getElementById("ciThemeIcon");
 
   let isResizing = false;
+  let mapCollapsed = false;
+  let currentBasemapKey = DEFAULT_BASE_MAP;
 
   if (chatInput) {
     chatInput.placeholder = "Pregunta algo sobre el territorio...";
@@ -122,6 +129,64 @@ export function initChatImmersiveUI(map) {
     attributeFilter: ["data-theme"],
   });
   syncThemeIcon();
+
+  // ── Mapa base ───────────────────────────────────────────────
+  function applyBasemap(key, { persist = true } = {}) {
+    const config = capasBaseConfig[key];
+    if (!config || !map) return false;
+
+    if (key === currentBasemapKey && appState.currentBaseLayer) {
+      if (basemapSelect) basemapSelect.value = key;
+      return true;
+    }
+
+    try {
+      const next = L.tileLayer(config.url, {
+        attribution: config.nombre,
+        maxZoom: config.maxZoom || 19,
+        minZoom: config.minZoom || 1,
+      });
+      const previous = appState.currentBaseLayer;
+      if (previous && map.hasLayer(previous)) {
+        map.removeLayer(previous);
+      }
+      next.addTo(map);
+      setCurrentBaseLayer(next);
+      currentBasemapKey = key;
+      if (basemapSelect) basemapSelect.value = key;
+      if (persist) {
+        try {
+          window.localStorage.setItem(BASE_MAP_KEY, key);
+        } catch {
+          /* almacenamiento no disponible */
+        }
+      }
+      return true;
+    } catch (error) {
+      log.warn("No se pudo cambiar el mapa base:", error.message);
+      return false;
+    }
+  }
+
+  if (basemapSelect) {
+    let saved = null;
+    try {
+      saved = window.localStorage.getItem(BASE_MAP_KEY);
+    } catch {
+      /* almacenamiento no disponible */
+    }
+    if (saved && saved !== DEFAULT_BASE_MAP && capasBaseConfig[saved]) {
+      applyBasemap(saved, { persist: false });
+    } else {
+      applyBasemap(DEFAULT_BASE_MAP, { persist: false });
+    }
+    basemapSelect.addEventListener("change", () => {
+      const key = basemapSelect.value;
+      if (!applyBasemap(key)) {
+        basemapSelect.value = currentBasemapKey;
+      }
+    });
+  }
 
   // ── Mapa: chips, leyenda y estado ───────────────────────────
   function removeLayerFromMap(layer) {
@@ -226,16 +291,33 @@ export function initChatImmersiveUI(map) {
     }
   }
 
+  function updateMapToggle(hasResults, showMap) {
+    if (!mapToggle) return;
+    mapToggle.hidden = !hasResults;
+    if (!hasResults) return;
+
+    mapToggle.setAttribute("aria-pressed", String(showMap));
+    const label = showMap ? "Ocultar mapa" : "Ver mapa";
+    mapToggle.title = label;
+    mapToggle.setAttribute("aria-label", label);
+  }
+
   function updateLayout() {
     const layers = appState.chat.resultsLayers || [];
-    const hasMap = layers.length > 0;
+    const hasResults = layers.length > 0;
+    if (!hasResults) mapCollapsed = false;
 
-    body.classList.toggle("chat-has-map", hasMap);
-    if (hasMap) setIntroVisible(false);
+    const showMap = hasResults && !mapCollapsed;
+
+    body.classList.toggle("chat-has-map", showMap);
+    if (hasResults) setIntroVisible(false);
 
     renderMapLayers(layers);
+    updateMapToggle(hasResults, showMap);
 
-    // El mapa cambia de tamaño al abrir/cerrar el split.
+    if (!showMap) return;
+
+    // El mapa cambia de tamaño al abrir o cerrar el split.
     window.requestAnimationFrame(() => {
       try {
         map.invalidateSize();
@@ -247,7 +329,17 @@ export function initChatImmersiveUI(map) {
 
   clearLayers?.addEventListener("click", () => {
     clearResults();
+    mapCollapsed = false;
     updateLayout();
+  });
+
+  mapToggle?.addEventListener("click", () => {
+    const layers = appState.chat.resultsLayers || [];
+    if (layers.length === 0) return;
+
+    mapCollapsed = !mapCollapsed;
+    updateLayout();
+    if (!mapCollapsed) fitToLayers(layers);
   });
 
   // ── Divisor arrastrable ────────────────────────────────────
@@ -365,11 +457,15 @@ export function initChatImmersiveUI(map) {
 
   // ── Eventos del chat ───────────────────────────────────────
   document.addEventListener("woll:chat-results", (event) => {
+    const newLayers = event.detail?.layers || [];
+    if (newLayers.length > 0) mapCollapsed = false;
+
     updateLayout();
-    fitToLayers(event.detail?.layers);
+    fitToLayers(newLayers);
   });
 
   document.addEventListener("woll:chat-cleared", () => {
+    mapCollapsed = false;
     setIntroVisible(true);
     updateLayout();
   });

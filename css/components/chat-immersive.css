@@ -589,6 +589,68 @@ body.chat-immersive.chat-has-map .ci-map-status {
   background: #047857;
 }
 
+/* Botón del header del chat para ocultar o recuperar el mapa. */
+#ciShowMap[hidden] {
+  display: none !important;
+}
+
+/* Selector de mapa base dentro del lienzo. */
+.ci-basemap {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 500;
+  display: none;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 7px 0 10px;
+  border: 1px solid var(--ci-line);
+  border-radius: 999px;
+  background: var(--ci-surface);
+  box-shadow: var(--ci-shadow-sm);
+  font-family: var(--ci-font);
+}
+
+body.chat-immersive.chat-has-map .ci-basemap {
+  display: inline-flex;
+}
+
+.ci-basemap .material-symbols-outlined {
+  color: var(--ci-brand-strong);
+  font-size: 15px;
+  flex: none;
+}
+
+.ci-basemap select {
+  max-width: 132px;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: var(--ci-text);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ci-basemap select:focus-visible {
+  outline: 2px solid var(--ci-brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* En mapas angostos el estado y el selector pueden chocar. */
+body.chat-immersive .map-canvas {
+  container-type: inline-size;
+}
+
+@container (max-width: 520px) {
+  body.chat-immersive .ci-map-status {
+    display: none !important;
+  }
+}
+
 body.chat-immersive .zoom-controls {
   top: auto !important;
   bottom: 14px;
