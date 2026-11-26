@@ -1288,8 +1288,10 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   admins con instrucciones de descarga; corrida manual verificada.
 - ✅ **31-D (valoración del chat):** pulgares con motivos, `response_id` por
   respuesta, tabla anónima `chat.feedback` y tarjeta de 30 días en el panel.
-- ⏳ **Pendiente:** navbar de WordPress (sin acceso), `full-backup.sh` por SSH,
-  offsite automático y 31-C (pospuesto).
+- ✅ **Backup completo por SSH:** `full-backup.sh` cifrado con DB, secretos,
+  configs, certificados y uploads; descargado y verificado en el equipo local.
+- ⏳ **Pendiente:** navbar de WordPress (sin acceso), offsite automático y
+  31-C (pospuesto).
 
 ### 2026-11-25
 - ✅ **Portada Geodatos en el VPS:** `/` sirve `geodatos.html`, `/visor` el

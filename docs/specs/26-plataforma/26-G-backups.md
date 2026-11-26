@@ -166,20 +166,24 @@ RESTORE_EXPECT_VALUES=1425842 \
   PITR si el RPO de 24 h no alcanza.
 
 
-## 10. Backup completo del VPS por SSH (pendiente de cierre)
+## 10. Backup completo del VPS por SSH (2026-11-26)
 
 El proveedor genera **una imagen completa mensual** desde Virtualizor; no se
-lanza ni se descarga por SSH. Para el día a día se agrega un backup completo de
+lanza ni se descarga por SSH. Para el día a día existe un backup completo de
 la aplicación, a demanda:
 
-- Script `deploy/vps/full-backup.sh` (a implementar al cierre).
+- Script `deploy/vps/full-backup.sh` (ejecutar con `sudo`).
 - Incluye: dump `pg_dump -Fc`, `.env*`, `/etc/woll/gcp-sa.json`, configs de
   SSH/UFW/fail2ban/Docker/systemd/sysctl, certificados, uploads de capas,
   `rag/manifest.json` y llave de deploy.
 - Excluye: código y GeoJSON base (GitHub), tiles y ráster (regenerables),
   imágenes Docker, logs.
-- Empaqueta en `tar.gz`, cifra con GPG (misma passphrase de backups), agrega
-  SHA-256 y guarda en `/var/backups/woll/full/` con retención de 3 copias.
+- Empaqueta en `tar.gz` fuera del staging (para no incluirse a sí mismo),
+  cifra con GPG (misma passphrase de backups), agrega SHA-256 y guarda en
+  `/var/backups/woll/full/` con retención de 3 copias.
+- Verificado: 68 MB crudos → 66 MB cifrados; 290 entradas; descarga por `scp`
+  y checksum local correctos. La primera copia quedó en `~/backups/woll/` del
+  equipo de desarrollo.
 - Descarga: `scp woll-vps:/var/backups/woll/full/<archivo> .` y verificación
   local con `sha256sum` y `gpg --decrypt`.
 
@@ -198,3 +202,20 @@ desastre total.
   de descarga (`scripts/notify-backup.mjs`). Si el correo falla, el backup no se
   marca como fallido.
 - Verificado: corrida manual eliminó 9 copias antiguas, dejó 2 y envió el aviso.
+
+
+### 10.1 Restauración
+
+1. `gpg --decrypt woll-full-<fecha>.tar.gz.gpg > woll-full-<fecha>.tar.gz`.
+2. Extraer en un directorio temporal.
+3. Restaurar la base: `docker exec -i woll-postgres-1 pg_restore -U woll -d woll
+   --clean --if-exists < db/woll.dump` (base vacía o de staging).
+4. Copiar `etc/woll/env` a `/srv/woll/.env`, `etc/woll/env.backup` y
+   `etc/woll/env.ops`; `etc/woll/gcp-sa.json` a `/etc/woll/`; `srv/rag` y
+   `srv/geojson/uploads` a `/srv/woll/`; `home/deploy/.ssh` al usuario deploy;
+   las unidades `etc/systemd/system/woll-*` a `/etc/systemd/system/`.
+5. Restaurar los volúmenes de certificados desde `docker/` si se conservan.
+6. `systemctl daemon-reload`, `docker compose up -d` y smoke de `/healthz`,
+   `/api/config`, `/`, `/visor` y `/chat`.
+7. La passphrase GPG no va dentro del archivo: debe estar en el gestor de
+   contraseñas.
