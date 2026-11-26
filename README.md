@@ -64,7 +64,7 @@ Para correr en local:
 
 ```bash
 npx http-server -p 8099   # visor sin chat → http://localhost:8099
-npm run dev:site          # portada Geodatos + visor → http://localhost:8099
+npm run dev:site          # portada Geodatos + visor + chat → http://localhost:8099
 npm run dev               # visor + chat + proxy Copernicus → http://localhost:3000
 npm run dev:api           # API Node persistente → http://localhost:3000 (sin frontend)
 npm run stack:up          # stack completo: PostgreSQL + API + Nginx → http://localhost:8080 (portada)
@@ -153,7 +153,8 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | Archivo / carpeta | Para qué sirve | Cuándo tocarlo |
 |---|---|---|
 | `index.html`, `help.html` | Entry point de la SPA (visor) y manual de ayuda | Cambios de shell, carga de scripts o UI global |
-| `geodatos.html`, `js/geodatos.js`, `assets/geodatos/` | Portada Geodatos del VPS: Nginx la sirve en `/` y el visor en `/visor` | Cambios de portada, enlaces o assets institucionales |
+| `geodatos.html`, `js/geodatos.js`, `assets/geodatos/` | Portada Geodatos del VPS: Nginx la sirve en `/`; el visor en `/visor` y el chat inmersivo en `/chat` | Cambios de portada, enlaces o assets institucionales |
+| `js/ui/chatImmersiveUI.js`, `css/components/chat-immersive.css` | Shell `/chat`: split mapa/chat, divisor arrastrable, leyenda y estilos de tarjetas | Cambios de la experiencia inmersiva, no del chat ni del mapa |
 | `docs/ops/geodatos-vps.md` | Checklist de publicación de la portada y del visor en el VPS | Antes de cambiar rutas o desplegar la portada |
 | `raster/`, `data/raster/`, `scripts/raster-*.mjs` | Ráster precalculado: tiles públicos, COG privado, publicación y retención | Publicar o actualizar un ráster (Sprint 49) |
 | `admin.html`, `css/admin.css`, `js/admin/` | Panel admin: configuración, capas, RAG, APIs, taxonomía, Chat IA, Demanda y auditoría | Configuración, chat, demanda o login |

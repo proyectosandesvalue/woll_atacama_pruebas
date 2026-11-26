@@ -129,6 +129,13 @@ case "$VISOR_HTML" in
 esac
 wait_http "/visor?chat=1" || die "smoke: /visor?chat=1 no respondió 200"
 log "smoke: /visor?chat=1 OK"
+wait_http /chat || die "smoke: /chat no respondió 200"
+log "smoke: /chat OK"
+CHAT_HTML="$(curl -sk https://127.0.0.1/chat || true)"
+case "$CHAT_HTML" in
+  *"Plataforma Woll Atacama"*) ;;
+  *) die "smoke: /chat no sirve la SPA del visor" ;;
+esac
 
 if [ "$WITH_CHAT" -eq 1 ]; then
   log "smoke: chat"

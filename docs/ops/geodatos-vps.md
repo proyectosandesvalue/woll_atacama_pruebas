@@ -14,7 +14,8 @@
 | `/` | Portada institucional Geodatos | `geodatos.html` |
 | `/geodatos.html` | Misma portada (enlace directo) | `geodatos.html` |
 | `/visor` | Visor territorial; la URL se mantiene en `/visor` | `index.html` |
-| `/visor?chat=1` | Visor con el panel del chat abierto | `index.html` |
+| `/visor?chat=1` | Visor con el chat tradicional abierto | `index.html` |
+| `/chat` | Chat inmersivo; misma SPA, nuevo shell | `index.html` |
 | `/visor/` | Redirección 301 a `/visor` | — |
 | `/index.html` | Acceso directo heredado al visor | `index.html` |
 | `/api/*` | API Node | proxy a `api:3000` |
@@ -29,8 +30,11 @@ se implementa una ruta `?embed=1` específica y se revisa `X-Frame-Options`.
 La portada mantiene su cabecera y pie institucionales. Los enlaces a
 Oportunidades, Recursos y Proyectos pilotos apuntan a `https://atacamawoll.cl/`
 porque esas páginas no viven en el VPS. El visor se abre en `/visor` y su marca
-(el logo del header) vuelve a `/`. Vercel conserva `/visor` como rewrite para
-la demo/staging, pero la ruta oficial es la del VPS.
+(el logo del header) vuelve a `/`. El chat inmersivo vive en `/chat`: reutiliza
+el mismo mapa y el mismo chat, abre el mapa a la izquierda cuando hay resultados
+y lo cierra cuando se quitan todas las capas o se inicia una nueva conversación.
+El chat tradicional del visor sigue en `/visor`. Vercel conserva `/visor` y
+`/chat` como rewrites para la demo/staging, pero la ruta oficial es la del VPS.
 
 ## 2. Archivos que se publican
 
@@ -42,7 +46,9 @@ la demo/staging, pero la ruta oficial es la del VPS.
 - `index.html` — la marca del visor enlaza a `/` (portada).
 - `deploy/nginx/woll.conf` — `index geodatos.html;`.
 - `deploy/nginx/woll.dev.conf` — misma portada en local.
-- `deploy/nginx/woll-locations.conf` — `/visor` y fallback.
+- `deploy/nginx/woll-locations.conf` — `/visor`, `/chat` y fallback.
+- `js/ui/chatImmersiveUI.js` — shell de `/chat`, split, leyenda y divisor.
+- `css/components/chat-immersive.css` — estilos del chat inmersivo.
 - `deploy/vps/release.sh` — smoke de `/`, `/visor` y `/visor?chat=1`.
 - `scripts/__tests__/geodatos-landing.test.js` — guard de rutas y assets.
 - `scripts/__tests__/chat-deep-link.test.js` — guard de `?chat=1`.
@@ -72,7 +78,8 @@ npx eslint js/geodatos.js js/utils/chatDeepLink.js js/ui/chatUI.js
 # 3. Previsualización integrada (portada + visor + proxy /api)
 npm run dev:site
 # http://localhost:8099/       -> portada
-# http://localhost:8099/visor  -> visor
+# http://localhost:8099/visor  -> visor tradicional
+# http://localhost:8099/chat   -> chat inmersivo
 ```
 
 - [ ] La portada carga la tipografía local (sin Google Fonts).
@@ -94,10 +101,12 @@ git add geodatos.html js/geodatos.js assets/geodatos \
   deploy/nginx deploy/vps/release.sh vercel.json \
   scripts/__tests__/geodatos-landing.test.js \
   scripts/__tests__/chat-deep-link.test.js \
-  js/utils/chatDeepLink.js js/ui/chatUI.js index.html \
+  scripts/__tests__/chat-immersive.test.js scripts/dev-site.mjs package.json \
+  js/utils/chatDeepLink.js js/ui/chatUI.js js/ui/chatImmersiveUI.js js/script.js \
+  css/components/chat-immersive.css index.html \
   docs/ops/geodatos-vps.md docs/DEV_GUIDE.md docs/ARCHITECTURE.md \
   docs/CHANGELOG.md README.md AGENTS.md
-git commit -m "feat: portada geodatos y visor en /visor del vps"
+git commit -m "feat: portada geodatos, chat inmersivo /chat y visor en /visor"
 git push vps main
 
 # 2. Release controlado (backup -> build -> migraciones -> up -> smoke)
@@ -135,7 +144,9 @@ Resultados esperados:
 | `/` | `200` y `<title>Geodatos ...` |
 | `/geodatos.html` | `200` y mismo título |
 | `/visor` | `200` y `<title>Plataforma Woll Atacama</title>` |
-| `/visor?chat=1` | `200` y el panel del chat abierto en el navegador |
+| `/visor?chat=1` | `200` y el chat tradicional abierto en el navegador |
+| `/chat` | `200` y chat inmersivo con portada |
+| `/chat/` | `301` a `/chat` |
 | `/visor/` | `301` a `/visor` |
 | `/api/config` | `200` |
 | logo y fuente | `200` |
@@ -147,8 +158,11 @@ Abrir `https://visor.atacamawoll.cl/` y comprobar:
 
 - [ ] La portada carga sin errores en consola ni violaciones de CSP.
 - [ ] “Abrir geoportal” y las tarjetas del geoportal llevan a `/visor`.
-- [ ] “Abrir chat” lleva a `/visor?chat=1` y el panel “Asistente IA” aparece
-      abierto.
+- [ ] “Abrir chat” lleva a `/chat` y aparece la portada del chat inmersivo.
+- [ ] Una consulta con capas abre el mapa a la izquierda; el divisor se puede
+      arrastrar; “Quitar todas” devuelve el chat completo.
+- [ ] “Nueva conversación” limpia el hilo y las capas, y vuelve a la portada.
+- [ ] El chat tradicional de `/visor` sigue funcionando.
 - [ ] El botón atrás vuelve a la portada.
 - [ ] Recargar `/visor` mantiene el visor (no cae en 404).
 - [ ] `/help.html` y `/admin.html` siguen funcionando.

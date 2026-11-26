@@ -223,6 +223,7 @@ PostGIS, no con el GeoJSON.
 
 ## Chat IA
 
+- **Dos entradas:** `/chat` es el shell inmersivo (mapa a la izquierda cuando hay capas, chat a la derecha, divisor arrastrable) y `/visor` conserva el chat lateral antiguo. `/chat` reutiliza `#map`, `initChatUI`, `showResults` y `clearResults`; no duplica el mapa ni el backend. Ver `docs/ops/geodatos-vps.md`.
 - **Antes de tocar cualquier componente del chat**, lee `docs/CONTRACT.md` §6.7
   y el checklist `docs/DEV_GUIDE.md` §3.6.1. La calidad se mide por ruta
   (tool/RAG/mixta), por evidencia y por abstención, no solo por la respuesta.

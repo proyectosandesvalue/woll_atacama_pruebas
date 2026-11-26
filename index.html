@@ -28,10 +28,40 @@
   <link rel="stylesheet" href="css/components/search.css?v=20261007" />
   <link rel="stylesheet" href="css/desktop.css?v=20261007" />
   <link rel="stylesheet" href="css/mobile.css?v=20261007" />
+  <link rel="stylesheet" href="css/components/chat-immersive.css?v=20261126" />
   <link rel="icon" href="assets/img/cropped-logo2-192x192.png" type="image/x-icon" />
 </head>
 
 <body>
+
+  <!-- HEADER DEL CHAT INMERSIVO (/chat) -->
+  <header class="ci-header" id="ciHeader" aria-label="Chat inmersivo">
+    <div class="ci-header-left">
+      <a href="https://www.atacamawoll.cl/" class="ci-logo" aria-label="Ir a Atacamawoll">
+        <img class="ci-logo-dark" src="assets/img/woll-logo-para-azul.png" alt="WoLL Atacama" />
+        <img class="ci-logo-light" src="assets/img/logo2-1.png" alt="WoLL Atacama" />
+      </a>
+      <span class="ci-header-divider" aria-hidden="true"></span>
+      <nav class="ci-breadcrumb" aria-label="Ubicación">
+        <a href="/">Geodatos</a>
+        <span aria-hidden="true">/</span>
+        <strong>Asistente IA</strong>
+      </nav>
+    </div>
+    <div class="ci-header-right">
+      <nav class="ci-nav" aria-label="Productos">
+        <a href="/" class="is-active" aria-current="page">Geodatos</a>
+        <a href="/visor">Visor</a>
+      </nav>
+      <button type="button" class="ci-icon-btn" id="ciThemeToggle" aria-label="Cambiar tema" title="Cambiar entre modo oscuro y claro">
+        <span class="material-symbols-outlined" id="ciThemeIcon">light_mode</span>
+      </button>
+      <button type="button" class="ci-new-btn" id="ciNewConversation">
+        <span class="material-symbols-outlined">add</span>
+        Nueva conversación
+      </button>
+    </div>
+  </header>
 
   <!-- ════════════════════════════════════════════════════════════
        HEADER
@@ -39,7 +69,7 @@
   <header class="header header-custom">
     <!-- Izquierda: Marca -->
     <div class="header-left">
-      <a href="/" class="brand" aria-label="Volver a Geodatos" title="Volver a Geodatos">
+      <a href="https://www.atacamawoll.cl/" class="brand" aria-label="Ir a Atacamawoll" title="Ir a Atacamawoll">
         <img src="assets/img/logo2-1.png" alt="WoLL Atacama" class="brand-logo-img light-logo" />
         <img src="assets/img/woll-logo-para-azul.png" alt="WoLL Atacama" class="brand-logo-img dark-logo" />
       </a>
@@ -119,6 +149,29 @@
 
     <!-- MAPA -->
     <div class="map-canvas">
+      <!-- Header del mapa para /chat -->
+      <div class="ci-map-top" id="ciMapTop">
+        <div class="ci-map-header">
+          <div class="ci-map-identity">
+            <span class="ci-map-icon"><span class="material-symbols-outlined">map</span></span>
+            <div>
+              <strong>Mapa de resultados</strong>
+              <small><i></i><span id="ciMapCount">0 capas visibles</span></small>
+            </div>
+          </div>
+          <div class="ci-map-actions">
+            <button type="button" class="ci-map-btn" id="ciClearLayers">
+              <span class="material-symbols-outlined">layers_clear</span>
+              Quitar todas
+            </button>
+            <button type="button" class="ci-map-icon-btn" id="ciExpandMap" aria-label="Expandir mapa" title="Expandir mapa">
+              <span class="material-symbols-outlined">open_in_full</span>
+            </button>
+          </div>
+        </div>
+        <div class="ci-map-chips" id="ciMapChips" aria-label="Capas en el mapa"></div>
+      </div>
+
       <div id="map"></div>
 
       <!-- Panel inferior: Tabla de Atributos -->
@@ -187,6 +240,17 @@
         <span class="coords-divider"></span>
         <span id="coordZoom">Zoom: —</span>
       </div>
+
+      <!-- Leyenda y estado del mapa para /chat -->
+      <div class="ci-map-legend" id="ciMapLegend" aria-label="Leyenda de resultados"></div>
+      <div class="ci-map-status" id="ciMapStatus"><i></i><span id="ciMapStatusText">Mapa interactivo</span></div>
+    </div>
+
+    <!-- Divisor mapa / chat para /chat -->
+    <div class="ci-divider" id="ciDivider" role="separator" aria-orientation="vertical"
+      aria-label="Ajustar el ancho del mapa y del chat" aria-valuemin="32" aria-valuemax="72"
+      aria-valuenow="62" tabindex="0" title="Arrastra para ajustar. Doble clic para restablecer.">
+      <span class="ci-divider-grip" aria-hidden="true"><i></i><i></i></span>
     </div>
 
     <!-- SIDEBAR DERECHO — Leyenda -->
@@ -259,6 +323,59 @@
 
       <!-- Conversación + entrada -->
       <div class="ai-chat-container">
+
+        <!-- Portada del chat inmersivo (/chat) -->
+        <div class="ci-intro" id="ciIntro">
+          <div class="ci-intro-inner">
+            <span class="ci-eyebrow">
+              <span class="material-symbols-outlined">auto_awesome</span>
+              Asistente territorial · WOLL Atacama
+            </span>
+            <h1 class="ci-intro-title">Conversa con el territorio de Atacama.</h1>
+            <p class="ci-intro-lead">
+              Pregunta por capas, comunas, estaciones o indicadores. Cuando la respuesta tenga datos geográficos, el mapa aparecerá a tu lado.
+            </p>
+            <div class="ci-context-pill">
+              <span class="material-symbols-outlined">database</span>
+              9 dimensiones <i></i> +70 capas <i></i> 9 comunas
+            </div>
+            <div class="ci-suggestions" aria-label="Consultas sugeridas">
+              <button type="button" class="ci-suggestion" data-ci-query="Muéstrame las lagunas y humedales por comuna">
+                <span class="ci-suggestion-icon"><span class="material-symbols-outlined">water_drop</span></span>
+                <span class="ci-suggestion-body">
+                  <span class="ci-suggestion-badge">Resultado en el mapa</span>
+                  <strong>Muéstrame las lagunas y humedales por comuna</strong>
+                  <small>Activa las capas y abre la vista dividida</small>
+                </span>
+                <span class="ci-suggestion-arrow material-symbols-outlined">arrow_outward</span>
+              </button>
+              <button type="button" class="ci-suggestion" data-ci-query="¿Dónde están las plantas desaladoras?">
+                <span class="ci-suggestion-icon"><span class="material-symbols-outlined">water</span></span>
+                <span class="ci-suggestion-body">
+                  <strong>¿Dónde están las plantas desaladoras?</strong>
+                  <small>Infraestructura y cobertura regional</small>
+                </span>
+                <span class="ci-suggestion-arrow material-symbols-outlined">arrow_outward</span>
+              </button>
+              <button type="button" class="ci-suggestion" data-ci-query="Compárame glaciares y humedales por comuna">
+                <span class="ci-suggestion-icon"><span class="material-symbols-outlined">compare_arrows</span></span>
+                <span class="ci-suggestion-body">
+                  <strong>Compárame glaciares y humedales por comuna</strong>
+                  <small>Comparación con gráfico y fuente</small>
+                </span>
+                <span class="ci-suggestion-arrow material-symbols-outlined">arrow_outward</span>
+              </button>
+              <button type="button" class="ci-suggestion" data-ci-query="¿Cuántos salares hay en Atacama?">
+                <span class="ci-suggestion-icon"><span class="material-symbols-outlined">landscape</span></span>
+                <span class="ci-suggestion-body">
+                  <strong>¿Cuántos salares hay en Atacama?</strong>
+                  <small>Conteo rápido sobre el catálogo</small>
+                </span>
+                <span class="ci-suggestion-arrow material-symbols-outlined">arrow_outward</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div class="ai-chat-messages" id="ai-chat-messages" role="log" aria-live="polite">
           <div class="ai-message assistant">¡Hola! Soy tu asistente de IA del Visor Territorial WoLL.

@@ -1,0 +1,1136 @@
+/* ============================================================
+   CHAT-IMMERSIVE.CSS — Experiencia /chat
+   Reutiliza el mapa y el chat existentes. Solo cambia el shell,
+   el layout y los estilos de las tarjetas.
+   ============================================================ */
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("../fonts/plus-jakarta-sans-latin.woff2") format("woff2");
+}
+
+body.chat-immersive {
+  --ci-header-h: 66px;
+  --ci-bg: #f8fbff;
+  --ci-surface: #ffffff;
+  --ci-surface-2: #eef6ff;
+  --ci-surface-3: #e0f2fe;
+  --ci-text: #072038;
+  --ci-text-2: #334e68;
+  --ci-text-3: #486581;
+  --ci-brand: #0284c7;
+  --ci-brand-strong: #0369a1;
+  --ci-brand-soft: #e0f2fe;
+  --ci-line: #0284c729;
+  --ci-line-strong: #0284c757;
+  --ci-shadow-sm: 0 4px 12px rgba(7, 32, 56, 0.05);
+  --ci-shadow: 0 12px 32px rgba(7, 32, 56, 0.07);
+  --ci-font: "Plus Jakarta Sans", system-ui, sans-serif;
+  background: var(--ci-bg);
+}
+
+[data-theme="dark"] body.chat-immersive {
+  --ci-bg: #08111f;
+  --ci-surface: #0f172a;
+  --ci-surface-2: #13243a;
+  --ci-surface-3: #1e3a5f;
+  --ci-text: #f0f9ff;
+  --ci-text-2: #bae6fd;
+  --ci-text-3: #94a3b8;
+  --ci-brand: #38bdf8;
+  --ci-brand-strong: #0284c7;
+  --ci-brand-soft: rgba(56, 189, 248, 0.15);
+  --ci-line: rgba(125, 211, 252, 0.16);
+  --ci-line-strong: rgba(125, 211, 252, 0.3);
+  --ci-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --ci-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Elementos exclusivos de /chat ─────────────────────────── */
+.ci-header,
+.ci-divider {
+  display: none;
+}
+
+/* ── Header inmersivo ───────────────────────────────────────── */
+
+body.chat-immersive .header {
+  display: none !important;
+}
+
+body.chat-immersive .ci-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  height: var(--ci-header-h);
+  padding: 0 24px;
+  background: color-mix(in srgb, var(--ci-bg) 90%, transparent);
+  border-bottom: 1px solid var(--ci-line);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  font-family: var(--ci-font);
+}
+
+.ci-header-left,
+.ci-header-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.ci-logo {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
+.ci-logo img {
+  display: none;
+  height: 30px;
+  width: auto;
+  max-width: 170px;
+  object-fit: contain;
+}
+
+[data-theme="light"] .ci-logo-light,
+[data-theme="dark"] .ci-logo-dark {
+  display: block;
+}
+
+.ci-header-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--ci-line-strong);
+  flex: none;
+}
+
+.ci-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ci-text-3);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.ci-breadcrumb a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ci-breadcrumb a:hover {
+  color: var(--ci-brand-strong);
+}
+
+.ci-breadcrumb strong {
+  color: var(--ci-text);
+  font-weight: 700;
+}
+
+.ci-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--ci-line);
+  border-radius: 999px;
+  background: var(--ci-surface-2);
+}
+
+.ci-nav a {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--ci-text-2);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ci-nav a:hover {
+  color: var(--ci-text);
+}
+
+.ci-nav a.is-active {
+  color: var(--ci-brand-strong);
+  background: var(--ci-surface);
+  box-shadow: var(--ci-shadow-sm);
+}
+
+.ci-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--ci-line);
+  border-radius: 50%;
+  background: var(--ci-surface);
+  color: var(--ci-text-2);
+  cursor: pointer;
+}
+
+.ci-icon-btn:hover {
+  border-color: var(--ci-line-strong);
+  background: var(--ci-brand-soft);
+  color: var(--ci-brand-strong);
+}
+
+.ci-icon-btn .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.ci-new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--ci-brand-strong);
+  border-radius: 999px;
+  background: var(--ci-brand);
+  color: #fff;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.22);
+}
+
+.ci-new-btn:hover {
+  background: var(--ci-brand-strong);
+  transform: translateY(-1px);
+}
+
+.ci-new-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+/* ── Layout principal ───────────────────────────────────────── */
+body.chat-immersive .main-layout {
+  position: fixed;
+  top: var(--ci-header-h);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  gap: 0;
+  padding: 16px 18px 18px;
+  background: var(--ci-bg);
+  overflow: hidden;
+}
+
+body.chat-immersive.chat-has-map .main-layout {
+  grid-template-columns: var(--ci-map-width, 62%) 18px minmax(300px, 1fr);
+}
+
+body.chat-immersive .sidebar-left,
+body.chat-immersive .sidebar-right,
+body.chat-immersive .sidebar-info {
+  display: none !important;
+}
+
+body.chat-immersive .map-canvas {
+  display: none;
+  grid-column: 1;
+  grid-row: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--ci-line);
+  border-radius: 24px;
+  background: var(--ci-surface);
+  box-shadow: var(--ci-shadow);
+}
+
+body.chat-immersive.chat-has-map .map-canvas {
+  display: flex;
+}
+
+body.chat-immersive .map-canvas > #map {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  flex: 1;
+  min-height: 0;
+  height: auto !important;
+  width: 100%;
+  z-index: 1;
+}
+
+body.chat-immersive .ci-map-top {
+  position: relative;
+  z-index: 2;
+}
+
+body.chat-immersive #attribute-table-panel,
+body.chat-immersive .coords-bar {
+  display: none !important;
+}
+
+body.chat-immersive .sidebar-chat {
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  z-index: 1 !important;
+  display: flex !important;
+  flex-direction: column;
+  grid-column: 1;
+  grid-row: 1;
+  width: auto !important;
+  max-width: none !important;
+  height: 100%;
+  min-width: 300px;
+  min-height: 0;
+  overflow: hidden;
+  transform: none !important;
+  border: 1px solid var(--ci-line);
+  border-radius: 24px;
+  background: var(--ci-surface);
+  box-shadow: var(--ci-shadow);
+}
+
+body.chat-immersive.chat-has-map .sidebar-chat {
+  grid-column: 3;
+}
+
+body.chat-immersive .ci-divider {
+  display: none;
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+}
+
+body.chat-immersive.chat-has-map .ci-divider {
+  display: flex;
+}
+
+.ci-divider::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  width: 1px;
+  background: var(--ci-line);
+}
+
+.ci-divider-grip {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 24px;
+  height: 48px;
+  border: 1px solid var(--ci-line-strong);
+  border-radius: 999px;
+  background: var(--ci-surface);
+  box-shadow: var(--ci-shadow-sm);
+}
+
+.ci-divider-grip i {
+  display: block;
+  width: 2px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--ci-text-3);
+  opacity: 0.55;
+}
+
+.ci-divider:hover .ci-divider-grip,
+.ci-divider:focus-visible .ci-divider-grip {
+  border-color: var(--ci-brand);
+  background: var(--ci-brand-soft);
+}
+
+body.is-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* ── Header del mapa ────────────────────────────────────────── */
+.ci-map-top {
+  display: none;
+  flex: none;
+  border-bottom: 1px solid var(--ci-line);
+  background: linear-gradient(180deg, var(--ci-surface-2) 0%, var(--ci-surface) 100%);
+  font-family: var(--ci-font);
+}
+
+body.chat-immersive.chat-has-map .ci-map-top {
+  display: flex;
+  flex-direction: column;
+}
+
+.ci-map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 14px 10px;
+}
+
+.ci-map-identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.ci-map-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--ci-line);
+  border-radius: 11px;
+  background: var(--ci-brand-soft);
+  color: var(--ci-brand-strong);
+  flex: none;
+}
+
+.ci-map-icon .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.ci-map-identity strong {
+  display: block;
+  color: var(--ci-text);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.ci-map-identity small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  color: var(--ci-text-3);
+  font-size: 9px;
+}
+
+.ci-map-identity small i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ci-brand);
+}
+
+.ci-map-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+}
+
+.ci-map-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--ci-line);
+  border-radius: 999px;
+  background: var(--ci-surface);
+  color: var(--ci-text-2);
+  font-family: inherit;
+  font-size: 9.5px;
+  font-weight: 700;
+  box-shadow: var(--ci-shadow-sm);
+  cursor: pointer;
+}
+
+.ci-map-btn:hover {
+  border-color: var(--ci-line-strong);
+  color: var(--ci-text);
+}
+
+.ci-map-btn .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.ci-map-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--ci-line);
+  border-radius: 50%;
+  background: var(--ci-surface);
+  color: var(--ci-text-2);
+  cursor: pointer;
+}
+
+.ci-map-icon-btn:hover {
+  border-color: var(--ci-line-strong);
+  color: var(--ci-text);
+}
+
+.ci-map-icon-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.ci-map-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0 14px 11px;
+}
+
+.ci-layer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--ci-line);
+  border-radius: 999px;
+  background: var(--ci-surface);
+  color: var(--ci-text-2);
+  font-size: 9.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ci-layer-chip b {
+  color: var(--ci-text);
+  font-size: 9px;
+}
+
+.ci-layer-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  margin-right: -3px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ci-text-3);
+  padding: 0;
+  cursor: pointer;
+}
+
+.ci-layer-chip button:hover {
+  background: var(--ci-brand-soft);
+  color: var(--ci-brand-strong);
+}
+
+.ci-layer-chip .material-symbols-outlined {
+  font-size: 12px;
+}
+
+.ci-layer-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* ── Leyenda del mapa ───────────────────────────────────────── */
+.ci-map-legend {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 450;
+  display: none;
+  width: min(280px, 43%);
+  max-height: 38%;
+  overflow-y: auto;
+  padding: 11px 12px;
+  border: 1px solid var(--ci-line);
+  border-radius: 14px;
+  background: var(--ci-surface);
+  box-shadow: var(--ci-shadow);
+  font-family: var(--ci-font);
+}
+
+body.chat-immersive.chat-has-map .ci-map-legend {
+  display: block;
+}
+
+.ci-legend-title {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--ci-text);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.ci-legend-section + .ci-legend-section {
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--ci-line);
+}
+
+.ci-legend-section strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ci-text);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.ci-legend-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ci-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ci-text-2);
+  font-size: 8px;
+}
+
+.ci-legend-swatch {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.ci-legend-more {
+  color: var(--ci-text-3);
+  font-size: 7.5px;
+}
+
+.ci-legend-foot {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ci-line);
+  color: var(--ci-text-3);
+  font-size: 7.5px;
+  line-height: 1.4;
+}
+
+/* ── Estado del mapa y controles ─────────────────────────────── */
+.ci-map-status {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 450;
+  display: none;
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid var(--ci-line);
+  border-radius: 999px;
+  background: var(--ci-surface);
+  box-shadow: var(--ci-shadow-sm);
+  color: var(--ci-text-2);
+  font-family: var(--ci-font);
+  font-size: 8px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+body.chat-immersive.chat-has-map .ci-map-status {
+  display: inline-flex;
+}
+
+.ci-map-status i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #047857;
+}
+
+body.chat-immersive .zoom-controls {
+  top: auto !important;
+  bottom: 14px;
+  right: 14px;
+  z-index: 460 !important;
+}
+
+body.chat-immersive .nav-controls {
+  top: auto !important;
+  bottom: 96px;
+  right: 14px;
+  z-index: 460 !important;
+}
+
+body.chat-immersive .map-btn {
+  width: 34px;
+  height: 34px;
+  border-color: var(--ci-line);
+  background: var(--ci-surface);
+  color: var(--ci-text-2);
+  box-shadow: var(--ci-shadow-sm);
+}
+
+body.chat-immersive .map-btn:hover {
+  background: var(--ci-brand-soft);
+  color: var(--ci-brand-strong);
+}
+
+/* ── Panel del chat ─────────────────────────────────────────── */
+body.chat-immersive .sidebar-chat .sidebar-header {
+  flex: none;
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--ci-line);
+  background: linear-gradient(180deg, var(--ci-surface-2) 0%, var(--ci-surface) 100%);
+  font-family: var(--ci-font);
+}
+
+body.chat-immersive .chat-title {
+  color: var(--ci-text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+body.chat-immersive .chat-title-icon {
+  color: var(--ci-brand-strong);
+}
+
+body.chat-immersive .chat-actions .icon-btn {
+  color: var(--ci-text-2);
+}
+
+body.chat-immersive .chat-actions .icon-btn:hover {
+  color: var(--ci-brand-strong);
+  background: var(--ci-brand-soft);
+}
+
+body.chat-immersive #closeChatSidebarBtn {
+  display: none !important;
+}
+
+body.chat-immersive .ai-chat-container {
+  flex: 1;
+  min-height: 0;
+  background: var(--ci-surface);
+  font-family: var(--ci-font);
+}
+
+body.chat-immersive .ai-chat-messages {
+  padding: 16px;
+  gap: 12px;
+}
+
+body.chat-immersive .ai-chat-examples,
+body.chat-immersive .chat-clear-results-btn,
+body.chat-immersive .chat-clear-results-mobile-btn {
+  display: none !important;
+}
+
+body.chat-immersive .ai-message {
+  max-width: 92%;
+  color: var(--ci-text);
+  font-family: var(--ci-font);
+  font-size: 0.82rem;
+  line-height: 1.58;
+}
+
+body.chat-immersive .ai-message.assistant {
+  background: var(--ci-surface);
+  border: 1px solid var(--ci-line);
+  color: var(--ci-text-2);
+  box-shadow: var(--ci-shadow-sm);
+}
+
+body.chat-immersive .ai-message.user {
+  background: var(--ci-brand);
+  color: #fff;
+}
+
+body.chat-immersive .ai-chart {
+  background: var(--ci-surface-2);
+}
+
+body.chat-immersive .ai-chart-title,
+body.chat-immersive .ai-chart-note {
+  color: var(--ci-text-2);
+}
+
+body.chat-immersive .ai-chart-placeholder {
+  background: var(--ci-surface-2);
+  color: var(--ci-text-3);
+}
+
+body.chat-immersive .ai-message-table-wrapper {
+  border-color: var(--ci-line);
+  background: var(--ci-surface-2);
+}
+
+body.chat-immersive .ai-chat-input-area {
+  flex: none;
+  padding: 10px 12px 12px;
+  border-top: 1px solid var(--ci-line);
+  background: var(--ci-surface);
+}
+
+body.chat-immersive .ai-chat-input {
+  background: var(--ci-surface-2);
+  border-color: var(--ci-line);
+  color: var(--ci-text);
+  font-family: var(--ci-font);
+}
+
+body.chat-immersive .ai-chat-input::placeholder {
+  color: var(--ci-text-3);
+}
+
+body.chat-immersive .ai-chat-input:focus {
+  border-color: var(--ci-brand);
+  box-shadow: 0 0 0 3px var(--ci-brand-soft);
+}
+
+body.chat-immersive .ai-chat-send-btn {
+  background: var(--ci-brand);
+  color: #fff;
+}
+
+body.chat-immersive .ai-chat-send-btn:hover {
+  background: var(--ci-brand-strong);
+}
+
+body.chat-immersive .ai-message.typing {
+  background: var(--ci-surface);
+  border: 1px solid var(--ci-line);
+}
+
+body.chat-immersive .typing-dot {
+  background: var(--ci-text-3);
+}
+
+/* ── Intro del chat completo ─────────────────────────────────── */
+.ci-intro {
+  display: none;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 16px 0;
+  background: var(--ci-surface);
+  font-family: var(--ci-font);
+}
+
+body.chat-immersive .ci-intro {
+  display: flex;
+  flex-direction: column;
+}
+
+body.chat-immersive.ci-intro-hidden .ci-intro {
+  display: none;
+}
+
+body.chat-immersive:not(.ci-intro-hidden) .ai-chat-messages {
+  display: none;
+}
+
+.ci-intro-inner {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 10px 0 0;
+}
+
+.ci-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 16px;
+  color: var(--ci-brand-strong);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.ci-eyebrow .material-symbols-outlined {
+  font-size: 15px;
+}
+
+.ci-intro-title {
+  max-width: 18ch;
+  margin: 0 0 12px;
+  color: var(--ci-text);
+  font-family: var(--ci-font);
+  font-size: clamp(30px, 3.2vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+
+.ci-intro-lead {
+  max-width: 62ch;
+  margin: 0 0 16px;
+  color: var(--ci-text-2);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.ci-context-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border: 1px solid var(--ci-line);
+  border-radius: 999px;
+  background: var(--ci-surface);
+  color: var(--ci-text-2);
+  font-size: 10px;
+  font-weight: 600;
+  box-shadow: var(--ci-shadow-sm);
+}
+
+.ci-context-pill .material-symbols-outlined {
+  font-size: 14px;
+  color: var(--ci-brand-strong);
+}
+
+.ci-context-pill i {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--ci-text-3);
+}
+
+.ci-suggestions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.ci-suggestion {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 72px;
+  padding: 11px 12px;
+  border: 1px solid var(--ci-line);
+  border-radius: 15px;
+  background: var(--ci-surface);
+  color: var(--ci-text);
+  text-align: left;
+  box-shadow: var(--ci-shadow-sm);
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+}
+
+.ci-suggestion:hover {
+  border-color: var(--ci-line-strong);
+  box-shadow: var(--ci-shadow);
+  transform: translateY(-2px);
+}
+
+.ci-suggestion-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--ci-line);
+  border-radius: 10px;
+  background: var(--ci-brand-soft);
+  color: var(--ci-brand-strong);
+  flex: none;
+}
+
+.ci-suggestion-icon .material-symbols-outlined {
+  font-size: 17px;
+}
+
+.ci-suggestion-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ci-suggestion-body strong {
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.ci-suggestion-body small {
+  color: var(--ci-text-3);
+  font-size: 9.25px;
+  line-height: 1.4;
+}
+
+.ci-suggestion-badge {
+  align-self: flex-start;
+  padding: 2px 5px;
+  border: 1px solid var(--ci-line);
+  border-radius: 999px;
+  background: var(--ci-brand-soft);
+  color: var(--ci-brand-strong);
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ci-suggestion-arrow {
+  margin-left: auto;
+  color: var(--ci-text-3);
+  font-size: 14px;
+  flex: none;
+}
+
+.ci-suggestion:hover .ci-suggestion-arrow {
+  color: var(--ci-brand-strong);
+  transform: translate(2px, -2px);
+}
+
+/* Composer más ancho en modo chat completo */
+body.chat-immersive:not(.chat-has-map) .ai-chat-input-area {
+  padding-left: max(12px, calc((100% - 880px) / 2));
+  padding-right: max(12px, calc((100% - 880px) / 2));
+}
+
+body.chat-immersive:not(.chat-has-map) .ai-chat-messages {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1040px) {
+  body.chat-immersive .ci-breadcrumb {
+    display: none;
+  }
+
+  body.chat-immersive .main-layout {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 760px) {
+  body.chat-immersive {
+    --ci-header-h: 58px;
+  }
+
+  body.chat-immersive .ci-header {
+    padding: 0 14px;
+  }
+
+  body.chat-immersive .ci-logo img {
+    height: 25px;
+    max-width: 145px;
+  }
+
+  body.chat-immersive .ci-new-btn {
+    padding: 0 10px;
+    font-size: 10px;
+  }
+
+  body.chat-immersive .main-layout {
+    padding: 10px;
+  }
+
+  body.chat-immersive .ci-intro-title {
+    font-size: 32px;
+  }
+
+  body.chat-immersive .ci-suggestions {
+    grid-template-columns: 1fr;
+  }
+
+  body.chat-immersive .ci-map-status {
+    display: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  body.chat-immersive .main-layout,
+  body.chat-immersive.chat-has-map .main-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+  }
+
+  body.chat-immersive .map-canvas,
+  body.chat-immersive.chat-has-map .map-canvas {
+    display: none;
+    flex: none;
+    min-height: 340px;
+    width: 100%;
+  }
+
+  body.chat-immersive.chat-has-map .map-canvas {
+    display: flex;
+  }
+
+  body.chat-immersive .sidebar-chat,
+  body.chat-immersive.chat-has-map .sidebar-chat {
+    grid-column: auto;
+    grid-row: auto;
+    flex: 1 0 auto;
+    width: 100%;
+    min-width: 0;
+    min-height: 560px;
+  }
+
+  body.chat-immersive .ci-divider {
+    display: none !important;
+  }
+
+  body.chat-immersive .ci-intro-title {
+    font-size: 29px;
+  }
+}
+
+@media (max-width: 560px) {
+  body.chat-immersive .ci-nav {
+    display: none;
+  }
+
+  body.chat-immersive .ci-new-btn {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+    font-size: 0;
+  }
+
+  body.chat-immersive .ci-new-btn .material-symbols-outlined {
+    font-size: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.chat-immersive * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

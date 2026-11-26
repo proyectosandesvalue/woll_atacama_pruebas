@@ -17,6 +17,7 @@ import { initMapUI, initModalUI } from './ui/mapUI.js';
 import { initSearchUI } from './ui/searchUI.js';
 import { initMobileUI } from './ui/mobileUI.js';
 import { initChatUI } from './ui/chatUI.js';
+import { initChatImmersiveUI } from './ui/chatImmersiveUI.js';
 import { initWmsFeatureInfo } from './utils/wmsFeatureInfo.js';
 
 // ── Módulo principal de UI (se ejecuta cuando el DOM y el mapa están listos) ──
@@ -44,6 +45,7 @@ async function initUI() {
   initSearchUI(map);
   initMobileUI(map);
   initChatUI();
+  initChatImmersiveUI(map);
 
   log.log('UI Shell inicializada correctamente (modular)');
 }

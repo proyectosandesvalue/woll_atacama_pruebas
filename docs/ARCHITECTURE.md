@@ -743,6 +743,11 @@ geodatos.html — portada institucional del VPS. Nginx la sirve en `/` y el
 visor en `/visor`, sin cambiar la URL para que los recursos relativos del SPA
 resuelvan contra la raíz. Ver `docs/ops/geodatos-vps.md`.
 
+/chat — modo inmersivo de la misma SPA: reutiliza `#map`, `appState.map`,
+`initChatUI`, `showResults` y `clearResults`. El mapa aparece a la izquierda
+cuando hay capas; el chat del visor (`/visor`) conserva su interfaz anterior.
+Implementación: `js/ui/chatImmersiveUI.js` + `css/components/chat-immersive.css`.
+
 js/geodatos.js — menú móvil de la portada.
 
 help.html — manual.

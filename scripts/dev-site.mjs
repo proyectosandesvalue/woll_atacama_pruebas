@@ -85,7 +85,18 @@ function proxyApi(req, res) {
       port: target.port,
       path: req.url,
       method: req.method,
-      headers: { ...req.headers, host: target.host },
+      headers: {
+        ...req.headers,
+        host: target.host,
+        "x-forwarded-for":
+          req.headers["x-forwarded-for"] ||
+          req.socket.remoteAddress ||
+          "127.0.0.1",
+        "x-real-ip":
+          req.headers["x-real-ip"] ||
+          req.socket.remoteAddress ||
+          "127.0.0.1",
+      },
     },
     (proxyRes) => {
       res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
@@ -122,13 +133,14 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (pathname === "/visor/") {
-    res.writeHead(301, { location: `/visor${url.search}` });
+  if (pathname === "/visor/" || pathname === "/chat/") {
+    const target = pathname.startsWith("/chat") ? "/chat" : "/visor";
+    res.writeHead(301, { location: `${target}${url.search}` });
     res.end();
     return;
   }
 
-  if (pathname === "/visor") {
+  if (pathname === "/visor" || pathname === "/chat") {
     await sendFile(req, res, path.join(ROOT, "index.html"));
     return;
   }
@@ -149,5 +161,6 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, HOST, () => {
   console.log(`Geodatos local: http://${HOST}:${PORT}/`);
   console.log(`Visor local:    http://${HOST}:${PORT}/visor`);
+  console.log(`Chat local:     http://${HOST}:${PORT}/chat`);
   console.log(`API proxy:      ${API_ORIGIN}`);
 });

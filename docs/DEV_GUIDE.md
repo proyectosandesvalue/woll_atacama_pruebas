@@ -1554,16 +1554,18 @@ con `required variable POSTGRES_PASSWORD is missing a value`.
 La portada del VPS es `geodatos.html`: Nginx la sirve en `/` con
 `index geodatos.html;`. El visor se sirve en `/visor` sin cambiar la URL, para
 que sus recursos relativos (`js/`, `css/`, `geojson/`) resuelvan contra la raíz.
-`/visor/` redirige a `/visor` y `/index.html` sigue disponible como acceso
-directo heredado.
+`/visor/` redirige a `/visor`, `/chat` sirve el chat inmersivo y
+`/index.html` sigue disponible como acceso directo heredado.
 
 - Configuración: `deploy/nginx/woll.conf`, `woll.dev.conf` y
   `woll-locations.conf`.
 - Previsualización local: `npm run dev:site` (portada en
-  `http://localhost:8099/` y visor en `http://localhost:8099/visor`).
+  `http://localhost:8099/`, visor en `/visor` y chat inmersivo en `/chat`).
 - La portada no usa CDN ni scripts inline: tipografía en
   `css/fonts/plus-jakarta-sans-latin.woff2` y JS en `js/geodatos.js`.
-- `deploy/vps/release.sh` verifica `/`, `/visor` y `/visor?chat=1`.
+- `deploy/vps/release.sh` verifica `/`, `/visor`, `/visor?chat=1` y `/chat`.
+- `/chat` reutiliza `#map`, `initChatUI`, `showResults` y `clearResults`; no
+  duplica el mapa ni el backend.
 - Checklist de publicación: `docs/ops/geodatos-vps.md`.
 - Tests: `scripts/__tests__/geodatos-landing.test.js` y
   `scripts/__tests__/chat-deep-link.test.js`.

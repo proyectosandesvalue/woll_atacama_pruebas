@@ -13,7 +13,7 @@ test("la portada Geodatos vive en la raíz y apunta al visor interno", async () 
   assert.match(html, /<html lang="es">/);
   assert.match(html, /<title>Geodatos \| Atacamawoll/);
   assert.match(html, /href="\/visor"/);
-  assert.match(html, /href="\/visor\?chat=1"/);
+  assert.match(html, /href="\/chat"/);
   assert.match(html, /assets\/geodatos\/logo-atacamawoll\.webp/);
   assert.match(html, /css\/fonts\/plus-jakarta-sans-latin\.woff2/);
 });
@@ -44,9 +44,12 @@ test("Nginx sirve la portada en / y el visor en /visor", async () => {
   assert.match(locations, /try_files \$uri \$uri\/ \/geodatos\.html;/);
 });
 
-test("el visor permite volver a la portada desde su marca", async () => {
+test("el logo del visor apunta al sitio principal", async () => {
   const visor = await read("index.html");
-  assert.match(visor, /<a href="\/" class="brand" aria-label="Volver a Geodatos"/);
+  assert.match(
+    visor,
+    /<a href="https:\/\/www\.atacamawoll\.cl\/" class="brand" aria-label="Ir a Atacamawoll"/
+  );
 });
 
 test("Vercel mantiene /visor para la demo/staging", async () => {

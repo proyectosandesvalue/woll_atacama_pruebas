@@ -11,10 +11,29 @@
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1.js" },
-    { "source": "/visor", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1.js"
+    },
+    {
+      "source": "/visor",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/chat",
+      "destination": "/index.html"
+    }
   ],
   "redirects": [
-    { "source": "/visor/", "destination": "/visor", "permanent": true }
+    {
+      "source": "/visor/",
+      "destination": "/visor",
+      "permanent": true
+    },
+    {
+      "source": "/chat/",
+      "destination": "/chat",
+      "permanent": true
+    }
   ]
 }
