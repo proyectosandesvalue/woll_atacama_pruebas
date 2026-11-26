@@ -11,6 +11,7 @@ Group=deploy
 WorkingDirectory=/srv/woll
 EnvironmentFile=/srv/woll/.env.backup
 ExecStart=/srv/woll/scripts/backup-postgres.sh
+ExecStartPost=/srv/woll/deploy/vps/notify-backup.sh
 Nice=10
 IOSchedulingClass=best-effort
 IOSchedulingPriority=7

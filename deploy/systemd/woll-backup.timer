@@ -1,8 +1,8 @@
 [Unit]
-Description=Backup diario de PostgreSQL (WOLL Atacama)
+Description=Backup semanal de PostgreSQL (WOLL Atacama)
 
 [Timer]
-OnCalendar=*-*-* 03:00:00 UTC
+OnCalendar=Sun *-*-* 03:00:00 UTC
 Persistent=true
 RandomizedDelaySec=15m
 AccuracySec=1min

@@ -33,6 +33,7 @@ set -euo pipefail
 BACKUP_DIR="${BACKUP_DIR:-backups/postgres}"
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
 MIN_KEEP="${BACKUP_MIN_KEEP:-2}"
+KEEP_LAST="${BACKUP_KEEP_LAST:-0}"
 MIN_FREE_MB="${BACKUP_MIN_FREE_MB:-1024}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 BASE="woll-${STAMP}.dump"
@@ -154,7 +155,13 @@ mapfile -t FILES < <(
     -printf '%T@ %p\n' | sort -nr | cut -d' ' -f2-
 )
 DELETED=0
-if (( ${#FILES[@]} > MIN_KEEP )); then
+if [[ "$KEEP_LAST" =~ ^[0-9]+$ ]] && (( KEEP_LAST > 0 )); then
+  # Retención exacta: conserva solo los N más nuevos (backup semanal).
+  for old in "${FILES[@]:KEEP_LAST}"; do
+    rm -f "$old" "${old}.sha256"
+    DELETED=$((DELETED + 1))
+  done
+elif (( ${#FILES[@]} > MIN_KEEP )); then
   for old in "${FILES[@]:MIN_KEEP}"; do
     if [[ -n "$(find "$old" -maxdepth 0 -mtime +"$RETENTION_DAYS" -print)" ]]; then
       rm -f "$old" "${old}.sha256"
