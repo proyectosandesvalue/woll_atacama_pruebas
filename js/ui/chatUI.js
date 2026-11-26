@@ -12,7 +12,7 @@
  * @module ui/chatUI
  */
 
-import { sendMessage } from "../utils/chatAssistant.js";
+import { sendMessage } from "../utils/chatAssistant.js?v=20261126e";
 import { createContextLogger } from "../utils/logger.js";
 import { showResults, clearResults } from "../utils/chatMapUtils.js";
 import { shouldOpenChatFromUrl } from "../utils/chatDeepLink.js";
