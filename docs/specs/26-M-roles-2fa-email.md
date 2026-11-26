@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 26-M |
-| **Estado de la spec** | EN EJECUCIÓN — Fase 1 (RBAC) y 2 (notificaciones) ✅; 3 (OTP) y 4 (dispositivos) pendientes |
+| **Estado de la spec** | CERRADA — RBAC, notificaciones, OTP, dispositivos y recuperación ✅ |
 | **Tamaño** | Grande (17-22 h) |
 | **Dependencias** | 26-H (VPS), 15 (panel admin), 31 (auditoría/ops) |
 | **Última revisión** | 2026-11-24 |
@@ -123,7 +123,7 @@ server/notifications/
 | 1 | Roles, migración, gate de rutas, tests | ✅ 2026-11-24 |
 | 2 | Módulo de notificaciones, adapter Resend, plantillas, tests | ✅ 2026-11-24 |
 | 3 | OTP por email, challenges, rate limits, UI de login | ✅ 2026-11-25 |
-| 4 | Dispositivos de confianza, país, revocación, UI | 🔶 base (tabla y módulo); falta integrar en login |
+| 4 | Dispositivos de confianza, país, revocación | ✅ 2026-11-25 |
 
 ## 10. Fuera de alcance
 
@@ -184,3 +184,27 @@ server/notifications/
   con la nueva contraseña `200`; solicitud de correo inexistente `202`.
 - Las sesiones abiertas no se invalidan al instante; expiran en 8 h. Queda como
   mejora agregar `password_changed_at` al chequeo de sesión.
+
+
+## 14. Dispositivos de confianza (2026-11-25)
+
+- Cookie `woll_device` con formato `id.token`; token de 32 bytes guardado como
+  HMAC en `admin.trusted_devices`. `HttpOnly`, `Secure` en producción,
+  `SameSite=Lax`, 30 días.
+- El dispositivo se considera válido si coinciden usuario, token, **prefijo de
+  red** (`/24` IPv4, `/64` IPv6) y **user-agent**, y no está expirado ni
+  revocado.
+- Si el dispositivo es válido y el país es Chile (o no hay cabecera de país),
+  el login crea sesión sin pedir código. Si cambia el equipo o la red, se pide
+  código y al verificarlo se **rota** el dispositivo.
+- En el VPS no hay cabecera geográfica (`GEO_PROVIDER=none`), así que el control
+  efectivo es prefijo de red + user-agent; si más adelante se pone Cloudflare,
+  se suma `CF-IPCountry`.
+- Se revocan todos los dispositivos al cambiar contraseña, rol, correo,
+  desactivar la cuenta o restablecer la contraseña.
+- Verificado en producción con un usuario temporal: el primer login con código
+  emitió la cookie de dispositivo y el siguiente login, misma red y
+  user-agent, respondió `200` sin pedir código.
+- Limitación: la cookie es un bearer; si se roba, evita el código. Por eso
+  expira a 30 días, se revoca al cambiar credenciales y las acciones sensibles
+  siguen exigiendo sesión válida.
