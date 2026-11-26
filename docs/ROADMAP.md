@@ -1294,8 +1294,10 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   hasheados, límites, UI en dos pasos, detector de ráfagas y avisos de cuenta.
 - ✅ **31-B correo:** ops-check notifica alertas y recuperaciones con dedupe;
   backup e ingestas fallidas envían aviso.
-- ⏳ **Pendiente:** dispositivos de confianza (30 días/Chile), navbar de
-  WordPress, 31-C/D y offsite.
+- ✅ **Recuperación de contraseña:** enlace por correo de un solo uso, 30 min,
+  límites, formulario en el panel y revocación de dispositivos.
+- ⏳ **Pendiente:** integrar dispositivos de confianza en el login (30 días,
+  red/equipo), navbar de WordPress, 31-C/D y offsite.
 
 ### 2026-11-24
 - ✅ **18-B (embeddings Vertex):** `gemini-embedding-001` a 1024 dims en

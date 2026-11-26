@@ -123,7 +123,7 @@ server/notifications/
 | 1 | Roles, migración, gate de rutas, tests | ✅ 2026-11-24 |
 | 2 | Módulo de notificaciones, adapter Resend, plantillas, tests | ✅ 2026-11-24 |
 | 3 | OTP por email, challenges, rate limits, UI de login | ✅ 2026-11-25 |
-| 4 | Dispositivos de confianza, país, revocación, UI | ⏳ pendiente (hoy cada login pide código) |
+| 4 | Dispositivos de confianza, país, revocación, UI | 🔶 base (tabla y módulo); falta integrar en login |
 
 ## 10. Fuera de alcance
 
@@ -165,3 +165,22 @@ server/notifications/
   200 y crea sesión; el correo de prueba y los avisos llegan a Gmail.
 - Pendiente: dispositivos de confianza (30 días/Chile) para no pedir código en
   el PC habitual, y CRUD de usuarios en el panel (hoy se usa el CLI).
+
+
+## 13. Recuperación de contraseña (2026-11-25)
+
+- Enlace “¿Olvidaste tu contraseña?” en el login y formulario de solicitud.
+- `POST /api/admin/password/forgot` responde siempre `202` (no enumera
+  cuentas). Si la cuenta existe, envía un enlace de un solo uso por SMTP.
+- Token de 32 bytes con formato `id.token`; en la base solo su HMAC. Expira en
+  30 minutos, se usa una vez y tiene límite de 3 solicitudes/hora por correo/IP
+  con cooldown de 60 s.
+- `POST /api/admin/password/reset` valida token y contraseña (mínimo 8),
+  actualiza el hash, consume todos los tokens de ese usuario, revoca sus
+  dispositivos de confianza y envía un aviso de “contraseña restablecida”.
+- La página `admin.html?reset=…` muestra el formulario de nueva contraseña y
+  limpia el token de la URL con `history.replaceState`.
+- Verificado con un usuario temporal: reset `200`, reutilización `400`, login
+  con la nueva contraseña `200`; solicitud de correo inexistente `202`.
+- Las sesiones abiertas no se invalidan al instante; expiran en 8 h. Queda como
+  mejora agregar `password_changed_at` al chequeo de sesión.
