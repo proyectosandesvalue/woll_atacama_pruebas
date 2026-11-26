@@ -47,14 +47,11 @@ trap cleanup EXIT
 
 log() { printf '[full-backup] %s\n' "$*"; }
 
-# ── Variables de la base (sin imprimirlas) ───────────────────
-set -a
-# shellcheck disable=SC1090
-. "$ROOT/.env"
-set +a
-PGUSER_DB="${POSTGRES_USER:-woll}"
-PGDB="${POSTGRES_DB:-woll}"
+# ── Variables de la base, leídas del contenedor ─────────────
+# No se hace `source .env`: los valores con espacios romperían el shell.
 PG_CONTAINER="${FULL_BACKUP_PG_CONTAINER:-woll-postgres-1}"
+PGUSER_DB="$(docker exec "$PG_CONTAINER" printenv POSTGRES_USER 2>/dev/null || echo woll)"
+PGDB="$(docker exec "$PG_CONTAINER" printenv POSTGRES_DB 2>/dev/null || echo woll)"
 
 # ── 1. Base de datos ─────────────────────────────────────────
 log "dump de PostgreSQL"
