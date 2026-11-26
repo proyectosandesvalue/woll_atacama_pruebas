@@ -16,7 +16,7 @@ ingestas no pueden depender de Supabase. El backup debe ser **diario**,
 **cifrado**, verificable, con retención y copia fuera del VPS. Además hay que
 probar una restauración real y medir el RTO.
 
-**RPO:** ≤ 24 h (backup diario a las 03:00 UTC).
+**RPO:** ≤ 7 días (backup semanal, domingo 03:00 UTC).
 **RTO medido:** 94 s para el dump v1 (69 MB, 90 tablas, 71 capas,
 1.425.842 indicadores) en el stack local. El objetivo es ≤ 2 h en el VPS.
 
@@ -27,7 +27,7 @@ probar una restauración real y medir el RTO.
   checksum, retención, copia externa, lock, alerta y chequeo de disco.
 - `scripts/restore-drill.sh`: restaura en una base descartable, compara conteos
   y mide el RTO.
-- `deploy/systemd/woll-backup.service` y `.timer` (03:00 UTC, `Persistent`).
+- `deploy/systemd/woll-backup.service` y `.timer` (domingo 03:00 UTC, `Persistent`).
 - `.env.backup.example` con las variables (sin secretos).
 - Documentación de restore manual y de la frecuencia.
 
@@ -67,7 +67,7 @@ scripts/backup-postgres.sh
 
 ```ini
 # woll-backup.timer
-OnCalendar=*-*-* 03:00:00 UTC
+OnCalendar=Sun *-*-* 03:00:00 UTC
 Persistent=true
 RandomizedDelaySec=15m
 ```
@@ -116,7 +116,7 @@ RESTORE_EXPECT_VALUES=1425842 \
 | CA-6 | fallo de `pg_dump` | se ejecuta | exit != 0 y alerta (`BACKUP_ALERT_CMD`) | test |
 | CA-7 | un backup | se corre el simulacro | crea `woll_restore_test`, restaura y compara conteos | script |
 | CA-8 | backup v1 | simulacro local | RTO 94 s; 71/382/1.425.842 | medido |
-| CA-9 | timer | se habilita | corre a las 03:00 UTC y `Persistent` recupera si el VPS estuvo apagado | `systemctl list-timers` |
+| CA-9 | timer | se habilita | corre el domingo a las 03:00 UTC y `Persistent` recupera si el VPS estuvo apagado | `systemctl list-timers` |
 
 ## 5. Tests
 
@@ -149,8 +149,8 @@ RESTORE_EXPECT_VALUES=1425842 \
 - Unidad instalada como `User=deploy` (el VPS no tiene usuario `woll`) con
   `UMask=0077`; `BACKUP_DIR=/var/backups/woll`, passphrase en
   `/home/deploy/.woll-backup.pass` y `.env.backup` en `/srv/woll`.
-- Timer activo: próxima ejecución 03:00 UTC con `RandomizedDelaySec=15m`.
-- Backups medidos: 71.978.113 B crudos → 68.156.897 B cifrados en ~30 s.
+- Timer activo: domingo 03:00 UTC con `RandomizedDelaySec=15m`; retención exacta de 2 copias (`BACKUP_KEEP_LAST=2`).
+- Backups medidos: 71.999.982 B crudos → 68.172.013 B cifrados en ~31 s.
 - Simulacro ejecutado contra `woll_restore_test`: **RTO 53 s**, 71 capas y
   1.425.842 indicadores. Se ejecutó sobre el backup de las 00:08 UTC.
 - Pendiente: copia externa (`BACKUP_OFFSITE_CMD`). Hoy el backup está en el
@@ -184,5 +184,17 @@ la aplicación, a demanda:
   local con `sha256sum` y `gpg --decrypt`.
 
 Complementa, no reemplaza: GitHub cubre código, el dump local cubre datos
-históricos, el backup diario cubre RPO 24 h y el mensual del proveedor cubre
+históricos, el backup semanal cubre RPO 7 días y el mensual del proveedor cubre
 desastre total.
+
+
+## 11. Cambio a backup semanal (2026-11-26)
+
+- Timer: domingo 03:00 UTC (`OnCalendar=Sun *-*-* 03:00:00 UTC`), `Persistent`.
+- Retención exacta: `BACKUP_KEEP_LAST=2` conserva solo las 2 copias más nuevas;
+  `BACKUP_RETENTION_DAYS=14` queda como respaldo de la lógica.
+- Al terminar un backup exitoso, `ExecStartPost=/srv/woll/deploy/vps/notify-backup.sh`
+  envía un correo a todos los admins activos con nombre, tamaño e instrucciones
+  de descarga (`scripts/notify-backup.mjs`). Si el correo falla, el backup no se
+  marca como fallido.
+- Verificado: corrida manual eliminó 9 copias antiguas, dejó 2 y envió el aviso.

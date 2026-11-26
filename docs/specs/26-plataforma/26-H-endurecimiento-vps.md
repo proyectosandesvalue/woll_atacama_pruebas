@@ -60,9 +60,9 @@ Supabase y backups verificados con simulacro de restauración.
    valida 51/51 RPCs.
 8. **Configuración del visor.** Snapshot `v1` publicado desde `js/config`
    (9 dimensiones, 158 capas, 315 filas de capas). `/api/config` responde 200.
-9. **Backups.** `woll-backup.timer` a las 03:00 UTC con `Persistent=true`;
-   dump `pg_dump -Fc -Z9`, cifrado GPG AES256, checksum, retención 14 días con
-   mínimo 3 y alerta por `logger`. Simulacro medido: **RTO 53 s** para 1.425.842
+9. **Backups.** `woll-backup.timer` semanal (domingo 03:00 UTC) con
+   `Persistent=true`; dump `pg_dump -Fc -Z9`, cifrado GPG AES256, checksum,
+   retención exacta de 2 copias y aviso por correo a los admins y alerta por `logger`. Simulacro medido: **RTO 53 s** para 1.425.842
    indicadores y 71 capas.
 
 ## 4. Procedimiento aplicado

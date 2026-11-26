@@ -1283,6 +1283,12 @@ preguntas pendientes para triage operativo.
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
+### 2026-11-26
+- ✅ **Backup semanal:** domingo 03:00 UTC, 2 copias exactas y correo a los
+  admins con instrucciones de descarga; corrida manual verificada.
+- ⏳ **Pendiente:** navbar de WordPress (sin acceso), `full-backup.sh` por SSH,
+  offsite automático y 31-C/D.
+
 ### 2026-11-25
 - ✅ **Portada Geodatos en el VPS:** `/` sirve `geodatos.html`, `/visor` el
   visor y `/visor/` redirige con 301; smoke de `/`, `/visor` y
