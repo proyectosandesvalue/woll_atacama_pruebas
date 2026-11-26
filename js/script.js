@@ -16,8 +16,8 @@ import { initSidebarUI } from './ui/sidebarUI.js';
 import { initMapUI, initModalUI } from './ui/mapUI.js';
 import { initSearchUI } from './ui/searchUI.js';
 import { initMobileUI } from './ui/mobileUI.js';
-import { initChatUI } from './ui/chatUI.js?v=20261126c';
-import { initChatImmersiveUI } from './ui/chatImmersiveUI.js?v=20261126c';
+import { initChatUI } from './ui/chatUI.js?v=20261126d';
+import { initChatImmersiveUI } from './ui/chatImmersiveUI.js?v=20261126d';
 import { initWmsFeatureInfo } from './utils/wmsFeatureInfo.js';
 
 // ── Módulo principal de UI (se ejecuta cuando el DOM y el mapa están listos) ──

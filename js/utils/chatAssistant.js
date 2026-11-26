@@ -38,7 +38,7 @@ function getSessionId() {
  *
  * @param {string} text - Consulta del usuario
  * @param {Array<{role:string, content:string}>} [history]
- * @returns {Promise<{reply: string, chart?: object|null, geojson?: object|null}>}
+ * @returns {Promise<{reply: string, chart?: object|null, charts?: object[], geojson?: object|null, geojson_meta?: object|null, geojson_layers?: object[]}>}
  */
 export async function sendMessage(text, history = []) {
   try {
@@ -77,6 +77,9 @@ export async function sendMessage(text, history = []) {
       charts: Array.isArray(data.charts) ? data.charts : [],
       geojson: data.geojson ?? null,
       geojson_meta: data.geojson_meta ?? null,
+      geojson_layers: Array.isArray(data.geojson_layers)
+        ? data.geojson_layers
+        : [],
     };
   } catch (err) {
     log.error("[ChatIA] sendMessage error:", err);
