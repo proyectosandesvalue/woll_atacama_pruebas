@@ -5,7 +5,7 @@
  * innerHTML para contenido dinámico.
  */
 
-import { api, setCsrfToken } from "./api.js";
+import { api, setCsrfToken } from "./api.js?v=20261126";
 
 const VIEW_META = {
   config: { eyebrow: "Operación / Configuración", title: "Configuración del visor", mode: "solo lectura" },
