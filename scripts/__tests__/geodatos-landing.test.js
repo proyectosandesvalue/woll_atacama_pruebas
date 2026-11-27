@@ -91,3 +91,12 @@ test("la portada habla de herramientas, no de productos", async () => {
   assert.match(html, /Tres herramientas, un ecosistema/);
   assert.doesNotMatch(html, /productos/i);
 });
+
+test("el hero conserva solo el CTA de Explorar las herramientas", async () => {
+  const html = await read("geodatos.html");
+  const hero = html.match(/<div class="hero-actions">([\s\S]*?)<\/div>/)?.[1] || "";
+
+  assert.match(hero, /Explorar las herramientas/);
+  assert.doesNotMatch(hero, /Abrir geoportal/);
+  assert.doesNotMatch(hero, /btn-secondary/);
+});

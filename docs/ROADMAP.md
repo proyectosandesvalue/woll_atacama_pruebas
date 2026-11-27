@@ -1305,6 +1305,9 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   render y evita que el visor aparezca de fondo durante la carga.
 - ✅ **Portada:** “Productos” pasa a “Herramientas” en el CTA, las estadísticas,
   el kicker, el ancla y el mock del dashboard.
+- ✅ **Portada:** el hero queda con un solo CTA, “Explorar las herramientas”;
+  se quitó “Abrir geoportal” de ese bloque.
+
 
 
 - ✅ **Backup completo por SSH:** `full-backup.sh` cifrado con DB, secretos,

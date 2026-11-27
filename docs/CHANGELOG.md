@@ -48,6 +48,7 @@
 ## [Unreleased]
 
 ### Added
+- **Portada: CTA único en el hero:** se quitó “Abrir geoportal” y quedó solo “Explorar las herramientas”. Los accesos al geoportal y al chat se mantienen en las tarjetas, secciones y pie.
 - **Portada: “Productos” pasa a “Herramientas”:** CTA “Explorar las herramientas”, estadística del hero, kicker de la sección, ancla `#herramientas`, KPI del mock del dashboard y `aria-label` del chat. Sin cambios de diseño ni de contenido.
 - **Mapa del chat `/chat` enfocado en la consulta:** al abrirse muestra solo la capa base, los límites comunales y las capas pedidas en la conversación; cada respuesta nueva se suma y el mapa se encuadra en las capas nuevas después de abrir el split (antes el encuadre se calculaba con el mapa oculto y podía terminar en el océano). Se eliminó la caja flotante “Capas visibles” del lienzo; los chips del header del mapa siguen mostrando las capas y su conteo. Validado en el VPS: primera consulta solo límites + plantas, segunda acumula humedales, 0 errores de consola.
 - **Arranque de `/chat` sin flash del visor:** `js/chat-route.js` se carga de forma bloqueante después de `<body>` y agrega `chat-immersive` antes del primer render. El mapa y el chat se siguen reutilizando, pero el chrome del visor queda oculto desde el primer frame; en `/visor` no cambia nada.
