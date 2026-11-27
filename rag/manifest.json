@@ -1,1 +1,26 @@
-[]
+[
+  {
+    "file": "inbox/catastro-fruticola-atacama-2024.pdf",
+    "slug": "catastro-fruticola-atacama-2024",
+    "title": "Catastro Frutícola Región de Atacama 2024 — Principales resultados",
+    "source_url": "https://bibliotecadigital.odepa.gob.cl/bitstream/handle/20.500.12650/73635/RegionAtacama.pdf",
+    "publisher": "ODEPA / CIREN",
+    "license": "Documento público ODEPA/CIREN; uso institucional con atribución",
+    "language": "es",
+    "published_at": "2024-09-01",
+    "copyright_cleared": true,
+    "tags": ["agricultura", "catastro", "atacama", "2024", "fruticultura"]
+  },
+  {
+    "file": "inbox/catastro-fruticola-atacama-2018.pdf",
+    "slug": "catastro-fruticola-atacama-2018",
+    "title": "Catastro Frutícola Región de Atacama 2018 — Principales resultados",
+    "source_url": "https://bibliotecadigital.odepa.gob.cl/bitstream/handle/20.500.12650/71149/Catastro-Fruticola-Atacama-2018.pdf",
+    "publisher": "ODEPA / CIREN",
+    "license": "Documento público ODEPA/CIREN; uso institucional con atribución",
+    "language": "es",
+    "published_at": "2018-07-01",
+    "copyright_cleared": true,
+    "tags": ["agricultura", "catastro", "atacama", "2018", "fruticultura", "historico"]
+  }
+]
