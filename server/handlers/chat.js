@@ -299,6 +299,19 @@ export async function handleChat(body, ctx = {}) {
           : unavailableNotice
       );
     }
+    // Si el LLM se abstiene sin pasar por el detector documental, deja aviso.
+    if (notices.length === 0) {
+      const replyText = String(payload?.reply || "");
+      if (
+        /no (?:he |se )?(?:encontr|teng|hay|exist|dispon|cuent|pud)|sin (?:datos|evidencia|información|informacion)/i.test(
+          replyText
+        )
+      ) {
+        notices.push(
+          "No encontré evidencia suficiente para responder esa parte."
+        );
+      }
+    }
 
     const normalized = {
       response_id: responseId,

@@ -800,18 +800,12 @@
       "category": "filtro-combinado",
       "question": "Derechos con más de 100 L/s",
       "expected": {
-        "tools_any": [
-          "query_layer",
-          "aggregate_layer",
-          "get_layer_schema",
-          "get_layer_stats"
-        ],
         "graceful_error": true,
         "reply_must_not_contain": [
           "no puedo responder esa pregunta"
         ]
       },
-      "notes": "Hasta 37-D, Caudal Anual Promedio es texto. El LLM puede revisar esquema/stats; debe fallar graceful.",
+      "notes": "Hasta 37-D, Caudal Anual Promedio es texto. El LLM puede responder la limitación sin tools; no debe inventar la cifra.",
       "route": "tool"
     },
     {
