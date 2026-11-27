@@ -183,10 +183,7 @@ section[id]{scroll-margin-top:92px}
 .geo-features{display:flex;flex-direction:column;gap:9px;margin:0 0 24px;padding:0;list-style:none}
 .geo-features li{display:flex;align-items:flex-start;gap:9px;color:var(--ink-muted);font-size:13.5px;line-height:1.45}
 .geo-features svg{flex:none;width:16px;height:16px;margin-top:2px;color:var(--accent)}
-.geo-card-cta{display:inline-flex;align-items:center;gap:8px;margin-top:auto;color:var(--accent-dark);font-size:13.5px;font-weight:700;text-decoration:none}
-.geo-card-cta svg{width:14px;height:14px;transition:transform .18s}
-.geo-card-cta:hover svg{transform:translate(3px)}
-.geo-card-cta:hover{color:var(--accent)}
+.geo-card .btn-primary{margin-top:auto;align-self:flex-start}
 
 /* ── Filas de detalle ─────────────────────────────────────── */
 .geo-detail{display:grid;grid-template-columns:1.04fr .96fr;overflow:hidden;border:1px solid var(--line);border-radius:24px;background:var(--bg-surface);box-shadow:0 12px 32px #0720380d;transition:border-color .22s,box-shadow .22s}
@@ -591,7 +588,7 @@ section[id]{scroll-margin-top:92px}
               Tabla de datos con exportación CSV y GeoJSON
             </li>
           </ul>
-          <a href="/visor" class="geo-card-cta">
+          <a href="/visor" class="btn-primary">
             Abrir geoportal
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
           </a>
@@ -620,7 +617,7 @@ section[id]{scroll-margin-top:92px}
               Gráficos automáticos y enlace a la capa
             </li>
           </ul>
-          <a href="/chat" class="geo-card-cta">
+          <a href="/chat" class="btn-primary">
             Abrir chat
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>
           </a>
@@ -649,7 +646,7 @@ section[id]{scroll-margin-top:92px}
               Series temporales y alertas
             </li>
           </ul>
-          <a href="#dashboard" class="geo-card-cta">
+          <a href="#dashboard" class="btn-primary">
             Ver la propuesta
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>
           </a>

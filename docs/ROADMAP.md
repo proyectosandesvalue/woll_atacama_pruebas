@@ -1307,6 +1307,9 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   el kicker, el ancla y el mock del dashboard.
 - ✅ **Portada:** el hero queda con un solo CTA, “Explorar las herramientas”;
   se quitó “Abrir geoportal” de ese bloque.
+- ✅ **Portada:** los CTA de las tarjetas usan el botón principal del hero
+  (“Abrir geoportal”, “Abrir chat” y “Ver la propuesta”).
+
 
 
 

@@ -100,3 +100,12 @@ test("el hero conserva solo el CTA de Explorar las herramientas", async () => {
   assert.doesNotMatch(hero, /Abrir geoportal/);
   assert.doesNotMatch(hero, /btn-secondary/);
 });
+
+test("los CTA de las tarjetas usan el estilo del botón principal", async () => {
+  const html = await read("geodatos.html");
+
+  assert.match(html, /href="\/visor" class="btn-primary"/);
+  assert.match(html, /href="\/chat" class="btn-primary"/);
+  assert.match(html, /href="#dashboard" class="btn-primary"/);
+  assert.doesNotMatch(html, /geo-card-cta/);
+});
