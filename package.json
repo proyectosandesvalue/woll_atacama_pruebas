@@ -50,6 +50,7 @@
     "load:30": "node scripts/load-test-sprint30.mjs",
     "config:snapshot": "node scripts/config-snapshot.mjs",
     "admin:user": "node scripts/admin-user.mjs",
+    "retention:run": "node scripts/retention.mjs",
     "rag:worker": "node scripts/rag-worker.mjs",
     "taxonomy:seed": "node scripts/taxonomy-seed.mjs",
     "taxonomy:compile": "node scripts/taxonomy-compile.mjs",
