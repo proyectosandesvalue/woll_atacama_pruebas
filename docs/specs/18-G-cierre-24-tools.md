@@ -175,8 +175,8 @@ Casos nuevos (nivel 2-3):
   - Golden: **59/59** activos (tool 42/42, RAG 6/6, mixta 2/2, abstención
     6/6, fuera 3/3). Rutas nuevas: compare, rank, overlay, nearest,
     metadata, series, WMS info/dates/pixel/statistics-failure y query order.
-  - Latencia del golden: p50 3,1 s, p95 6,9 s.
-  - `npm test`: 716 tests, 704 pasan, 12 omitidos, 0 fallan.
+  - Latencia del golden: p50 3,3 s, p95 8,8 s (incluye WMS y geoprocesos).
+  - `npm test`: 719 tests, 707 pasan, 12 omitidos, 0 fallan.
 - **Desvíos:**
   - Las RPC `chat_spatial_overlay` y `chat_nearest_distance` fallaban con
     `SET is not allowed in a non-volatile function`; la migración 074 las
