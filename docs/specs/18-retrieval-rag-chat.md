@@ -197,6 +197,9 @@ Se activan o agregan solo los que el corpus actual puede resolver:
 |---|---|---|---|
 | `doc-metodologia-catastro` | `rag` | ¿Cuál es la metodología del catastro frutícola? | activar |
 | `doc-catastro-evolucion` | `rag` | ¿Cómo cambió la superficie frutícola de Atacama entre 2018 y 2024? | nuevo |
+| `doc-especies-superficie-2024` | `rag` | ¿Qué dice el informe 2024 sobre la superficie plantada por especie? | nuevo |
+| `doc-infraestructura-2018` | `rag` | ¿Qué infraestructura frutícola se describe en el informe 2018? | nuevo |
+| `doc-riego-2024` | `tool` | ¿Qué método de riego predomina en el catastro 2024? | nuevo (capa `met_riego`) |
 | `mix-catastro-comunas` | `mixta` | ¿En qué comunas se concentran los registros de vid de mesa y qué metodología usa el catastro? | nuevo |
 | `mix-catastro-evolucion` | `mixta` | ¿Cuántos registros de vid de mesa hay en la capa del catastro y cómo evolucionó la superficie frutícola entre 2018 y 2024? | nuevo |
 | `abstencion-informe-calidad-agua` | `abstencion` | ¿Qué dice el informe de calidad de agua 2025 sobre el río Copiapó? | activar |
@@ -320,11 +323,12 @@ que exista el corpus correspondiente. No se fuerza su activación.
 
 - **Horas reales:** ~10 h (estimado 10-12 h).
 - **Resultados:** migración 063 aplicada en el VPS; `npm run eval:rag`
-  Recall@5 1,0 y MRR 0,778; golden set 45/45 con RAG 4/4, mixta 2/2,
-  abstención 6/6 y tool 30/30. Latencia del golden: p50 1,9 s, p95 6,4 s.
+  Recall@5 1,0 y MRR 0,778; golden set 48/48 con RAG 6/6, mixta 2/2,
+  abstención 6/6 y tool 31/31. Latencia del golden: p50 1,7 s, p95 5,5 s.
 - **Desvíos:**
   - La migración es `063_chat_documents.sql`, no `056`, porque el número
-    estaba ocupado por `admin_roles`.
+    estaba ocupado por `admin_roles`. La regla de comparación entre ediciones
+    se agregó en `065_chat_documents_v2.sql`.
   - El umbral quedó en 0,62, no 0,55: con 0,55 aparecían pasajes irrelevantes
     para preguntas sin documento (0,58-0,59).
   - `tier4-kilos-jojoba` y `tier4-rendimiento-palto` se reclasificaron a
@@ -332,6 +336,10 @@ que exista el corpus correspondiente. No se fuerza su activación.
     `abstencion-exportacion-chirimoya-2025` para conservar la cobertura.
   - Los casos mixtos usan conteo/consulta de la capa, no suma de superficie:
     `sup_frutal` y `superf_fru` siguen siendo `varchar` (deuda 37-D).
+  - El router determinístico interceptaba preguntas documentales con
+    "método de riego" o "mayor superficie"; se agregó `isDocumentalQuestion`
+    y casos de regresión. La pregunta de riego se resolvió con la capa
+    `met_riego` (tool), no con RAG.
 - **Lecciones:** calibrar el umbral con preguntas negativas, no solo
   positivas; construir las citas desde la fila SQL y no desde el texto del
   LLM; los casos de golden pueden quedar obsoletos cuando crece el corpus.

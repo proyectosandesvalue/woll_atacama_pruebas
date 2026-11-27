@@ -467,7 +467,7 @@ enrutamiento explícito, evidencia, abstención y evaluación por ruta.
 - **18-E — Evaluación y UX.** ✅ `npm run eval:rag`, comprobaciones
   `sources_any`/`citation_required`/`expected_abstain` en el runner, fuentes
   visibles en el chat y aviso cuando la cifra viene de un documento.
-  45/45 casos activos del golden set pasan.
+  48/48 casos activos del golden set pasan.
 
 **Criterio de cierre**: el golden set documental y mixto pasa, el retrieval
 tiene Recall@5 medido y el chat se abstiene cuando no hay evidencia. ✅ para
@@ -1316,9 +1316,14 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   `chat.documents` (migración 063), pasajes `untrusted`, citas
   documento/página/sección en `citations` y bloque **Fuentes** en el chat.
 - ✅ **18-E (evaluación y UX):** runner con `sources_any`,
-  `citation_required` y `expected_abstain`; golden set 45/45 (RAG 4/4,
-  mixta 2/2, abstención 6/6, tool 30/30); aviso específico cuando la cifra
+  `citation_required` y `expected_abstain`; golden set 48/48 (RAG 6/6,
+  mixta 2/2, abstención 6/6, tool 31/31); aviso específico cuando la cifra
   viene de un documento y no de las capas.
+- ✅ **Router documental:** las preguntas con señales documentales
+  (`metodología`, `método/sistema de riego`, `informe`, `producción`,
+  `rendimiento`, `infraestructura`, `evolución`, `mayor superficie`) ya no
+  se interceptan con un pipeline de capas. Migración `065` agrega la regla
+  de no filtrar por año en comparaciones entre ediciones.
 - 📝 **Pendiente:** corpus normativo/plan regulador para activar
   `doc-normativa-cauces`, `doc-plan-regulador-caldera`,
   `mix-desaladoras-normativa` y `mix-derechos-ley`.

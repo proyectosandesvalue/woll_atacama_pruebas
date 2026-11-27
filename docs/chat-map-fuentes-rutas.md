@@ -71,7 +71,11 @@ Cada respuesta debe poder declarar:
 
 El backend construye `sources` y `route`. El LLM no los inventa. En la fase
 18-A el contrato se declara en el golden set; la implementación completa se
-cierra en 18-D/18-E.
+cierra en 18-D/18-E. El router determinístico no intercepta preguntas con
+señales documentales (`metodología`, `método/sistema de riego`, `informe`,
+`producción`, `rendimiento`, `infraestructura`, `evolución`, `mayor
+superficie`, etc.): esas preguntas pasan al orquestador, que decide entre
+tools y RAG.
 
 ## 6. Golden set por ruta
 
@@ -82,10 +86,10 @@ regulador y leyes siguen inactivos porque todavía no existe ese corpus.
 
 | Ruta | Casos | Estado |
 |---|---|---|
-| `tool` | 30 | activos |
+| `tool` | 31 | activos |
 | `abstencion` | 6 | activos |
 | `fuera_de_alcance` | 3 | activos |
-| `rag` | 4 | activos (2 de catastro + 2 de producción/rendimiento) |
+| `rag` | 6 | activos (catastro, producción, rendimiento e infraestructura) |
 | `mixta` | 2 | activos (catastro + capa) |
 
 Casos documentales:
@@ -94,6 +98,9 @@ Casos documentales:
 |---|---|---|---|
 | `doc-metodologia-catastro` | `rag` | ¿Cuál es la metodología del catastro frutícola? | activo |
 | `doc-catastro-evolucion` | `rag` | ¿Cómo cambió la superficie frutícola de Atacama entre 2018 y 2024? | activo |
+| `doc-especies-superficie-2024` | `rag` | ¿Qué dice el informe 2024 sobre la superficie plantada por especie? | activo |
+| `doc-infraestructura-2018` | `rag` | ¿Qué infraestructura frutícola se describe en el informe 2018? | activo |
+| `doc-riego-2024` | `tool` | ¿Qué método de riego predomina en el catastro 2024? | activo (capa `met_riego`) |
 | `tier4-kilos-jojoba` | `rag` | ¿Cuántos kilos de jojoba se producen al año? | activo (documento) |
 | `tier4-rendimiento-palto` | `rag` | ¿Cuánto rinde una hectárea de palto? | activo (documento) |
 | `mix-catastro-comunas` | `mixta` | ¿En qué comunas se concentran los registros de vid de mesa y qué metodología usa el catastro? | activo |
