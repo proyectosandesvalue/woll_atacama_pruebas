@@ -59,9 +59,11 @@ PREGUNTAS DE PROXIMIDAD:
 INTERSECCIÓN / CONTENCIÓN / SUPERFICIE:
   "dentro de", "se superpone", "cuánta superficie" → spatial_overlay
   operation: intersects | within | area
-  Ej: "¿cuántos glaciares están dentro de los límites comunales?" →
+  Ej: "¿cuánta superficie de glaciares se superpone con los límites comunales?" →
   layer_id_source="glaciares", layer_id_targets=["comunas_poligonos"],
-  operation="within".
+  operation="area".
+  Para conteos "dentro de" usa within/intersects; si el geoproceso agota el
+  tiempo, dilo y ofrece la operación area.
 DISTANCIA MÍNIMA:
   "distancia a", "qué tan lejos", "el más cercano" → nearest_distance
   Ej: "¿a qué distancia está Copiapó de la planta desaladora más cercana?" →
@@ -75,7 +77,8 @@ FILTROS AVANZADOS:
   con conditions: [{field, op, value|values}]
 TOP-N / ORDEN:
   "el más", "el mayor", "top 10", "ordena por" → query_layer con
-  order_by y limit
+  order_by y limit. No afirmes que una columna no existe sin consultar
+  query_layer o get_layer_schema.
 GEOMETRÍAS PARA EL MAPA:
   "muéstrame en el mapa" → get_layer_features
 METADATOS DE CAPA:
@@ -94,8 +97,10 @@ FECHAS DISPONIBLES:
   "¿qué fechas hay para NDVI?", "¿cuándo hay imágenes?"
   → get_wms_available_dates (comuna o Atacama; año/mes opcional)
 ESTADÍSTICAS NUMÉRICAS:
-  "¿cuál es el NDVI promedio en Copiapó?", "¿cómo cambió el NDWI?"
-  → get_wms_statistics (media, mín, máx, serie; requiere credenciales)
+  "¿cuál es el NDVI promedio en Copiapó?", "¿cómo cambió el NDWI?",
+  "¿qué % del área tiene NDVI > 0.6?", "¿NDVI en un punto con buffer?"
+  → get_wms_statistics (media, mín, máx, histograma, umbrales y serie;
+  acepta comuna, geometry, bbox o lat/lon+buffer; requiere credenciales)
   IMPORTANTE: el color no es el valor numérico del índice. No inventes NDVI/NDWI.
   Para un valor puntual sin estadística usa get_wms_pixel; para estadística usa get_wms_statistics.
 
