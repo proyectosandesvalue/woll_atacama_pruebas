@@ -3,11 +3,11 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 18 |
-| **Estado de la spec** | EN EJECUCIÓN |
+| **Estado de la spec** | CERRADA |
 | **Tamaño** | Mediano |
 | **Duración estimada** | 10-12 h |
 | **Dependencias** | 17 (ingesta ✅), 18-A (✅), 45-A (panel RAG ✅) |
-| **Última revisión** | 2026-11-26 |
+| **Última revisión** | 2026-11-27 |
 
 > **Contexto de esta revisión.** El corpus real ya tiene dos documentos
 > `ready` en el VPS: `catastro-fruticola-atacama-2024` (18 chunks) y
@@ -186,7 +186,7 @@ para compatibilidad. `GET /api/chat` devuelve ambas en `citations`.
 | `CHAT_DOCUMENTS_ENABLED` | env | — | Override para pruebas. |
 | `RAG_MIN_SCORE` | env | — | Override para pruebas. |
 
-Migración `056_chat_documents.sql` (a crear): inserta settings, el prompt
+Migración `063_chat_documents.sql` (aplicada en el VPS): inserta settings, el prompt
 `chat.documents` v1 y los casos de golden nuevos. Idempotente.
 
 ### 4.6. Casos de golden
@@ -234,11 +234,11 @@ que exista el corpus correspondiente. No se fuerza su activación.
 
 | Tramo | Contenido | Horas | Estado |
 |---|---|---|---|
-| 18-C.1 | `server/rag/retrieve.js` + SQL híbrido + tests puros | 3 | ⏳ |
-| 18-C.2 | `search_documents` + registro + compact + prompt `chat.documents` + migración 056 + tests | 3 | ⏳ |
-| 18-D.1 | Evidencia/citas, `GET /api/chat` y bloque de fuentes en el chat + tests | 2 | ⏳ |
-| 18-D.2 | Golden: casos nuevos, `citation_required`/`sources_any` en el runner, `eval:rag` | 2 | ⏳ |
-| 18-E | Validación en VPS, golden set, docs y cierre | 2 | ⏳ |
+| 18-C.1 | `server/rag/retrieve.js` + SQL híbrido + tests puros | 3 | ✅ |
+| 18-C.2 | `search_documents` + registro + compact + prompt `chat.documents` + migración 063 + tests | 3 | ✅ |
+| 18-D.1 | Evidencia/citas, `GET /api/chat` y bloque de fuentes en el chat + tests | 2 | ✅ |
+| 18-D.2 | Golden: casos nuevos, `citation_required`/`sources_any` en el runner, `eval:rag` | 2 | ✅ |
+| 18-E | Validación en VPS, golden set, docs y cierre | 2 | ✅ |
 
 ## 7. Tests requeridos
 
@@ -293,13 +293,13 @@ que exista el corpus correspondiente. No se fuerza su activación.
 
 **Reversión**
 - `chat.documents.enabled=false` desactiva la tool y el prompt sin deploy.
-- La migración 056 es aditiva; el rollback de prompts usa
+- La migración 063 es aditiva; el rollback de prompts usa
   `admin_rollback_prompt`.
 - El código de retrieval no toca tablas existentes.
 
 **Documentación**
 - `docs/ROADMAP.md` (estado 18-B/18-C/18-D/18-E).
-- `docs/CHANGELOG.md` (nueva tool, citas, migración 056).
+- `docs/CHANGELOG.md` (nueva tool, citas, migración 063).
 - `docs/ARCHITECTURE.md` §4 (tool documental y flujo de evidencia).
 - `docs/DEV_GUIDE.md` §3.6.1 (checklist del chat) y §7 (RAG).
 - `docs/chat-map-fuentes-rutas.md` (estado de los casos).
@@ -314,10 +314,24 @@ que exista el corpus correspondiente. No se fuerza su activación.
 - `js/utils/chatAssistant.js`, `js/ui/chatUI.js`, CSS del chat.
 - `server/handlers/admin-chat-config.js` (prompt visible/editable).
 - `scripts/run-golden-set.mjs` (chequeos de cita/fuente).
-- Migración `056_chat_documents.sql` y `db/migrations/README` si aplica.
+- Migración `063_chat_documents.sql` y `db/migrations/README` si aplica.
 
 ## 12. Cierre
 
-- Horas reales:
-- Desvíos:
-- Lecciones:
+- **Horas reales:** ~10 h (estimado 10-12 h).
+- **Resultados:** migración 063 aplicada en el VPS; `npm run eval:rag`
+  Recall@5 1,0 y MRR 0,778; golden set 45/45 con RAG 4/4, mixta 2/2,
+  abstención 6/6 y tool 30/30. Latencia del golden: p50 1,9 s, p95 6,4 s.
+- **Desvíos:**
+  - La migración es `063_chat_documents.sql`, no `056`, porque el número
+    estaba ocupado por `admin_roles`.
+  - El umbral quedó en 0,62, no 0,55: con 0,55 aparecían pasajes irrelevantes
+    para preguntas sin documento (0,58-0,59).
+  - `tier4-kilos-jojoba` y `tier4-rendimiento-palto` se reclasificaron a
+    `rag`: el corpus ahora responde esas cifras con cita. Se agregó
+    `abstencion-exportacion-chirimoya-2025` para conservar la cobertura.
+  - Los casos mixtos usan conteo/consulta de la capa, no suma de superficie:
+    `sup_frutal` y `superf_fru` siguen siendo `varchar` (deuda 37-D).
+- **Lecciones:** calibrar el umbral con preguntas negativas, no solo
+  positivas; construir las citas desde la fila SQL y no desde el texto del
+  LLM; los casos de golden pueden quedar obsoletos cuando crece el corpus.

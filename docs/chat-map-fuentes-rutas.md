@@ -77,29 +77,34 @@ cierra en 18-D/18-E.
 
 Los casos viven en `server/chat/__evals__/golden.json` y en
 `admin.golden_cases`. La columna `route` permite agrupar el acierto por ruta.
-Los casos nuevos de RAG y mixtos quedan **inactivos** hasta que exista
-`search_documents` (18-D); así no rompen el baseline actual.
+Desde 18-D, los casos de catastro están activos; los de normativa, plan
+regulador y leyes siguen inactivos porque todavía no existe ese corpus.
 
-| Ruta | Casos existentes | Casos nuevos | Estado |
+| Ruta | Casos | Estado |
+|---|---|---|
+| `tool` | 30 | activos |
+| `abstencion` | 6 | activos |
+| `fuera_de_alcance` | 3 | activos |
+| `rag` | 4 | activos (2 de catastro + 2 de producción/rendimiento) |
+| `mixta` | 2 | activos (catastro + capa) |
+
+Casos documentales:
+
+| ID | Ruta | Pregunta | Estado |
 |---|---|---|---|
-| `tool` | 30 | — | activos |
-| `abstencion` | 5 | 2 | activos + 2 pendientes |
-| `fuera_de_alcance` | 3 | 1 | activos + 1 pendiente |
-| `rag` | — | 3 | pendientes (18-D) |
-| `mixta` | — | 2 | pendientes (18-D) |
-
-Casos nuevos:
-
-| ID | Ruta | Pregunta | Se activa |
-|---|---|---|---|
-| `doc-normativa-cauces` | `rag` | ¿Qué dice la normativa sobre la protección de cauces y zonas de inundación? | 18-D |
-| `doc-metodologia-catastro` | `rag` | ¿Cuál es la metodología del catastro frutícola? | 18-D |
-| `doc-plan-regulador-caldera` | `rag` | ¿Qué regula el plan regulador de Caldera sobre densidad y altura? | 18-D |
-| `mix-desaladoras-normativa` | `mixta` | ¿Cuántas plantas desaladoras hay y qué normativa regula su instalación? | 18-D |
-| `mix-derechos-ley` | `mixta` | ¿Qué comunas concentran más derechos de agua y qué dice la ley sobre su uso? | 18-D |
-| `abstencion-informe-calidad-agua` | `abstencion` | ¿Qué dice el informe de calidad de agua 2025 sobre el río Copiapó? | 18-D |
-| `abstencion-normativa-litio` | `abstencion` | ¿Qué dice la normativa sobre el uso de agua en la industria del litio? | 18-D |
-| `fuera-alcance-capital-francia` | `fuera_de_alcance` | ¿Cuál es la capital de Francia? | 18-A (pendiente de verificar) |
+| `doc-metodologia-catastro` | `rag` | ¿Cuál es la metodología del catastro frutícola? | activo |
+| `doc-catastro-evolucion` | `rag` | ¿Cómo cambió la superficie frutícola de Atacama entre 2018 y 2024? | activo |
+| `tier4-kilos-jojoba` | `rag` | ¿Cuántos kilos de jojoba se producen al año? | activo (documento) |
+| `tier4-rendimiento-palto` | `rag` | ¿Cuánto rinde una hectárea de palto? | activo (documento) |
+| `mix-catastro-comunas` | `mixta` | ¿En qué comunas se concentran los registros de vid de mesa y qué metodología usa el catastro? | activo |
+| `mix-catastro-evolucion` | `mixta` | ¿Cuántos registros de vid de mesa hay en la capa del catastro y cómo evolucionó la superficie entre 2018 y 2024? | activo |
+| `abstencion-informe-calidad-agua` | `abstencion` | ¿Qué dice el informe de calidad de agua 2025 sobre el río Copiapó? | activo |
+| `abstencion-normativa-litio` | `abstencion` | ¿Qué dice la normativa sobre el uso de agua en la industria del litio? | activo |
+| `abstencion-exportacion-chirimoya-2025` | `abstencion` | ¿Cuántos kilos de chirimoya se exportaron a China en 2025? | activo |
+| `doc-normativa-cauces` | `rag` | ¿Qué dice la normativa sobre la protección de cauces y zonas de inundación? | inactivo (sin corpus) |
+| `doc-plan-regulador-caldera` | `rag` | ¿Qué regula el plan regulador de Caldera sobre densidad y altura? | inactivo (sin corpus) |
+| `mix-desaladoras-normativa` | `mixta` | ¿Cuántas plantas desaladoras hay y qué normativa regula su instalación? | inactivo (sin corpus) |
+| `mix-derechos-ley` | `mixta` | ¿Qué comunas concentran más derechos de agua y qué dice la ley sobre su uso? | inactivo (sin corpus) |
 
 ## 7. Criterios de aceptación de 18-A
 
@@ -123,7 +128,9 @@ Casos nuevos:
 
 ## 9. Próximos pasos
 
-1. **18-B:** corpus curado, metadata de vigencia y chunking por estructura.
-2. **18-C:** retrieval híbrido (pgvector + `tsv`), filtros y reranking.
-3. **18-D:** tool `search_documents`, citas y enrutamiento mixto.
-4. **18-E:** evaluación de retrieval y respuesta, UX de fuentes y latencia.
+1. **17-E/18-B:** cargar normativa, planes reguladores y leyes para activar
+   los cuatro casos inactivos.
+2. **18-E:** medir fidelidad de respuesta y latencia con el corpus ampliado;
+   evaluar reranking si Recall@5 baja de 0,8.
+3. **Mantenimiento:** revisar el umbral 0,62 y el top-5 cuando crezca el
+   corpus o cambie el modelo de embeddings.

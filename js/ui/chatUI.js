@@ -177,7 +177,6 @@ function renderCitations(citations, container) {
     const meta = [];
     if (c.publisher) meta.push(String(c.publisher));
     if (c.published_at) meta.push(String(c.published_at).slice(0, 4));
-    if (c.section) meta.push(String(c.section));
     if (meta.length > 0) {
       const metaEl = document.createElement("span");
       metaEl.className = "ai-source-meta";
@@ -908,11 +907,35 @@ export function initChatUI() {
   const infoBtn = document.getElementById("chatInfoBtn");
   const infoModal = document.getElementById("chatInfoModal");
   const infoCloseBtn = document.getElementById("chatInfoModalClose");
+  const infoCloseFooterBtn = document.getElementById("chatInfoModalCloseFooter");
+  const providerLabel = document.getElementById("chatProviderLabel");
+  let infoLoaded = false;
+
+  async function loadChatInfo() {
+    if (infoLoaded || !providerLabel) return;
+    try {
+      const response = await fetch("/api/chat/info", {
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data?.provider_label) {
+        providerLabel.textContent = data.provider_label;
+        infoLoaded = true;
+      }
+    } catch {
+      // Se mantiene el texto genérico si el endpoint no está disponible.
+    }
+  }
 
   infoBtn?.addEventListener("click", () => {
     infoModal?.showModal();
+    loadChatInfo();
   });
   infoCloseBtn?.addEventListener("click", () => {
+    infoModal?.close();
+  });
+  infoCloseFooterBtn?.addEventListener("click", () => {
     infoModal?.close();
   });
 

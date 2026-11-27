@@ -258,9 +258,11 @@ externo (GitHub/Keycloak/etc.) y un subject token; no se configura solo con
 `GCP_PROJECT_NUMBER`. Si el VPS es una VM de GCE, se puede usar la service
 account adjunta a la VM y ADC por metadata, sin JSON.
 
-Para embeddings Vertex falta el driver `vertex-ai`; por ahora el RAG local usa
-el endpoint OpenAI-compatible de Google AI Studio o un servidor de embeddings
-compatible con OpenAI.
+El driver Vertex AI está implementado (ADR 026): con
+`EMBEDDINGS_PROVIDER=vertex`, `GOOGLE_CLOUD_PROJECT`, `EMBEDDINGS_LOCATION` y
+`gemini-embedding-001` a 1024 dimensiones. En local usa ADC o
+`GOOGLE_APPLICATION_CREDENTIALS_JSON`; en el VPS, la service account montada.
+También se puede usar un endpoint OpenAI-compatible.
 
 Si ya tienes un `.env` local con un proveedor OpenAI-compatible (por ejemplo
 Gemini API), puedes cargarlo sin copiar claves:
@@ -432,8 +434,9 @@ respuesta. Antes de cambiar prompts, tools, router, RAG o settings:
 1. Identifica el tipo de pregunta y la ruta esperada en `CONTRACT.md` §6.7.
 2. Si agregas o cambias una tool, agrega el caso al golden set con
    `tools_any` y documenta la tool en el prompt del orquestador.
-3. Si tocas el RAG, mide primero el retrieval (Recall@5, MRR). No cambies el
-   prompt hasta saber si el problema es el corpus, el chunking o el ranking.
+3. Si tocas el RAG, mide primero el retrieval con `npm run eval:rag`
+   (Recall@5, MRR). No cambies el prompt hasta saber si el problema es el
+   corpus, el chunking o el ranking.
 4. Si tocas el enrutamiento, actualiza el mapa de fuentes y los casos mixtos.
 5. Corre el golden set antes y después:
    `CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1 npm run eval:chat`.
@@ -1100,6 +1103,7 @@ stack; recrea esos servicios después de cambiarlas.
 ```bash
 npm run rag:worker            # loop local
 npm run rag:worker -- --once  # una pasada (cron/tests)
+npm run eval:rag              # Recall@5/MRR del retrieval
 ```
 
 - El worker necesita `DATABASE_URL` (cola), `RAG_DATABASE_URL` (escritura
@@ -1116,6 +1120,21 @@ npm run rag:worker -- --once  # una pasada (cron/tests)
   `label=disable` para que API y worker compartan `./rag`. En Docker/Linux
   normal no hace falta; en el VPS el volumen debe pertenecer al usuario del
   contenedor.
+
+**Consulta documental en el chat (18-D)**
+
+- La tool `search_documents` busca en `rag.chunks` con pgvector + `tsv`
+  español (RRF), filtro opcional por año, top-5 y umbral 0,62.
+- Devuelve pasajes `untrusted` con `document_slug`, título, página, sección,
+  score y URL; `buildEvidence()` los agrega a `citations` y el chat muestra
+  **Fuentes**.
+- Las reglas de uso están en el prompt `chat.documents` (panel Chat IA →
+  Prompts) y en el fallback `DOCUMENT_RULES` de `server/chat/prompts.js`.
+- Para calibrar: `npm run eval:rag` (6 preguntas de catastro, Recall@5 y
+  MRR). Si bajas el umbral aparecen pasajes irrelevantes; si lo subes,
+  pierdes preguntas respondibles.
+- El aviso de datos no disponibles se mantiene, pero si la respuesta cita un
+  documento se muestra como “la cifra proviene del documento citado”.
 
 **Taxonomía normalizada (46)**
 

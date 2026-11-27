@@ -278,7 +278,7 @@ Env vars tienen prioridad sobre la BD (para tests y overrides rápidos).
 4.6. server/chat/tools/
 Una tool por archivo. Cada archivo exporta { schema, run }.
 
-Tools actuales (13; las 9 primeras son las que conoce el router):
+Tools actuales (14; las 9 primeras son las que conoce el router):
 
 Tool	Propósito
 get_layer_stats	Estadísticas generales de una capa.
@@ -294,10 +294,14 @@ get_station_weather	Clima observado de una estación meteorológica.
 get_historical_climate	Series históricas de estaciones (DGA/DGAC).
 list_climate_stations	Listado de estaciones meteorológicas disponibles.
 get_arclim_forecast	Proyecciones climáticas ARClim por comuna y escenario.
+search_documents	Fragmentos documentales de `rag.chunks` con cita (Sprint 18-D).
 El registro está en tools/index.js. _helpers.js contiene normalizeArgs y withTimeout.
+`search_documents` no usa RPC: consulta `rag.*` con `db.query()` y un embedder
+de consulta (`RETRIEVAL_QUERY`). Devuelve pasajes `untrusted`; el orquestador
+los cita vía `buildEvidence()` y el frontend los muestra en **Fuentes**.
 
 4.7. server/chat/runners.js
-Ejecuta cada tool contra Supabase (vía el pool).
+Ejecuta cada tool contra la BD activa (Postgres en el VPS; Supabase solo en la demo).
 
 Normalización defensiva de args del LLM:
 
@@ -357,11 +361,16 @@ extract.js	Extracción página a página con pdfjs-dist.
 normalize.js	Limpieza de controles/Unicode, des-guionizado y encabezados repetidos.
 chunker.js	Chunking por párrafo/oración/sección con solape controlado.
 pipeline.js	Validación del manifiesto, idempotencia, embeddings y escritura atómica.
+retrieve.js	Retrieval híbrido pgvector + tsv (RRF), umbral y pasajes citables (18-D).
 
-La CLI `scripts/ingest_docs.mjs` es el único punto de entrada operativo. No corre en `api/`.
+La CLI `scripts/ingest_docs.mjs` es el punto de entrada de ingesta y no corre en `api/`.
+En runtime, `server/chat/tools/search-documents.js` lee `rag.documents`/`rag.chunks`
+con `db.query()` y un embedding `RETRIEVAL_QUERY`; no escribe ni acepta SQL del LLM.
+La migración `063_chat_documents.sql` crea el prompt `chat.documents` y las
+settings `chat.documents.*`; si la BD no responde, se usa `DOCUMENT_RULES`.
 
 4.13. server/embeddings/*
-Driver de embeddings compatible con OpenAI `/embeddings` (Sprint 17). Interfaz `embed(texts[])`, batching, timeout, reintentos con backoff y validación de dimensión. El modelo activo se registra por chunk en `rag.chunks.embedding_model`. Decisión y alternativas en ADR 022.
+Driver de embeddings compatible con OpenAI `/embeddings` (Sprint 17). Interfaz `embed(texts[])`, batching, timeout, reintentos con backoff y validación de dimensión. El modelo activo se registra por chunk en `rag.chunks.embedding_model`. En Vertex se usa `task_type=RETRIEVAL_DOCUMENT` al ingerir y `RETRIEVAL_QUERY` al consultar (18-D). Decisión y alternativas en ADR 022.
 
 4.14. server/proxy/* + api/proxy.js
 Proxy cerrado para servicios geoespaciales externos (2026-11-06). No acepta URLs arbitrarias: cada servicio declara URL base, parámetros permitidos y límites.
@@ -733,7 +742,7 @@ Rol	Permisos
 rag_writer	SELECT/INSERT/UPDATE/DELETE en las tres tablas; secuencias.
 chat_ro	SELECT solo de documentos `ready` y sus chunks; lectura de ingestion_runs.
 
-La ingesta calcula los embeddings antes de abrir la transacción y reemplaza la versión anterior en un único COMMIT. El chat del Sprint 18 usará `chat_ro` y delimitará los fragmentos como contenido no confiable (CONTRACT §6.6).
+La ingesta calcula los embeddings antes de abrir la transacción y reemplaza la versión anterior en un único COMMIT. El chat consulta con `search_documents` (18-D): embeddings de consulta `RETRIEVAL_QUERY`, retrieval híbrido, pasajes `untrusted` y citas documento/página/sección (CONTRACT §6.6). El rol `chat_ro` queda disponible para un cliente de solo lectura; la API del VPS usa el rol de servicio. La migración `063_chat_documents.sql` agrega el prompt y las settings del bloque documental.
 
 6. Frontend
 6.1. Entry point

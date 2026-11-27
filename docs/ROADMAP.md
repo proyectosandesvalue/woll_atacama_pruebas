@@ -74,8 +74,8 @@
 | 14 | Migrar config a Supabase (`admin.*`) | 🔶 local (snapshot + `/api/config` ✅; VPS pendiente) | alta | 4-6h | 07 |
 | 15 | Panel admin — solo lectura | 🔶 local (login, config, chat y auditoría ✅; VPS pendiente) | alta | 6-8h | 14 |
 | 16 | Panel admin — CRUD de capas | ⏳ pending | alta | 8-12h | 08, 14, 15 |
-| 17 | Ingesta RAG (PDFs → chunks → embeddings) | 🔶 pipeline ✅ con Vertex embeddings; corpus real pendiente | media | 8-12h | — (CLI); 15 solo para el panel |
-| 18 | Retrieval RAG + tool en chat | 🔶 parcial (18-A ✅; 18-B en curso; 18-C a 18-E pendientes) | media | 8-12h | 17 |
+| 17 | Ingesta RAG (PDFs → chunks → embeddings) | 🔶 pipeline ✅; corpus real de 2 catastros (2018/2024); falta el 3.º para CA-12 | media | 8-12h | — (CLI); 15 solo para el panel |
+| 18 | Retrieval RAG + tool en chat | ✅ 18-A a 18-E con corpus de catastro; 4 casos inactivos por corpus pendiente | media | 8-12h | 17 |
 | 19 | APIs externas + CRUD | ⏳ pending | media | 15-25h | 16 |
 | 20 | Adapter real: meteorología | ⏳ pending | baja | 4-6h | 19 |
 | 21 | Adapter real: leyes (BCN) | ⏳ pending | baja | 6-8h | 19 |
@@ -408,7 +408,7 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 
 ### Sprint 17 — Ingesta RAG (PDFs → chunks → embeddings)
 
-**Estado**: 🔶 parcial (código, migración y tests listos; falta aplicar la migración en el VPS y validar con PDFs reales) · **Prioridad**: media · **Duración**: 8-12h · **Dependencias**: ninguna para la CLI; 15 solo para visualizar estado en el panel
+**Estado**: 🔶 parcial (pipeline, migración y panel ✅ en el VPS; corpus real con 2 informes del Catastro Frutícola 2018/2024, 31 chunks; falta el 3.º documento para cerrar CA-12) · **Prioridad**: media · **Duración**: 8-12h · **Dependencias**: ninguna para la CLI; 15 solo para visualizar estado en el panel
 
 **Objetivo**: índice vectorial versionado y trazable de PDFs públicos, listo para la recuperación del Sprint 18.
 
@@ -432,15 +432,17 @@ con un color distinto, y que persistan hasta que el usuario las quite.
 | 17-B | Extracción, normalización y chunker + tests | ✅ |
 | 17-C | Driver de embeddings + tests | ✅ |
 | 17-D | CLI de ingesta, manifiesto, dry-run, ingestion_runs | ✅ |
-| 17-E | 3 PDFs reales + reporte CA-12 + validación de chunks | ⏳ |
+| 17-E | 3 PDFs reales + reporte CA-12 + validación de chunks | 🔶 2/3 (Catastro Frutícola Atacama 2018 y 2024; 31 chunks) |
 
-**Pendiente bloqueante de 17-E**: elegir 3-5 documentos públicos con licencia verificada (BCN/DGA) y completar `rag/manifest.json`.
+**Pendiente de 17-E**: agregar un tercer documento público con licencia
+verificada para cerrar CA-12. El corpus actual ya permite el retrieval y el
+golden set documental del Sprint 18.
 
 **Nota de ajuste**: `pgvector` en la imagen de Postgres (tramo 26-C). Guardar versión del modelo de embeddings. Marcar documentos como fuente no confiable (inyección indirecta). Registrar procedencia de cada fragmento. Verificar derechos de autor.
 
 ### Sprint 18 — Retrieval RAG + tool en chat
 
-**Estado**: 🔶 parcial (18-A ✅; 18-B en curso; 18-C a 18-E pendientes) · **Prioridad**: media · **Duración**: 8-12h · **Dependencias**: 17
+**Estado**: ✅ 18-A a 18-E con el corpus de catastro (2018/2024); 4 casos de normativa/plan regulador siguen inactivos por falta de corpus · **Prioridad**: media · **Duración**: 8-12h · **Dependencias**: 17
 **Eje obligatorio**: `docs/CONTRACT.md` §6.7 y ADR 025. El chat se gobierna como
 orquestador de fuentes, no como RAG puro.
 
@@ -452,21 +454,25 @@ enrutamiento explícito, evidencia, abstención y evaluación por ruta.
   `docs/chat-map-fuentes-rutas.md`, columna `route` en el golden set
   (migración 051), 8 casos nuevos inactivos y resumen por ruta en el runner.
   Sin código de retrieval.
-- **18-B — Corpus y chunking.** 🔶 Driver Vertex AI y `embeddings:check`
-  listos (ADR 026). Falta definir el corpus con licencia y vigencia, la
-  metadata (materia, comuna, instrumento, fecha), validar el chunking por
-  artículo/sección con PDFs reales y revisar los chunks desde el panel.
-- **18-C — Retrieval híbrido.** pgvector + `tsv` español, fusión RRF, filtros
-  por metadata, reranking top-20 → top-5 y umbral de relevancia.
-- **18-D — Tool `search_documents`.** Búsqueda documental con citas
-  (documento, página, sección), delimitación `untrusted`, enrutamiento
-  `dato / documental / mixto` y combinación con tools de datos.
-- **18-E — Evaluación y UX.** Métricas de retrieval (Recall@5, MRR) y de
-  respuesta (fidelidad, cita, abstención); fuentes visibles en el chat;
-  latencia y costo.
+- **18-B — Corpus y chunking.** ✅/🔶 Driver Vertex AI y `embeddings:check`
+  listos (ADR 026). Corpus real: Catastro Frutícola Atacama 2018 y 2024
+  (31 chunks, 1024 dims, `untrusted`). Falta el corpus normativo/plan
+  regulador para los 4 casos inactivos.
+- **18-C — Retrieval híbrido.** ✅ pgvector + `tsv` español, fusión RRF,
+  top-20 → top-5, filtro por año y umbral 0,62 calibrado. Sin reranking:
+  Recall@5 1,0 y MRR 0,778 en el eval de 6 preguntas.
+- **18-D — Tool `search_documents`.** ✅ Búsqueda documental con citas
+  (documento, página, sección), delimitación `untrusted`, prompt
+  `chat.documents` (migración 063) y combinación con tools de datos.
+- **18-E — Evaluación y UX.** ✅ `npm run eval:rag`, comprobaciones
+  `sources_any`/`citation_required`/`expected_abstain` en el runner, fuentes
+  visibles en el chat y aviso cuando la cifra viene de un documento.
+  45/45 casos activos del golden set pasan.
 
 **Criterio de cierre**: el golden set documental y mixto pasa, el retrieval
-tiene Recall@5 medido y el chat se abstiene cuando no hay evidencia.
+tiene Recall@5 medido y el chat se abstiene cuando no hay evidencia. ✅ para
+el corpus de catastro; los casos de normativa, plan regulador y leyes quedan
+inactivos hasta cargar esos documentos.
 
 ### Sprint 19 — APIs externas + CRUD
 
@@ -1283,6 +1289,27 @@ preguntas pendientes para triage operativo.
 ## Sesiones de trabajo
 
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
+
+### 2026-11-27
+- ✅ **17-E (corpus RAG real, 2/3):** ingesta del Catastro Frutícola de
+  Atacama 2018 y 2024 (ODEPA/CIREN), 31 chunks, `gemini-embedding-001` a
+  1024 dims, `trust_level=untrusted`. Manifiesto con URL oficial y licencia;
+  PDFs fuera de git. Dry-run y worker validados en el VPS. Falta el 3.º
+  documento para cerrar CA-12.
+- ✅ **18-C (retrieval híbrido):** `server/rag/retrieve.js` con pgvector +
+  `tsv` español, RRF, filtro por año, top-5 y umbral 0,62 calibrado con
+  preguntas positivas y negativas. `npm run eval:rag`: Recall@5 1,0,
+  MRR 0,778.
+- ✅ **18-D (tool documental):** `search_documents` (14.ª tool), prompt
+  `chat.documents` (migración 063), pasajes `untrusted`, citas
+  documento/página/sección en `citations` y bloque **Fuentes** en el chat.
+- ✅ **18-E (evaluación y UX):** runner con `sources_any`,
+  `citation_required` y `expected_abstain`; golden set 45/45 (RAG 4/4,
+  mixta 2/2, abstención 6/6, tool 30/30); aviso específico cuando la cifra
+  viene de un documento y no de las capas.
+- 📝 **Pendiente:** corpus normativo/plan regulador para activar
+  `doc-normativa-cauces`, `doc-plan-regulador-caldera`,
+  `mix-desaladoras-normativa` y `mix-derechos-ley`.
 
 ### 2026-11-26
 - ✅ **Mantenimiento del VPS:** 11 paquetes (5 de seguridad) y Docker 29.10.1;
