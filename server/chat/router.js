@@ -25,6 +25,22 @@ function dbg(...args) {
   if (DEBUG) console.log("[router]", ...args);
 }
 
+/**
+ * Señales de una pregunta documental. Si aparecen, el router no ejecuta un
+ * pipeline de capas: deja que el orquestador decida entre tools y RAG.
+ * Es deliberadamente acotado para no desviar conteos/listados normales.
+ */
+const DOCUMENTAL_CUES =
+  /(metodolog[ií]a|m[eé]todos?\s+de\s+riego|sistema\s+de\s+riego|qu[eé]\s+dice\s+(?:el\s+)?(?:informe|catastro|documento)|seg[uú]n\s+(?:el\s+)?(?:informe|catastro|documento)|producci[oó]n|rendimiento|destino|infraestructura|encuest|productores|predios|evoluci[oó]n|mayor(?:es)?\s+superficie|superficie\s+(?:frut[ií]cola|plantada)|especies\s+(?:frutales\s+)?(?:que\s+)?dominan)/i;
+
+/**
+ * @param {string} text
+ * @returns {boolean}
+ */
+export function isDocumentalQuestion(text) {
+  return DOCUMENTAL_CUES.test(String(text || ""));
+}
+
 async function isRouterEnabled() {
   // Env var tiene prioridad.
   if (process.env.CHAT_ROUTER_ENABLED !== undefined) {
@@ -91,6 +107,17 @@ export async function route(classification, text = "") {
   ) {
     dbg(
       `router: confidence ${classification.confidence} < ${minConfidence}, skip`
+    );
+    return null;
+  }
+
+  // 18-D: una pregunta documental no se resuelve con un pipeline de capas.
+  if (
+    classification.intent === "contexto_documental" ||
+    isDocumentalQuestion(text)
+  ) {
+    dbg(
+      `router: pregunta documental, skip (intent=${classification.intent}, text=${String(text).slice(0, 80)})`
     );
     return null;
   }

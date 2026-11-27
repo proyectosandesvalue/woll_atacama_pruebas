@@ -1064,6 +1064,72 @@
       "notes": "Requiere comparar los dos informes del corpus (18-D)."
     },
     {
+      "id": "doc-riego-2024",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "rag",
+      "category": "riego",
+      "route": "rag",
+      "activo": true,
+      "question": "¿Qué método de riego predomina en el catastro 2024?",
+      "expected": {
+        "sources_any": [
+          "document"
+        ],
+        "citation_required": true,
+        "reply_must_not_contain": [
+          "no puedo responder"
+        ],
+        "expected_abstain": false
+      },
+      "notes": "El router no debe interceptar esta pregunta documental (18-D)."
+    },
+    {
+      "id": "doc-especies-superficie-2024",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "rag",
+      "category": "especies",
+      "route": "rag",
+      "activo": true,
+      "question": "¿Cuáles son las especies con mayor superficie plantada en 2024?",
+      "expected": {
+        "sources_any": [
+          "document"
+        ],
+        "citation_required": true,
+        "reply_must_contain": [
+          "vid de mesa"
+        ],
+        "expected_abstain": false
+      },
+      "notes": "La superficie por especie está en el informe; la capa no puede sumar varchar (18-D/37-D)."
+    },
+    {
+      "id": "doc-infraestructura-2018",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "rag",
+      "category": "infraestructura",
+      "route": "rag",
+      "activo": true,
+      "question": "¿Qué infraestructura frutícola se describe en el informe 2018?",
+      "expected": {
+        "sources_any": [
+          "document"
+        ],
+        "citation_required": true,
+        "reply_must_contain": [
+          "embalaje"
+        ],
+        "expected_abstain": false
+      },
+      "notes": "Infraestructura y agroindustria del informe 2018 (18-D)."
+    },
+    {
       "id": "mix-catastro-comunas",
       "level": 3,
       "tier": 2,
