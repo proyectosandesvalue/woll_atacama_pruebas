@@ -1309,8 +1309,8 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   se quitó “Abrir geoportal” de ese bloque.
 - ✅ **Portada:** los CTA de las tarjetas usan el botón principal del hero
   (“Abrir geoportal”, “Abrir chat” y “Ver la propuesta”).
-- ✅ **Portada:** el mock del chat se reemplazó por una captura real 2x del
-  panel del Asistente IA, con animación de flotación y datos reales.
+- ✅ **Portada:** el mock del chat se reemplazó por un carrusel de 3 capturas
+  reales (chat, mapa y mapa + chat) que rota cada 3,5 s, con pausa y reduced motion.
 
 
 

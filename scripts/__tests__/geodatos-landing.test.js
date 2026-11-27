@@ -72,6 +72,8 @@ test("los assets y el JS de la portada existen", async () => {
   await exists("js/geodatos.js");
   await exists("assets/geodatos/logo-atacamawoll.webp");
   await exists("assets/geodatos/chat-real.webp");
+  await exists("assets/geodatos/chat-map.webp");
+  await exists("assets/geodatos/chat-map-chat.webp");
   await exists("assets/geodatos/og-geodatos.webp");
   await exists("css/fonts/plus-jakarta-sans-latin.woff2");
   await exists("css/fonts/plus-jakarta-sans-OFL.txt");
@@ -111,11 +113,20 @@ test("los CTA de las tarjetas usan el estilo del botón principal", async () => 
   assert.doesNotMatch(html, /geo-card-cta/);
 });
 
-test("el chat de la portada usa una captura real, no un mock", async () => {
+test("el chat de la portada usa capturas reales en carrusel", async () => {
   const html = await read("geodatos.html");
+  const js = await read("js/geodatos.js");
 
-  assert.match(html, /assets\/geodatos\/chat-real\.webp/);
-  assert.match(html, /class="chat-preview-float"/);
-  assert.match(html, /Vista real del chat/);
+  assert.match(html, /id="chatCarousel"/);
+  assert.match(html, /chat-slide--chat/);
+  assert.match(html, /chat-slide--map/);
+  assert.match(html, /chat-slide--map-chat/);
+  assert.match(html, /chat-map\.webp/);
+  assert.match(html, /chat-map-chat\.webp/);
+  assert.match(html, /chat-carousel-toggle/);
+  assert.match(html, /Capturas reales/);
   assert.doesNotMatch(html, /mock-chat-body|mock-msg|mock-mini-chart/);
+  assert.match(js, /chatCarousel/);
+  assert.match(js, /3500/);
+  assert.match(js, /prefers-reduced-motion/);
 });

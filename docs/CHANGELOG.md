@@ -48,7 +48,7 @@
 ## [Unreleased]
 
 ### Added
-- **Portada: captura real del chat:** se reemplazó el mock ilustrativo por una captura 2x del panel real del Asistente IA (WebP 1032×1540, 69 KB), con una consulta y un gráfico de datos reales. Incluye una animación CSS de flotación de 7 s, desactivada con `prefers-reduced-motion`, y se retiró el CSS del mock falso.
+- **Portada: carrusel de capturas reales del chat:** tres vistas reales —chat, mapa y mapa + chat— en WebP (70-82 KB cada una), con transición de 0,8 s cada 3,5 s. Incluye puntos de navegación, pausa/reanudar y `prefers-reduced-motion` (sin autoplay). Se retiró el mock falso.
 - **Portada: CTA de tarjetas con el botón principal:** “Abrir geoportal”, “Abrir chat” y “Ver la propuesta” usan el mismo estilo del hero (pill azul, 44 px) y quedan alineados al pie de cada tarjeta.
 - **Portada: CTA único en el hero:** se quitó “Abrir geoportal” y quedó solo “Explorar las herramientas”. Los accesos al geoportal y al chat se mantienen en las tarjetas, secciones y pie.
 - **Portada: “Productos” pasa a “Herramientas”:** CTA “Explorar las herramientas”, estadística del hero, kicker de la sección, ancla `#herramientas`, KPI del mock del dashboard y `aria-label` del chat. Sin cambios de diseño ni de contenido.

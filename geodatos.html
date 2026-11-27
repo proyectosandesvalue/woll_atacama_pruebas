@@ -211,11 +211,32 @@ section[id]{scroll-margin-top:92px}
 .geo-detail:hover .mock-window,.geo-detail:hover .mock-chat{transform:rotate(0)}
 .mock-caption{position:absolute;right:28px;bottom:16px;z-index:2;color:var(--ink-subtle);font-size:10px;font-weight:600;letter-spacing:.02em}
 
-.mock-chat--real{max-width:430px;background:transparent;border:0}
-.mock-chat--real img{display:block;width:100%;height:auto}
+.chat-carousel-shell{display:flex;flex-direction:column;align-items:center;gap:9px;width:100%;max-width:520px}
 .chat-preview-float{width:100%;display:flex;justify-content:center;animation:chatFloat 7s ease-in-out infinite;will-change:transform}
+.mock-chat--carousel{max-width:520px;height:560px;background:#eef6ff}
+.chat-carousel{position:absolute;inset:0}
+.chat-slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;margin:0;opacity:0;transition:opacity .8s ease;pointer-events:none}
+.chat-slide.is-active{opacity:1;z-index:1}
+.chat-slide-bg{position:absolute;inset:-18px;background-size:cover;background-position:center;filter:blur(18px) saturate(1.1);opacity:.35;transform:scale(1.06)}
+.chat-slide-img{position:relative;z-index:1;display:block;max-width:100%;max-height:100%;width:auto;height:auto;border-radius:12px;box-shadow:0 10px 28px #0720381f}
+.chat-slide--chat .chat-slide-bg{background-image:url("assets/geodatos/chat-real.webp")}
+.chat-slide--map .chat-slide-bg{background-image:url("assets/geodatos/chat-map.webp")}
+.chat-slide--map-chat .chat-slide-bg{background-image:url("assets/geodatos/chat-map-chat.webp")}
+.chat-carousel-meta{display:flex;align-items:center;justify-content:center;gap:10px;min-height:26px;flex-wrap:wrap}
+.chat-carousel-dots{display:flex;align-items:center;gap:5px}
+.chat-dot{width:6px;height:6px;border:0;border-radius:999px;background:#b8d3e6;padding:0;cursor:pointer;transition:width .2s,background .2s}
+.chat-dot.is-active{width:18px;background:#0284c7}
+.chat-dot:focus-visible{outline:2px solid #0284c7;outline-offset:2px}
+.chat-carousel-caption{color:var(--ink-subtle);font-size:10px;font-weight:600;letter-spacing:.02em}
+.chat-carousel-toggle{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:1px solid #0284c733;border-radius:50%;background:#fff;color:#0369a1;cursor:pointer;padding:0}
+.chat-carousel-toggle svg{width:11px;height:11px;fill:currentColor}
+.chat-carousel-toggle .icon-play{display:none}
+.chat-carousel-toggle[aria-pressed="true"] .icon-pause{display:none}
+.chat-carousel-toggle[aria-pressed="true"] .icon-play{display:block}
+.chat-carousel-toggle:focus-visible{outline:2px solid #0284c7;outline-offset:2px}
+.chat-carousel-note{color:var(--ink-subtle);font-size:9px;font-weight:500;letter-spacing:.02em;text-align:center}
 @keyframes chatFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@media (prefers-reduced-motion: reduce){.chat-preview-float{animation:none}}
+@media (prefers-reduced-motion: reduce){.chat-preview-float{animation:none}.chat-slide{transition:none}.chat-carousel-toggle{display:none}}
 
 /* ── Mock del geoportal ───────────────────────────────────── */
 .mock-bar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #0284c71f;background:#f4f9ff}
@@ -776,14 +797,45 @@ section[id]{scroll-margin-top:92px}
           <p class="geo-note">El chat se abre dentro del geoportal, en el panel “Asistente IA”.</p>
         </div>
         <div class="geo-visual geo-visual--chat">
-          <div class="chat-preview-float">
-            <div class="mock-chat mock-chat--real">
-              <img src="assets/geodatos/chat-real.webp"
-                alt="Panel del Asistente IA con la consulta ¿Cuántas lagunas hay por comuna? y un gráfico de distribución"
-                width="1032" height="1540" loading="lazy" decoding="async" />
+          <div class="chat-carousel-shell">
+            <div class="chat-preview-float">
+              <div class="mock-chat mock-chat--carousel">
+                <div class="chat-carousel" id="chatCarousel" aria-roledescription="carrusel" aria-label="Vistas reales del chat">
+                  <figure class="chat-slide chat-slide--chat is-active" data-slide="0" role="group" aria-roledescription="vista" aria-label="Chat" aria-hidden="false">
+                    <div class="chat-slide-bg" aria-hidden="true"></div>
+                    <img class="chat-slide-img" src="assets/geodatos/chat-real.webp"
+                      alt="Panel del Asistente IA con la consulta ¿Cuántas lagunas hay por comuna? y un gráfico de distribución"
+                      width="1032" height="1660" loading="lazy" decoding="async" />
+                  </figure>
+                  <figure class="chat-slide chat-slide--map" data-slide="1" role="group" aria-roledescription="vista" aria-label="Mapa" aria-hidden="true">
+                    <div class="chat-slide-bg" aria-hidden="true"></div>
+                    <img class="chat-slide-img" src="assets/geodatos/chat-map.webp"
+                      alt="Mapa de resultados con la capa de lagunas, tranques y embalses"
+                      width="1400" height="1408" loading="lazy" decoding="async" />
+                  </figure>
+                  <figure class="chat-slide chat-slide--map-chat" data-slide="2" role="group" aria-roledescription="vista" aria-label="Mapa y chat" aria-hidden="true">
+                    <div class="chat-slide-bg" aria-hidden="true"></div>
+                    <img class="chat-slide-img" src="assets/geodatos/chat-map-chat.webp"
+                      alt="Mapa de resultados junto al panel del Asistente IA"
+                      width="1600" height="1011" loading="lazy" decoding="async" />
+                  </figure>
+                </div>
+              </div>
             </div>
+            <div class="chat-carousel-meta">
+              <div class="chat-carousel-dots" role="group" aria-label="Elegir vista">
+                <button type="button" class="chat-dot is-active" data-slide-to="0" aria-label="Ver chat" aria-current="true"></button>
+                <button type="button" class="chat-dot" data-slide-to="1" aria-label="Ver mapa"></button>
+                <button type="button" class="chat-dot" data-slide-to="2" aria-label="Ver mapa y chat"></button>
+              </div>
+              <span class="chat-carousel-caption" id="chatCarouselCaption">Chat · 1 de 3</span>
+              <button type="button" class="chat-carousel-toggle" id="chatCarouselToggle" aria-label="Pausar recorrido" aria-pressed="false">
+                <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5" width="3" height="14"/><rect x="14" y="5" width="3" height="14"/></svg>
+                <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+              </button>
+            </div>
+            <span class="chat-carousel-note">Capturas reales del chat y el mapa · datos del geoportal</span>
           </div>
-          <span class="mock-caption">Vista real del chat · datos del geoportal</span>
         </div>
       </div>
     </div>
