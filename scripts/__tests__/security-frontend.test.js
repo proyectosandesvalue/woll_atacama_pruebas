@@ -5,7 +5,15 @@ import { readFileSync } from "node:fs";
 const read = (path) => readFileSync(new URL(`../../${path}`, import.meta.url), "utf8");
 
 test("index.html y help.html usan assets locales, sin CDN", () => {
-  for (const file of ["index.html", "help.html", "admin.html"]) {
+  for (const file of [
+    "index.html",
+    "help.html",
+    "admin.html",
+    "geodatos.html",
+    "terminos.html",
+    "privacidad.html",
+    "fuentes.html",
+  ]) {
     const html = read(file);
     const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g)].map((m) => m[1]);
     const styles = [...html.matchAll(/<link\b[^>]*\brel="stylesheet"[^>]*\bhref="([^"]+)"/g)].map((m) => m[1]);

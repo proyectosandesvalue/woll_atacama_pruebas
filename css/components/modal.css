@@ -583,6 +583,60 @@
   gap: 12px;
 }
 
+/* Enlaces legales del diálogo de bienvenida (Sprint 32-A). */
+.welcome-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-right: auto;
+  font-size: 0.75rem;
+}
+
+.welcome-legal-links a {
+  color: var(--text-tertiary);
+  text-decoration: none;
+}
+
+.welcome-legal-links a:hover {
+  color: var(--color-brand-text);
+  text-decoration: underline;
+}
+
+/* Aviso del proveedor LLM en el chat (Sprint 32-C). */
+.chat-info-dialog {
+  max-width: 560px;
+}
+
+.chat-info-list {
+  margin: 12px 0 16px;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.chat-info-list li + li {
+  margin-top: 8px;
+}
+
+.chat-info-links {
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 640px) {
+  .welcome-dialog-footer {
+    flex-wrap: wrap;
+  }
+
+  .welcome-legal-links {
+    width: 100%;
+    order: 2;
+  }
+}
+
 /* BOTONES (btn + variantes) */
 
 .btn {

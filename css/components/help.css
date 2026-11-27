@@ -232,6 +232,7 @@ mark.search-current {
   transition: all 0.12s ease;
   border-left: 3px solid transparent;
   user-select: none;
+  text-decoration: none;
 }
 
 .help-nav-link .material-symbols-outlined {

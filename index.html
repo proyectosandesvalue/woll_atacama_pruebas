@@ -533,7 +533,45 @@
       </div>
 
       <div class="welcome-dialog-footer">
+        <nav class="welcome-legal-links" aria-label="Información legal">
+          <a href="terminos.html">Términos de uso</a>
+          <a href="privacidad.html">Privacidad</a>
+          <a href="fuentes.html">Fuentes de datos</a>
+        </nav>
         <button class="btn-primary-action" id="welcomeModalCloseFooter">Comenzar exploración</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- MODAL DE INFORMACIÓN DEL ASISTENTE IA -->
+  <dialog class="welcome-dialog chat-info-dialog" id="chatInfoModal" aria-labelledby="chatInfoModalTitle">
+    <div class="welcome-dialog-inner">
+      <div class="welcome-dialog-header">
+        <h2 class="welcome-dialog-title" id="chatInfoModalTitle">Información del asistente</h2>
+        <button class="welcome-dialog-close" id="chatInfoModalClose" aria-label="Cerrar">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="welcome-dialog-body">
+        <p>
+          El Asistente IA envía tu consulta a
+          <strong id="chatProviderLabel">un proveedor externo de modelos de lenguaje</strong>
+          para generar la respuesta. El proveedor activo se indica aquí y puede
+          cambiar según la configuración del servicio.
+        </p>
+        <ul class="chat-info-list">
+          <li>La conversación no se guarda en la base de datos; permanece en tu navegador hasta que la limpias o la cierras.</li>
+          <li>Las preguntas sin respuesta se registran de forma agregada y sin datos personales, para mejorar el servicio.</li>
+          <li>No incluyas datos personales, credenciales ni información confidencial en tus consultas.</li>
+          <li>Las respuestas se generan automáticamente y pueden contener errores. Verifica la evidencia y la fuente original.</li>
+        </ul>
+        <p class="chat-info-links">
+          Más información en la <a href="privacidad.html">Política de privacidad</a>
+          y en <a href="fuentes.html">Fuentes de datos</a>.
+        </p>
+      </div>
+      <div class="welcome-dialog-footer">
+        <button type="button" class="btn btn-primary" id="chatInfoModalCloseFooter">Entendido</button>
       </div>
     </div>
   </dialog>
