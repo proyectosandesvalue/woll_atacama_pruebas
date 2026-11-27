@@ -82,3 +82,12 @@ test("el release verifica la portada y el visor", async () => {
   assert.match(release, /wait_http \/visor/);
   assert.match(release, /\/visor\?chat=1/);
 });
+
+test("la portada habla de herramientas, no de productos", async () => {
+  const html = await read("geodatos.html");
+
+  assert.match(html, /Explorar las herramientas/);
+  assert.match(html, /id="herramientas"/);
+  assert.match(html, /Tres herramientas, un ecosistema/);
+  assert.doesNotMatch(html, /productos/i);
+});

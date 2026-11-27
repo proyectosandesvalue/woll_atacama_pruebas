@@ -1303,6 +1303,9 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   header del chat puede ocultar/recuperar el panel cuando hay capas.
 - ✅ **Arranque de `/chat`:** `js/chat-route.js` marca el body antes del primer
   render y evita que el visor aparezca de fondo durante la carga.
+- ✅ **Portada:** “Productos” pasa a “Herramientas” en el CTA, las estadísticas,
+  el kicker, el ancla y el mock del dashboard.
+
 
 - ✅ **Backup completo por SSH:** `full-backup.sh` cifrado con DB, secretos,
   configs, certificados y uploads; descargado y verificado en el equipo local.
