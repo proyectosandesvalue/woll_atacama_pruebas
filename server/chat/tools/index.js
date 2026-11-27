@@ -39,3 +39,16 @@ export const TOOL_NAMES = ALL_TOOLS.map((t) => t.schema.function.name);
 export const TOOL_RUNNERS = Object.fromEntries(
   ALL_TOOLS.map((t) => [t.schema.function.name, t.run])
 );
+
+/**
+ * Definiciones que se envían al LLM. Si el bloque documental está apagado,
+ * `search_documents` no se ofrece (killswitch real, no solo prompt).
+ *
+ * @param {{documentsEnabled?: boolean}} [options]
+ */
+export function getToolDefinitions({ documentsEnabled = true } = {}) {
+  if (documentsEnabled) return TOOL_DEFINITIONS;
+  return TOOL_DEFINITIONS.filter(
+    (tool) => tool.function?.name !== "search_documents"
+  );
+}

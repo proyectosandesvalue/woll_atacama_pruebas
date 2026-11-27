@@ -74,6 +74,48 @@ test("devuelve pasajes con cita y trust", async () => {
   assert.equal(out.passages[0].trust, "untrusted");
 });
 
+test("respeta el killswitch de RAG", async () => {
+  let embedCalls = 0;
+  const out = await runSearchDocuments(
+    { query: "metodología del catastro" },
+    {
+      driver: "postgres",
+      db: fakeDb(),
+      settings: { enabled: false, minScore: 0.62, topK: 5 },
+      embedder: {
+        async embed() {
+          embedCalls += 1;
+          return [[0.1, 0.2, 0.3]];
+        },
+      },
+    }
+  );
+  assert.equal(out.reason, "deshabilitado");
+  assert.equal(embedCalls, 0);
+});
+
+test("aplica top_k y min_score de los settings", async () => {
+  let captured = null;
+  const db = {
+    pool: {},
+    async query(sql, params) {
+      captured = params;
+      return [];
+    },
+  };
+  await runSearchDocuments(
+    { query: "metodología del catastro", limit: 8 },
+    {
+      driver: "postgres",
+      db,
+      settings: { enabled: true, minScore: 0.7, topK: 3 },
+      embedder: fakeEmbedder(),
+    }
+  );
+  assert.equal(captured[2], 0.7);
+  assert.equal(captured[3], 3);
+});
+
 test("un error de BD se degrada a fuente_no_disponible", async () => {
   const db = {
     pool: {},

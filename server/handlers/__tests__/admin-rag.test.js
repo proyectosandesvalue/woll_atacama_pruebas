@@ -70,6 +70,31 @@ test("rag queue rechaza acciones inválidas", async () => {
   assert.equal(result.status, 400);
 });
 
+test("rag queue acepta unpublish sin manifiesto ni embeddings", async () => {
+  const db = {
+    pool: { query: async () => ({ rows: [] }) },
+    async query(sql, params) {
+      return [
+        {
+          id: 99,
+          action: params[0],
+          slug: params[1],
+          force: params[2],
+          status: "queued",
+          requested_by: params[3],
+        },
+      ];
+    },
+  };
+  const result = await handleRagQueue(
+    ctx({ body: { slug: "catastro-2024", action: "unpublish" } }),
+    { getDB: async () => db }
+  );
+  assert.equal(result.status, 201);
+  assert.equal(result.body.job.action, "unpublish");
+  assert.equal(result.body.job.slug, "catastro-2024");
+});
+
 test("rag manifest exige CSRF", async () => {
   const result = await handleRagManifestSave({
     ...ctx(),

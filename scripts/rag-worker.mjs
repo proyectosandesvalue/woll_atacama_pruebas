@@ -25,6 +25,7 @@ import pg from "pg";
 
 import { getRagConfig } from "../server/rag/config.js";
 import { ingestDocument } from "../server/rag/pipeline.js";
+import { unpublishDocument } from "../server/rag/unpublish.js";
 import { getEmbeddingsConfig } from "../server/embeddings/config.js";
 import { createEmbedder } from "../server/embeddings/provider.js";
 import { readManifest } from "../server/admin/rag-manifest.js";
@@ -63,6 +64,19 @@ export function mapIngestStatus(result) {
     default:
       return "failed";
   }
+}
+
+/**
+ * Estado del job según la acción. Unpublish no pasa por el pipeline de
+ * ingesta, así que tiene su propio mapeo.
+ * @param {{action?: string}} job
+ * @param {object} result
+ */
+export function mapJobStatus(job, result) {
+  if (job?.action === "unpublish") {
+    return result?.status === "unpublished" ? "succeeded" : "skipped";
+  }
+  return mapIngestStatus(result);
 }
 
 function databaseUrl() {
@@ -157,6 +171,14 @@ function manifestEntry(manifest, slug) {
 }
 
 async function processJob(job, { jobPool, ragPool, embedder, config, manifest, baseDir }) {
+  // Unpublish no necesita manifiesto ni embeddings: solo el índice.
+  if (job.action === "unpublish") {
+    if (!ragPool) {
+      throw Object.assign(new Error("Falta RAG_DATABASE_URL."), { code: "NO_RAG_DB" });
+    }
+    return unpublishDocument({ pool: ragPool, slug: job.slug });
+  }
+
   const entry = manifestEntry(manifest, job.slug);
   if (!entry) {
     throw Object.assign(new Error("El documento no está en el manifiesto."), {
@@ -211,7 +233,7 @@ async function runOnce({ jobPool, ragPool, embedder, config, baseDir }) {
       manifest,
       baseDir,
     });
-    const status = mapIngestStatus(result);
+    const status = mapJobStatus(job, result);
     const resultError =
       status === "failed"
         ? { code: result?.errorCode || "INGEST_FAILED", message: result?.error || "La ingesta falló." }

@@ -11,4 +11,8 @@
  * @deprecated usar `server/chat/tools/index.js` directamente en código nuevo.
  */
 
-export { TOOL_DEFINITIONS, TOOL_NAMES } from "./tools/index.js";
+export {
+  TOOL_DEFINITIONS,
+  TOOL_NAMES,
+  getToolDefinitions,
+} from "./tools/index.js";

@@ -28,7 +28,7 @@ import {
 } from "./admin.js";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const ACTIONS = new Set(["dry_run", "ingest", "reingest"]);
+const ACTIONS = new Set(["dry_run", "ingest", "reingest", "unpublish"]);
 
 function errorStatus(err) {
   if (err instanceof RagError) {
@@ -277,17 +277,20 @@ export async function handleRagQueue(ctx, { getDB = defaultGetDB } = {}) {
     return json(400, { error: "Acción inválida." });
   }
 
-  let entry;
-  try {
-    entry = await findManifestEntry(slug, ctx.env);
-  } catch (err) {
-    return json(errorStatus(err), errorBody(err));
-  }
-  if (!entry) {
-    return json(404, { error: "El documento no está en el manifiesto." });
+  // Unpublish actúa sobre `rag.documents`; no exige manifiesto ni embeddings.
+  if (action !== "unpublish") {
+    let entry;
+    try {
+      entry = await findManifestEntry(slug, ctx.env);
+    } catch (err) {
+      return json(errorStatus(err), errorBody(err));
+    }
+    if (!entry) {
+      return json(404, { error: "El documento no está en el manifiesto." });
+    }
   }
 
-  if (action !== "dry_run") {
+  if (action !== "dry_run" && action !== "unpublish") {
     try {
       getEmbeddingsConfig();
     } catch (err) {

@@ -13,6 +13,7 @@ import { getDBConfig } from "../../db/config.js";
 import { getEmbeddingsConfig } from "../../embeddings/config.js";
 import { createEmbedder } from "../../embeddings/provider.js";
 import { searchDocuments } from "../../rag/retrieve.js";
+import { getDocumentSettings } from "../../rag/settings.js";
 
 let _embedder = null;
 let _embedderKey = null;
@@ -63,13 +64,34 @@ export async function runSearchDocuments(args = {}, deps = {}) {
     if (!db || typeof db.query !== "function" || !db.pool) {
       return unavailable(query);
     }
+
+    const settings = deps.settings || (await getDocumentSettings({ db }));
+    if (!settings.enabled) {
+      return {
+        query,
+        count: 0,
+        passages: [],
+        reason: "deshabilitado",
+      };
+    }
+
+    const requested =
+      args.limit === undefined || args.limit === null
+        ? settings.topK
+        : Number(args.limit);
+    const limit = Math.min(
+      Number.isFinite(requested) && requested > 0 ? Math.floor(requested) : settings.topK,
+      settings.topK
+    );
+
     const embedder = deps.embedder || getSearchEmbedder();
     return await searchDocuments({
       db,
       embedder,
       query,
-      limit: args.limit,
+      limit,
       year: args.year,
+      minScore: settings.minScore,
     });
   } catch (err) {
     // No se registra el contenido de la consulta ni de los documentos.

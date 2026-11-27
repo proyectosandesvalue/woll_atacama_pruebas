@@ -610,7 +610,7 @@
                       <li><b>Rechazado:</b> falló la compuerta de derechos o la validación.</li>
                       <li><b>Falló:</b> error de extracción, embeddings o base de datos.</li>
                     </ul>
-                    <p><b>Chunks</b> muestra los fragmentos indexados. <b>Quitar</b> borra la entrada del manifiesto, no las versiones ya ingeridas.</p>
+                    <p><b>Chunks</b> muestra los fragmentos indexados. <b>Quitar</b> borra la entrada del manifiesto, no las versiones ya ingeridas. <b>Despublicar</b> marca la versión <code>ready</code> como <code>superseded</code>, borra sus chunks y la saca del chat; el documento y el manifiesto se conservan y puedes reingestar una versión nueva.</p>
                   </div>
                 </div>
                 <button id="ragRefresh" class="btn btn-secondary" type="button">
@@ -1232,6 +1232,9 @@
                     <li><code>chat.unavailable.enabled</code>: activa el detector de datos no disponibles.</li>
                     <li><code>chat.geojson.enabled</code>: permite que el chat pinte capas en el mapa.</li>
                     <li><code>chat.verbose</code>: el asistente puede nombrar tools y capas técnicas.</li>
+                    <li><code>chat.documents.enabled</code>: activa la tool documental y sus reglas. Al desactivarlo, la tool no se ofrece al LLM.</li>
+                    <li><code>chat.documents.min_score</code>: umbral de similitud (0-1) para devolver pasajes. Más alto = más estricto.</li>
+                    <li><code>chat.documents.top_k</code>: máximo de pasajes por consulta (1-8).</li>
                   </ul>
                   <p><b>Tipo:</b> string, number, boolean o json. Un valor mal escrito puede desactivar una función; si no estás seguro, no cambies un setting que funciona.</p>
                 </div>

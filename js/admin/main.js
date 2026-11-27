@@ -2313,6 +2313,9 @@ function renderRagDocuments(manifest, documents) {
       actions.push(ragActionButton("Ingestar", "ingest", slug));
       actions.push(ragActionButton("Quitar", "delete", slug));
     }
+    if (doc?.status === "ready") {
+      actions.push(ragActionButton("Despublicar", "unpublish", slug));
+    }
     if (doc?.document_id) {
       actions.push(ragActionButton("Chunks", "chunks", slug, doc.document_id));
     }
@@ -3321,6 +3324,19 @@ function bindEvents() {
         }
         await api.ragDeleteManifest(slug, false);
         if (state.rag.editingSlug === slug) resetRagForm();
+        await loadRag({ silent: true });
+        return;
+      }
+      if (action === "unpublish") {
+        if (
+          !window.confirm(
+            `¿Despublicar ${slug}? Se borran sus chunks del índice y deja de responder en el chat. El documento y el manifiesto se conservan; para volver a publicarlo, ingesta de nuevo.`
+          )
+        ) {
+          return;
+        }
+        const result = await api.ragQueue(slug, "unpublish", false);
+        ragSetStatus(`Trabajo #${result.job.id} encolado para despublicar ${slug}.`);
         await loadRag({ silent: true });
         return;
       }

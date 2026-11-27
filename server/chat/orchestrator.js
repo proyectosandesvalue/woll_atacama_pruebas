@@ -10,13 +10,15 @@
  */
 
 import { getLLM } from "../llm/provider.js";
-import { TOOL_DEFINITIONS } from "./tools.js";
+import { getToolDefinitions } from "./tools.js";
 import { runTool } from "./runners.js";
 import { buildSystemPrompt } from "./prompts.js";
 import { buildChartsFromHistory } from "./charts.js";
 import { compact, buildGeojsonLayersFromCtx, buildEvidence } from "./evidence.js";
 import { maybeFetchFeaturesForStyle } from "./post-process.js";
 import { getCatalog } from "./catalog.js";
+import { getDB } from "../db/pool.js";
+import { getDocumentSettings } from "../rag/settings.js";
 
 const DEFAULT_BUDGET_MS = 8000;
 const DEFAULT_MAX_ITERATIONS = 3;
@@ -57,6 +59,17 @@ export async function runOrchestrator({ text, history = [], sessionId = null, ti
     duration_ms: Date.now() - systemStarted,
   });
 
+  // 18-F: si el RAG está desactivado, la tool no se ofrece al LLM.
+  let documentsEnabled = true;
+  try {
+    const db = await getDB();
+    const docSettings = await getDocumentSettings({ db });
+    documentsEnabled = docSettings.enabled;
+  } catch {
+    // INV-5: sin BD se mantiene el default; la tool se defiende igual.
+  }
+  const toolDefinitions = getToolDefinitions({ documentsEnabled });
+
   dbg(
     `budget=${budgetMs}ms maxSteps=${maxSteps} model=${process.env.LLM_MODEL}`
   );
@@ -92,7 +105,7 @@ export async function runOrchestrator({ text, history = [], sessionId = null, ti
         response = await llm.chat({
           system: isLast ? `${system}${SYNTHESIS_NO_TOOLS_NOTE}` : system,
           messages,
-          tools: TOOL_DEFINITIONS,
+          tools: toolDefinitions,
           toolChoice: isLast ? "none" : "auto",
           reasoningEffort: "low",
           sessionId,
