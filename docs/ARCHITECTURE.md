@@ -316,10 +316,13 @@ get_historical_climate	Series históricas de estaciones (DGA/DGAC).
 list_climate_stations	Listado de estaciones meteorológicas disponibles.
 get_arclim_forecast	Proyecciones climáticas ARClim por comuna y escenario.
 search_documents	Fragmentos documentales de `rag.chunks` con cita (Sprint 18-D).
-El registro está en tools/index.js. _helpers.js contiene normalizeArgs y withTimeout.
+El registro está en tools/index.js. `getToolDefinitions({documentsEnabled})`
+quita `search_documents` cuando el RAG está desactivado. _helpers.js contiene
+normalizeArgs y withTimeout.
 `search_documents` no usa RPC: consulta `rag.*` con `db.query()` y un embedder
 de consulta (`RETRIEVAL_QUERY`). Devuelve pasajes `untrusted`; el orquestador
-los cita vía `buildEvidence()` y el frontend los muestra en **Fuentes**.
+los cita vía `buildEvidence()` y el frontend los muestra en **Fuentes**. Sus
+settings se leen de `chat.documents.*` (18-F).
 
 4.7. server/chat/runners.js
 Ejecuta cada tool contra la BD activa (Postgres en el VPS; Supabase solo en la demo).
@@ -383,6 +386,8 @@ normalize.js	Limpieza de controles/Unicode, des-guionizado y encabezados repetid
 chunker.js	Chunking por párrafo/oración/sección con solape controlado.
 pipeline.js	Validación del manifiesto, idempotencia, embeddings y escritura atómica.
 retrieve.js	Retrieval híbrido pgvector + tsv (RRF), umbral y pasajes citables (18-D).
+settings.js	Lee chat.documents.* con prioridad de env y caché de 5 min (18-F).
+unpublish.js	Marca superseded, borra chunks y deja corrida unpublished (18-F).
 
 La CLI `scripts/ingest_docs.mjs` es el punto de entrada de ingesta y no corre en `api/`.
 En runtime, `server/chat/tools/search-documents.js` lee `rag.documents`/`rag.chunks`
@@ -472,15 +477,20 @@ El adapter `api/proxy.js` aplica CORS y escribe la respuesta. El frontend consum
 - **Uploads:** `POST /api/admin/rag/upload` recibe el PDF binario, valida
   `%PDF-` y 25 MB, y escribe `rag/inbox/<slug>.pdf`. Nginx solo permite 30 MB
   en esa ruta.
-- **Cola:** `admin.rag_jobs` guarda `dry_run|ingest|reingest`, estado, actor y
-  resultado. Un solo job activo por slug (índice parcial).
+- **Cola:** `admin.rag_jobs` guarda `dry_run|ingest|reingest|unpublish`,
+  estado, actor y resultado. Un solo job activo por slug (índice parcial).
 - **Worker:** `scripts/rag-worker.mjs` (imagen `docker/rag-worker`, con
   `pdfjs-dist`) reclama con `FOR UPDATE SKIP LOCKED`, ejecuta
-  `server/rag/pipeline.js`, actualiza heartbeat (`admin.worker_heartbeats`) y
-  termina el job. El API no importa `pdfjs-dist`.
+  `server/rag/pipeline.js` o `server/rag/unpublish.js`, actualiza heartbeat
+  (`admin.worker_heartbeats`) y termina el job. El API no importa
+  `pdfjs-dist`.
 - **Panel:** `/admin.html` → RAG muestra manifiesto, documentos, chunks,
   corridas y jobs; permite subir, estimar (dry-run), ingestar, cancelar jobs
-  `queued` y editar metadatos.
+  `queued`, editar metadatos y **despublicar** una versión `ready`
+  (superseded + chunks borrados, conservando documento y manifiesto).
+- **Settings:** `chat.documents.enabled|min_score|top_k` se leen de
+  `admin.settings` con prioridad de env y caché de 5 min. El killswitch quita
+  `search_documents` de las tools del LLM (18-F).
 - **Límites:** el worker usa `RAG_DATABASE_URL` para `rag.*` y
   `DATABASE_URL` para la cola. Jamás corre como superusuario en producción.
 - **Fallback:** si el worker o embeddings no están configurados, el visor y el

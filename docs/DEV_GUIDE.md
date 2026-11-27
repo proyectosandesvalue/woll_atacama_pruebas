@@ -1135,6 +1135,14 @@ npm run eval:rag              # Recall@5/MRR del retrieval
   pierdes preguntas respondibles.
 - El aviso de datos no disponibles se mantiene, pero si la respuesta cita un
   documento se muestra como “la cifra proviene del documento citado”.
+- Settings del panel (18-F): `chat.documents.enabled`, `min_score` y `top_k`
+  se leen de `admin.settings` con prioridad de env y caché de 5 min. El
+  killswitch quita `search_documents` de las tools del LLM, no solo sus
+  reglas.
+- **Despublicar** (18-F): en la tabla de documentos, una versión `ready`
+  puede pasar a `superseded` y borrar sus chunks. El documento y el
+  manifiesto se conservan; para volver a publicarlo, ingesta de nuevo. El
+  job `unpublish` lo procesa el worker.
 
 **Taxonomía normalizada (46)**
 

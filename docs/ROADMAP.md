@@ -75,7 +75,7 @@
 | 15 | Panel admin — solo lectura | 🔶 local (login, config, chat y auditoría ✅; VPS pendiente) | alta | 6-8h | 14 |
 | 16 | Panel admin — CRUD de capas | ⏳ pending | alta | 8-12h | 08, 14, 15 |
 | 17 | Ingesta RAG (PDFs → chunks → embeddings) | 🔶 pipeline ✅; corpus real de 2 catastros (2018/2024); falta el 3.º para CA-12 | media | 8-12h | — (CLI); 15 solo para el panel |
-| 18 | Retrieval RAG + tool en chat | ✅ 18-A a 18-E con corpus de catastro; 4 casos inactivos por corpus pendiente | media | 8-12h | 17 |
+| 18 | Retrieval RAG + tool en chat | ✅ 18-A a 18-F con corpus de catastro; 4 casos inactivos por corpus pendiente | media | 8-12h | 17 |
 | 19 | APIs externas + CRUD | ⏳ pending | media | 15-25h | 16 |
 | 20 | Adapter real: meteorología | ⏳ pending | baja | 4-6h | 19 |
 | 21 | Adapter real: leyes (BCN) | ⏳ pending | baja | 6-8h | 19 |
@@ -442,7 +442,7 @@ golden set documental del Sprint 18.
 
 ### Sprint 18 — Retrieval RAG + tool en chat
 
-**Estado**: ✅ 18-A a 18-E con el corpus de catastro (2018/2024); 4 casos de normativa/plan regulador siguen inactivos por falta de corpus · **Prioridad**: media · **Duración**: 8-12h · **Dependencias**: 17
+**Estado**: ✅ 18-A a 18-F con el corpus de catastro (2018/2024); 4 casos de normativa/plan regulador siguen inactivos por falta de corpus · **Prioridad**: media · **Duración**: 12-16h · **Dependencias**: 17
 **Eje obligatorio**: `docs/CONTRACT.md` §6.7 y ADR 025. El chat se gobierna como
 orquestador de fuentes, no como RAG puro.
 
@@ -468,6 +468,11 @@ enrutamiento explícito, evidencia, abstención y evaluación por ruta.
   `sources_any`/`citation_required`/`expected_abstain` en el runner, fuentes
   visibles en el chat y aviso cuando la cifra viene de un documento.
   48/48 casos activos del golden set pasan.
+- **18-F — Operación RAG desde el panel.** ✅ Settings `chat.documents.*`
+  cableados con caché y prioridad de env; killswitch real que quita
+  `search_documents` de las tools; “Despublicar” como job del worker
+  (migración 066) que marca `superseded` y borra chunks conservando el
+  documento. Spec `docs/specs/18-F-rag-panel-operacion.md`.
 
 **Criterio de cierre**: el golden set documental y mixto pasa, el retrieval
 tiene Recall@5 medido y el chat se abstiene cuando no hay evidencia. ✅ para
@@ -1324,6 +1329,13 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   `rendimiento`, `infraestructura`, `evolución`, `mayor superficie`) ya no
   se interceptan con un pipeline de capas. Migración `065` agrega la regla
   de no filtrar por año en comparaciones entre ediciones.
+- ✅ **18-F (operación RAG desde el panel):** `chat.documents.enabled`,
+  `min_score` y `top_k` se leen de `admin.settings` (env tiene prioridad,
+  caché 5 min). Si RAG está desactivado, `search_documents` no se ofrece al
+  LLM. “Despublicar” encola `unpublish`; el worker marca la versión
+  `superseded`, borra sus chunks y deja una corrida `unpublished`
+  (migración 066). El documento y el manifiesto se conservan para
+  reingestar. Golden 48/48; `eval:rag` Recall@5 1,0 / MRR 0,778.
 - 📝 **Pendiente:** corpus normativo/plan regulador para activar
   `doc-normativa-cauces`, `doc-plan-regulador-caldera`,
   `mix-desaladoras-normativa` y `mix-derechos-ley`.

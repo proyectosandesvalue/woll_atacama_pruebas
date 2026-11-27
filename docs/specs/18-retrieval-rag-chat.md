@@ -243,6 +243,10 @@ que exista el corpus correspondiente. No se fuerza su activación.
 | 18-D.2 | Golden: casos nuevos, `citation_required`/`sources_any` en el runner, `eval:rag` | 2 | ✅ |
 | 18-E | Validación en VPS, golden set, docs y cierre | 2 | ✅ |
 
+> La operación del bloque documental desde el panel (settings, killswitch y
+> despublicar) se cerró en el sub-sprint **18-F**:
+> `docs/specs/18-F-rag-panel-operacion.md`.
+
 ## 7. Tests requeridos
 
 - `server/rag/__tests__/retrieve.test.js`: RRF, umbral, filtro de año, sin

@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 18-F (continuación de 18) |
-| **Estado de la spec** | EN EJECUCIÓN |
+| **Estado de la spec** | CERRADA |
 | **Tamaño** | Mediano |
 | **Duración estimada** | 6-8 h |
 | **Dependencias** | 18-D (tool y citas), 45-A (panel RAG), 48 (settings/prompts) |
@@ -108,10 +108,10 @@ BD > default. Caché de 5 min, con reset para tests.
 
 | Tramo | Contenido | Horas | Estado |
 |---|---|---|---|
-| 18-F.1 | `server/rag/settings.js`, tool, orquestador y tests | 2 | ⏳ |
-| 18-F.2 | Migración 066, `unpublishDocument`, worker y tests | 2 | ⏳ |
-| 18-F.3 | Handler/acción del panel, ayuda y docs | 1 | ⏳ |
-| 18-F.4 | Validación en VPS, golden y cierre | 2 | ⏳ |
+| 18-F.1 | `server/rag/settings.js`, tool, orquestador y tests | 2 | ✅ |
+| 18-F.2 | Migración 066, `unpublishDocument`, worker y tests | 2 | ✅ |
+| 18-F.3 | Handler/acción del panel, ayuda y docs | 1 | ✅ |
+| 18-F.4 | Validación en VPS, golden y cierre | 2 | ✅ |
 
 ## 7. Tests requeridos
 
@@ -165,6 +165,25 @@ BD > default. Caché de 5 min, con reset para tests.
 
 ## 12. Cierre
 
-- Horas reales:
-- Desvíos:
-- Lecciones:
+- **Horas reales:** ~6 h (estimado 6-8 h).
+- **Resultados:**
+  - `chat.documents.enabled`, `min_score` y `top_k` se leen desde
+    `admin.settings` con prioridad de env y caché de 5 min.
+  - Con `min_score=0.70` y `top_k=3`, la tool devolvió exactamente 3 pasajes
+    con score ≥ 0,70. Con `enabled=false`, el orquestador ofreció 13 tools
+    (sin `search_documents`) y la tool devolvió `deshabilitado`.
+  - La migración 066 se aplicó; un job `unpublish` de un slug sin versión
+    `ready` quedó `skipped` (`sin_version_ready`) y los 2 documentos reales
+    siguieron `ready`.
+  - `npm run eval:rag`: Recall@5 1,0 y MRR 0,778.
+  - Golden set: 48/48, con RAG 6/6, mixta 2/2, abstención 6/6 y tool 31/31.
+- **Desvíos:**
+  - El unpublish se implementó como job del worker (no escritura directa
+    desde el API), para respetar el rol de escritura de `rag.*`.
+  - Se agregó la corrida `unpublished` a `rag.ingestion_runs` para conservar
+    la traza.
+  - Se reformuló una frase de `docs/banco-preguntas-analisis-profundo.md`
+    que el test de lenguaje neutro marcaba como regionalismo.
+- **Lecciones:** el panel debe leer los settings con la misma prioridad que
+  el resto del chat; un killswitch tiene que quitar la tool del prompt, no
+  solo sus reglas; despublicar es una operación del worker, no del API.
