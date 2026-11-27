@@ -1144,6 +1144,25 @@ npm run eval:rag              # Recall@5/MRR del retrieval
   manifiesto se conservan; para volver a publicarlo, ingesta de nuevo. El
   job `unpublish` lo procesa el worker.
 
+**Tools de análisis y WMS (18-G)**
+
+- El chat tiene 24 tools: 14 de capas/análisis, 5 de clima, 4 de
+  WMS/Copernicus y `search_documents`.
+- Las tools multi-capa (`compare_layers`, `rank_multicriteria`,
+  `spatial_overlay`, `nearest_distance`) citan todas las capas usadas; el
+  frontend las muestra en **Fuentes**.
+- `get_historical_series` devuelve hasta 5.000 puntos, pero el orquestador
+  solo recibe los últimos 40 + estadísticas. No subas el límite sin revisar
+  el presupuesto de tokens.
+- WMS: `get_wms_layer_info` es local; `get_wms_pixel`/`get_wms_available_dates`
+  usan el proxy Copernicus (`INSTANCE_ID`/`CLIENT_SECRET`);
+  `get_wms_statistics` requiere además `COPERNICUS_CLIENT_ID/SECRET`.
+- `spatial_overlay` con `within`/`intersects` sobre glaciares puede agotar el
+  timeout de 5 s; usa `area` o filtra por comuna. Es una optimización
+  pendiente.
+- Golden: `npm run eval:chat` (59 casos activos); corre con
+  `CHAT_ROUTER_ENABLED=1 CHAT_UNAVAILABLE_ENABLED=1`.
+
 **Taxonomía normalizada (46)**
 
 ```bash

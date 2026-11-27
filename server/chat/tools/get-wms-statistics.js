@@ -35,6 +35,114 @@ function isValidDate(value) {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+/**
+ * Convierte un bbox [west,south,east,north] en polígono GeoJSON.
+ * @param {number[]} bbox
+ */
+export function bboxPolygon(bbox) {
+  const [west, south, east, north] = bbox.map(Number);
+  return {
+    type: "Polygon",
+    coordinates: [
+      [
+        [west, south],
+        [east, south],
+        [east, north],
+        [west, north],
+        [west, south],
+      ],
+    ],
+  };
+}
+
+/**
+ * Crea un cuadrado aproximado alrededor de un punto.
+ * @param {number} lat
+ * @param {number} lon
+ * @param {number} meters
+ */
+export function pointBufferPolygon(lat, lon, meters) {
+  const dLat = meters / 111320;
+  const dLon = meters / (111320 * Math.max(0.01, Math.cos((lat * Math.PI) / 180)));
+  return {
+    geometry: bboxPolygon([lon - dLon, lat - dLat, lon + dLon, lat + dLat]),
+    bbox: [lon - dLon, lat - dLat, lon + dLon, lat + dLat],
+  };
+}
+
+function isPolygonGeometry(geometry) {
+  return (
+    geometry &&
+    typeof geometry === "object" &&
+    (geometry.type === "Polygon" || geometry.type === "MultiPolygon") &&
+    Array.isArray(geometry.coordinates)
+  );
+}
+
+async function resolveAoi({
+  comuna,
+  geometry,
+  bbox,
+  lat,
+  lon,
+  buffer_m,
+}) {
+  if (isPolygonGeometry(geometry)) {
+    return {
+      geometry,
+      aoi_type: "geometry",
+      aoi_label: "polígono personalizado",
+      bbox: null,
+    };
+  }
+
+  if (Array.isArray(bbox) && bbox.length === 4) {
+    const parsed = bbox.map(Number);
+    if (parsed.every(Number.isFinite)) {
+      return {
+        geometry: bboxPolygon(parsed),
+        aoi_type: "bbox",
+        aoi_label: "bbox personalizado",
+        bbox: parsed,
+      };
+    }
+  }
+
+  const useLat = Number(lat);
+  const useLon = Number(lon);
+  if (Number.isFinite(useLat) && Number.isFinite(useLon)) {
+    const meters = Math.min(
+      Math.max(Number(buffer_m) || 100, 10),
+      5000
+    );
+    const buffered = pointBufferPolygon(useLat, useLon, meters);
+    return {
+      geometry: buffered.geometry,
+      aoi_type: "point_buffer",
+      aoi_label: `buffer ${meters} m`,
+      bbox: buffered.bbox,
+    };
+  }
+
+  if (comuna) {
+    const db = await getDB();
+    const geo = await db.rpc("chat_comuna_geometry", { p_comuna: comuna });
+    if (!geo || !geo.geometry) {
+      throw new Error(`No se encontró la comuna: ${comuna}`);
+    }
+    return {
+      geometry: geo.geometry,
+      aoi_type: "comuna",
+      aoi_label: geo.comuna || comuna,
+      bbox: geo.bbox || null,
+    };
+  }
+
+  throw new Error(
+    "Indica 'comuna', 'geometry', 'bbox' o 'lat'/'lon' para definir el área."
+  );
+}
+
 export default {
   schema: {
     type: "function",
@@ -55,7 +163,34 @@ export default {
           },
           comuna: {
             type: "string",
-            description: "Comuna de Atacama.",
+            description: "Comuna de Atacama. Opcional si usas geometry/bbox/lat-lon.",
+          },
+          geometry: {
+            type: "object",
+            description:
+              "Polígono GeoJSON (Polygon o MultiPolygon) para un AOI arbitrario.",
+            additionalProperties: true,
+          },
+          bbox: {
+            type: "array",
+            items: { type: "number" },
+            description:
+              "BBox [oeste, sur, este, norte] en WGS84 para un AOI rectangular.",
+            minItems: 4,
+            maxItems: 4,
+          },
+          lat: {
+            type: "number",
+            description: "Latitud del punto (para buffer).",
+          },
+          lon: {
+            type: "number",
+            description: "Longitud del punto (para buffer).",
+          },
+          buffer_m: {
+            type: "number",
+            description:
+              "Buffer en metros alrededor de lat/lon (default 100, máximo 5000).",
           },
           from: {
             type: "string",
@@ -74,14 +209,34 @@ export default {
             enum: ["P1D", "P1W", "P1M"],
             description: "Intervalo de agregación (default P1M).",
           },
+          thresholds: {
+            type: "array",
+            items: { type: "number" },
+            description:
+              "Umbrales para calcular % de área sobre/bajo el valor. " +
+              "Ej: [0.6] para NDVI alto.",
+          },
         },
-        required: ["layer_id", "comuna"],
+        required: ["layer_id"],
         additionalProperties: false,
       },
     },
   },
 
-  run: async ({ layer_id, comuna, from, to, maxcc, interval }) => {
+  run: async ({
+    layer_id,
+    comuna,
+    geometry,
+    bbox,
+    lat,
+    lon,
+    buffer_m,
+    from,
+    to,
+    maxcc,
+    interval,
+    thresholds,
+  }) => {
     const layer = getWmsLayer(layer_id);
     if (!layer) throw new Error(`Capa WMS no encontrada: ${layer_id}`);
     if (!layer.pixel_query) {
@@ -104,31 +259,37 @@ export default {
       throw new Error("La fecha inicial no puede ser posterior a la final.");
     }
 
-    const db = await getDB();
-    const geo = await db.rpc("chat_comuna_geometry", { p_comuna: comuna });
-    if (!geo || !geo.geometry) {
-      throw new Error(`No se encontró la comuna: ${comuna}`);
-    }
+    const aoi = await resolveAoi({
+      comuna,
+      geometry,
+      bbox,
+      lat,
+      lon,
+      buffer_m,
+    });
 
     const stats = await getStatistics({
       layerId: layer_id,
-      geometry: geo.geometry,
+      geometry: aoi.geometry,
       from: start,
       to: end,
       maxcc: maxcc ?? layer.wmsMaxcc ?? 30,
       interval: interval || "P1M",
+      thresholds: Array.isArray(thresholds) ? thresholds : [],
     });
 
     return {
       ...stats,
       display_name: layer.display_name,
-      comuna: geo.comuna || comuna,
+      comuna: comuna || null,
+      aoi_type: aoi.aoi_type,
+      aoi_label: aoi.aoi_label,
       index_label: getIndexSpec(layer_id)?.label || layer_id,
-      bbox: geo.bbox || null,
+      bbox: aoi.bbox || null,
       note:
         stats.series.length === 0
-          ? "Sin datos para el rango y la nubosidad solicitados."
-          : "Estadísticas calculadas sobre el polígono comunal con Sentinel-2 L2A.",
+          ? "Sin datos para el rango, AOI y nubosidad solicitados."
+          : "Estadísticas calculadas sobre el AOI con Sentinel-2 L2A.",
     };
   },
 };

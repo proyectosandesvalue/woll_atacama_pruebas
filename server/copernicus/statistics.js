@@ -15,7 +15,7 @@
 const TOKEN_URL =
   "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token";
 const STATISTICS_URL =
-  "https://sh.dataspace.copernicus.eu/api/v1/statistics";
+  "https://sh.dataspace.copernicus.eu/statistics/v1";
 
 const TOKEN_SAFETY_MS = 60_000;
 let _tokenCache = { token: null, expiresAt: 0 };
@@ -190,6 +190,91 @@ export function getIndexSpec(layerId) {
   return INDEX_SPECS[layerId] || null;
 }
 
+/**
+ * Rango fijo para histogramas. Los índices normalizados usan [-1,1]; los
+ * cocientes y índices no normalizados usan rangos propios.
+ */
+const HISTOGRAM_RANGES = Object.freeze({
+  copernicus_evi: [-1, 1.5],
+  copernicus_evi2: [-1, 1.5],
+  copernicus_msi: [0, 10],
+  copernicus_mcari: [-1, 2],
+  copernicus_ari_1: [-1, 1],
+});
+
+function histogramRange(layerId) {
+  return HISTOGRAM_RANGES[layerId] || [-1, 1];
+}
+
+/**
+ * Cuenta cuántos píxeles quedan sobre/bajo un umbral, interpolando el bin
+ * que contiene el umbral. Es una estimación a partir del histograma.
+ *
+ * @param {Array<{lowEdge:number, highEdge:number, count:number}>} bins
+ * @param {number} threshold
+ * @param {number} total
+ */
+export function thresholdStats(bins, threshold, total) {
+  if (!Array.isArray(bins) || bins.length === 0 || !Number.isFinite(threshold)) {
+    return null;
+  }
+  const totalCount = Number(total) > 0
+    ? Number(total)
+    : bins.reduce((acc, bin) => acc + (Number(bin.count) || 0), 0);
+  if (totalCount <= 0) return null;
+
+  let above = 0;
+  let below = 0;
+
+  for (const bin of bins) {
+    const low = Number(bin.lowEdge);
+    const high = Number(bin.highEdge);
+    const count = Number(bin.count) || 0;
+    if (!Number.isFinite(low) || !Number.isFinite(high) || high <= low) continue;
+
+    if (threshold <= low) {
+      above += count;
+    } else if (threshold >= high) {
+      below += count;
+    } else {
+      const fractionAbove = (high - threshold) / (high - low);
+      above += count * fractionAbove;
+      below += count * (1 - fractionAbove);
+    }
+  }
+
+  return {
+    value: threshold,
+    above_pct: Number(((above / totalCount) * 100).toFixed(2)),
+    below_pct: Number(((below / totalCount) * 100).toFixed(2)),
+    above_count: Math.round(above),
+    below_count: Math.round(below),
+  };
+}
+
+/**
+ * Suma histogramas de varios intervalos. Asume los mismos bins.
+ */
+function mergeHistograms(series) {
+  const first = series.find((row) => Array.isArray(row.histogram) && row.histogram.length > 0);
+  if (!first) return [];
+  const merged = first.histogram.map((bin) => ({
+    lowEdge: bin.lowEdge,
+    highEdge: bin.highEdge,
+    count: 0,
+  }));
+  for (const row of series) {
+    if (!Array.isArray(row.histogram) || row.histogram.length !== merged.length) {
+      continue;
+    }
+    for (let i = 0; i < merged.length; i += 1) {
+      merged[i].count += Number(row.histogram[i].count) || 0;
+    }
+  }
+  return merged;
+}
+
+
 function isoStart(date) {
   return `${date}T00:00:00Z`;
 }
@@ -225,6 +310,8 @@ export function buildStatisticsBody({
     throw new Error("Se requiere una geometría GeoJSON de la comuna.");
   }
 
+  const [lowEdge, highEdge] = histogramRange(layerId);
+
   return {
     input: {
       bounds: {
@@ -255,28 +342,49 @@ export function buildStatisticsBody({
             percentiles: { k: [25, 50, 75] },
           },
         },
+        histograms: {
+          default: {
+            nBins: 20,
+            lowEdge,
+            highEdge,
+          },
+        },
       },
     },
   };
 }
 
-function firstBandStats(outputs) {
+function firstBand(outputs) {
   const bands = outputs?.index?.bands;
   if (!bands || typeof bands !== "object") return null;
   const key = Object.keys(bands)[0];
-  return key ? bands[key]?.stats || null : null;
+  return key ? bands[key] || null : null;
 }
 
 /**
  * Normaliza la respuesta de Statistical API a una serie.
  * @param {object} json
+ * @param {number[]} [thresholds] Umbrales para calcular % sobre/bajo.
  */
-export function normalizeStatisticsResponse(json) {
+export function normalizeStatisticsResponse(json, thresholds = []) {
   const rows = Array.isArray(json?.data) ? json.data : [];
+  const thresholdList = Array.isArray(thresholds)
+    ? thresholds.filter((value) => Number.isFinite(Number(value))).map(Number)
+    : [];
+
   const series = rows
     .map((row) => {
-      const stats = firstBandStats(row.outputs);
+      const band = firstBand(row.outputs);
+      const stats = band?.stats;
       if (!stats) return null;
+      const histogram = Array.isArray(band?.histogram?.bins)
+        ? band.histogram.bins.map((bin) => ({
+            lowEdge: Number(bin.lowEdge),
+            highEdge: Number(bin.highEdge),
+            count: Number(bin.count) || 0,
+          }))
+        : [];
+      const sampleCount = Number(stats.sampleCount);
       return {
         from: row.interval?.from || null,
         to: row.interval?.to || null,
@@ -284,15 +392,29 @@ export function normalizeStatisticsResponse(json) {
         min: Number(stats.min),
         max: Number(stats.max),
         stDev: Number(stats.stDev),
-        sampleCount: Number(stats.sampleCount),
+        sampleCount,
         noDataCount: Number(stats.noDataCount),
         percentiles: stats.percentiles || null,
+        histogram,
+        overflowCount: Number(band?.histogram?.overflowCount) || 0,
+        underflowCount: Number(band?.histogram?.underflowCount) || 0,
+        thresholds: thresholdList
+          .map((threshold) => thresholdStats(histogram, threshold, sampleCount))
+          .filter(Boolean),
       };
     })
     .filter((row) => row && Number.isFinite(row.mean));
 
   if (series.length === 0) {
-    return { series: [], mean: null, min: null, max: null, sampleCount: 0 };
+    return {
+      series: [],
+      mean: null,
+      min: null,
+      max: null,
+      sampleCount: 0,
+      histogram: [],
+      thresholds: [],
+    };
   }
 
   const sampleCount = series.reduce(
@@ -305,12 +427,19 @@ export function normalizeStatisticsResponse(json) {
         sampleCount
       : series.reduce((acc, row) => acc + row.mean, 0) / series.length;
 
+  const histogram = mergeHistograms(series);
+  const thresholdsOverall = thresholdList
+    .map((threshold) => thresholdStats(histogram, threshold, sampleCount))
+    .filter(Boolean);
+
   return {
     series,
     mean: Number(weightedMean.toFixed(4)),
     min: Math.min(...series.map((row) => row.min)),
     max: Math.max(...series.map((row) => row.max)),
     sampleCount,
+    histogram,
+    thresholds: thresholdsOverall,
   };
 }
 
@@ -335,6 +464,7 @@ export async function getStatistics({
   to,
   maxcc = 30,
   interval = "P1M",
+  thresholds = [],
   env = process.env,
   fetchImpl = fetch,
   now = Date.now(),
@@ -368,7 +498,7 @@ export async function getStatistics({
   }
 
   const json = await res.json();
-  const normalized = normalizeStatisticsResponse(json);
+  const normalized = normalizeStatisticsResponse(json, thresholds);
   return {
     layer_id: layerId,
     index: getIndexSpec(layerId)?.label || layerId,

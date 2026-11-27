@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 18-G (continuación de 18) |
-| **Estado de la spec** | EN EJECUCIÓN |
+| **Estado de la spec** | CERRADA |
 | **Tamaño** | Mediano |
 | **Duración estimada** | 6-8 h |
 | **Dependencias** | 18-D/18-F, expansión de tools 24, migraciones 067-073 |
@@ -118,10 +118,10 @@ Casos nuevos (nivel 2-3):
 
 | Tramo | Contenido | Horas | Estado |
 |---|---|---|---|
-| 18-G.1 | Citas multi-capa + climate + compactación + tests | 2 | 🔄 |
-| 18-G.2 | Golden de tools nuevas + query order | 2 | ⏳ |
-| 18-G.3 | Fallas WMS/capa inexistente y timeouts | 1 | ⏳ |
-| 18-G.4 | VPS, migraciones 067-073, golden completo y docs | 2 | ⏳ |
+| 18-G.1 | Citas multi-capa + climate + compactación + tests | 2 | ✅ |
+| 18-G.2 | Golden de tools nuevas + query order | 2 | ✅ |
+| 18-G.3 | Fallas WMS/capa inexistente y timeouts | 1 | ✅ |
+| 18-G.4 | VPS, migraciones 067-073, golden completo y docs | 2 | ✅ |
 
 ## 7. Tests requeridos
 
@@ -165,6 +165,29 @@ Casos nuevos (nivel 2-3):
 
 ## 12. Cierre
 
-- Horas reales:
-- Desvíos:
-- Lecciones:
+- **Horas reales:** ~7 h (estimado 6-8 h).
+- **Resultados:**
+  - `buildEvidence()` cita todas las capas de `compare_layers`,
+    `rank_multicriteria`, `spatial_overlay` y `nearest_distance`, y agrega
+    cita `climate` para `get_historical_series`.
+  - `compact()` limita series a 40 puntos, comparaciones a 40 filas por capa,
+    rankings a top 20 y fechas WMS a 30; `query_layer` trunca textos largos.
+  - Golden: **59/59** activos (tool 42/42, RAG 6/6, mixta 2/2, abstención
+    6/6, fuera 3/3). Rutas nuevas: compare, rank, overlay, nearest,
+    metadata, series, WMS info/dates/pixel/statistics-failure y query order.
+  - Latencia del golden: p50 3,1 s, p95 6,9 s.
+  - `npm test`: 716 tests, 704 pasan, 12 omitidos, 0 fallan.
+- **Desvíos:**
+  - Las RPC `chat_spatial_overlay` y `chat_nearest_distance` fallaban con
+    `SET is not allowed in a non-volatile function`; la migración 074 las
+    recrea sin `SET statement_timeout`.
+  - El `order_by` devolvía nulos primero; la migración 075 agrega
+    `NULLS LAST`.
+  - `spatial_overlay` con `within`/`intersects` sobre los 863 glaciares
+    agota el timeout de 5 s del pool; el caso golden usa `area` sobre
+    salares. Queda como optimización pendiente.
+  - `get_wms_statistics` falla elegante porque el VPS no tiene
+    `COPERNICUS_CLIENT_ID/SECRET`; el caso golden lo verifica.
+- **Lecciones:** una tool nueva no está cerrada hasta que cita su fuente,
+  compacta su salida y tiene un caso de falla; el router debe dejar pasar
+  comparaciones, overlay, distancias y WMS al orquestador.

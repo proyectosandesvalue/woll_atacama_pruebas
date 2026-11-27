@@ -75,7 +75,7 @@
 | 15 | Panel admin — solo lectura | 🔶 local (login, config, chat y auditoría ✅; VPS pendiente) | alta | 6-8h | 14 |
 | 16 | Panel admin — CRUD de capas | ⏳ pending | alta | 8-12h | 08, 14, 15 |
 | 17 | Ingesta RAG (PDFs → chunks → embeddings) | 🔶 pipeline ✅; corpus real de 2 catastros (2018/2024); falta el 3.º para CA-12 | media | 8-12h | — (CLI); 15 solo para el panel |
-| 18 | Retrieval RAG + tool en chat | ✅ 18-A a 18-F con corpus de catastro; 4 casos inactivos por corpus pendiente | media | 8-12h | 17 |
+| 18 | Retrieval RAG + tool en chat | ✅ 18-A a 18-G con corpus de catastro y 24 tools; 4 casos inactivos por corpus pendiente | media | 18-22h | 17 |
 | 19 | APIs externas + CRUD | ⏳ pending | media | 15-25h | 16 |
 | 20 | Adapter real: meteorología | ⏳ pending | baja | 4-6h | 19 |
 | 21 | Adapter real: leyes (BCN) | ⏳ pending | baja | 6-8h | 19 |
@@ -442,7 +442,7 @@ golden set documental del Sprint 18.
 
 ### Sprint 18 — Retrieval RAG + tool en chat
 
-**Estado**: ✅ 18-A a 18-F con el corpus de catastro (2018/2024); 4 casos de normativa/plan regulador siguen inactivos por falta de corpus · **Prioridad**: media · **Duración**: 12-16h · **Dependencias**: 17
+**Estado**: ✅ 18-A a 18-G con el corpus de catastro (2018/2024) y 24 tools; 4 casos de normativa/plan regulador siguen inactivos por falta de corpus · **Prioridad**: media · **Duración**: 18-22h · **Dependencias**: 17
 **Eje obligatorio**: `docs/CONTRACT.md` §6.7 y ADR 025. El chat se gobierna como
 orquestador de fuentes, no como RAG puro.
 
@@ -467,12 +467,17 @@ enrutamiento explícito, evidencia, abstención y evaluación por ruta.
 - **18-E — Evaluación y UX.** ✅ `npm run eval:rag`, comprobaciones
   `sources_any`/`citation_required`/`expected_abstain` en el runner, fuentes
   visibles en el chat y aviso cuando la cifra viene de un documento.
-  48/48 casos activos del golden set pasan.
+  48/48 casos activos al cierre de 18-E; 59/59 con las tools de 18-G.
 - **18-F — Operación RAG desde el panel.** ✅ Settings `chat.documents.*`
   cableados con caché y prioridad de env; killswitch real que quita
   `search_documents` de las tools; “Despublicar” como job del worker
   (migración 066) que marca `superseded` y borra chunks conservando el
   documento. Spec `docs/specs/18-F-rag-panel-operacion.md`.
+- **18-G — Cierre de las 24 tools.** ✅ Citas multi-capa y climate,
+  compactación de series/comparaciones/rankings/fechas WMS, router que no
+  intercepta análisis, migraciones 074/075 y 11 casos golden nuevos.
+  Golden 59/59 (tool 42/42, RAG 6/6, mixta 2/2, abstención 6/6).
+  Spec `docs/specs/18-G-cierre-24-tools.md`.
 
 **Criterio de cierre**: el golden set documental y mixto pasa, el retrieval
 tiene Recall@5 medido y el chat se abstiene cuando no hay evidencia. ✅ para
@@ -1308,7 +1313,7 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   `get_historical_series`; catálogo WMS de 22 capas con `get_wms_layer_info`,
   `get_wms_pixel`, `get_wms_available_dates` y `get_wms_statistics`; ARClim
   ampliado a 26 indicadores con multi-comuna y caché. Migraciones `067`–`073`.
-  `npm test` 699 pass / 0 fail. Queda cargar metadatos, ampliar el golden set
+  `npm test` 707 pass / 0 fail. Queda cargar metadatos, ampliar el golden set
   profundo, WMS IDE por píxel y el resto del motor de recetas (Sprint 41).
 - ✅ **32-A/B/C (marco legal y privacidad):** páginas `terminos.html`,
   `privacidad.html` y `fuentes.html` con `css/legal.css`, enlazadas desde la
@@ -1345,6 +1350,15 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   `superseded`, borra sus chunks y deja una corrida `unpublished`
   (migración 066). El documento y el manifiesto se conservan para
   reingestar. Golden 48/48; `eval:rag` Recall@5 1,0 / MRR 0,778.
+- ✅ **18-G (cierre de las 24 tools):** `buildEvidence()` cita todas las
+  capas de compare/rank/overlay/nearest y agrega cita `climate` para
+  `get_historical_series`; `compact()` limita series a 40 puntos,
+  comparaciones a 40 filas y rankings a top 20. El router deja pasar
+  análisis al orquestador. Migraciones 074 (overlay/nearest sin SET en
+  función STABLE) y 075 (`NULLS LAST` en order_by). Golden 59/59
+  (tool 42/42); 11 casos nuevos. Queda pendiente optimizar
+  `spatial_overlay` within/intersects sobre glaciares (timeout 5 s) y
+  cargar `COPERNICUS_CLIENT_ID/SECRET` para estadísticas.
 - 📝 **Pendiente:** corpus normativo/plan regulador para activar
   `doc-normativa-cauces`, `doc-plan-regulador-caldera`,
   `mix-desaladoras-normativa` y `mix-derechos-ley`.

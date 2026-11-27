@@ -40,6 +40,9 @@ test("buildStatisticsBody arma un request NDVI válido", () => {
   assert.equal(body.input.data[0].type, "sentinel-2-l2a");
   assert.equal(body.input.data[0].dataFilter.maxCloudCoverage, 20);
   assert.equal(body.aggregation.aggregationInterval.of, "P1M");
+  assert.equal(body.calculations.default.histograms.default.nBins, 20);
+  assert.equal(body.calculations.default.histograms.default.lowEdge, -1);
+  assert.equal(body.calculations.default.histograms.default.highEdge, 1);
   assert.match(body.aggregation.evalscript, /B08 - s\.B04/);
   assert.equal(body.input.bounds.properties.crs.includes("EPSG/0/4326"), true);
 });
@@ -107,6 +110,49 @@ test("normalizeStatisticsResponse calcula media ponderada y extremos", () => {
   assert.equal(out.sampleCount, 400);
 });
 
+test("normalizeStatisticsResponse calcula umbrales desde histograma", () => {
+  const out = normalizeStatisticsResponse(
+    {
+      data: [
+        {
+          interval: { from: "2025-01-01", to: "2025-01-31" },
+          outputs: {
+            index: {
+              bands: {
+                B0: {
+                  stats: {
+                    mean: 0.5,
+                    min: 0,
+                    max: 0.8,
+                    stDev: 0.2,
+                    sampleCount: 100,
+                    noDataCount: 0,
+                  },
+                  histogram: {
+                    bins: [
+                      { lowEdge: 0, highEdge: 0.5, count: 30 },
+                      { lowEdge: 0.5, highEdge: 0.8, count: 70 },
+                    ],
+                    overflowCount: 0,
+                    underflowCount: 0,
+                  },
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
+    [0.6]
+  );
+
+  assert.equal(out.thresholds.length, 1);
+  assert.equal(out.thresholds[0].value, 0.6);
+  assert.equal(out.thresholds[0].above_pct, 46.67);
+  assert.equal(out.thresholds[0].below_pct, 53.33);
+  assert.equal(out.histogram.length, 2);
+});
+
 test("getStatistics pide token y consulta Statistical API", async () => {
   _resetTokenCache();
   const calls = [];
@@ -162,7 +208,7 @@ test("getStatistics pide token y consulta Statistical API", async () => {
   assert.equal(out.mean, 0.5);
   assert.equal(calls.length, 2);
   assert.match(calls[0].url, /identity\.dataspace\.copernicus\.eu/);
-  assert.match(calls[1].url, /api\/v1\/statistics/);
+  assert.match(calls[1].url, /statistics\/v1/);
   assert.equal(calls[1].opts.headers.Authorization, "Bearer token-123");
   assert.match(calls[1].opts.body, /sentinel-2-l2a/);
 });

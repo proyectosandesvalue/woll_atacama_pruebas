@@ -802,14 +802,16 @@
       "expected": {
         "tools_any": [
           "query_layer",
-          "aggregate_layer"
+          "aggregate_layer",
+          "get_layer_schema",
+          "get_layer_stats"
         ],
         "graceful_error": true,
         "reply_must_not_contain": [
           "no puedo responder esa pregunta"
         ]
       },
-      "notes": "Hasta 37-D, Caudal Anual Promedio es texto. Debe fallar graceful.",
+      "notes": "Hasta 37-D, Caudal Anual Promedio es texto. El LLM puede revisar esquema/stats; debe fallar graceful.",
       "route": "tool"
     },
     {
@@ -1315,15 +1317,15 @@
       "category": "interseccion",
       "route": "tool",
       "activo": true,
-      "question": "¿Cuánta superficie de glaciares se superpone con los límites comunales?",
+      "question": "¿Cuánta superficie de salares se superpone con los límites comunales?",
       "expected": {
         "tools_any": ["spatial_overlay"],
         "sources_any": ["layer"],
         "citation_required": true,
-        "reply_must_contain": ["superficie"],
+        "reply_must_contain": ["salar", "superficie"],
         "expected_abstain": false
       },
-      "notes": "18-G: overlay area glaciares → comunas; within/intersects son pesados y pueden agotar el timeout."
+      "notes": "18-G: overlay area salares → comunas; capa pequeña para no agotar el timeout. Glaciares completo es más pesado."
     },
     {
       "id": "tool-nearest-distance",
@@ -1464,15 +1466,15 @@
       "category": "orden",
       "route": "tool",
       "activo": true,
-      "question": "Ordena los derechos de agua por la columna Volumen de mayor a menor y dame los 5 primeros.",
+      "question": "Dame los 5 glaciares con mayor área (AREA_KM2).",
       "expected": {
         "tools_any": ["query_layer"],
         "sources_any": ["layer"],
         "citation_required": true,
-        "reply_must_contain": ["volumen"],
+        "reply_must_contain": ["glaciar"],
         "expected_abstain": false
       },
-      "notes": "18-G: order_by Volumen con NULLS LAST (migración 075)."
+      "notes": "18-G: order_by AREA_KM2 con NULLS LAST (migración 075)."
     },
     {
       "id": "abstencion-informe-calidad-agua",

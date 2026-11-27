@@ -246,6 +246,9 @@ que exista el corpus correspondiente. No se fuerza su activación.
 > La operación del bloque documental desde el panel (settings, killswitch y
 > despublicar) se cerró en el sub-sprint **18-F**:
 > `docs/specs/18-F-rag-panel-operacion.md`.
+> El cierre de las 24 tools (citas multi-capa, compactación, router de
+> análisis y golden nuevo) se cerró en **18-G**:
+> `docs/specs/18-G-cierre-24-tools.md`.
 
 ## 7. Tests requeridos
 

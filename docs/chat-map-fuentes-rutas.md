@@ -86,7 +86,7 @@ regulador y leyes siguen inactivos porque todavía no existe ese corpus.
 
 | Ruta | Casos | Estado |
 |---|---|---|
-| `tool` | 31 | activos |
+| `tool` | 42 | activos |
 | `abstencion` | 6 | activos |
 | `fuera_de_alcance` | 3 | activos |
 | `rag` | 6 | activos (catastro, producción, rendimiento e infraestructura) |
@@ -112,6 +112,13 @@ Casos documentales:
 | `doc-plan-regulador-caldera` | `rag` | ¿Qué regula el plan regulador de Caldera sobre densidad y altura? | inactivo (sin corpus) |
 | `mix-desaladoras-normativa` | `mixta` | ¿Cuántas plantas desaladoras hay y qué normativa regula su instalación? | inactivo (sin corpus) |
 | `mix-derechos-ley` | `mixta` | ¿Qué comunas concentran más derechos de agua y qué dice la ley sobre su uso? | inactivo (sin corpus) |
+
+En 18-G se agregaron 11 casos de tools: `compare_layers`,
+`rank_multicriteria`, `spatial_overlay`, `nearest_distance`,
+`get_layer_metadata`, `get_historical_series`, `get_wms_layer_info`,
+`get_wms_available_dates`, `get_wms_pixel`,
+`get_wms_statistics` (falla elegante) y `query_layer` con `order_by`.
+El golden activo total queda en 59 casos.
 
 ## 7. Criterios de aceptación de 18-A
 

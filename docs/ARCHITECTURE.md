@@ -334,6 +334,13 @@ de consulta (`RETRIEVAL_QUERY`). Devuelve pasajes `untrusted`; el orquestador
 los cita vía `buildEvidence()` y el frontend los muestra en **Fuentes**. Sus
 settings se leen de `chat.documents.*` (18-F).
 
+18-G: `buildEvidence()` extrae layer_ids de `layer_id`, `layer_ids`,
+`layer_id_source/targets` y `criteria[]`, y agrega cita `climate` para
+`get_historical_series`. `compact()` limita series a 40 puntos, comparaciones
+a 40 filas, rankings a top 20 y fechas WMS a 30. El router deja pasar
+comparaciones, rankings, overlay, distancias, metadatos, WMS, series y top-N
+al orquestador (`isAnalysisQuestion`).
+
 4.7. server/chat/runners.js
 Ejecuta cada tool contra la BD activa (Postgres en el VPS; Supabase solo en la demo).
 
