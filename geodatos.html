@@ -211,6 +211,12 @@ section[id]{scroll-margin-top:92px}
 .geo-detail:hover .mock-window,.geo-detail:hover .mock-chat{transform:rotate(0)}
 .mock-caption{position:absolute;right:28px;bottom:16px;z-index:2;color:var(--ink-subtle);font-size:10px;font-weight:600;letter-spacing:.02em}
 
+.mock-chat--real{max-width:430px;background:transparent;border:0}
+.mock-chat--real img{display:block;width:100%;height:auto}
+.chat-preview-float{width:100%;display:flex;justify-content:center;animation:chatFloat 7s ease-in-out infinite;will-change:transform}
+@keyframes chatFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion: reduce){.chat-preview-float{animation:none}}
+
 /* ── Mock del geoportal ───────────────────────────────────── */
 .mock-bar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #0284c71f;background:#f4f9ff}
 .mock-dots{display:flex;gap:4px;flex:none}
@@ -244,33 +250,6 @@ section[id]{scroll-margin-top:92px}
 .mock-check.is-on::after{content:"✓";font-size:7px;line-height:1;font-weight:800}
 .mock-select{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:5px;padding:5px 6px;border:1px solid #0284c73d;border-radius:5px;color:#486581;font-size:7.5px}
 .mock-export{margin-top:auto;padding:6px;border-radius:6px;background:#0284c7;color:#fff;font-size:7.5px;font-weight:700;text-align:center}
-
-/* ── Mock del chat ────────────────────────────────────────── */
-.mock-chat{display:flex;flex-direction:column}
-.mock-chat-head{display:flex;align-items:center;gap:9px;padding:12px 14px;border-bottom:1px solid #0284c71f;background:linear-gradient(#fff,#f8fbff)}
-.mock-chat-avatar{display:flex;align-items:center;justify-content:center;width:29px;height:29px;border-radius:9px;background:linear-gradient(135deg,#0284c7,#38bdf8);color:#fff;font-size:14px;flex:none}
-.mock-chat-head strong{display:block;color:#06203a;font-size:11px;line-height:1.2}
-.mock-chat-head small{display:block;color:#486581;font-size:8px}
-.mock-chat-status{display:inline-flex;align-items:center;gap:3px;margin-left:auto;color:#047857;font-size:7.5px;font-weight:700}
-.mock-chat-status i{width:5px;height:5px;border-radius:50%;background:#059669}
-.mock-chat-body{display:flex;flex-direction:column;gap:9px;min-height:258px;padding:14px;background:#f8fbff}
-.mock-msg{max-width:88%;padding:9px 11px;border-radius:12px;font-size:9.5px;line-height:1.5}
-.mock-msg--user{align-self:flex-end;border-bottom-right-radius:4px;background:#0284c7;color:#fff}
-.mock-msg--bot{align-self:flex-start;border:1px solid #0284c71f;border-bottom-left-radius:4px;background:#fff;color:#334e68;box-shadow:0 4px 12px #0720380a}
-.mock-msg--bot p{margin:0}
-.mock-mini-chart{display:flex;align-items:flex-end;gap:4px;height:46px;margin:8px 0 6px;padding:6px 4px 0;border-top:1px solid #0284c71a}
-.mock-mini-chart span{flex:1;height:var(--bar);border-radius:3px 3px 0 0;background:linear-gradient(#38bdf8,#0284c7);opacity:.85}
-.mock-source{display:flex;align-items:center;gap:5px;color:#0369a1;font-size:8px;font-weight:700}
-.mock-source-dot{width:5px;height:5px;border-radius:50%;background:#0284c7}
-.mock-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
-.mock-chips span{padding:3px 6px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-size:7px;font-weight:700}
-.mock-typing{display:flex;gap:3px;width:34px;padding:7px 9px;border:1px solid #0284c71f;border-radius:10px;background:#fff}
-.mock-typing i{width:4px;height:4px;border-radius:50%;background:#7aa7c7;animation:mockBlink 1.4s infinite ease-in-out}
-.mock-typing i:nth-child(2){animation-delay:.2s}
-.mock-typing i:nth-child(3){animation-delay:.4s}
-.mock-chat-input{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 12px 12px;padding:8px 10px;border:1px solid #0284c73d;border-radius:999px;background:#fff;color:#829ab1;font-size:8.5px}
-.mock-send{display:flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#0284c7;color:#fff;font-size:11px;flex:none}
-@keyframes mockBlink{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-1px)}}
 
 /* ── Mock del dashboard ───────────────────────────────────── */
 .mock-dash{padding:16px}
@@ -796,35 +775,15 @@ section[id]{scroll-margin-top:92px}
           </div>
           <p class="geo-note">El chat se abre dentro del geoportal, en el panel “Asistente IA”.</p>
         </div>
-        <div class="geo-visual geo-visual--chat" aria-hidden="true">
-          <div class="mock-chat">
-            <div class="mock-chat-head">
-              <span class="mock-chat-avatar">✦</span>
-              <div>
-                <strong>Asistente IA</strong>
-                <small>Consulta territorial</small>
-              </div>
-              <span class="mock-chat-status"><i></i> Activo</span>
+        <div class="geo-visual geo-visual--chat">
+          <div class="chat-preview-float">
+            <div class="mock-chat mock-chat--real">
+              <img src="assets/geodatos/chat-real.webp"
+                alt="Panel del Asistente IA con la consulta ¿Cuántas lagunas hay por comuna? y un gráfico de distribución"
+                width="1032" height="1540" loading="lazy" decoding="async" />
             </div>
-            <div class="mock-chat-body">
-              <div class="mock-msg mock-msg--user">¿Cuántas lagunas hay por comuna?</div>
-              <div class="mock-msg mock-msg--bot">
-                <p>La respuesta incluye el detalle por comuna y la capa de origen. Puedes revisar el mapa y descargar los registros.</p>
-                <div class="mock-mini-chart">
-                  <span style="--bar:68%"></span>
-                  <span style="--bar:86%"></span>
-                  <span style="--bar:49%"></span>
-                  <span style="--bar:64%"></span>
-                  <span style="--bar:37%"></span>
-                </div>
-                <div class="mock-source"><span class="mock-source-dot"></span> Fuente: capa de lagunas</div>
-                <div class="mock-chips"><span>Cifras</span><span>Gráfico</span><span>Fuente</span></div>
-              </div>
-              <div class="mock-typing"><i></i><i></i><i></i></div>
-            </div>
-            <div class="mock-chat-input">Escribe tu consulta… <span class="mock-send">→</span></div>
           </div>
-          <span class="mock-caption">Ejemplo ilustrativo</span>
+          <span class="mock-caption">Vista real del chat · datos del geoportal</span>
         </div>
       </div>
     </div>

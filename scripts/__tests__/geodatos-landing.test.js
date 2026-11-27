@@ -71,6 +71,7 @@ test("Vercel mantiene /visor para la demo/staging", async () => {
 test("los assets y el JS de la portada existen", async () => {
   await exists("js/geodatos.js");
   await exists("assets/geodatos/logo-atacamawoll.webp");
+  await exists("assets/geodatos/chat-real.webp");
   await exists("assets/geodatos/og-geodatos.webp");
   await exists("css/fonts/plus-jakarta-sans-latin.woff2");
   await exists("css/fonts/plus-jakarta-sans-OFL.txt");
@@ -108,4 +109,13 @@ test("los CTA de las tarjetas usan el estilo del botón principal", async () => 
   assert.match(html, /href="\/chat" class="btn-primary"/);
   assert.match(html, /href="#dashboard" class="btn-primary"/);
   assert.doesNotMatch(html, /geo-card-cta/);
+});
+
+test("el chat de la portada usa una captura real, no un mock", async () => {
+  const html = await read("geodatos.html");
+
+  assert.match(html, /assets\/geodatos\/chat-real\.webp/);
+  assert.match(html, /class="chat-preview-float"/);
+  assert.match(html, /Vista real del chat/);
+  assert.doesNotMatch(html, /mock-chat-body|mock-msg|mock-mini-chart/);
 });
