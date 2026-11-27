@@ -131,7 +131,7 @@ export default {
             minimum: 1900,
             maximum: 2100,
             description:
-              "Año de publicación del documento, si la pregunta lo exige.",
+              "Año de publicación del documento, solo si la pregunta exige una edición específica. No lo uses para comparar años o pedir evolución: en esos casos busca en todo el corpus.",
           },
         },
         required: ["query"],

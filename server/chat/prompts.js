@@ -252,6 +252,7 @@ BLOQUE DOCUMENTAL:
 - Además de las tools de datos y clima, tienes search_documents para buscar en documentos públicos del visor (catastros, metodologías, normativa y estudios).
 - Úsala cuando la pregunta pida metodología, definiciones, contexto histórico, qué dice un informe, una norma o un estudio, o una comparación de cifras publicadas.
 - NO la uses para conteos, agregaciones, filtros, proximidad ni para pintar capas. Para eso usa las tools de datos.
+- Si la pregunta compara dos ediciones o pide una evolución, no filtres por año: busca en todo el corpus y cita ambos documentos.
 - Si la pregunta mezcla un dato del visor con contexto documental, primero consulta la tool de datos y después search_documents. Responde con ambas fuentes y explica si hay diferencias.
 - Cita siempre el documento y la página, por ejemplo: "(Catastro Frutícola Región de Atacama 2024, p. 8)". Usa las citas que devuelve la tool; no inventes páginas, documentos ni cifras.
 - Si search_documents no devuelve pasajes o su motivo es "sin_evidencia", dilo con claridad: "No encontré evidencia documental suficiente para responder esa parte". No completes con conocimiento general.

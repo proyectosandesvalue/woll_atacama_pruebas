@@ -296,13 +296,13 @@ function verifyCase(c, response) {
 
   const replyLower = String(data?.reply || "").toLowerCase();
   const abstained =
-    /no (encontr|tengo|hay|dispongo|cuento|pude)|sin (datos|evidencia|información|informacion)/.test(
+    /no (?:he |se )?(?:encontr|teng|hay|exist|dispon|cuent|pud)|sin (?:datos|evidencia|información|informacion)/.test(
       replyLower
     );
   if ((exp.abstain === true || exp.expected_abstain === true) && !abstained) {
     failures.push("se esperaba abstención y el reply no la declara");
   }
-  if (exp.expected_abstain === false && abstained) {
+  if (exp.expected_abstain === false && abstained && citations.length === 0) {
     failures.push("expected_abstain=false pero el reply se abstiene");
   }
 

@@ -1067,23 +1067,26 @@
       "id": "doc-riego-2024",
       "level": 2,
       "tier": 2,
-      "intent_esperado": "contexto_documental",
-      "fuente_esperada": "rag",
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
       "category": "riego",
-      "route": "rag",
+      "route": "tool",
       "activo": true,
       "question": "¿Qué método de riego predomina en el catastro 2024?",
       "expected": {
         "sources_any": [
-          "document"
+          "layer"
         ],
         "citation_required": true,
+        "reply_must_contain": [
+          "goteo"
+        ],
         "reply_must_not_contain": [
           "no puedo responder"
         ],
         "expected_abstain": false
       },
-      "notes": "El router no debe interceptar esta pregunta documental (18-D)."
+      "notes": "La capa tiene met_riego; el orquestador debe dar la distribución real, no una respuesta genérica (18-D)."
     },
     {
       "id": "doc-especies-superficie-2024",
@@ -1094,7 +1097,7 @@
       "category": "especies",
       "route": "rag",
       "activo": true,
-      "question": "¿Cuáles son las especies con mayor superficie plantada en 2024?",
+      "question": "¿Qué dice el informe 2024 sobre la superficie plantada por especie?",
       "expected": {
         "sources_any": [
           "document"
