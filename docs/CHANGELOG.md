@@ -48,6 +48,7 @@
 ## [Unreleased]
 
 ### Added
+- **Portada: carrusel de capturas reales del geoportal:** tres vistas reales del visor —mapa y capas, tabla de atributos y filtros— en WebP (25-92 KB), con el mismo carrusel de 3,5 s, puntos, pausa y `prefers-reduced-motion`. Reemplaza el mock esquemático del geoportal.
 - **Portada: carrusel de capturas reales del chat:** tres vistas reales —chat, mapa y mapa + chat— en WebP (70-82 KB cada una), con transición de 0,8 s cada 3,5 s. Incluye puntos de navegación, pausa/reanudar y `prefers-reduced-motion` (sin autoplay). Se retiró el mock falso.
 - **Portada: CTA de tarjetas con el botón principal:** “Abrir geoportal”, “Abrir chat” y “Ver la propuesta” usan el mismo estilo del hero (pill azul, 44 px) y quedan alineados al pie de cada tarjeta.
 - **Portada: CTA único en el hero:** se quitó “Abrir geoportal” y quedó solo “Explorar las herramientas”. Los accesos al geoportal y al chat se mantienen en las tarjetas, secciones y pie.

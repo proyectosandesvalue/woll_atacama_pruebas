@@ -211,9 +211,14 @@ section[id]{scroll-margin-top:92px}
 .geo-detail:hover .mock-window,.geo-detail:hover .mock-chat{transform:rotate(0)}
 .mock-caption{position:absolute;right:28px;bottom:16px;z-index:2;color:var(--ink-subtle);font-size:10px;font-weight:600;letter-spacing:.02em}
 
-.chat-carousel-shell{display:flex;flex-direction:column;align-items:center;gap:9px;width:100%;max-width:520px}
+.chat-carousel-shell,.geo-carousel-shell{display:flex;flex-direction:column;align-items:center;gap:9px;width:100%;max-width:520px}
 .chat-preview-float{width:100%;display:flex;justify-content:center;animation:chatFloat 7s ease-in-out infinite;will-change:transform}
 .mock-chat--carousel{max-width:520px;height:560px;background:#eef6ff}
+.mock-window--carousel{max-width:520px}
+.geo-carousel{position:relative;aspect-ratio:16/10;overflow:hidden;background:#eef6ff}
+.geo-slide{position:absolute;inset:0;margin:0;opacity:0;transition:opacity .8s ease;pointer-events:none}
+.geo-slide.is-active{opacity:1;z-index:1}
+.geo-slide-img{display:block;width:100%;height:100%;object-fit:cover}
 .chat-carousel{position:absolute;inset:0}
 .chat-slide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;margin:0;opacity:0;transition:opacity .8s ease;pointer-events:none}
 .chat-slide.is-active{opacity:1;z-index:1}
@@ -236,7 +241,7 @@ section[id]{scroll-margin-top:92px}
 .chat-carousel-toggle:focus-visible{outline:2px solid #0284c7;outline-offset:2px}
 .chat-carousel-note{color:var(--ink-subtle);font-size:9px;font-weight:500;letter-spacing:.02em;text-align:center}
 @keyframes chatFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-@media (prefers-reduced-motion: reduce){.chat-preview-float{animation:none}.chat-slide{transition:none}.chat-carousel-toggle{display:none}}
+@media (prefers-reduced-motion: reduce){.chat-preview-float{animation:none}.chat-slide,.geo-slide{transition:none}.chat-carousel-toggle{display:none}}
 
 /* ── Mock del geoportal ───────────────────────────────────── */
 .mock-bar{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #0284c71f;background:#f4f9ff}
@@ -248,30 +253,6 @@ section[id]{scroll-margin-top:92px}
 .mock-address{flex:1;padding:3px 8px;border:1px solid #0284c71f;border-radius:6px;background:#fff;color:#486581;font-size:8.5px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mock-live{display:inline-flex;align-items:center;gap:4px;color:#047857;font-size:8px;font-weight:700;white-space:nowrap}
 .mock-live i{width:5px;height:5px;border-radius:50%;background:#059669}
-.mock-app{display:grid;grid-template-columns:1fr 154px;min-height:280px}
-.mock-map{position:relative;overflow:hidden;background:#eaf6ff}
-.mock-map-svg{display:block;width:100%;height:100%;min-height:280px}
-.mock-tooltip{position:absolute;top:42%;left:34%;padding:7px 9px;border:1px solid #0284c733;border-radius:8px;background:#fffffff2;box-shadow:0 8px 20px #0720381f}
-.mock-tooltip-title{display:block;color:#06203a;font-size:9px;font-weight:700;line-height:1.2}
-.mock-tooltip-sub{display:block;margin-top:2px;color:#486581;font-size:7px}
-.mock-legend{position:absolute;left:10px;bottom:10px;display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid #0284c71f;border-radius:999px;background:#fffffff2;color:#334e68;font-size:7px;font-weight:600;backdrop-filter:blur(4px)}
-.mock-legend span{display:inline-flex;align-items:center;gap:4px}
-.mock-legend .dot{width:6px;height:6px;border-radius:50%}
-.dot--water{background:#0284c7}
-.dot--land{background:#65a30d}
-.dot--risk{background:#d97706}
-.mock-coords{position:absolute;right:10px;bottom:10px;padding:4px 7px;border-radius:5px;background:#06203ae6;color:#e0f2fe;font-size:6.5px;font-weight:600;letter-spacing:.03em}
-.mock-side{display:flex;flex-direction:column;padding:11px;border-left:1px solid #0284c71f;background:#fff}
-.mock-side-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;color:#334e68;font-size:8px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
-.mock-count{padding:1px 5px;border-radius:999px;background:#e0f2fe;color:#0369a1;font-size:7px}
-.mock-side-head--second{margin-top:12px}
-.mock-layer{display:flex;align-items:center;gap:6px;padding:3.5px 0;color:#486581;font-size:8px}
-.mock-check{display:inline-flex;align-items:center;justify-content:center;width:10px;height:10px;border:1px solid #b8d3e6;border-radius:3px;background:#fff;flex:none}
-.mock-check.is-on{border-color:#0284c7;background:#0284c7;color:#fff}
-.mock-check.is-on::after{content:"✓";font-size:7px;line-height:1;font-weight:800}
-.mock-select{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:5px;padding:5px 6px;border:1px solid #0284c73d;border-radius:5px;color:#486581;font-size:7.5px}
-.mock-export{margin-top:auto;padding:6px;border-radius:6px;background:#0284c7;color:#fff;font-size:7.5px;font-weight:700;text-align:center}
-
 /* ── Mock del dashboard ───────────────────────────────────── */
 .mock-dash{padding:16px}
 .mock-dash-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}
@@ -440,9 +421,6 @@ section[id]{scroll-margin-top:92px}
   .geo-card{padding:26px 22px}
   .geo-detail-copy{padding:28px 22px}
   .geo-visual{padding:18px;min-height:280px}
-  .mock-app{grid-template-columns:1fr 128px}
-  .mock-legend{gap:5px;font-size:6px}
-  .mock-coords{display:none}
   .geo-dash-visual{padding:16px}
   .geo-dash-note{padding:18px}
   .geo-cta{padding:30px 22px}
@@ -454,8 +432,6 @@ section[id]{scroll-margin-top:92px}
   .footer-grid{grid-template-columns:1fr;gap:28px}
 }
 @media (max-width:460px){
-  .mock-app{grid-template-columns:1fr}
-  .mock-side{display:none}
   .mock-dash-body{grid-template-columns:1fr}
   .mock-kpis{grid-template-columns:1fr}
   .mock-kpi{display:grid;grid-template-columns:1fr auto;align-items:center;gap:0 8px}
@@ -695,66 +671,46 @@ section[id]{scroll-margin-top:92px}
           </div>
           <p class="geo-note">Acceso web, sin instalación. Funciona en navegadores modernos.</p>
         </div>
-        <div class="geo-visual geo-visual--map" aria-hidden="true">
-          <div class="mock-window">
-            <div class="mock-bar">
-              <span class="mock-dots"><i></i><i></i><i></i></span>
-              <span class="mock-address">visor-woll-atacama.cl</span>
-              <span class="mock-live"><i></i> En línea</span>
-            </div>
-            <div class="mock-app">
-              <div class="mock-map">
-                <svg class="mock-map-svg" viewBox="0 0 520 340" preserveAspectRatio="none" aria-hidden="true">
-                  <defs>
-                    <linearGradient id="mapBg" x1="0" y1="0" x2="1" y2="1">
-                      <stop offset="0" stop-color="#eaf6ff"/>
-                      <stop offset="1" stop-color="#d7ecfb"/>
-                    </linearGradient>
-                    <linearGradient id="mapLand" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0" stop-color="#d5ecd9"/>
-                      <stop offset="1" stop-color="#b9ddc9"/>
-                    </linearGradient>
-                  </defs>
-                  <rect width="520" height="340" fill="url(#mapBg)"/>
-                  <path d="M0 70 L120 55 L210 80 L300 60 L410 95 L520 75 L520 340 L0 340 Z" fill="#dcecf4" opacity=".8"/>
-                  <path d="M70 40 L150 30 L210 58 L190 120 L130 150 L70 110 Z" fill="url(#mapLand)" stroke="#8fc3a7" stroke-width="1.5"/>
-                  <path d="M210 58 L300 44 L360 82 L340 150 L250 170 L190 120 Z" fill="#d9ead9" stroke="#9ec9ac" stroke-width="1.5"/>
-                  <path d="M130 150 L190 120 L250 170 L230 235 L150 250 L100 205 Z" fill="#e6dfc8" stroke="#c9bd97" stroke-width="1.5"/>
-                  <path d="M340 150 L420 130 L470 180 L440 250 L350 260 L300 210 Z" fill="#d8e4f2" stroke="#a9c1dc" stroke-width="1.5"/>
-                  <path d="M150 250 L230 235 L300 270 L280 330 L170 335 L120 290 Z" fill="#cfe4d8" stroke="#9ac5ad" stroke-width="1.5"/>
-                  <path d="M250 170 L340 150 L350 260 L300 270 L230 235 Z" fill="#e9e2cd" stroke="#cbbf98" stroke-width="1.5"/>
-                  <path d="M-10 230 C90 210 150 250 220 240 S360 190 540 230" fill="none" stroke="#5fb3e8" stroke-width="4" stroke-linecap="round" opacity=".7"/>
-                  <path d="M0 90 C100 100 180 80 260 100 S420 120 540 100" fill="none" stroke="#9cc9e8" stroke-width="2" stroke-dasharray="6 7" opacity=".8"/>
-                  <circle cx="205" cy="185" r="7" fill="#0284c7" stroke="#fff" stroke-width="3"/>
-                  <circle cx="355" cy="205" r="7" fill="#0284c7" stroke="#fff" stroke-width="3"/>
-                  <circle cx="165" cy="280" r="7" fill="#0284c7" stroke="#fff" stroke-width="3"/>
-                </svg>
-                <div class="mock-tooltip">
-                  <span class="mock-tooltip-title">Cuenca del Huasco</span>
-                  <span class="mock-tooltip-sub">12 capas activas</span>
-                </div>
-                <div class="mock-legend">
-                  <span><i class="dot dot--water"></i> Agua</span>
-                  <span><i class="dot dot--land"></i> Suelo</span>
-                  <span><i class="dot dot--risk"></i> Riesgos</span>
-                </div>
-                <div class="mock-coords">27°22′S · 70°20′W · z8</div>
+        <div class="geo-visual geo-visual--map">
+          <div class="geo-carousel-shell">
+            <div class="mock-window mock-window--carousel">
+              <div class="mock-bar">
+                <span class="mock-dots"><i></i><i></i><i></i></span>
+                <span class="mock-address">visor.atacamawoll.cl/visor</span>
+                <span class="mock-live"><i></i> En línea</span>
               </div>
-              <aside class="mock-side">
-                <div class="mock-side-head"><span>Capas</span><span class="mock-count">12</span></div>
-                <div class="mock-layer"><i class="mock-check is-on"></i><span>Recursos hídricos</span></div>
-                <div class="mock-layer"><i class="mock-check is-on"></i><span>Clima</span></div>
-                <div class="mock-layer"><i class="mock-check is-on"></i><span>Agricultura</span></div>
-                <div class="mock-layer"><i class="mock-check"></i><span>Minería</span></div>
-                <div class="mock-layer"><i class="mock-check"></i><span>Riesgos</span></div>
-                <div class="mock-side-head mock-side-head--second"><span>Filtros</span></div>
-                <div class="mock-select">Todas las comunas <span>⌄</span></div>
-                <div class="mock-select">Todas las categorías <span>⌄</span></div>
-                <div class="mock-export">Exportar CSV</div>
-              </aside>
+              <div class="geo-carousel" id="geoCarousel" role="region" aria-roledescription="carrusel" aria-label="Vistas reales del geoportal">
+                <figure class="geo-slide is-active" data-slide="0" role="group" aria-roledescription="vista" aria-label="Mapa y capas" aria-hidden="false">
+                  <img class="geo-slide-img" src="assets/geodatos/geo-mapa.webp?v=20261127"
+                    alt="Visor del geoportal con el panel de capas, la leyenda y el mapa de Atacama"
+                    width="1600" height="1000" loading="lazy" decoding="async" />
+                </figure>
+                <figure class="geo-slide" data-slide="1" role="group" aria-roledescription="vista" aria-label="Tabla de atributos" aria-hidden="true">
+                  <img class="geo-slide-img" src="assets/geodatos/geo-tabla.webp?v=20261127"
+                    alt="Tabla de atributos de la capa de glaciares con datos y herramientas de búsqueda"
+                    width="1600" height="1000" loading="lazy" decoding="async" />
+                </figure>
+                <figure class="geo-slide" data-slide="2" role="group" aria-roledescription="vista" aria-label="Filtros" aria-hidden="true">
+                  <img class="geo-slide-img" src="assets/geodatos/geo-filtros.webp?v=20261127"
+                    alt="Filtro de datos por atributos y valores para la capa de glaciares"
+                    width="1600" height="1000" loading="lazy" decoding="async" />
+                </figure>
+              </div>
             </div>
+            <div class="chat-carousel-meta">
+              <div class="chat-carousel-dots" role="group" aria-label="Elegir vista">
+                <button type="button" class="chat-dot is-active" data-slide-to="0" aria-label="Ver mapa y capas" aria-current="true"></button>
+                <button type="button" class="chat-dot" data-slide-to="1" aria-label="Ver tabla de atributos"></button>
+                <button type="button" class="chat-dot" data-slide-to="2" aria-label="Ver filtros"></button>
+              </div>
+              <span class="chat-carousel-caption" id="geoCarouselCaption">Mapa y capas · 1 de 3</span>
+              <button type="button" class="chat-carousel-toggle" id="geoCarouselToggle" aria-label="Pausar recorrido" aria-pressed="false">
+                <svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="5" width="3" height="14"/><rect x="14" y="5" width="3" height="14"/></svg>
+                <svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+              </button>
+            </div>
+            <span class="chat-carousel-note">Capturas reales del geoportal</span>
           </div>
-          <span class="mock-caption">Vista esquemática del geoportal</span>
         </div>
       </div>
     </div>

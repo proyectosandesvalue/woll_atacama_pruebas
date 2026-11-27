@@ -74,6 +74,9 @@ test("los assets y el JS de la portada existen", async () => {
   await exists("assets/geodatos/chat-real.webp");
   await exists("assets/geodatos/chat-map.webp");
   await exists("assets/geodatos/chat-map-chat.webp");
+  await exists("assets/geodatos/geo-mapa.webp");
+  await exists("assets/geodatos/geo-tabla.webp");
+  await exists("assets/geodatos/geo-filtros.webp");
   await exists("assets/geodatos/og-geodatos.webp");
   await exists("css/fonts/plus-jakarta-sans-latin.woff2");
   await exists("css/fonts/plus-jakarta-sans-OFL.txt");
@@ -129,4 +132,23 @@ test("el chat de la portada usa capturas reales en carrusel", async () => {
   assert.match(js, /chatCarousel/);
   assert.match(js, /3500/);
   assert.match(js, /prefers-reduced-motion/);
+});
+
+test("el geoportal de la portada usa capturas reales en carrusel", async () => {
+  const html = await read("geodatos.html");
+  const js = await read("js/geodatos.js");
+
+  assert.match(html, /id="geoCarousel"/);
+  assert.match(html, /class="geo-slide/);
+  assert.match(html, /geo-mapa\.webp/);
+  assert.match(html, /geo-tabla\.webp/);
+  assert.match(html, /geo-filtros\.webp/);
+  assert.match(html, /geoCarouselCaption/);
+  assert.match(html, /geoCarouselToggle/);
+  assert.match(html, /Capturas reales del geoportal/);
+  assert.doesNotMatch(html, /mock-app|mock-side|mock-export/);
+  assert.match(js, /geoCarousel/);
+  assert.match(js, /Mapa y capas/);
+  assert.match(js, /Tabla de atributos/);
+  assert.match(js, /Filtros/);
 });

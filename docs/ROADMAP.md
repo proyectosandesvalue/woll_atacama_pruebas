@@ -1311,6 +1311,9 @@ Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
   (“Abrir geoportal”, “Abrir chat” y “Ver la propuesta”).
 - ✅ **Portada:** el mock del chat se reemplazó por un carrusel de 3 capturas
   reales (chat, mapa y mapa + chat) que rota cada 3,5 s, con pausa y reduced motion.
+- ✅ **Portada:** el geoportal también usa un carrusel de 3 capturas reales
+  (mapa y capas, tabla y filtros), con el mismo comportamiento.
+
 
 
 
