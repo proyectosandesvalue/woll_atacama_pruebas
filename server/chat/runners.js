@@ -19,6 +19,8 @@ const TOOLS_WITHOUT_LAYER_ID = new Set([
   "get_station_weather",
   "get_historical_climate",
   "list_climate_stations",
+  "get_arclim_forecast",
+  "search_documents",
 ]);
 
 /**

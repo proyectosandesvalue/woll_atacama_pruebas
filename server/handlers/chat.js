@@ -302,6 +302,9 @@ export async function handleChat(body, ctx = {}) {
         : [],
       chart: charts.length === 1 ? charts[0] : null,
       charts,
+      citations: Array.isArray(payload?.citations) && payload.citations.length > 0
+        ? payload.citations
+        : null,
     };
 
     if (unavailableMatches.length > 0) {
@@ -583,6 +586,7 @@ async function buildPayloadFromPipeline(
     if (seen.has(key)) continue;
     seen.add(key);
     citations.push({
+      type: "layer",
       layer_id: citationLayer,
       tool: r.tool,
       label: citationLayer,

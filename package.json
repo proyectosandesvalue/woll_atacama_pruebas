@@ -15,6 +15,7 @@
     "smoke:db": "node --env-file=.env.staging scripts/smoke-db.mjs",
     "smoke:chat": "node --env-file=.env.staging scripts/smoke-orchestrator.mjs",
     "eval:chat": "node --env-file=.env.staging scripts/run-golden-set.mjs --all",
+    "eval:rag": "node --env-file=.env.local scripts/eval-rag-retrieval.mjs",
     "audit": "node --env-file=.env.staging scripts/audit-data.mjs",
     "audit:db": "node --env-file=.env.local scripts/audit-db.mjs",
     "audit:layer": "node --env-file=.env.staging scripts/audit-data.mjs --layer",

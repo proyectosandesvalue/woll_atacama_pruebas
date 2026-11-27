@@ -99,6 +99,10 @@ function addMessage(payload, sender) {
         renderChart(chart, msg);
       }
     }
+
+    if (Array.isArray(payload.citations) && payload.citations.length > 0) {
+      renderCitations(payload.citations, msg);
+    }
   }
 
   if (
@@ -113,6 +117,84 @@ function addMessage(payload, sender) {
   messagesEl.appendChild(msg);
   scrollToBottom();
   return msg;
+}
+
+/**
+ * Renderiza las fuentes de la respuesta: documentos (con enlace https y
+ * página) y capas usadas. Solo construye nodos con textContent.
+ */
+function renderCitations(citations, container) {
+  const documents = [];
+  const layers = [];
+  for (const c of citations) {
+    if (!c || typeof c !== "object") continue;
+    if (c.type === "document" && c.title) documents.push(c);
+    else if (c.type === "layer" || c.layer_id) layers.push(c);
+  }
+  if (documents.length === 0 && layers.length === 0) return;
+
+  const wrap = document.createElement("div");
+  wrap.className = "ai-sources";
+  wrap.setAttribute("aria-label", "Fuentes de la respuesta");
+
+  const heading = document.createElement("div");
+  heading.className = "ai-sources-title";
+  heading.textContent = "Fuentes";
+  wrap.appendChild(heading);
+
+  for (const c of documents) {
+    const item = document.createElement("div");
+    item.className = "ai-source ai-source-document";
+
+    const line = document.createElement("span");
+    const title = String(c.title || c.document_slug || "Documento");
+    let page = "";
+    if (c.page_start) {
+      page =
+        c.page_end && c.page_end !== c.page_start
+          ? `, pp. ${c.page_start}-${c.page_end}`
+          : `, p. ${c.page_start}`;
+    }
+
+    const sourceUrl =
+      typeof c.source_url === "string" && /^https:\/\//i.test(c.source_url)
+        ? c.source_url
+        : null;
+
+    if (sourceUrl) {
+      const link = document.createElement("a");
+      link.href = sourceUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = title;
+      line.appendChild(link);
+    } else {
+      line.appendChild(document.createTextNode(title));
+    }
+    line.appendChild(document.createTextNode(page));
+    item.appendChild(line);
+
+    const meta = [];
+    if (c.publisher) meta.push(String(c.publisher));
+    if (c.published_at) meta.push(String(c.published_at).slice(0, 4));
+    if (c.section) meta.push(String(c.section));
+    if (meta.length > 0) {
+      const metaEl = document.createElement("span");
+      metaEl.className = "ai-source-meta";
+      metaEl.textContent = ` — ${meta.join(" · ")}`;
+      item.appendChild(metaEl);
+    }
+    wrap.appendChild(item);
+  }
+
+  for (const c of layers) {
+    const tag = document.createElement("span");
+    tag.className = "ai-source-tag";
+    tag.textContent = c.label || c.layer_id || "Capa";
+    wrap.appendChild(tag);
+  }
+
+  container.appendChild(wrap);
 }
 
 const FEEDBACK_REASONS = [

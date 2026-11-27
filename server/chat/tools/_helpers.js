@@ -121,6 +121,25 @@ function normalizeArgs(name, raw) {
     }
   }
 
+  // search_documents (RAG)
+  if (name === "search_documents") {
+    if (typeof args.query === "string") {
+      args.query = args.query.trim().slice(0, 500);
+    }
+    if (args.limit !== undefined && args.limit !== null) {
+      const n = Number(args.limit);
+      args.limit = Number.isFinite(n)
+        ? Math.min(Math.max(1, Math.floor(n)), 8)
+        : 5;
+    }
+    if (args.year !== undefined && args.year !== null && String(args.year).trim() !== "") {
+      const n = Number(args.year);
+      args.year = Number.isInteger(n) && n >= 1900 && n <= 2100 ? n : null;
+    } else {
+      args.year = null;
+    }
+  }
+
   // distance_m + layer_id_targets (proximidad)
   if (name === "count_near_layer" || name === "aggregate_near_layer") {
     const d = Number(args.distance_m);

@@ -272,6 +272,40 @@ function verifyCase(c, response) {
     return { ok: false, failures, warnings };
   }
 
+  // 2.1. Citas y abstención documental (Sprint 18-D).
+  const citations = Array.isArray(data?.citations) ? data.citations : [];
+  const citationTypes = new Set(
+    citations.map((c) =>
+      c?.type || (c?.document_slug ? "document" : c?.layer_id ? "layer" : "otro")
+    )
+  );
+
+  if (exp.sources_any) {
+    for (const source of exp.sources_any) {
+      if (!citationTypes.has(source)) {
+        failures.push(
+          `sources_any esperaba "${source}", citations=[${Array.from(citationTypes).join(", ")}]`
+        );
+      }
+    }
+  }
+
+  if (exp.citation_required === true && citations.length === 0) {
+    failures.push("citation_required=true pero no hay citations");
+  }
+
+  const replyLower = String(data?.reply || "").toLowerCase();
+  const abstained =
+    /no (encontr|tengo|hay|dispongo|cuento|pude)|sin (datos|evidencia|información|informacion)/.test(
+      replyLower
+    );
+  if ((exp.abstain === true || exp.expected_abstain === true) && !abstained) {
+    failures.push("se esperaba abstención y el reply no la declara");
+  }
+  if (exp.expected_abstain === false && abstained) {
+    failures.push("expected_abstain=false pero el reply se abstiene");
+  }
+
   // 3. tools_any.
   if (exp.tools_any) {
     if (isRemote) {

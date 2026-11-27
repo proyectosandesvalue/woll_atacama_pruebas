@@ -61,7 +61,12 @@ export async function runOrchestrator({ text, history = [], sessionId = null, ti
     `budget=${budgetMs}ms maxSteps=${maxSteps} model=${process.env.LLM_MODEL}`
   );
 
-  const ctx = { raw: new Map(), trace: [] };
+  const ctx = {
+    raw: new Map(),
+    trace: [],
+    documentPassages: [],
+    documentSearch: { attempted: false, found: 0, reason: null },
+  };
 
   const messages = [];
   for (const h of history) {
@@ -188,6 +193,17 @@ export async function runOrchestrator({ text, history = [], sessionId = null, ti
     for (const { tc, out } of toolResults) {
       ctx.trace.push({ tool: tc.name, args: tc.arguments, ok: out.ok });
 
+      if (tc.name === "search_documents") {
+        ctx.documentSearch.attempted = true;
+        if (out.ok && Array.isArray(out.result?.passages)) {
+          ctx.documentPassages.push(...out.result.passages);
+          ctx.documentSearch.found += out.result.passages.length;
+        }
+        ctx.documentSearch.reason = out.ok
+          ? out.result?.reason || null
+          : "fuente_no_disponible";
+      }
+
       if (tc.name === "aggregate_by_admin" && out.ok) {
         const lid = tc.arguments?.layer_id;
         if (typeof lid === "string" && lid.length > 0) {
@@ -269,6 +285,13 @@ async function finish(reply, ctx, messages, userText = "", timing = null) {
   }
   for (const w of coverageWarnings) {
     notices.push(w);
+  }
+  if (ctx.documentSearch?.attempted && ctx.documentSearch.found === 0) {
+    notices.push(
+      ctx.documentSearch.reason === "fuente_no_disponible"
+        ? "La fuente documental no está disponible en este momento."
+        : "No encontré evidencia documental suficiente para responder esa parte."
+    );
   }
 
   timing?.mark("orchestrator.finish", {

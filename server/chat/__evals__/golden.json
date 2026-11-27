@@ -1000,19 +1000,101 @@
       "fuente_esperada": "rag",
       "category": "metodologia",
       "route": "rag",
-      "activo": false,
+      "activo": true,
       "question": "¿Cuál es la metodología del catastro frutícola?",
       "expected": {
         "sources_any": [
           "document"
         ],
         "citation_required": true,
+        "reply_must_contain": [
+          "catastro"
+        ],
         "reply_must_not_contain": [
           "no puedo responder"
         ],
         "expected_abstain": false
       },
-      "notes": "Pendiente 18-D: requiere el documento metodológico en el corpus."
+      "notes": "Activo con los catastros 2018 y 2024 en el corpus (18-D)."
+    },
+    {
+      "id": "doc-catastro-evolucion",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "rag",
+      "category": "comparacion-historica",
+      "route": "rag",
+      "activo": true,
+      "question": "¿Cómo cambió la superficie frutícola de Atacama entre 2018 y 2024?",
+      "expected": {
+        "sources_any": [
+          "document"
+        ],
+        "citation_required": true,
+        "reply_must_contain": [
+          "2018",
+          "2024"
+        ],
+        "reply_must_not_contain": [
+          "no puedo responder"
+        ],
+        "expected_abstain": false
+      },
+      "notes": "Requiere comparar los dos informes del corpus (18-D)."
+    },
+    {
+      "id": "mix-catastro-comunas",
+      "level": 3,
+      "tier": 2,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "mixta",
+      "category": "mixta",
+      "route": "mixta",
+      "activo": true,
+      "question": "¿Qué comunas concentran la superficie de vid de mesa y qué metodología usa el catastro frutícola?",
+      "expected": {
+        "tools_any": [
+          "aggregate_by_admin",
+          "aggregate_layer",
+          "search_documents"
+        ],
+        "tools_count_min": 2,
+        "sources_any": [
+          "document",
+          "layer"
+        ],
+        "citation_required": true,
+        "expected_abstain": false
+      },
+      "notes": "Debe combinar agregación por comuna con el documento metodológico (18-D)."
+    },
+    {
+      "id": "mix-catastro-evolucion",
+      "level": 3,
+      "tier": 2,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "mixta",
+      "category": "mixta",
+      "route": "mixta",
+      "activo": true,
+      "question": "¿Cómo evolucionó la superficie frutícola entre 2018 y 2024 y qué capas del visor la representan?",
+      "expected": {
+        "tools_any": [
+          "query_layer",
+          "get_layer_stats",
+          "aggregate_layer",
+          "search_documents"
+        ],
+        "tools_count_min": 2,
+        "sources_any": [
+          "document",
+          "layer"
+        ],
+        "citation_required": true,
+        "expected_abstain": false
+      },
+      "notes": "Debe combinar los informes 2018/2024 con una capa del catastro (18-D)."
     },
     {
       "id": "doc-plan-regulador-caldera",
@@ -1097,7 +1179,7 @@
       "fuente_esperada": "no_disponible",
       "category": "abstencion",
       "route": "abstencion",
-      "activo": false,
+      "activo": true,
       "question": "¿Qué dice el informe de calidad de agua 2025 sobre el río Copiapó?",
       "expected": {
         "abstain": true,
@@ -1107,7 +1189,7 @@
           "el documento indica"
         ]
       },
-      "notes": "Pendiente 18-D: el documento no está en el corpus; debe abstenerse con motivo."
+      "notes": "Activo en 18-D: el documento no está en el corpus; debe abstenerse con motivo."
     },
     {
       "id": "abstencion-normativa-litio",
@@ -1117,7 +1199,7 @@
       "fuente_esperada": "no_disponible",
       "category": "abstencion",
       "route": "abstencion",
-      "activo": false,
+      "activo": true,
       "question": "¿Qué dice la normativa sobre el uso de agua en la industria del litio?",
       "expected": {
         "abstain": true,
@@ -1127,7 +1209,7 @@
           "la ley indica"
         ]
       },
-      "notes": "Pendiente 18-D: sin documento en el corpus, no debe inventar una norma."
+      "notes": "Activo en 18-D: sin documento en el corpus, no debe inventar una norma."
     },
     {
       "id": "fuera-alcance-capital-francia",

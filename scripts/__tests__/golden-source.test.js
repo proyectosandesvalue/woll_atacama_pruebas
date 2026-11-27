@@ -120,14 +120,31 @@ test("el golden set cubre las cinco rutas del mapa", async () => {
   for (const route of ["tool", "rag", "mixta", "abstencion", "fuera_de_alcance"]) {
     assert.ok(routes.has(route), `falta la ruta ${route}`);
   }
-  const pending = golden.cases.filter(
+  const documental = golden.cases.filter(
     (item) => item.route === "rag" || item.route === "mixta"
   );
-  assert.ok(pending.length >= 5, "faltan casos rag/mixtos");
-  assert.ok(
-    pending.every((item) => item.activo === false),
-    "los casos rag/mixtos deben quedar inactivos hasta 18-D"
+  assert.ok(documental.length >= 5, "faltan casos rag/mixtos");
+
+  // 18-D activa solo los casos que el corpus de catastro puede resolver.
+  const active = new Set(
+    documental.filter((item) => item.activo !== false).map((item) => item.id)
   );
+  for (const id of [
+    "doc-metodologia-catastro",
+    "doc-catastro-evolucion",
+    "mix-catastro-comunas",
+    "mix-catastro-evolucion",
+  ]) {
+    assert.ok(active.has(id), `${id} debe estar activo tras 18-D`);
+  }
+  for (const id of [
+    "doc-normativa-cauces",
+    "doc-plan-regulador-caldera",
+    "mix-desaladoras-normativa",
+    "mix-derechos-ley",
+  ]) {
+    assert.ok(!active.has(id), `${id} debe seguir inactivo hasta tener corpus`);
+  }
 });
 
 test("golden seed convierte tier nulo en 1 y omite historial vacío", () => {

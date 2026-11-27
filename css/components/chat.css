@@ -81,6 +81,53 @@
   color: var(--text-primary);
 }
 
+.ai-sources {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-default);
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  white-space: normal;
+}
+
+.ai-sources-title {
+  margin-bottom: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.ai-source {
+  margin: 2px 0;
+}
+
+.ai-source a {
+  color: var(--accent-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.ai-source a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.ai-source-meta {
+  color: var(--text-tertiary);
+}
+
+.ai-source-tag {
+  display: inline-block;
+  margin: 2px 4px 0 0;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--bg-surface-2);
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+}
+
 .ai-message.typing {
   display: inline-flex;
   align-items: center;

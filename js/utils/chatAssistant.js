@@ -80,6 +80,7 @@ export async function sendMessage(text, history = []) {
       geojson_layers: Array.isArray(data.geojson_layers)
         ? data.geojson_layers
         : [],
+      citations: Array.isArray(data.citations) ? data.citations : [],
     };
   } catch (err) {
     log.error("[ChatIA] sendMessage error:", err);
