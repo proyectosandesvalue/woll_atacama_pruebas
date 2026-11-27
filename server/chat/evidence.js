@@ -27,6 +27,18 @@ function dbg(...args) {
 // Compactador
 // ─────────────────────────────────────────────────────────────────
 
+function truncateRow(row, max = 300) {
+  if (!row || typeof row !== "object" || Array.isArray(row)) return row;
+  const out = {};
+  for (const [key, value] of Object.entries(row)) {
+    out[key] =
+      typeof value === "string" && value.length > max
+        ? `${value.slice(0, max)}…`
+        : value;
+  }
+  return out;
+}
+
 export function compact(name, out, ctx) {
   if (!out.ok) return { error: out.error };
 
@@ -123,6 +135,14 @@ export function compact(name, out, ctx) {
           ? `Mostrando 30 de ${r.dates.length} fechas.`
           : undefined,
     };
+  }
+
+  if (name === "query_layer" && Array.isArray(r)) {
+    return r.slice(0, 40).map((item) =>
+      item && typeof item === "object" && item.row
+        ? { ...item, row: truncateRow(item.row) }
+        : truncateRow(item)
+    );
   }
 
   if (name === "get_layer_stats" && r && Array.isArray(r.attributes)) {

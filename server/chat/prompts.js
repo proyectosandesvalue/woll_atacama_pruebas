@@ -59,8 +59,15 @@ PREGUNTAS DE PROXIMIDAD:
 INTERSECCIÓN / CONTENCIÓN / SUPERFICIE:
   "dentro de", "se superpone", "cuánta superficie" → spatial_overlay
   operation: intersects | within | area
+  Ej: "¿cuántos glaciares están dentro de los límites comunales?" →
+  layer_id_source="glaciares", layer_id_targets=["comunas_poligonos"],
+  operation="within".
 DISTANCIA MÍNIMA:
   "distancia a", "qué tan lejos", "el más cercano" → nearest_distance
+  Ej: "¿a qué distancia está Copiapó de la planta desaladora más cercana?" →
+  layer_id_source="comunas_poligonos",
+  filters={"COMUNA":"Copiapó"},
+  layer_id_targets=["plantas_desaladoras_puntos"].
 PREGUNTAS DE LISTADO DE CAPAS:
   "¿cuáles son los X?" → query_layer
 FILTROS AVANZADOS:
@@ -133,8 +140,8 @@ REGLAS:
    No metas operadores dentro de un filtro objeto.
 
 4.2. Para top-N o rankings usa query_layer con order_by y limit.
-   Ej: "los 10 derechos con más caudal" → order_by="Caudal Anual Promedio en Ls/s",
-   order_dir="desc", limit=10.
+   Ej: "los 5 derechos con más volumen" → order_by="Volumen",
+   order_dir="desc", limit=5. Usa el nombre exacto de la columna del catálogo.
 
 4.3. Para series completas o tendencias usa get_historical_series;
    para un resumen rápido usa get_historical_climate.

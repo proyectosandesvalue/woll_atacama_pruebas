@@ -1265,6 +1265,212 @@
       "notes": "Pendiente 18-D: dato por comuna + contexto legal citado."
     },
     {
+      "id": "tool-compare-layers",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "analisis_receta",
+      "fuente_esperada": "db",
+      "category": "comparacion",
+      "route": "tool",
+      "activo": true,
+      "question": "Compara glaciares y humedales por comuna.",
+      "expected": {
+        "tools_any": ["compare_layers"],
+        "sources_any": ["layer"],
+        "citation_required": true,
+        "reply_must_contain": ["glaciar", "humedal"],
+        "expected_abstain": false
+      },
+      "notes": "18-G: una sola tool compara 2-4 capas y cita ambas."
+    },
+    {
+      "id": "tool-rank-multicriteria",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "analisis_receta",
+      "fuente_esperada": "db",
+      "category": "ranking",
+      "route": "tool",
+      "activo": true,
+      "question": "Prioriza las comunas según cantidad de glaciares y humedales, con pesos 0.6 y 0.4.",
+      "expected": {
+        "tools_any": ["rank_multicriteria"],
+        "sources_any": ["layer"],
+        "citation_required": true,
+        "reply_must_contain": ["Alto del Carmen"],
+        "expected_abstain": false
+      },
+      "notes": "18-G: ranking min-max ponderado; cita los criterios."
+    },
+    {
+      "id": "tool-spatial-overlay",
+      "level": 3,
+      "tier": 3,
+      "intent_esperado": "analisis_receta",
+      "fuente_esperada": "db",
+      "category": "interseccion",
+      "route": "tool",
+      "activo": true,
+      "question": "¿Cuántos glaciares están dentro de los límites comunales?",
+      "expected": {
+        "tools_any": ["spatial_overlay"],
+        "sources_any": ["layer"],
+        "citation_required": true,
+        "reply_must_contain": ["glaciar"],
+        "expected_abstain": false
+      },
+      "notes": "18-G: overlay within glaciares → comunas; no debe responder el router de capas."
+    },
+    {
+      "id": "tool-nearest-distance",
+      "level": 3,
+      "tier": 3,
+      "intent_esperado": "analisis_receta",
+      "fuente_esperada": "db",
+      "category": "proximidad",
+      "route": "tool",
+      "activo": true,
+      "question": "¿A qué distancia está la comuna de Copiapó de la planta desaladora más cercana?",
+      "expected": {
+        "tools_any": ["nearest_distance"],
+        "sources_any": ["layer"],
+        "citation_required": true,
+        "reply_must_contain": ["distancia"],
+        "expected_abstain": false
+      },
+      "notes": "18-G: fuente comuna Copiapó, target plantas desaladoras."
+    },
+    {
+      "id": "tool-layer-metadata",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
+      "category": "metadatos",
+      "route": "tool",
+      "activo": true,
+      "question": "¿Cuál es la fuente y la licencia de la capa de glaciares?",
+      "expected": {
+        "tools_any": ["get_layer_metadata"],
+        "sources_any": ["layer"],
+        "citation_required": true,
+        "reply_must_contain": ["glaciar"]
+      },
+      "notes": "18-G: si no hay metadatos declarados, debe decirlo sin inventar."
+    },
+    {
+      "id": "tool-historical-series",
+      "level": 3,
+      "tier": 3,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
+      "category": "serie",
+      "route": "tool",
+      "activo": true,
+      "question": "Serie histórica de temperatura media diaria de la estación 03414002 entre 2010 y 2020.",
+      "expected": {
+        "tools_any": ["get_historical_series"],
+        "sources_any": ["climate"],
+        "citation_required": true,
+        "reply_must_contain": ["temperatura"],
+        "expected_abstain": false
+      },
+      "notes": "18-G: la serie se compacta a 40 puntos + stats y cita la estación."
+    },
+    {
+      "id": "tool-wms-layer-info",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
+      "category": "satelite",
+      "route": "tool",
+      "activo": true,
+      "question": "¿Qué mide la capa Copernicus NDVI?",
+      "expected": {
+        "tools_any": ["get_wms_layer_info"],
+        "sources_any": ["layer"],
+        "citation_required": true,
+        "reply_must_contain": ["NDVI"],
+        "expected_abstain": false
+      },
+      "notes": "18-G: metadatos locales del catálogo WMS, sin red."
+    },
+    {
+      "id": "tool-wms-available-dates",
+      "level": 3,
+      "tier": 3,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "api",
+      "category": "satelite",
+      "route": "tool",
+      "activo": true,
+      "question": "¿Qué fechas hay para NDVI en Atacama en octubre de 2026?",
+      "expected": {
+        "tools_any": ["get_wms_available_dates"],
+        "sources_any": ["layer"],
+        "citation_required": true,
+        "reply_must_contain": ["octubre"],
+        "expected_abstain": false
+      },
+      "notes": "18-G: WFS Copernicus vía proxy; devuelve fechas de escena."
+    },
+    {
+      "id": "tool-wms-pixel",
+      "level": 3,
+      "tier": 3,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "api",
+      "category": "satelite",
+      "route": "tool",
+      "activo": true,
+      "question": "Consulta el píxel NDVI de Copiapó para el 2026-10-01.",
+      "expected": {
+        "tools_any": ["get_wms_pixel"],
+        "sources_any": ["layer"],
+        "citation_required": true,
+        "graceful_error": true,
+        "reply_must_not_contain": ["no puedo responder esa pregunta"]
+      },
+      "notes": "18-G: puede no haber dato; debe decirlo y no inventar el índice."
+    },
+    {
+      "id": "tool-wms-statistics-failure",
+      "level": 3,
+      "tier": 4,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "api",
+      "category": "satelite",
+      "route": "tool",
+      "activo": true,
+      "question": "Calcula el NDVI promedio de Copiapó en octubre de 2026.",
+      "expected": {
+        "tools_any": ["get_wms_statistics"],
+        "graceful_error": true,
+        "reply_must_not_contain": ["no puedo responder esa pregunta", "error interno"]
+      },
+      "notes": "18-G: sin COPERNICUS_CLIENT_ID/SECRET el chat declara la falla."
+    },
+    {
+      "id": "tool-query-order",
+      "level": 2,
+      "tier": 2,
+      "intent_esperado": "dato_simple",
+      "fuente_esperada": "db",
+      "category": "orden",
+      "route": "tool",
+      "activo": true,
+      "question": "Dame los 5 derechos de agua con mayor volumen.",
+      "expected": {
+        "tools_any": ["query_layer"],
+        "sources_any": ["layer"],
+        "citation_required": true,
+        "reply_must_contain": ["volumen"],
+        "expected_abstain": false
+      },
+      "notes": "18-G: order_by Volumen con NULLS LAST (migración 075)."
+    },
+    {
       "id": "abstencion-informe-calidad-agua",
       "level": 3,
       "tier": 4,

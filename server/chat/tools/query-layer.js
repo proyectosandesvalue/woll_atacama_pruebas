@@ -51,7 +51,7 @@ export default {
             type: "string",
             description:
               "Columna para ordenar. Úsala con limit para top-N. " +
-              "Ej: 'Caudal Anual Promedio en Ls/s'.",
+              "Ej: 'Caudal Anual Promedio'. Usa el nombre exacto del catálogo.",
           },
           order_dir: {
             type: "string",

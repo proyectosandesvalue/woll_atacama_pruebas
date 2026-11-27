@@ -41,6 +41,23 @@ export function isDocumentalQuestion(text) {
   return DOCUMENTAL_CUES.test(String(text || ""));
 }
 
+/**
+ * Señales de una pregunta de análisis que no debe resolverse con un pipeline
+ * de capas: comparaciones, rankings, overlay, distancias, metadatos, WMS,
+ * series históricas o top-N. El orquestador tiene las tools específicas.
+ * Es acotado para no desviar conteos/listados simples.
+ */
+const ANALYSIS_CUES =
+  /(compara|comparaci[oó]n|versus|\bvs\b|prioriza|ranking|pesos|dentro de|se superpone|superposici[oó]n|intersecci[oó]n|cu[aá]nta superficie|distancia|qu[eé] tan lejos|m[aá]s cercan[oa]|fuente|licencia|escala|c[oó]mo cito|ndvi|ndwi|copernicus|satelital|p[ií]xel|serie hist[oó]rica|tendencia|top\s*\d+|ordena por|mayor|menor|el m[aá]s\b)/i;
+
+/**
+ * @param {string} text
+ * @returns {boolean}
+ */
+export function isAnalysisQuestion(text) {
+  return ANALYSIS_CUES.test(String(text || ""));
+}
+
 async function isRouterEnabled() {
   // Env var tiene prioridad.
   if (process.env.CHAT_ROUTER_ENABLED !== undefined) {
@@ -114,10 +131,11 @@ export async function route(classification, text = "") {
   // 18-D: una pregunta documental no se resuelve con un pipeline de capas.
   if (
     classification.intent === "contexto_documental" ||
-    isDocumentalQuestion(text)
+    isDocumentalQuestion(text) ||
+    isAnalysisQuestion(text)
   ) {
     dbg(
-      `router: pregunta documental, skip (intent=${classification.intent}, text=${String(text).slice(0, 80)})`
+      `router: pregunta documental/análisis, skip (intent=${classification.intent}, text=${String(text).slice(0, 80)})`
     );
     return null;
   }

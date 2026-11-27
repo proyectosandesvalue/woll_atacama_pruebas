@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { isDocumentalQuestion } from "../router.js";
+import { isDocumentalQuestion, isAnalysisQuestion } from "../router.js";
 
 test("detecta preguntas documentales que no deben ir al pipeline de capas", () => {
   const questions = [
@@ -20,6 +20,22 @@ test("detecta preguntas documentales que no deben ir al pipeline de capas", () =
   }
 });
 
+test("detecta preguntas de análisis que necesitan tools específicas", () => {
+  const questions = [
+    "Compara glaciares y humedales por comuna.",
+    "Prioriza las comunas según glaciares y humedales, con pesos 0.6 y 0.4.",
+    "¿Cuántos glaciares están dentro de los límites comunales?",
+    "¿A qué distancia está Copiapó de la planta desaladora más cercana?",
+    "¿Cuál es la fuente y la licencia de la capa de glaciares?",
+    "¿Qué mide la capa Copernicus NDVI?",
+    "Serie histórica de temperatura de la estación 03414002.",
+    "Dame los 5 derechos de agua con mayor volumen.",
+  ];
+  for (const q of questions) {
+    assert.equal(isAnalysisQuestion(q), true, q);
+  }
+});
+
 test("no desvía conteos, listados ni ubicaciones de capas", () => {
   const questions = [
     "¿Cuántos glaciares hay por comuna?",
@@ -31,5 +47,6 @@ test("no desvía conteos, listados ni ubicaciones de capas", () => {
   ];
   for (const q of questions) {
     assert.equal(isDocumentalQuestion(q), false, q);
+    assert.equal(isAnalysisQuestion(q), false, q);
   }
 });

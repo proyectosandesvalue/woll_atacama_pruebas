@@ -182,4 +182,18 @@ test("compact trunca series, comparaciones, rankings y fechas WMS", () => {
   );
   assert.equal(dates.dates.length, 30);
   assert.equal(dates.total, 100);
+
+  const rows = compact(
+    "query_layer",
+    {
+      ok: true,
+      result: [
+        { row: { id: 1, Descripcion: "x".repeat(1000), Volumen: 10 } },
+      ],
+    },
+    ctx
+  );
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].row.Descripcion.length, 301);
+  assert.equal(rows[0].row.Volumen, 10);
 });
