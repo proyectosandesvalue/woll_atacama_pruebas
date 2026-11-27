@@ -908,44 +908,64 @@
       "id": "tier4-kilos-jojoba",
       "level": 3,
       "tier": 4,
-      "intent_esperado": "fuera_de_alcance",
-      "fuente_esperada": "no_disponible",
-      "category": "dato-inexistente",
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "rag",
+      "category": "produccion-documental",
       "question": "¿Cuántos kilos de jojoba se producen al año?",
       "expected": {
         "graceful_error": true,
         "reply_must_not_contain": [
           "no puedo responder esa pregunta"
         ],
-        "reply_must_not_match": [
-          "\\d+\\s*(kg|kilos|toneladas)",
-          "se producen \\d+"
+        "sources_any": [
+          "document"
         ],
-        "notice_required": true
+        "citation_required": true,
+        "notice_required": true,
+        "expected_abstain": false
       },
-      "notes": "El visor no tiene producción en kilos. CA-8 de la spec 40-D.",
-      "route": "abstencion"
+      "notes": "El visor no tiene la cifra en capas, pero el catastro documental la responde con cita (18-D).",
+      "route": "rag"
     },
     {
       "id": "tier4-rendimiento-palto",
       "level": 3,
       "tier": 4,
-      "intent_esperado": "fuera_de_alcance",
-      "fuente_esperada": "no_disponible",
-      "category": "dato-inexistente",
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "rag",
+      "category": "rendimiento-documental",
       "question": "¿Cuánto rinde una hectárea de palto?",
       "expected": {
         "graceful_error": true,
         "reply_must_not_contain": [
           "no puedo responder esa pregunta"
         ],
-        "reply_must_not_match": [
-          "\\d+\\s*(kg|kilos|toneladas|t/ha)",
-          "rinde \\d+"
+        "sources_any": [
+          "document"
         ],
-        "notice_required": true
+        "citation_required": true,
+        "notice_required": true,
+        "expected_abstain": false
       },
-      "notes": "El visor no tiene rendimiento. Tier 4.",
+      "notes": "El visor no tiene rendimiento en capas; el catastro documental lo responde con cita (18-D).",
+      "route": "rag"
+    },
+    {
+      "id": "abstencion-exportacion-chirimoya-2025",
+      "level": 3,
+      "tier": 4,
+      "intent_esperado": "contexto_documental",
+      "fuente_esperada": "no_disponible",
+      "category": "abstencion",
+      "question": "¿Cuántos kilos de chirimoya se exportaron a China en 2025?",
+      "expected": {
+        "abstain": true,
+        "notice_required": true,
+        "reply_must_not_match": [
+          "\\b[1-9]\\d*\\s*(kg|kilos|toneladas)"
+        ]
+      },
+      "notes": "Dato fuera del corpus 2018/2024: debe abstenerse y no inventar exportaciones (18-D).",
       "route": "abstencion"
     },
     {
@@ -1052,7 +1072,7 @@
       "category": "mixta",
       "route": "mixta",
       "activo": true,
-      "question": "¿Qué comunas concentran la superficie de vid de mesa y qué metodología usa el catastro frutícola?",
+      "question": "¿En qué comunas se concentran los registros de vid de mesa y qué metodología usa el catastro frutícola?",
       "expected": {
         "tools_any": [
           "aggregate_by_admin",
@@ -1067,7 +1087,7 @@
         "citation_required": true,
         "expected_abstain": false
       },
-      "notes": "Debe combinar agregación por comuna con el documento metodológico (18-D)."
+      "notes": "Debe combinar un conteo por comuna con el documento metodológico (18-D). La superficie está como texto (37-D)."
     },
     {
       "id": "mix-catastro-evolucion",
@@ -1078,7 +1098,7 @@
       "category": "mixta",
       "route": "mixta",
       "activo": true,
-      "question": "¿Cómo evolucionó la superficie frutícola entre 2018 y 2024 y qué capas del visor la representan?",
+      "question": "¿Cuántos registros de vid de mesa hay en la capa del catastro y cómo evolucionó la superficie frutícola entre 2018 y 2024?",
       "expected": {
         "tools_any": [
           "query_layer",
@@ -1092,6 +1112,10 @@
           "layer"
         ],
         "citation_required": true,
+        "reply_must_contain": [
+          "2018",
+          "2024"
+        ],
         "expected_abstain": false
       },
       "notes": "Debe combinar los informes 2018/2024 con una capa del catastro (18-D)."

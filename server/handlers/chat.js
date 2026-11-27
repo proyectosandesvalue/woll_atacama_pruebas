@@ -289,7 +289,16 @@ export async function handleChat(body, ctx = {}) {
     // Unir notice del orquestador con el de datos no disponibles.
     const notices = [];
     if (payload?.notice) notices.push(payload.notice);
-    if (unavailableNotice) notices.push(unavailableNotice);
+    const hasDocumentCitation =
+      Array.isArray(payload?.citations) &&
+      payload.citations.some((c) => c?.type === "document");
+    if (unavailableNotice) {
+      notices.push(
+        hasDocumentCitation
+          ? "El visor no incluye este dato en sus capas; la respuesta se apoya en el documento citado."
+          : unavailableNotice
+      );
+    }
 
     const normalized = {
       response_id: responseId,

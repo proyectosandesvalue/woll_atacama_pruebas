@@ -197,10 +197,17 @@ Se activan o agregan solo los que el corpus actual puede resolver:
 |---|---|---|---|
 | `doc-metodologia-catastro` | `rag` | ¿Cuál es la metodología del catastro frutícola? | activar |
 | `doc-catastro-evolucion` | `rag` | ¿Cómo cambió la superficie frutícola de Atacama entre 2018 y 2024? | nuevo |
-| `mix-catastro-comunas` | `mixta` | ¿Qué comunas concentran la superficie de vid de mesa y qué metodología usa el catastro? | nuevo |
-| `mix-catastro-capas` | `mixta` | ¿Qué capas del visor representan el catastro frutícola y qué variables miden? | nuevo |
+| `mix-catastro-comunas` | `mixta` | ¿En qué comunas se concentran los registros de vid de mesa y qué metodología usa el catastro? | nuevo |
+| `mix-catastro-evolucion` | `mixta` | ¿Cuántos registros de vid de mesa hay en la capa del catastro y cómo evolucionó la superficie frutícola entre 2018 y 2024? | nuevo |
 | `abstencion-informe-calidad-agua` | `abstencion` | ¿Qué dice el informe de calidad de agua 2025 sobre el río Copiapó? | activar |
 | `abstencion-normativa-litio` | `abstencion` | ¿Qué dice la normativa sobre el uso de agua en la industria del litio? | activar |
+| `abstencion-exportacion-chirimoya-2025` | `abstencion` | ¿Cuántos kilos de chirimoya se exportaron a China en 2025? | nuevo |
+
+`tier4-kilos-jojoba` y `tier4-rendimiento-palto` se reclasifican de
+`abstencion` a `rag`: el visor no tiene esas cifras en capas, pero los
+informes del catastro sí las publican y ahora se responden con cita. Para
+mantener la cobertura de abstención se agrega el caso de exportaciones de
+chirimoya 2025, que no está en el corpus.
 
 `doc-normativa-cauces`, `doc-plan-regulador-caldera`,
 `mix-desaladoras-normativa` y `mix-derechos-ley` **siguen inactivos** hasta
@@ -220,7 +227,8 @@ que exista el corpus correspondiente. No se fuerza su activación.
 | CA-8 | un filtro `year=2018` | se consulta | solo devuelve chunks del documento 2018 | test con BD mockeada |
 | CA-9 | la BD RAG o Vertex fallan | se consulta | la tool devuelve `fuente_no_disponible` y el chat sigue | test |
 | CA-10 | el golden set completo | se ejecuta antes/después | las rutas `tool` y `abstencion` no bajan | `npm run eval:chat` |
-| CA-11 | lint y tests | se ejecutan | 0 errores y 0 fallos | `npm run lint && npm test` |
+| CA-11 | una respuesta documental sobre un dato que el visor no tiene en capas | se revisa el aviso | el aviso aclara que la cifra proviene del documento citado | manual/golden |
+| CA-12 | lint y tests | se ejecutan | 0 errores y 0 fallos | `npm run lint && npm test` |
 
 ## 6. Plan por sub-sprint
 
