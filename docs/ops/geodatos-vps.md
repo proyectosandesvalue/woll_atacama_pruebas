@@ -55,7 +55,11 @@ para la demo/staging, pero la ruta oficial es la del VPS.
   flash del visor.
 - `js/ui/chatImmersiveUI.js` — shell de `/chat`, split, encuadre y divisor.
 - `css/components/chat-immersive.css` — estilos del chat inmersivo.
-- `deploy/vps/release.sh` — smoke de `/`, `/visor` y `/visor?chat=1`.
+- `terminos.html`, `privacidad.html`, `fuentes.html` — páginas legales
+  estáticas, enlazadas desde el pie de la portada.
+- `css/legal.css` — hoja compartida de las páginas legales.
+- `deploy/vps/release.sh` — smoke de `/`, `/visor`, `/visor?chat=1`,
+  `/chat`, las páginas legales y `/api/chat/info`.
 - `scripts/__tests__/geodatos-landing.test.js` — guard de rutas y assets.
 - `scripts/__tests__/chat-deep-link.test.js` — guard de `?chat=1`.
 

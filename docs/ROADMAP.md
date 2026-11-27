@@ -89,7 +89,7 @@
 | 29 | Datos y gobierno de capas | ⏳ pending | media | 10-12h | 26-E |
 | 30 | Pruebas de aceptación técnica | ✅ cerrado (VPS 14/14; carga 8/8 ✅; tiles ✅) | alta | 16h | 26, 27 |
 | 31 | Observabilidad y operación | 🔶 parcial (31-A/B/E ✅ en VPS; 31-C/D pendientes) | alta | 7-8h | 26 |
-| 32 | Marco legal y privacidad | ⏳ pending | media | 5-6h | 24, 31-A |
+| 32 | Marco legal y privacidad | ✅ local (32-A/B/C; 32-D externo pendiente) | media | 5-6h | 24, 31-A |
 | 33 | Entrega y traspaso | ⏳ pending | alta | 10h | Sprints Must |
 | 34 | Refactor de mantenibilidad (frontend) | ⏳ pending | media | 20-25h | 26-D, 28 |
 | 35 | Refactor de estilos CSS | ⏳ pending | media | 8-10h | 34 |
@@ -755,19 +755,24 @@ inactivos hasta cargar esos documentos.
 
 ### Sprint 32 — Marco legal y privacidad
 
-**Estado**: ⏳ pending · **Prioridad**: media · **Duración**: 5-6h · **Dependencias**: 24, 31-A
+**Estado**: ✅ local (32-A/B/C; 32-D externo) · **Prioridad**: media · **Duración**: 5-6h · **Dependencias**: 24, 31-A
 **Nota**: este plan no es asesoría legal; el punto D debe hacerlo un profesional.
 
 **Sub-sprints**:
-- [ ] **A (2h).** Páginas de términos de uso, privacidad y fuentes de datos.
-- [ ] **B (1h).** Política de retención de logs y consultas.
-- [ ] **C (1h).** Declaración del proveedor LLM y aviso visible en el chat (ADR 011).
+- [X] **A (2h).** Páginas `terminos.html`, `privacidad.html` y `fuentes.html`, con `css/legal.css`; enlaces desde la portada, el visor y la ayuda.
+- [X] **B (1h).** `docs/RETENTION.md`, migración `064_retention.sql`, `npm run retention:run` y purga con `--dry-run`.
+- [X] **C (1h).** `GET /api/chat/info`, modal de información del chat y ADR 011.
 - [ ] **D (2h).** Revisión legal externa (Ley 21.719 y normativa aplicable).
 
 **Criterios**:
-- **CA-1** Dado el visor, entonces las tres páginas son accesibles desde la interfaz.
-- **CA-2** Dado el chat, entonces el usuario ve qué proveedor procesa sus consultas.
-- **CA-3** La política de retención está implementada y documentada.
+- **CA-1** Dado el visor, entonces las tres páginas son accesibles desde la interfaz. ✅ (portada, visor y ayuda)
+- **CA-2** Dado el chat, entonces el usuario ve qué proveedor procesa sus consultas. ✅ (`/api/chat/info` + modal)
+- **CA-3** La política de retención está implementada y documentada. ✅ (migración 064 + `retention:run`)
+
+**Resultados (2026-11-27):** tres páginas estáticas sin CDN, enlazadas desde
+`geodatos.html`, el diálogo de bienvenida del visor y la ayuda. Retención de
+365/730 días con RPC y comando; el chat muestra el proveedor real (Vertex AI en
+producción) y enlaza a privacidad. Queda 32-D (revisión legal externa).
 
 ### Sprint 33 — Entrega y traspaso
 
@@ -1291,6 +1296,13 @@ preguntas pendientes para triage operativo.
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
 ### 2026-11-27
+- ✅ **32-A/B/C (marco legal y privacidad):** páginas `terminos.html`,
+  `privacidad.html` y `fuentes.html` con `css/legal.css`, enlazadas desde la
+  portada, el visor y la ayuda. `docs/RETENTION.md` + migración
+  `064_retention.sql` + `npm run retention:run` (365/730 días, `--dry-run`).
+  `GET /api/chat/info` (Node y adapter Vercel) y modal de información del chat
+  con el proveedor real; ADR 011. Tests de páginas, endpoint y retención.
+  Queda 32-D (revisión legal externa).
 - ✅ **17-E (corpus RAG real, 2/3):** ingesta del Catastro Frutícola de
   Atacama 2018 y 2024 (ODEPA/CIREN), 31 chunks, `gemini-embedding-001` a
   1024 dims, `trust_level=untrusted`. Manifiesto con URL oficial y licencia;

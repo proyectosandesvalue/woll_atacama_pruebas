@@ -28,6 +28,7 @@ Si el código contradice el CONTRACT, no decidas por tu cuenta: señálalo y dej
 | Cómo hacer una tarea habitual | `docs/DEV_GUIDE.md` |
 | Por qué se tomó una decisión | `docs/DECISIONS/` |
 | Qué cambió y qué bugs se corrigieron | `docs/CHANGELOG.md` |
+| Retención de logs y datos operativos | `docs/RETENTION.md` |
 | Spec de un sprint | `docs/specs/` |
 | Integraciones externas y proxy | `docs/integrations/` |
 | Publicar la portada Geodatos y el visor en el VPS | `docs/ops/geodatos-vps.md` |
@@ -96,6 +97,7 @@ Reglas:
 - **Proxy externo:** `/api/proxy` es cerrado (allowlist en `server/proxy/services.js`); `INSTANCE_ID` y `CLIENT_SECRET` viven solo en el servidor. Ver `docs/integrations/proxy-servicios-externos.md`.
 - **Secretos:** solo en variables de entorno. `.env.staging` está en `.gitignore`.
 - **Seguridad frontend:** CSP en Nginx sin `unsafe-eval`; librerías y tipografías vendorizadas en `js/lib/` y `css/fonts/` (sin CDN); datos de API/GeoJSON escapados antes de `innerHTML`; `npm audit --omit=dev --audit-level=high` en CI. Ver `docs/specs/28-seguridad-frontend.md`.
+- **Privacidad y retención (32):** las páginas `terminos.html`, `privacidad.html` y `fuentes.html` se enlazan desde la portada, el visor y la ayuda. El aviso del proveedor LLM se obtiene de `GET /api/chat/info`; no hardcodear el proveedor. La purga se ejecuta con `npm run retention:run` (365/730 días, `--dry-run` primero). Ver `docs/RETENTION.md` y ADR 011.
 - **Tests:** toda feature nueva trae al menos un test (`node:test`).
 - **Configuración del visor**: el runtime lee el snapshot activo por `GET /api/config`; publicar con `npm run config:snapshot -- --publish` y verificar con `--check`. El fallback es `allTemasConfig` (INV-5). La taxonomía nativa (`GET /api/taxonomy`) se habilita con `TAXONOMY_API_ENABLED=1` y el cliente con `?taxonomy=1`; si falla, cae a `/api/config`. Panel admin en `/admin.html` con contraseña y sesión; TOTP opcional para flujos sensibles (ADR 007).
 - **Capas (47)**: el panel sube GeoJSON a `geojson/uploads/` o un ZIP de Shapefile a `geojson/private/` (Nginx 404), encola en `admin.layer_jobs` y `npm run layer:worker` carga a PostGIS/genera tiles. El worker Shapefile usa la imagen `docker/layer-worker` con GDAL y `unzip`; la API no incorpora GDAL. Luego se asigna en Taxonomía y se publica el snapshot. El borrado es lógico.

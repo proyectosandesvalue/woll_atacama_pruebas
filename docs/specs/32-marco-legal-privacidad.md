@@ -3,11 +3,11 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 32 |
-| **Estado de la spec** | DRAFT |
+| **Estado de la spec** | CERRADA (32-A/B/C; 32-D externo) |
 | **Tamaño** | Mediano |
 | **Duración estimada** | 4-5 h (32-A 2 h, 32-B 1 h, 32-C 1 h; 32-D externo) |
 | **Dependencias** | 24 (alcance de entrega), 31-A (observabilidad), 28-A (assets locales) |
-| **Última revisión** | 2026-11-19 |
+| **Última revisión** | 2026-11-27 |
 
 > **Qué es esta spec.** Fija qué se construye en 32-A/B/C, qué queda fuera y
 > cómo se verifica. No es asesoría legal: la revisión profesional es 32-D.
@@ -32,12 +32,12 @@ cambiar la estructura.
 
 **Dentro del alcance**
 - Tres páginas públicas: `terminos.html`, `privacidad.html` y `fuentes.html`.
-- Hoja compartida `css/legal.css` y script mínimo `js/ui/legal.js` (tema y año).
+- Hoja compartida `css/legal.css` (sin JS: las páginas son estáticas).
 - Enlaces a las tres páginas desde el visor (diálogo de bienvenida) y desde
   `help.html` (sección de soporte).
 - Política de retención en `docs/RETENTION.md`: qué se guarda, por qué, dónde,
   por cuánto tiempo y cómo se borra.
-- Migración `056_retention.sql` con una RPC idempotente de purga para
+- Migración `064_retention.sql` con una RPC idempotente de purga para
   `admin.unanswered_questions` y `admin.audit_log`.
 - Script `scripts/retention.mjs` + `npm run retention:run` con `--dry-run`.
 - Endpoint `GET /api/chat/info` con proveedor y modelo, sin secretos.
@@ -110,7 +110,7 @@ Respuesta `200`:
 
 ### 4.3. Retención
 
-Migración `056_retention.sql`:
+Migración `064_retention.sql`:
 
 ```sql
 public.admin_purge_retention(
@@ -155,16 +155,16 @@ de lenguaje”.
 | CA-3 | La política de retención | Ejecuto `npm run retention:run -- --dry-run` | La RPC informa cuántas filas se borrarían sin borrar nada | test + SQL |
 | CA-4 | Las páginas legales | Inspecciono el HTML | No hay scripts, estilos ni fuentes externas; no hay datos personales de ejemplo | test |
 | CA-5 | Las páginas legales | Navego con teclado y lector de pantalla | Títulos jerárquicos, `main`, enlaces con texto descriptivo y foco visible | manual + test estático |
-| CA-6 | La migración 056 | La aplico dos veces | No falla y la RPC queda disponible | SQL |
+| CA-6 | La migración 064 | La aplico dos veces | No falla y la RPC queda disponible | SQL |
 | CA-7 | El endpoint de info | Lo consulto sin variables LLM | Responde 200 con el texto genérico, sin secretos | test |
 
 ## 6. Plan por sub-sprint
 
 | Tramo | Contenido | Horas | Estado |
 |---|---|---|---|
-| 32-A | Páginas, CSS, enlaces desde visor/ayuda y tests estáticos | 2 | ⏳ |
-| 32-B | `docs/RETENTION.md`, migración 056, script y comando npm | 1 | ⏳ |
-| 32-C | `GET /api/chat/info`, modal del chat, ADR 011 y tests | 1 | ⏳ |
+| 32-A | Páginas, CSS, enlaces desde portada/visor/ayuda y tests estáticos | 2 | ✅ |
+| 32-B | `docs/RETENTION.md`, migración 064, script y comando npm | 1 | ✅ |
+| 32-C | `GET /api/chat/info`, adapters, modal del chat, ADR 011 y tests | 1 | ✅ |
 | 32-D | Revisión legal externa (fuera de esta ejecución) | 2 | ⏳ |
 
 Un commit por tramo (`feat: sprint-32-A paginas legales`,
@@ -173,13 +173,14 @@ Un commit por tramo (`feat: sprint-32-A paginas legales`,
 ## 7. Tests requeridos (`node:test`)
 
 - `scripts/__tests__/legal-pages.test.js`
-  - existen las tres páginas, `css/legal.css` y `js/ui/legal.js`;
+  - existen las tres páginas y `css/legal.css`;
   - no hay recursos `http(s)://` en `<script>`, `<link rel=stylesheet>` ni
     `@font-face`;
   - hay enlaces cruzados y enlaces desde `index.html` y `help.html`;
   - las páginas tienen `<main>`, `<h1>` y fecha de actualización.
 - `server/handlers/__tests__/chat-info.test.js`
   - mapeo de proveedor para Groq, Google AI Studio, OpenAI y Vertex;
+  - el adapter de Vercel y el router Node comparten el handler puro;
   - respuesta sin variables y sin claves;
   - `Cache-Control` esperado.
 - `scripts/__tests__/retention.test.js`
@@ -219,7 +220,7 @@ Un commit por tramo (`feat: sprint-32-A paginas legales`,
 - **Riesgo:** la purga borra datos aún útiles. Mitigación: `--dry-run`,
   defaults conservadores y ejecución programada fuera de horario.
 - **Reversión:** las páginas y el modal son aditivos; se retiran los enlaces y
-  el endpoint. La migración 056 se revierte con `DROP FUNCTION`; no borra
+  el endpoint. La migración 064 se revierte con `DROP FUNCTION`; no borra
   columnas.
 - **Documentos a actualizar:** `ROADMAP.md`, `CHANGELOG.md`,
   `ARCHITECTURE.md`, `README.md`, `docs/specs/README.md`, `.env.example`,
@@ -227,7 +228,10 @@ Un commit por tramo (`feat: sprint-32-A paginas legales`,
 
 ## 11. Puntos de integración
 
-- **Sprint 28:** el test de seguridad frontend cubre las páginas nuevas.
+- **Sprint 28:** el test de seguridad frontend cubre las páginas nuevas y
+  verifica que no haya CDN.
+- **Vercel:** `api/chat-info.js` + rewrite `/api/chat/info` para la demo;
+  el VPS usa el router Node.
 - **Sprint 29-A:** el inventario de fuentes y licencias alimenta
   `fuentes.html`; esta spec solo publica el marco general.
 - **Sprint 45/47:** la ficha de capa y el gestor pueden enlazar a la página de
@@ -239,6 +243,6 @@ Un commit por tramo (`feat: sprint-32-A paginas legales`,
 
 ## 12. Cierre
 
-- Horas reales:
-- Desvíos:
-- Lecciones:
+- Horas reales: ~4 (A 2, B 1, C 1).
+- Desvíos: la migración pasó de 056 a 064 por el avance del repositorio; se agregó `api/chat-info.js` para la demo Vercel.
+- Lecciones: el aviso del proveedor debe derivarse del entorno; un texto fijo queda obsoleto al migrar de Groq a Vertex AI.

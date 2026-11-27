@@ -1589,6 +1589,52 @@ que sus recursos relativos (`js/`, `css/`, `geojson/`) resuelvan contra la raíz
 - Tests: `scripts/__tests__/geodatos-landing.test.js` y
   `scripts/__tests__/chat-deep-link.test.js`.
 
+### 2.16. Páginas legales y retención (Sprint 32)
+
+**Páginas públicas**
+
+`terminos.html`, `privacidad.html` y `fuentes.html` son estáticas y comparten
+`css/legal.css`; no usan CDN ni JS. Se enlazan desde `geodatos.html`, el
+diálogo de bienvenida de `index.html` y la sección Legal de `help.html`.
+
+1. Edita el texto en la página correspondiente y actualiza la fecha visible.
+2. Si cambias una fuente o licencia, revisa también `fuentes.html` y la ficha
+   de la capa.
+3. Verifica que no haya recursos externos ni `onclick` inline:
+
+   ```bash
+   node --test scripts/__tests__/legal-pages.test.js
+   node --test scripts/__tests__/security-frontend.test.js
+   ```
+
+**Aviso del proveedor LLM**
+
+`GET /api/chat/info` deriva el proveedor desde `LLM_PROVIDER` y
+`LLM_BASE_URL`, y devuelve el modelo. El modal `#chatInfoModal` lo muestra al
+abrir “Información” en el chat. No hardcodees el proveedor: si cambia el
+entorno, el aviso cambia solo. La demo Vercel usa `api/chat-info.js` y el
+rewrite `/api/chat/info`.
+
+**Retención**
+
+La política está en `docs/RETENTION.md`. La RPC vive en
+`db/migrations/064_retention.sql` y el comando es:
+
+```bash
+# Conteo sin borrar
+npm run retention:run -- --dry-run
+
+# Purga con los plazos por defecto (365/730 días)
+npm run retention:run
+
+# Plazos explícitos
+npm run retention:run -- --unanswered-days 365 --audit-days 730
+```
+
+Requiere `DATABASE_ADMIN_URL` o `DATABASE_URL`. Programa la ejecución diaria
+en el VPS con el timer descrito en `docs/RETENTION.md` §3.1. Antes de activar
+el timer, corre `--dry-run` y revisa los conteos.
+
 ## Verificación después de reemplazar
 
 ```bash

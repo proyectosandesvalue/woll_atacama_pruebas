@@ -130,6 +130,23 @@ Limitaciones de esta etapa:
   `npm audit --omit=dev --audit-level=high`.
 - **Pendiente:** capa base con licencia (28-C), ZAP y `security.txt` (28-E, VPS).
 
+#### Privacidad y retención (Sprint 32)
+
+- **Páginas públicas:** `terminos.html`, `privacidad.html` y `fuentes.html`,
+  con `css/legal.css` local. Se enlazan desde `geodatos.html`, el diálogo de
+  bienvenida del visor y la ayuda.
+- **Aviso del proveedor:** `GET /api/chat/info` (router Node y adapter Vercel)
+  deriva una etiqueta desde `LLM_PROVIDER`/`LLM_BASE_URL` y devuelve el modelo.
+  Nunca expone claves ni la URL base. El modal `#chatInfoModal` la muestra al
+  abrir “Información” y enlaza a privacidad.
+- **Conversación:** no se persiste en la base; vive en el navegador.
+- **Retención:** `admin.unanswered_questions` 365 días desde `last_seen_at`;
+  `admin.audit_log` 730 días. La RPC `admin_purge_retention()` (migración 064)
+  y `npm run retention:run -- --dry-run` aplican la política descrita en
+  `docs/RETENTION.md`. Los logs de contenedor rotan a 10 MB × 5 y los backups
+  se conservan 14 días (26-G).
+- **ADR:** `docs/DECISIONS/011-aviso-proveedor-llm.md`.
+
 #### Capas satelitales Copernicus
 
 - **Servicios:** `js/config/wms_services.js` usa el factory `copernicus()` y apunta a `/api/proxy?source=copernicus-wms`; tiles de 512, `maxNativeZoom: 16`, `keepBuffer: 1`, `updateWhenIdle` y `updateWhenZooming: false`.
@@ -204,6 +221,10 @@ export default async function handler(req, res) {
 
 Recibe: { text, history }
 Devuelve: { reply, notice?, chart?, charts, geojson?, geojson_meta?, geojson_layers?, citations?, no_disponible? }
+
+`GET /api/chat/info` es el aviso público del proveedor LLM. Devuelve
+`{ provider, provider_label, model, external_processing, notice_version }`
+con `Cache-Control: public, max-age=300`; no consulta la BD ni el LLM.
 
 4.2. server/handlers/chat.js
 Handler puro. Pipeline completo:

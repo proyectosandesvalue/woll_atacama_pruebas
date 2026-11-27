@@ -182,6 +182,9 @@ El mapa completo de carpetas y responsabilidades está en `docs/ARCHITECTURE.md`
 | `server/handlers/admin-chat-config.js`, `server/routes/admin-chat-config.js` | CRUD de prompts/settings/mensajes/unavailable/golden y tools read-only | Configuración del chat (48) |
 | `server/handlers/admin-unanswered.js`, `server/routes/admin-unanswered.js` | Cola de demanda: preguntas sin respuesta, triage y brief | Demanda del chat (50) |
 | `docs/help/demanda-no-satisfecha.md` | Contenido de ayuda de Demanda para la futura página del panel | Textos de ayuda o privacidad |
+| `terminos.html`, `privacidad.html`, `fuentes.html`, `css/legal.css` | Páginas públicas legales y de fuentes; enlaces desde portada, visor y ayuda | Textos legales, privacidad o atribuciones (32) |
+| `docs/RETENTION.md`, `db/migrations/064_retention.sql`, `scripts/retention.mjs` | Política, RPC y comando de purga de datos operativos | Cambiar plazos o ejecutar retención (32-B) |
+| `server/handlers/chat-info.js`, `server/routes/chat-info.js`, `api/chat-info.js` | Aviso público del proveedor LLM para el chat | Cambiar proveedor o aviso (32-C) |
 | `scripts/golden-seed.mjs`, `scripts/lib/golden-source.mjs` | Seed del golden y lectura BD → JSON con fallback | Cambios del golden set (48) |
 | `server/admin/rag-manifest.js` | Lectura/escritura atómica del manifiesto y PDFs | Validación o almacenamiento de documentos |
 | `scripts/rag-worker.mjs`, `docker/rag-worker/` | Worker de extracción/embeddings y cola | Ingesta real de PDFs |

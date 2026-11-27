@@ -111,6 +111,19 @@ wait_http /healthz || die "smoke: /healthz no respondió 200"
 log "smoke: /healthz OK"
 wait_http /api/config || die "smoke: /api/config no respondió 200"
 log "smoke: /api/config OK"
+wait_http /api/chat/info || die "smoke: /api/chat/info no respondió 200"
+log "smoke: /api/chat/info OK"
+INFO_JSON="$(curl -sk https://127.0.0.1/api/chat/info || true)"
+case "$INFO_JSON" in
+  *'"provider_label"'*) ;;
+  *) die "smoke: /api/chat/info no devuelve provider_label" ;;
+esac
+
+# Páginas legales.
+for page in terminos.html privacidad.html fuentes.html; do
+  wait_http "/${page}" || die "smoke: /${page} no respondió 200"
+  log "smoke: /${page} OK"
+done
 
 # Portada institucional y visor.
 wait_http / || die "smoke: / (Geodatos) no respondió 200"
