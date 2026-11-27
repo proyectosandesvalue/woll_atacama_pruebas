@@ -217,7 +217,7 @@ Reglas del campo geojson_meta:
 - El registro (`tools/index.js`) solo lista archivos, no define lógica.
 - Agregar una tool = 1 archivo nuevo + 1 línea en el registro.
 
-**Tools actuales (13)**: `get_layer_stats`, `get_layer_schema`, `query_layer`, `aggregate_layer`, `aggregate_by_admin`, `aggregate_by_admin_and_column`, `count_near_layer`, `aggregate_near_layer`, `get_layer_features`, `get_station_weather`, `get_historical_climate`, `list_climate_stations`, `get_arclim_forecast`.
+**Tools actuales (24)**: `get_layer_stats`, `get_layer_schema`, `get_layer_metadata`, `query_layer`, `aggregate_layer`, `aggregate_by_admin`, `aggregate_by_admin_and_column`, `compare_layers`, `rank_multicriteria`, `count_near_layer`, `aggregate_near_layer`, `spatial_overlay`, `nearest_distance`, `get_layer_features`, `get_station_weather`, `get_historical_climate`, `get_historical_series`, `list_climate_stations`, `get_arclim_forecast`, `get_wms_layer_info`, `get_wms_pixel`, `get_wms_available_dates`, `get_wms_statistics`, `search_documents`.
 
 - **Las tools no se editan desde el panel.** Son estructura y código: una tool = un archivo + una entrada en el registro. El panel las muestra como inventario de solo lectura (`GET /api/admin/chat/tools`, `editable: false`). Crear, borrar o reescribir tools desde la UI requeriría código en runtime y rompería el contrato de RPCs tipadas (6.3).
 

@@ -17,6 +17,9 @@
 > cubre consulta, exploración, conteos y comparaciones. Este documento cubre la
 > capa analítica que viene después: métodos, modelos y decisiones.
 >
+> **Análisis de capacidad:** [`docs/analisis-capacidad-chat-ia.md`](analisis-capacidad-chat-ia.md)
+> — por qué el chat actual no puede resolver estas preguntas y qué falta.
+>
 > **Principio:** una pregunta profunda no siempre exige que el portal calcule
 > todo. Puede responderse de tres formas:
 >

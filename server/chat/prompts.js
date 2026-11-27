@@ -15,6 +15,7 @@
 import { getDB } from "../db/pool.js";
 import { retrieveLayers, splitCatalog } from "./layer-retrieval.js";
 import { getCatalog } from "./catalog.js";
+import { buildWmsPromptBlock } from "./wms-catalog.js";
 
 /** Log de diagnóstico: activar con ORCHESTRATOR_DEBUG=1 */
 const DEBUG = /^(1|true|yes)$/i.test(process.env.ORCHESTRATOR_DEBUG || "");
@@ -38,7 +39,7 @@ let _documentPromptCache = { content: null, time: 0 };
 export const SYSTEM_PROMPT_BASE = `Eres un analista territorial de la Región de Atacama (Chile).
 Tu trabajo es responder preguntas sobre datos territoriales usando tools que consultan la base de datos real.
 
-TIENES 14 TOOLS. Elige la correcta según el TIPO de pregunta:
+TIENES 24 TOOLS. Elige la correcta según el TIPO de pregunta:
 
 === CAPAS TERRITORIALES ===
 PREGUNTAS DE CONTEO CON AGRUPACIÓN ADMINISTRATIVA:
@@ -47,23 +48,62 @@ PREGUNTAS DE CONTEO POR COLUMNA:
   "¿cuántos X por tipo?" → aggregate_layer
 PREGUNTAS DE DOBLE AGRUPACIÓN:
   "¿cuántos X por comuna según tipo?" → aggregate_by_admin_and_column
+COMPARAR CAPAS:
+  "compara X y Y por comuna" / "X versus Y" → compare_layers
+  (2-4 capas, una sola llamada)
+RANKING MULTICRITERIO:
+  "prioriza comunas según X e Y", "ranking con pesos" → rank_multicriteria
+  (2-6 criterios; si faltan pesos, pídelos; no los inventes)
 PREGUNTAS DE PROXIMIDAD:
   "cerca de Y" → count_near_layer o aggregate_near_layer
+INTERSECCIÓN / CONTENCIÓN / SUPERFICIE:
+  "dentro de", "se superpone", "cuánta superficie" → spatial_overlay
+  operation: intersects | within | area
+DISTANCIA MÍNIMA:
+  "distancia a", "qué tan lejos", "el más cercano" → nearest_distance
 PREGUNTAS DE LISTADO DE CAPAS:
   "¿cuáles son los X?" → query_layer
+FILTROS AVANZADOS:
+  "mayor a", "menor a", "entre", "en la lista" → query_layer o aggregate_*
+  con conditions: [{field, op, value|values}]
+TOP-N / ORDEN:
+  "el más", "el mayor", "top 10", "ordena por" → query_layer con
+  order_by y limit
 GEOMETRÍAS PARA EL MAPA:
   "muéstrame en el mapa" → get_layer_features
+METADATOS DE CAPA:
+  "fuente", "fecha", "escala", "licencia", "cómo cito" → get_layer_metadata
 ESTADÍSTICAS DE UNA CAPA:
   → get_layer_stats
+
+=== WMS / SATÉLITE ===
+METADATOS DE CAPA WMS/COPERNICUS:
+  "¿qué capas satelitales hay?", "¿qué mide el NDVI?", "¿qué fechas tiene?"
+  → get_wms_layer_info
+PÍXEL COPERNICUS:
+  "¿qué color/escena/nubosidad hay en Copiapó para NDVI?"
+  → get_wms_pixel (comuna o lat/lon; devuelve RGB, fecha, nubosidad y escena)
+FECHAS DISPONIBLES:
+  "¿qué fechas hay para NDVI?", "¿cuándo hay imágenes?"
+  → get_wms_available_dates (comuna o Atacama; año/mes opcional)
+ESTADÍSTICAS NUMÉRICAS:
+  "¿cuál es el NDVI promedio en Copiapó?", "¿cómo cambió el NDWI?"
+  → get_wms_statistics (media, mín, máx, serie; requiere credenciales)
+  IMPORTANTE: el color no es el valor numérico del índice. No inventes NDVI/NDWI.
+  Para un valor puntual sin estadística usa get_wms_pixel; para estadística usa get_wms_statistics.
 
 === CLIMA Y METEOROLOGÍA ===
 CLIMA ACTUAL (en vivo):
   "¿cuál es la temperatura en Copiapó?", "¿qué humedad hay en Vallenar?"
   → get_station_weather
-CLIMA HISTÓRICO:
+CLIMA HISTÓRICO (RESUMEN):
   "¿cuánto llovió en 1997?", "temperatura mínima histórica en Iglesia Colorada",
   "promedio de caudal del Río Copiapó en 2010"
   → get_historical_climate
+SERIE COMPLETA / TENDENCIA:
+  "¿cómo varió el caudal entre 2010 y 2024?", "tendencia", "serie completa",
+  "gráfico de la serie"
+  → get_historical_series
 LISTAR ESTACIONES:
   "¿qué estaciones hay en Atacama?",
   "¿qué estaciones reportan en vivo?",
@@ -72,7 +112,7 @@ LISTAR ESTACIONES:
   "¿cuáles son las estaciones de la red?",
   → list_climate_stations
 
-REGLAS (23):
+REGLAS:
 
 1. ACTÚA DIRECTO. La primera acción SIEMPRE es llamar a la tool
    correcta. NO revises el esquema ni hagas consultas exploratorias
@@ -86,6 +126,18 @@ REGLAS (23):
 
 4. SOLO usa get_layer_schema si TODAS las tools fallaron por
    columna inválida. NO la uses antes de intentar.
+
+4.1. Para filtros numéricos o listas usa "conditions":
+   [{"field":"caudal","op":"gt","value":"100"}]
+   [{"field":"comuna","op":"in","values":["Copiapó","Vallenar"]}]
+   No metas operadores dentro de un filtro objeto.
+
+4.2. Para top-N o rankings usa query_layer con order_by y limit.
+   Ej: "los 10 derechos con más caudal" → order_by="Caudal Anual Promedio en Ls/s",
+   order_dir="desc", limit=10.
+
+4.3. Para series completas o tendencias usa get_historical_series;
+   para un resumen rápido usa get_historical_climate.
 
 5. Responde en español, con nivel de detalle según la pregunta:
    - Pregunta simple (conteo, ubicación): 2-4 frases.
@@ -223,7 +275,8 @@ REGLAS (23):
 
 23. PROYECCIONES CLIMÁTICAS (ARClim)
     Si el usuario pregunta por el clima futuro, proyecciones, o el impacto del cambio climático para una comuna de Atacama (ej. "¿cuántos días de calor habrá en Vallenar en 2050?"), utiliza SIEMPRE la herramienta "get_arclim_forecast".
-    - Pasa la "comuna" y el "indicador" (tasmax_mean, hot_days, pr_sum, frost_days, tasmin_mean).
+    - Pasa la "comuna" y el "indicador". Hay 26 indicadores: hot_days, consecutive_days_over_30C, very_hot_days, tropical_nights, ola_calor_compuesto_dmc, tasmax_mean, tasmin_mean, mean_temperature, daily_temperature_range, hottest_day, coldest_night, frost_days, frost_days_below_minus_2_degrees, ice_days, cold_spell_duration_index_short, pr_sum, max_5day_precip, number_of_heavy_precipitation_days, consecutive_dry_days, drought_periods, spi, vel_mean, rsds_mean, rsds_max, hurs_mean, huss_mean.
+    - Para comparar o rankear comunas, pasa "comunas" como array o omite comuna para recibir todas.
     - En tu respuesta final, menciona explícitamente los valores histórico, SSP2-4.5 y SSP5-8.5 para dar contexto, y cita que la fuente es ARClim (MMA).
 `;
 
@@ -444,7 +497,11 @@ export async function buildSystemPrompt(userText = "", history = [], deps = {}) 
     (documentRules ? "\n\n" + documentRules : "") +
     verboseRules;
   const full =
-    promptConReglas + historyBlock + "\nCATÁLOGO DE CAPAS:\n" + catalogBlock;
+    promptConReglas +
+    historyBlock +
+    "\nCATÁLOGO DE CAPAS:\n" +
+    catalogBlock +
+    buildWmsPromptBlock();
 
     dbg(
     `system prompt: base=${promptConReglas.length} chars | ` +

@@ -82,6 +82,49 @@ export function compact(name, out, ctx) {
     };
   }
 
+  if (name === "get_historical_series" && r && Array.isArray(r.values)) {
+    const values = r.values.slice(-40);
+    return {
+      ...r,
+      values,
+      _hint:
+        `Serie truncada a los últimos ${values.length} de ${r.values.length} puntos. ` +
+        "Usa stats para el rango completo.",
+    };
+  }
+
+  if (name === "compare_layers" && r && Array.isArray(r.layers)) {
+    return {
+      ...r,
+      layers: r.layers.map((layer) => ({
+        ...layer,
+        data: Array.isArray(layer.data) ? layer.data.slice(0, 40) : layer.data,
+      })),
+    };
+  }
+
+  if (name === "rank_multicriteria" && r && Array.isArray(r.ranking)) {
+    return {
+      ...r,
+      ranking: r.ranking.slice(0, 20).map((row, index) => ({
+        ...row,
+        contributions: index < 5 ? row.contributions : undefined,
+      })),
+    };
+  }
+
+  if (name === "get_wms_available_dates" && r && Array.isArray(r.dates)) {
+    return {
+      ...r,
+      dates: r.dates.slice(0, 30),
+      total: r.dates.length,
+      _hint:
+        r.dates.length > 30
+          ? `Mostrando 30 de ${r.dates.length} fechas.`
+          : undefined,
+    };
+  }
+
   if (name === "get_layer_stats" && r && Array.isArray(r.attributes)) {
     return {
       ...r,
@@ -212,6 +255,27 @@ function detectUsedColumns(userText, catalogAttrs) {
   return used;
 }
 
+/**
+ * Extrae todos los layer_ids que una tool pudo usar, incluyendo las tools
+ * multi-capa (compare, rank, overlay, nearest).
+ * @param {object} args
+ * @returns {string[]}
+ */
+function collectLayerIdsFromArgs(args = {}) {
+  const ids = new Set();
+  const add = (value) => {
+    if (typeof value === "string" && value.trim()) ids.add(value.trim());
+  };
+  add(args.layer_id);
+  if (Array.isArray(args.layer_ids)) args.layer_ids.forEach(add);
+  add(args.layer_id_source);
+  if (Array.isArray(args.layer_id_targets)) args.layer_id_targets.forEach(add);
+  if (Array.isArray(args.criteria)) {
+    for (const criterion of args.criteria) add(criterion?.layer_id);
+  }
+  return [...ids];
+}
+
 export async function buildEvidence(ctx, userText, catalog) {
   const citations = [];
   const coverageWarnings = [];
@@ -223,14 +287,22 @@ export async function buildEvidence(ctx, userText, catalog) {
   const layerIds = new Set();
   for (const t of ctx.trace) {
     if (!t.ok) continue;
-    const lid = t.args?.layer_id;
-    if (typeof lid === "string" && lid.length > 0) {
+    for (const lid of collectLayerIdsFromArgs(t.args)) {
       layerIds.add(lid);
       citations.push({
         type: "layer",
         layer_id: lid,
         tool: t.tool,
         label: lid,
+      });
+    }
+    if (t.tool === "get_historical_series" && t.args?.codigo) {
+      citations.push({
+        type: "climate",
+        station: String(t.args.codigo),
+        indicator: t.args.indicator || null,
+        tool: t.tool,
+        label: `Estación ${t.args.codigo}`,
       });
     }
   }
@@ -265,13 +337,42 @@ export async function buildEvidence(ctx, userText, catalog) {
     const key =
       c.type === "document"
         ? `document:${c.document_slug}:${c.page_start}:${c.page_end}`
-        : `${c.layer_id}:${c.tool}`;
+        : c.type === "climate"
+          ? `climate:${c.station}:${c.indicator}`
+          : `${c.layer_id}:${c.tool}`;
     if (seenCitations.has(key)) continue;
     seenCitations.add(key);
     if (c.type === "layer") {
       c.label = catalogMap.get(c.layer_id) || c.layer_id;
     }
     uniqueCitations.push(c);
+  }
+
+  // Enriquecer citas de capa con metadatos de procedencia (si existen).
+  const layerCitations = uniqueCitations.filter((c) => c.type === "layer");
+  if (layerCitations.length > 0) {
+    try {
+      const db = await getDB();
+      const rows =
+        (await db.rpc("chat_layers_metadata", {
+          p_layers: [...new Set(layerCitations.map((c) => c.layer_id))],
+        })) ?? [];
+      const byLayer = new Map(rows.map((row) => [row.layer_id, row]));
+      for (const citation of layerCitations) {
+        const meta = byLayer.get(citation.layer_id);
+        if (!meta) continue;
+        citation.source = meta.source || null;
+        citation.source_url = meta.source_url || null;
+        citation.updated_at = meta.data_updated_at || null;
+        citation.scale = meta.scale || null;
+        citation.license = meta.license || null;
+        citation.method = meta.method || null;
+        citation.coverage = meta.coverage || null;
+        citation.limitations = meta.limitations || null;
+      }
+    } catch (err) {
+      dbg(`chat_layers_metadata falló: ${err?.message || err}`);
+    }
   }
 
   for (const lid of layerIds) {

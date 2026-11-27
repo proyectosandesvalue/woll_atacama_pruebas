@@ -1301,6 +1301,15 @@ preguntas pendientes para triage operativo.
 Bitácora cronológica descendente. Se actualiza al cierre de cada sesión.
 
 ### 2026-11-27
+- ✅ **Chat IA: precisión y análisis espacial (tools 14→24):** filtros
+  avanzados (`conditions` con `gt/gte/lt/lte/in/between`) y orden/top-N en
+  `query_layer`; nuevas tools `get_layer_metadata`, `compare_layers`,
+  `rank_multicriteria`, `spatial_overlay`, `nearest_distance`,
+  `get_historical_series`; catálogo WMS de 22 capas con `get_wms_layer_info`,
+  `get_wms_pixel`, `get_wms_available_dates` y `get_wms_statistics`; ARClim
+  ampliado a 26 indicadores con multi-comuna y caché. Migraciones `067`–`073`.
+  `npm test` 699 pass / 0 fail. Queda cargar metadatos, ampliar el golden set
+  profundo, WMS IDE por píxel y el resto del motor de recetas (Sprint 41).
 - ✅ **32-A/B/C (marco legal y privacidad):** páginas `terminos.html`,
   `privacidad.html` y `fuentes.html` con `css/legal.css`, enlazadas desde la
   portada, el visor y la ayuda. `docs/RETENTION.md` + migración

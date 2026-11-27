@@ -22,12 +22,41 @@ export default {
           filters: {
             type: "object",
             additionalProperties: true,
+            description:
+              "Filtros simples por columna=valor. Para rangos numéricos, listas o between usa conditions.",
+          },
+          conditions: {
+            type: "array",
+            description:
+              "Filtros avanzados: [{field, op, value|values}]. " +
+              "op válido: match, eq, in, ilike, gt, gte, lt, lte, between.",
+            items: {
+              type: "object",
+              properties: {
+                field: { type: "string" },
+                op: { type: "string" },
+                value: { type: "string" },
+                values: { type: "array", items: { type: "string" } },
+              },
+              required: ["field", "op"],
+            },
           },
           limit: {
             type: "integer",
             description: "Máximo de filas (default 20, máximo 50).",
             minimum: 1,
             maximum: 50,
+          },
+          order_by: {
+            type: "string",
+            description:
+              "Columna para ordenar. Úsala con limit para top-N. " +
+              "Ej: 'Caudal Anual Promedio en Ls/s'.",
+          },
+          order_dir: {
+            type: "string",
+            enum: ["asc", "desc"],
+            description: "Dirección del orden (default desc).",
           },
         },
         required: ["layer_id"],
@@ -36,35 +65,14 @@ export default {
     },
   },
 
-  run: async ({ layer_id, filters, limit }) => {
-  const db = await getDB();
-  return db.rpc("chat_query", {
-    p_layer: layer_id,
-    p_filters: normalizeFilters(filters),
-    p_limit: limit ?? 20,
-  });
-},
+  run: async ({ layer_id, filters, limit, order_by, order_dir }) => {
+    const db = await getDB();
+    return db.rpc("chat_query", {
+      p_layer: layer_id,
+      p_filters: filters ?? {},
+      p_limit: limit ?? 20,
+      p_order_by: order_by ?? null,
+      p_order_dir: order_dir ?? "desc",
+    });
+  },
 };
-
-/**
- * Normaliza un valor de filtro: quita tildes y espacios extra.
- * El ILIKE de la RPC hará el match case-insensitive.
- */
-function normalizeFilterValue(value) {
-  if (value === null || value === undefined) return value;
-  if (typeof value !== "string") return value;
-  return value
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");  // quitar tildes
-}
-
-function normalizeFilters(filters) {
-  if (!filters || typeof filters !== "object") return {};
-  const out = {};
-  for (const [key, value] of Object.entries(filters)) {
-    if (value === null || value === undefined) continue;
-    out[key] = normalizeFilterValue(value);
-  }
-  return out;
-}

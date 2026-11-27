@@ -53,6 +53,17 @@ test("usa el fallback DOCUMENT_RULES si la BD falla", async () => {
   assert.match(prompt, /NO CONFIABLE/);
 });
 
+test("incluye el bloque WMS/Copernicus", async () => {
+  _resetPromptCache();
+  const prompt = await buildSystemPrompt("NDVI en Copiapó", [], {
+    db: fakeDb(),
+    catalog: [],
+  });
+  assert.match(prompt, /CAPAS WMS\/SATELITALES/);
+  assert.match(prompt, /copernicus_ndvi/);
+  assert.match(prompt, /get_wms_pixel/);
+});
+
 test("DOCUMENT_RULES prohíbe usar documentos para conteos", () => {
   assert.match(DOCUMENT_RULES, /search_documents/);
   assert.match(DOCUMENT_RULES, /NO la uses para conteos/);

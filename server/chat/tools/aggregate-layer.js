@@ -31,6 +31,24 @@ export default {
           filters: {
             type: "object",
             additionalProperties: true,
+            description:
+              "Filtros simples por columna=valor. Para rangos numéricos, listas o between usa conditions.",
+          },
+          conditions: {
+            type: "array",
+            description:
+              "Filtros avanzados: [{field, op, value|values}]. " +
+              "op válido: match, eq, in, ilike, gt, gte, lt, lte, between.",
+            items: {
+              type: "object",
+              properties: {
+                field: { type: "string" },
+                op: { type: "string" },
+                value: { type: "string" },
+                values: { type: "array", items: { type: "string" } },
+              },
+              required: ["field", "op"],
+            },
           },
         },
         required: ["layer_id", "group_by"],

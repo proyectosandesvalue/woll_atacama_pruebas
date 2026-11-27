@@ -129,7 +129,9 @@ function renderCitations(citations, container) {
   for (const c of citations) {
     if (!c || typeof c !== "object") continue;
     if (c.type === "document" && c.title) documents.push(c);
-    else if (c.type === "layer" || c.layer_id) layers.push(c);
+    else if (c.type === "layer" || c.type === "climate" || c.layer_id) {
+      layers.push(c);
+    }
   }
   if (documents.length === 0 && layers.length === 0) return;
 
@@ -189,7 +191,7 @@ function renderCitations(citations, container) {
   for (const c of layers) {
     const tag = document.createElement("span");
     tag.className = "ai-source-tag";
-    tag.textContent = c.label || c.layer_id || "Capa";
+    tag.textContent = c.label || c.station || c.layer_id || "Fuente";
     wrap.appendChild(tag);
   }
 

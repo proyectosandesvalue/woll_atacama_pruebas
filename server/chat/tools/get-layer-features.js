@@ -28,7 +28,24 @@ export default {
           filters: {
             type: "object",
             additionalProperties: true,
-            description: "Filtros opcionales por columna=valor.",
+            description:
+              "Filtros simples por columna=valor. Para rangos numéricos, listas o between usa conditions.",
+          },
+          conditions: {
+            type: "array",
+            description:
+              "Filtros avanzados: [{field, op, value|values}]. " +
+              "op válido: match, eq, in, ilike, gt, gte, lt, lte, between.",
+            items: {
+              type: "object",
+              properties: {
+                field: { type: "string" },
+                op: { type: "string" },
+                value: { type: "string" },
+                values: { type: "array", items: { type: "string" } },
+              },
+              required: ["field", "op"],
+            },
           },
           limit: {
             type: "integer",
@@ -50,11 +67,11 @@ export default {
     },
   },
 
-    run: async ({ layer_id, filters, limit, color_by }) => {
+  run: async ({ layer_id, filters, limit, color_by }) => {
   const db = await getDB();
   const result = await db.rpc("chat_layer_features", {
     p_layer: layer_id,
-    p_filters: normalizeFilters(filters),
+    p_filters: filters ?? {},
     p_limit: limit ?? 500,
   });
 
@@ -65,26 +82,3 @@ export default {
   };
 },
 };
-
-/**
- * Normaliza un valor de filtro: quita tildes y espacios extra.
- * El ILIKE de la RPC hará el match case-insensitive.
- */
-function normalizeFilterValue(value) {
-  if (value === null || value === undefined) return value;
-  if (typeof value !== "string") return value;
-  return value
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");  // quitar tildes
-}
-
-function normalizeFilters(filters) {
-  if (!filters || typeof filters !== "object") return {};
-  const out = {};
-  for (const [key, value] of Object.entries(filters)) {
-    if (value === null || value === undefined) continue;
-    out[key] = normalizeFilterValue(value);
-  }
-  return out;
-}

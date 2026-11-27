@@ -117,15 +117,89 @@ test("normalizeArgs convierte filters null a objeto vacío", () => {
   assert.deepStrictEqual(out.filters, {});
 });
 
-test("normalizeArgs convierte filters array a objeto vacío", () => {
+test("normalizeArgs convierte filters array inválido a objeto vacío", () => {
   const out = normalizeArgs("query_layer", { layer_id: "x", filters: [1, 2] });
   assert.deepStrictEqual(out.filters, {});
+});
+
+test("normalizeArgs preserva filters array válido", () => {
+  const filters = [{ field: "caudal", op: "gt", value: "100" }];
+  const out = normalizeArgs("query_layer", { layer_id: "x", filters });
+  assert.deepStrictEqual(out.filters, filters);
 });
 
 test("normalizeArgs preserva filters válido", () => {
   const filters = { comuna: "Copiapó" };
   const out = normalizeArgs("query_layer", { layer_id: "x", filters });
-  assert.deepStrictEqual(out.filters, filters);
+  assert.deepStrictEqual(out.filters, [
+    { field: "comuna", op: "match", value: "Copiapó" },
+  ]);
+});
+
+test("normalizeArgs combina filters y conditions", () => {
+  const out = normalizeArgs("query_layer", {
+    layer_id: "x",
+    filters: { comuna: "Copiapó" },
+    conditions: [{ field: "caudal", op: "gte", value: "50" }],
+  });
+  assert.deepStrictEqual(out.filters, [
+    { field: "comuna", op: "match", value: "Copiapó" },
+    { field: "caudal", op: "gte", value: "50" },
+  ]);
+  assert.strictEqual(out.conditions, undefined);
+});
+
+test("normalizeArgs convierte value array a condición in", () => {
+  const out = normalizeArgs("query_layer", {
+    layer_id: "x",
+    filters: { comuna: ["Copiapó", "Vallenar"] },
+  });
+  assert.deepStrictEqual(out.filters, [
+    { field: "comuna", op: "in", values: ["Copiapó", "Vallenar"] },
+  ]);
+});
+
+test("normalizeArgs descarta conditions inválidas", () => {
+  const out = normalizeArgs("query_layer", {
+    layer_id: "x",
+    conditions: [
+      { field: "caudal", op: "gt" },
+      { field: "comuna", op: "in", value: "Copiapó" },
+      { field: "comuna", op: "between", values: ["a"] },
+      { field: "comuna", op: "eq", value: "Copiapó" },
+    ],
+  });
+  assert.deepStrictEqual(out.filters, [
+    { field: "comuna", op: "eq", value: "Copiapó" },
+  ]);
+});
+
+test("normalizeArgs acota conditions a 20", () => {
+  const conditions = Array.from({ length: 25 }, (_, i) => ({
+    field: `campo_${i}`,
+    op: "eq",
+    value: "x",
+  }));
+  const out = normalizeArgs("query_layer", { layer_id: "x", conditions });
+  assert.equal(out.filters.length, 20);
+});
+
+test("normalizeArgs normaliza order_by y order_dir", () => {
+  const out = normalizeArgs("query_layer", {
+    layer_id: "x",
+    order_by: "  Caudal  ",
+    order_dir: "ASC",
+  });
+  assert.equal(out.order_by, "Caudal");
+  assert.equal(out.order_dir, "asc");
+});
+
+test("normalizeArgs degrada order_dir inválido a desc", () => {
+  const out = normalizeArgs("query_layer", {
+    layer_id: "x",
+    order_dir: "arriba",
+  });
+  assert.equal(out.order_dir, "desc");
 });
 
 test("normalizeArgs no toca filters si no está presente", () => {
@@ -242,6 +316,41 @@ test("normalizeArgs preserva distance_m válido", () => {
 test("normalizeArgs no toca distance_m en tools que no lo usan", () => {
   const out = normalizeArgs("query_layer", { layer_id: "x", distance_m: 123 });
   assert.strictEqual(out.distance_m, 123);
+});
+
+// ── compare_layers ────────────────────────────────────────────
+
+test("normalizeArgs limpia y acota layer_ids de compare_layers", () => {
+  const out = normalizeArgs("compare_layers", {
+    layer_ids: ["glaciares", "glaciares", "humedales", "derechos", "volcanes", "x"],
+    admin_level: "COMUNA",
+  });
+  assert.deepStrictEqual(out.layer_ids, [
+    "glaciares",
+    "humedales",
+    "derechos",
+    "volcanes",
+  ]);
+  assert.equal(out.admin_level, "comuna");
+});
+
+test("normalizeArgs deja layer_ids vacío si compare_layers no recibe array", () => {
+  const out = normalizeArgs("compare_layers", {
+    layer_ids: "glaciares",
+    admin_level: "comuna",
+  });
+  assert.deepStrictEqual(out.layer_ids, []);
+});
+
+test("normalizeArgs valida metric de compare_layers", () => {
+  const out = normalizeArgs("compare_layers", {
+    layer_ids: ["a", "b"],
+    admin_level: "comuna",
+    metric: "sum",
+    field: "superficie",
+  });
+  assert.equal(out.metric, "sum");
+  assert.equal(out.field, "superficie");
 });
 
 // ── Inmutabilidad del objeto original ──────────────────────────

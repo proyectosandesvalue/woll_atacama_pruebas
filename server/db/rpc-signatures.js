@@ -65,6 +65,8 @@ export const RPC_SIGNATURES = Object.freeze({
       p_filters: jsonb,
       p_limit: int,
       p_offset: int,
+      p_order_by: text,
+      p_order_dir: text,
     },
     returns: "value",
   },
@@ -126,6 +128,40 @@ export const RPC_SIGNATURES = Object.freeze({
       p_admin_level: text,
       p_filters: jsonb,
     },
+    returns: "value",
+  },
+  chat_spatial_overlay: {
+    schema: "public",
+    params: {
+      p_layer_source: text,
+      p_layer_targets: textArray,
+      p_operation: text,
+      p_filters: jsonb,
+    },
+    returns: "value",
+  },
+  chat_nearest_distance: {
+    schema: "public",
+    params: {
+      p_layer_source: text,
+      p_layer_targets: textArray,
+      p_filters: jsonb,
+    },
+    returns: "value",
+  },
+  chat_layers_metadata: {
+    schema: "public",
+    params: { p_layers: textArray },
+    returns: "value",
+  },
+  chat_comuna_centroid: {
+    schema: "public",
+    params: { p_comuna: text },
+    returns: "value",
+  },
+  chat_comuna_geometry: {
+    schema: "public",
+    params: { p_comuna: text },
     returns: "value",
   },
   chat_column_coverage: {
@@ -429,6 +465,17 @@ export const RPC_SIGNATURES = Object.freeze({
       p_indicator: text,
       p_year_start: int,
       p_year_end: int,
+    },
+    returns: "value",
+  },
+  chat_historical_series: {
+    schema: "public",
+    params: {
+      p_codigo: text,
+      p_indicator: text,
+      p_year_start: int,
+      p_year_end: int,
+      p_limit: int,
     },
     returns: "value",
   },

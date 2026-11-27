@@ -82,6 +82,8 @@ CONTRAEJEMPLOS (pipeline = null porque el orquestador lo resuelve mejor):
 REGLA CRÍTICA: si la pregunta contiene "cerca de", "a menos de",
 "concentración", "más grande", "compara", o está en inglés,
 pipeline = null (excepto proximidad_conteo, que sí matchea "a menos de N metros de Y").
+Si la pregunta usa rangos numéricos ("más de", "menos de", "entre", ">", "<"),
+pipeline = null: el orquestador usará query_layer con conditions.
 
 4. slots = datos concretos que puedes extraer de la pregunta:
    - layer_id: el id de la capa (ej: "derechos_agua_2025"). Si no

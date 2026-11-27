@@ -8,7 +8,7 @@ import {
   TOOL_RUNNERS,
   TOOL_NAMES,
 } from "./tools/index.js";
-import { normalizeArgs, withTimeout, RPC_TIMEOUT_MS } from "./tools/_helpers.js";
+import { normalizeArgs, withTimeout, timeoutForTool } from "./tools/_helpers.js";
 import { runWithDbSignal } from "../db/context.js";
 
 /**
@@ -18,8 +18,18 @@ import { runWithDbSignal } from "../db/context.js";
 const TOOLS_WITHOUT_LAYER_ID = new Set([
   "get_station_weather",
   "get_historical_climate",
+  "get_historical_series",
   "list_climate_stations",
   "get_arclim_forecast",
+  "get_wms_layer_info",
+  "get_wms_pixel",
+  "get_wms_available_dates",
+  "get_wms_statistics",
+  "compare_layers",
+  "rank_multicriteria",
+  "spatial_overlay",
+  "nearest_distance",
+  "get_layer_metadata",
   "search_documents",
 ]);
 
@@ -50,7 +60,7 @@ export async function runTool(name, rawArgs) {
     const controller = new AbortController();
     const result = await withTimeout(
       runWithDbSignal(controller.signal, () => fn(args)),
-      RPC_TIMEOUT_MS,
+      timeoutForTool(name),
       controller
     );
     return { ok: true, result };

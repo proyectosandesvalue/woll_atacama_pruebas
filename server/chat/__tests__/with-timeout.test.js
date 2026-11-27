@@ -1,7 +1,19 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { withTimeout } from "../tools/_helpers.js";
+import {
+  withTimeout,
+  timeoutForTool,
+  RPC_TIMEOUT_MS,
+  TOOL_TIMEOUTS,
+} from "../tools/_helpers.js";
+
+test("timeoutForTool usa 6 s por defecto y más para WMS", () => {
+  assert.equal(timeoutForTool("query_layer"), RPC_TIMEOUT_MS);
+  assert.equal(timeoutForTool("get_wms_statistics"), 25000);
+  assert.equal(timeoutForTool("get_wms_available_dates"), 15000);
+  assert.ok(TOOL_TIMEOUTS.get_wms_statistics > RPC_TIMEOUT_MS);
+});
 
 test("resuelve si la promesa termina antes del timeout", async () => {
   const controller = new AbortController();

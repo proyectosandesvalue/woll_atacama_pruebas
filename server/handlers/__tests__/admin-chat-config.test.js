@@ -74,7 +74,7 @@ test("chat tools es un inventario de solo lectura", () => {
   const result = handleChatTools(ctx());
   assert.equal(result.status, 200);
   assert.equal(result.body.editable, false);
-  assert.equal(result.body.items.length, 14);
+  assert.equal(result.body.items.length, 24);
   assert.ok(result.body.items.every((item) => item.name && item.parameters));
   assert.match(result.body.reason, /código/);
 });

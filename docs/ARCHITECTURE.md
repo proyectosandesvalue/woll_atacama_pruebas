@@ -270,7 +270,7 @@ orchestrator.js	Solo el bucle ReAct + imports.
 4.4. server/chat/capabilities/
 Router determinístico (40-C):
 
-registry.js: 9 tools atómicas de capas + 4 pipelines declarativos. Las 4 tools de clima (`get_station_weather`, `get_historical_climate`, `list_climate_stations`, `get_arclim_forecast`) no están en el registro: las invoca el orquestador directamente.
+registry.js: 9 tools atómicas de capas + 4 pipelines declarativos. Las tools nuevas de análisis (`get_layer_metadata`, `compare_layers`, `rank_multicriteria`, `spatial_overlay`, `nearest_distance`), las 4 de WMS/Copernicus (`get_wms_layer_info`, `get_wms_pixel`, `get_wms_available_dates`, `get_wms_statistics`), las 5 de clima (`get_station_weather`, `get_historical_climate`, `get_historical_series`, `list_climate_stations`, `get_arclim_forecast`) y la documental no están en el registro: las invoca el orquestador directamente.
 
 pipelines.js: executePipeline() con Promise.allSettled. Sustituye slots ($layer_id, $filters, $group_by, $color_by). Resuelve aggregate_by_admin vs aggregate_layer según group_by.
 
@@ -299,22 +299,32 @@ Env vars tienen prioridad sobre la BD (para tests y overrides rápidos).
 4.6. server/chat/tools/
 Una tool por archivo. Cada archivo exporta { schema, run }.
 
-Tools actuales (14; las 9 primeras son las que conoce el router):
+Tools actuales (24; el router solo conoce las 9 originales de capas):
 
 Tool	Propósito
 get_layer_stats	Estadísticas generales de una capa.
 get_layer_schema	Schema real (columnas + top values).
-query_layer	Filas concretas (listado).
+get_layer_metadata	Fuente, fecha, escala, licencia, método y limitaciones.
+query_layer	Filas concretas (listado, filtros, orden y top-N).
 aggregate_layer	Agregación por una columna.
 aggregate_by_admin	Agregación por comuna/provincia/región vía ST_Intersects.
 aggregate_by_admin_and_column	Doble agrupación (admin + columna).
+compare_layers	Comparación de 2-4 capas por admin en una llamada.
+rank_multicriteria	Ranking multicriterio simple con pesos y normalización min-max.
 count_near_layer	Conteo por proximidad.
 aggregate_near_layer	Agregación por proximidad, agrupada por admin.
+spatial_overlay	Intersección, contención y superficie entre capas.
+nearest_distance	Distancia mínima, promedio y máxima a la capa objetivo.
 get_layer_features	FeatureCollection para pintar en el mapa.
 get_station_weather	Clima observado de una estación meteorológica.
-get_historical_climate	Series históricas de estaciones (DGA/DGAC).
+get_historical_climate	Series históricas de estaciones (DGA/DGAC), resumen y últimos 12 valores.
+get_historical_series	Serie temporal completa (hasta 5.000 puntos) de una estación/indicador.
 list_climate_stations	Listado de estaciones meteorológicas disponibles.
 get_arclim_forecast	Proyecciones climáticas ARClim por comuna y escenario.
+get_wms_layer_info	Metadatos de capas WMS/Copernicus (leyenda, rango, fechas).
+get_wms_pixel	Píxel Copernicus: color RGB, fecha, nubosidad y escena.
+get_wms_available_dates	Fechas con imágenes disponibles en Copernicus para un área.
+get_wms_statistics	Estadísticas numéricas de un índice Copernicus por comuna y fecha.
 search_documents	Fragmentos documentales de `rag.chunks` con cita (Sprint 18-D).
 El registro está en tools/index.js. `getToolDefinitions({documentsEnabled})`
 quita `search_documents` cuando el RAG está desactivado. _helpers.js contiene
@@ -688,7 +698,7 @@ chat_layer_stats(layer_id) — stats de una capa.
 
 chat_layer_schema(layer_id) — schema real (columnas + top values).
 
-chat_query(layer_id, filters, limit, offset) — filas concretas.
+chat_query(layer_id, filters, limit, offset, order_by, order_dir) — filas concretas con orden y top-N.
 
 chat_aggregate(layer_id, group_by, metric, field, filters) — agregación por columna.
 
@@ -699,6 +709,18 @@ chat_aggregate_by_admin_and_column(...) — doble agrupación.
 chat_count_near_layer(source, targets, distance_m, filters) — conteo por proximidad.
 
 chat_aggregate_near_layer(source, targets, distance_m, admin_level, filters) — agregación por proximidad.
+
+chat_spatial_overlay(source, targets, operation, filters) — intersección, contención y superficie.
+
+chat_nearest_distance(source, targets, filters) — distancia mínima, promedio y máxima.
+
+chat_historical_series(estacion, indicador, año_inicio, año_fin, limit) — serie completa.
+
+chat_layers_metadata(layers[]) — fuente, fecha, escala, licencia y método.
+
+chat_comuna_centroid(comuna) — centroide comunal para muestrear un píxel WMS.
+
+chat_comuna_geometry(comuna) — polígono GeoJSON y bbox para estadísticas Copernicus.
 
 chat_refresh_stats() — recalcula stats de todas las capas.
 

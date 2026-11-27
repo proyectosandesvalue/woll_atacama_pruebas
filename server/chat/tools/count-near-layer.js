@@ -45,6 +45,22 @@ export default {
             description: "Filtros opcionales sobre la capa fuente.",
             additionalProperties: true,
           },
+          conditions: {
+            type: "array",
+            description:
+              "Filtros avanzados sobre la capa fuente: [{field, op, value|values}]. " +
+              "op válido: match, eq, in, ilike, gt, gte, lt, lte, between.",
+            items: {
+              type: "object",
+              properties: {
+                field: { type: "string" },
+                op: { type: "string" },
+                value: { type: "string" },
+                values: { type: "array", items: { type: "string" } },
+              },
+              required: ["field", "op"],
+            },
+          },
         },
         required: ["layer_id_source", "layer_id_targets", "distance_m"],
         additionalProperties: false,
