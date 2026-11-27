@@ -12,6 +12,10 @@
   },
   "rewrites": [
     {
+      "source": "/api/chat/info",
+      "destination": "/api/chat-info.js"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/$1.js"
     },

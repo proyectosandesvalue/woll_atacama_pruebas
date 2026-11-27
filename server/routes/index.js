@@ -13,6 +13,7 @@ import { adminTaxonomyRoutes } from "./admin-taxonomy.js";
 import { adminUnansweredRoutes } from "./admin-unanswered.js";
 import { arclimRoute } from "./arclim.js";
 import { chatRoute, feedbackRoute } from "./chat.js";
+import { chatInfoRoute } from "./chat-info.js";
 import { configRoutes } from "./config.js";
 import { healthRoute, readyRoute } from "./health.js";
 import { layerRoutes } from "./layers.js";
@@ -24,6 +25,7 @@ import { taxonomyRoutes } from "./taxonomy.js";
 export const routes = [
   chatRoute,
   feedbackRoute,
+  chatInfoRoute,
   ...configRoutes,
   ...adminRoutes,
   ...adminRagRoutes,
