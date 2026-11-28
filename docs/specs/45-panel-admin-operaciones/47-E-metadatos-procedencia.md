@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | **Sprint (ROADMAP)** | 47-E (extensión de 47) |
-| **Estado de la spec** | EN EJECUCIÓN |
+| **Estado de la spec** | CERRADA |
 | **Tamaño** | Mediano |
 | **Duración estimada** | 4-6 h |
 | **Dependencias** | 47 (gestor de capas), 18-G (`chat_layers_metadata`) |
@@ -144,9 +144,9 @@ puede escribir; el grant deja el camino preparado para mínimo privilegio.
 
 | Tramo | Contenido | Horas | Estado |
 |---|---|---|---|
-| 47-E.1 | Handler, rutas, migración 076 y tests | 2 | ⏳ |
-| 47-E.2 | API client, vista, tabla, formulario y búsqueda | 2 | ⏳ |
-| 47-E.3 | Validación en VPS, docs y cierre | 1-2 | ⏳ |
+| 47-E.1 | Handler, rutas, migración 076 y tests | 2 | ✅ |
+| 47-E.2 | API client, vista, tabla, formulario y búsqueda | 2 | ✅ |
+| 47-E.3 | Validación en VPS, docs y cierre | 1-2 | ✅ |
 
 ## 7. Tests requeridos
 
@@ -187,6 +187,22 @@ puede escribir; el grant deja el camino preparado para mínimo privilegio.
 
 ## 12. Cierre
 
-- Horas reales:
-- Desvíos:
-- Lecciones:
+- **Horas reales:** ~4 h (estimado 4-6 h).
+- **Resultados:**
+  - `GET /api/admin/layer-metadata` devuelve 71 capas (200 con sesión;
+    401 sin sesión).
+  - `PUT` valida https/fecha/largos, actualiza `chat.chat_catalog` y audita
+    `layer.metadata.update`.
+  - Vista **Metadatos** en `/admin.html` con métricas, búsqueda, tabla y
+    formulario; `admin.html` la sirve y el nav la expone.
+  - Migración `076_layer_metadata_admin.sql` aplicada en el VPS (grants/policies
+    para `woll_api`).
+  - `npm test`: 732 tests, 720 pasan, 12 omitidos, 0 fallan.
+- **Desvíos:**
+  - La ruta se registra dentro de `adminLayerRoutes` para no tocar el
+    `routes/index.js` compartido con el trabajo concurrente de WMS pixel.
+  - Los 71 metadatos siguen vacíos: la UI está lista, pero la carga de
+    fuente/licencia es trabajo de datos del equipo. No se inventaron valores.
+- **Lecciones:** separar el editor de procedencia del editor de capas evita
+  mezclar la ficha pública con el catálogo del chat; el chat ya consume los
+  campos vía `chat_layers_metadata`.
