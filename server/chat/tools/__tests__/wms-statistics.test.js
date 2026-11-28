@@ -1,10 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import tool, {
+import tool from "../get-wms-statistics.js";
+import {
   bboxPolygon,
   pointBufferPolygon,
-} from "../get-wms-statistics.js";
+} from "../../../copernicus/aoi.js";
 
 test("bboxPolygon arma un polígono cerrado", () => {
   const poly = bboxPolygon([-70, -27, -69, -26]);

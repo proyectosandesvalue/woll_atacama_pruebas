@@ -10,6 +10,7 @@ import { api, setCsrfToken } from "./api.js?v=20261126";
 const VIEW_META = {
   config: { eyebrow: "Operación / Configuración", title: "Configuración del visor", mode: "solo lectura" },
   layers: { eyebrow: "Operación / Capas", title: "Gestor de capas", mode: "editable" },
+  "layer-meta": { eyebrow: "Operación / Capas", title: "Metadatos de procedencia", mode: "editable" },
   rag: { eyebrow: "Operación / Documentos", title: "Ingesta RAG", mode: "editable" },
   apis: { eyebrow: "Operación / Integraciones", title: "Conexiones externas", mode: "editable" },
   taxonomy: { eyebrow: "Operación / Taxonomía", title: "Dimensiones y capas", mode: "editable" },
@@ -30,6 +31,11 @@ const state = {
     data: null,
     loading: false,
     pollTimer: null,
+  },
+  layerMeta: {
+    data: [],
+    loading: false,
+    editing: null,
   },
   chat: {
     feedback: null,
@@ -407,6 +413,7 @@ function selectView(view) {
 
   if (view === "config" && !state.loaded.config) loadConfig();
   if (view === "layers") loadLayerManager();
+  if (view === "layer-meta") loadLayerMeta();
   if (view === "rag") loadRag();
   if (view === "apis") loadApis();
   if (view === "taxonomy") loadTaxonomy();
@@ -2224,6 +2231,164 @@ async function runRagAction(action) {
   }
 }
 
+// ── Metadatos de capas (47-E) ────────────────────────────────
+
+function layerMetaSetStatus(message, kind = "ok") {
+  const status = $("#layerMetaStatus");
+  if (!status) return;
+  status.textContent = message || "";
+  status.hidden = !message;
+  status.classList.toggle("is-error", kind === "error");
+}
+
+async function loadLayerMeta({ silent = false } = {}) {
+  if (state.layerMeta.loading) return;
+  state.layerMeta.loading = true;
+  if (!silent) setStatus("Cargando metadatos de capas…");
+  try {
+    const data = await withAuth(api.layerMetadata());
+    if (!data) return;
+    state.layerMeta.data = Array.isArray(data.items) ? data.items : [];
+    renderLayerMeta();
+    setStatus("");
+  } catch (err) {
+    setStatus(`No se pudieron cargar los metadatos: ${err.message}`, "error");
+  } finally {
+    state.layerMeta.loading = false;
+  }
+}
+
+function renderLayerMeta() {
+  const body = $("#layerMetaBody");
+  const empty = $("#layerMetaEmpty");
+  if (!body || !empty) return;
+
+  const items = Array.isArray(state.layerMeta.data) ? state.layerMeta.data : [];
+  const needle = String($("#layerMetaSearch")?.value || "")
+    .toLowerCase()
+    .trim();
+  const filtered = items.filter((item) => {
+    if (!needle) return true;
+    return [item.layer_id, item.display_name, item.dimension]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(needle));
+  });
+
+  const withSource = items.filter((item) => item.source).length;
+  const withLicense = items.filter((item) => item.license).length;
+  $("#layerMetaMetricTotal").textContent = String(items.length);
+  $("#layerMetaMetricSource").textContent = String(withSource);
+  $("#layerMetaMetricLicense").textContent = String(withLicense);
+
+  const fragment = document.createDocumentFragment();
+  for (const item of filtered) {
+    const edit = el("button", {
+      className: "btn btn-secondary btn-mini",
+      text: "Editar",
+      attrs: {
+        type: "button",
+        "data-layer-meta-id": item.layer_id,
+      },
+    });
+    fragment.appendChild(
+      el("tr", {}, [
+        el("td", {}, [
+          el("strong", {
+            className: "layer-name",
+            text: item.display_name || item.layer_id,
+          }),
+          el("small", { className: "item-meta", text: ` ${item.layer_id}` }),
+        ]),
+        el("td", { text: item.dimension || "—" }),
+        el("td", { text: item.source || "sin declarar" }),
+        el("td", { text: item.license || "sin declarar" }),
+        el("td", { text: formatDay(item.data_updated_at) }),
+        el("td", {}, [el("div", { className: "row-actions" }, [edit])]),
+      ])
+    );
+  }
+
+  body.replaceChildren(fragment);
+  empty.hidden = filtered.length > 0;
+}
+
+function openLayerMetaForm(item) {
+  const panel = $("#layerMetaFormPanel");
+  if (!panel || !item) return;
+  state.layerMeta.editing = item.layer_id;
+  $("#layerMetaId").value = item.layer_id;
+  $("#layerMetaSource").value = item.source || "";
+  $("#layerMetaSourceUrl").value = item.source_url || "";
+  $("#layerMetaDate").value = item.data_updated_at
+    ? String(item.data_updated_at).slice(0, 10)
+    : "";
+  $("#layerMetaScale").value = item.scale || "";
+  $("#layerMetaLicense").value = item.license || "";
+  $("#layerMetaMethod").value = item.method || "";
+  $("#layerMetaCoverage").value = item.coverage || "";
+  $("#layerMetaLimitations").value = item.limitations || "";
+  $("#layerMetaFormMeta").textContent =
+    `${item.display_name || item.layer_id} · ${item.layer_id} · ` +
+    `${item.dimension || "sin dimensión"}`;
+  layerMetaSetStatus("");
+  panel.hidden = false;
+  panel.scrollIntoView({ behavior: "smooth", block: "start" });
+  $("#layerMetaSource")?.focus({ preventScroll: true });
+}
+
+function closeLayerMetaForm() {
+  const panel = $("#layerMetaFormPanel");
+  if (panel) panel.hidden = true;
+  state.layerMeta.editing = null;
+}
+
+function collectLayerMeta() {
+  const value = (selector) => String($(selector)?.value || "").trim();
+  const date = value("#layerMetaDate");
+  return {
+    layer_id: value("#layerMetaId"),
+    source: value("#layerMetaSource"),
+    source_url: value("#layerMetaSourceUrl"),
+    data_updated_at: date || null,
+    scale: value("#layerMetaScale"),
+    license: value("#layerMetaLicense"),
+    method: value("#layerMetaMethod"),
+    coverage: value("#layerMetaCoverage"),
+    limitations: value("#layerMetaLimitations"),
+  };
+}
+
+async function saveLayerMeta(event) {
+  event.preventDefault();
+  const payload = collectLayerMeta();
+  if (!payload.layer_id) {
+    layerMetaSetStatus("Falta la capa a editar.", "error");
+    return;
+  }
+  const submit = event.submitter;
+  if (submit) submit.disabled = true;
+  try {
+    const result = await api.layerMetadataSave(payload);
+    const item = result?.item;
+    if (item) {
+      const index = state.layerMeta.data.findIndex(
+        (row) => row.layer_id === item.layer_id
+      );
+      if (index >= 0) state.layerMeta.data[index] = item;
+      else state.layerMeta.data.push(item);
+      renderLayerMeta();
+    }
+    layerMetaSetStatus("Metadatos guardados.");
+    setStatus(`Metadatos de ${payload.layer_id} guardados.`);
+    closeLayerMetaForm();
+    await loadLayerMeta({ silent: true });
+  } catch (err) {
+    layerMetaSetStatus(err.message, "error");
+  } finally {
+    if (submit) submit.disabled = false;
+  }
+}
+
 async function loadRag({ silent = false } = {}) {
   if (state.rag.loading) return;
   state.rag.loading = true;
@@ -3284,6 +3449,21 @@ function bindEvents() {
   $("#layerSearch")?.addEventListener("input", renderLayers);
   $("#dimensionFilter")?.addEventListener("change", renderLayers);
   $("#auditRefresh")?.addEventListener("click", loadAudit);
+
+  // Metadatos de capas (47-E)
+  $("#layerMetaRefresh")?.addEventListener("click", () => loadLayerMeta());
+  $("#layerMetaSearch")?.addEventListener("input", renderLayerMeta);
+  $("#layerMetaBody")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-layer-meta-id]");
+    if (!button) return;
+    const item = state.layerMeta.data.find(
+      (row) => row.layer_id === button.dataset.layerMetaId
+    );
+    if (item) openLayerMetaForm(item);
+  });
+  $("#layerMetaForm")?.addEventListener("submit", saveLayerMeta);
+  $("#layerMetaClose")?.addEventListener("click", closeLayerMetaForm);
+  $("#layerMetaCancel")?.addEventListener("click", closeLayerMetaForm);
 
   // RAG
   $("#ragForm")?.addEventListener("submit", (event) => {

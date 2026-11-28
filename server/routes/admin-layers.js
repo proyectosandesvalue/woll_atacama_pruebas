@@ -11,6 +11,7 @@ import {
   handleLayerUpload,
   handleLayersGet,
 } from "../handlers/admin-layers.js";
+import { adminLayerMetadataRoutes } from "./admin-layer-metadata.js";
 
 const jsonBody = { body: "json", bodyLimit: 250_000 };
 
@@ -59,4 +60,5 @@ export const adminLayerRoutes = [
     ...jsonBody,
     handler: (ctx) => handleLayerJobCancel(ctx, { getDB: ctx.getDB }),
   },
+  ...adminLayerMetadataRoutes,
 ];

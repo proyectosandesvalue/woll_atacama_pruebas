@@ -122,6 +122,9 @@ export const api = {
     request(`/api/admin/unanswered/brief?id=${encodeURIComponent(id)}`),
 
   layersList: () => request("/api/admin/layers"),
+  layerMetadata: () => request("/api/admin/layer-metadata"),
+  layerMetadataSave: (payload) =>
+    request("/api/admin/layer-metadata", { method: "PUT", body: payload }),
   layerSave: (payload) =>
     request("/api/admin/layers", {
       method: payload.id ? "PUT" : "POST",

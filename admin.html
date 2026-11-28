@@ -146,6 +146,10 @@
           <span class="material-symbols-outlined">layers</span>
           <span>Capas</span>
         </button>
+        <button class="nav-item" type="button" data-view="layer-meta">
+          <span class="material-symbols-outlined">fact_check</span>
+          <span>Metadatos</span>
+        </button>
         <button class="nav-item" type="button" data-view="rag">
           <span class="material-symbols-outlined">library_books</span>
           <span>RAG</span>
@@ -469,6 +473,142 @@
             </table>
           </div>
           <p id="layerJobsEmpty" class="empty" hidden>Sin trabajos registrados.</p>
+        </div>
+      </section>
+
+      <!-- Metadatos de procedencia -->
+      <section id="view-layer-meta" class="view" aria-labelledby="viewTitle" hidden>
+        <div class="info-banner" role="note">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          <div>
+            <strong>Procedencia declarada de las capas</strong>
+            <p>
+              Estos campos alimentan <code>get_layer_metadata</code> y las citas
+              del chat. Si no hay dato, deja el campo vacío: se mostrará
+              “sin declarar”. No inventes fuente, licencia ni escala.
+            </p>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <article class="metric">
+            <span class="metric-label">Capas</span>
+            <strong class="metric-value" id="layerMetaMetricTotal">—</strong>
+            <small>en <code>chat.chat_catalog</code></small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Con fuente</span>
+            <strong class="metric-value" id="layerMetaMetricSource">—</strong>
+            <small>procedencia declarada</small>
+          </article>
+          <article class="metric">
+            <span class="metric-label">Con licencia</span>
+            <strong class="metric-value" id="layerMetaMetricLicense">—</strong>
+            <small>licencia declarada</small>
+          </article>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>Metadatos por capa</h2>
+              <p class="muted">Fuente, fecha, escala, licencia, método, cobertura y limitaciones.</p>
+            </div>
+            <div class="panel-head-actions">
+              <div class="help-wrap">
+                <button class="help-btn" type="button" data-help="help-layer-meta"
+                        aria-label="Ayuda sobre los metadatos de capas" aria-expanded="false"
+                        aria-controls="help-layer-meta">
+                  <span class="material-symbols-outlined">help</span>
+                </button>
+                <div id="help-layer-meta" class="help-popover" hidden>
+                  <strong>Cómo completar</strong>
+                  <ul>
+                    <li><b>Fuente:</b> institución o proyecto que produjo la capa.</li>
+                    <li><b>URL:</b> enlace https al dataset o ficha oficial.</li>
+                    <li><b>Fecha:</b> fecha del dato, no la de carga al visor.</li>
+                    <li><b>Escala:</b> escala nominal o resolución, si aplica.</li>
+                    <li><b>Licencia:</b> condiciones de uso y atribución.</li>
+                    <li><b>Método:</b> fotointerpretación, levantamiento, modelo, etc.</li>
+                    <li><b>Cobertura:</b> territorio y periodo que cubre.</li>
+                    <li><b>Limitaciones:</b> qué no se debe concluir con esta capa.</li>
+                  </ul>
+                  <p>Vacío = “sin declarar”. No se inventan valores.</p>
+                </div>
+              </div>
+              <label class="field-inline" for="layerMetaSearch">
+                <span class="sr-only">Buscar capa</span>
+                <input id="layerMetaSearch" type="search" placeholder="Buscar capa…" />
+              </label>
+              <button id="layerMetaRefresh" class="btn btn-secondary" type="button">
+                <span class="material-symbols-outlined">refresh</span>
+                Actualizar
+              </button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th scope="col">Capa</th>
+                  <th scope="col">Dimensión</th>
+                  <th scope="col">Fuente</th>
+                  <th scope="col">Licencia</th>
+                  <th scope="col">Fecha dato</th>
+                  <th scope="col">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="layerMetaBody"></tbody>
+            </table>
+          </div>
+          <p id="layerMetaEmpty" class="empty" hidden>No hay capas que coincidan.</p>
+        </div>
+
+        <div id="layerMetaFormPanel" class="panel" hidden>
+          <div class="panel-head">
+            <div>
+              <h2>Editar metadatos</h2>
+              <p class="muted" id="layerMetaFormMeta">—</p>
+            </div>
+            <button id="layerMetaClose" class="btn btn-secondary" type="button">Cerrar</button>
+          </div>
+          <form id="layerMetaForm" class="rag-form" novalidate>
+            <input id="layerMetaId" type="hidden" />
+            <div class="field-grid">
+              <div>
+                <label for="layerMetaSource">Fuente</label>
+                <input id="layerMetaSource" maxlength="200" placeholder="DGA, ODEPA/CIREN, IDE Chile…" />
+              </div>
+              <div>
+                <label for="layerMetaScale">Escala</label>
+                <input id="layerMetaScale" maxlength="120" placeholder="1:50.000, 10 m…" />
+              </div>
+            </div>
+            <label for="layerMetaSourceUrl">URL de la fuente</label>
+            <input id="layerMetaSourceUrl" type="url" maxlength="500" placeholder="https://…" />
+            <div class="field-grid">
+              <div>
+                <label for="layerMetaDate">Fecha del dato</label>
+                <input id="layerMetaDate" type="date" />
+              </div>
+              <div>
+                <label for="layerMetaLicense">Licencia</label>
+                <input id="layerMetaLicense" maxlength="200" placeholder="Uso institucional con atribución" />
+              </div>
+            </div>
+            <label for="layerMetaMethod">Método</label>
+            <input id="layerMetaMethod" maxlength="500" placeholder="Fotointerpretación, levantamiento en terreno…" />
+            <label for="layerMetaCoverage">Cobertura</label>
+            <input id="layerMetaCoverage" maxlength="500" placeholder="Región de Atacama, 2020-2025…" />
+            <label for="layerMetaLimitations">Limitaciones</label>
+            <textarea id="layerMetaLimitations" rows="3" maxlength="1000"
+                      placeholder="Qué no se debe concluir con esta capa…"></textarea>
+            <div class="rag-actions">
+              <button class="btn btn-primary" type="submit">Guardar metadatos</button>
+              <button id="layerMetaCancel" class="btn btn-secondary" type="button">Cancelar</button>
+            </div>
+            <p id="layerMetaStatus" class="status-line" role="status" aria-live="polite" hidden></p>
+          </form>
         </div>
       </section>
 
